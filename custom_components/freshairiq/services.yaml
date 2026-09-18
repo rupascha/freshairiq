@@ -1,0 +1,22 @@
+execute_intervention:
+  name: Empfohlene Raumklima-Maßnahme ausführen
+  description: >-
+    Führt eine von FreshAirIQ bereits berechnete, explizit ausführbare Maßnahme
+    für einen Raum aus. FreshAirIQ steuert optionale Geräte niemals automatisch;
+    diese Aktion muss bewusst vom Nutzer oder einer Automation aufgerufen werden.
+  fields:
+    room_key:
+      name: Raum-Schlüssel
+      description: Interner FreshAirIQ-Schlüssel des Raums.
+      required: true
+      example: wohnzimmer
+      selector:
+        text:
+    intervention_key:
+      name: Maßnahmen-Schlüssel
+      description: >-
+        Optional. Ohne Angabe wird die höchst priorisierte ausführbare Maßnahme
+        des Raums verwendet, z. B. extract_moisture oder shade.
+      required: false
+      selector:
+        text:

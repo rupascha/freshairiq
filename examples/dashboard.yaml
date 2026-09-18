@@ -1,0 +1,30 @@
+type: vertical-stack
+cards:
+  - type: tile
+    entity: sensor.freshairiq_status
+    name: FreshAirIQ
+    icon: mdi:home-air-filter
+    tap_action:
+      action: navigate
+      navigation_path: /freshairiq-safe
+    hold_action:
+      action: more-info
+  - type: horizontal-stack
+    cards:
+      - type: tile
+        entity: sensor.freshairiq_removable_moisture
+        name: Potenzial
+      - type: tile
+        entity: sensor.freshairiq_live_moisture_balance
+        name: Bilanz
+      - type: tile
+        entity: sensor.freshairiq_next_5_minutes
+        name: Nächste 5 Min
+  - type: entities
+    title: Diagnose
+    entities:
+      - sensor.freshairiq_highest_estimated_surface_humidity
+      - sensor.freshairiq_learning_confidence
+      - sensor.freshairiq_last_learning_diagnosis
+# Room entity_ids are generated from the room names selected in the config flow.
+# Add the per-room Action / Mould risk / Close recommended entities here after setup.

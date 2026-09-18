@@ -1,0 +1,5 @@
+# Compatibility path only. The strategy now generates a native Home Assistant
+# tile that opens the FreshAirIQ safe panel; it no longer generates
+# custom:freshairiq-card as dashboard content.
+strategy:
+  type: custom:freshairiq

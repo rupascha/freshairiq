@@ -1,0 +1,165 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "cross_ventilation": {
+        "default": "mdi:swap-horizontal-bold"
+      },
+      "close_recommended": {
+        "default": "mdi:window-closed-variant"
+      }
+    },
+    "button": {
+      "reset_learning": {
+        "default": "mdi:brain-refresh"
+      },
+      "reset_statistics": {
+        "default": "mdi:chart-box-outline"
+      }
+    },
+    "number": {
+      "forecast_horizon": {
+        "default": "mdi:timeline-clock-outline"
+      },
+      "guest_adults": {
+        "default": "mdi:account-plus"
+      },
+      "guest_children": {
+        "default": "mdi:account-child"
+      }
+    },
+    "select": {
+      "operating_profile": {
+        "default": "mdi:tune-variant"
+      }
+    },
+    "sensor": {
+      "status": {
+        "default": "mdi:home-air-filter"
+      },
+      "potential_total_ml": {
+        "default": "mdi:water-minus"
+      },
+      "live_balance_ml": {
+        "default": "mdi:water-sync"
+      },
+      "next_5_min_ml": {
+        "default": "mdi:water-clock-outline"
+      },
+      "forecast_moisture_effect_ml": {
+        "default": "mdi:chart-timeline-variant-shimmer"
+      },
+      "forecast_cost": {
+        "default": "mdi:currency-eur"
+      },
+      "forecast_confidence": {
+        "default": "mdi:shield-check-outline"
+      },
+      "total_water_ml": {
+        "default": "mdi:water-outline"
+      },
+      "prognosis_confidence": {
+        "default": "mdi:shield-check-outline"
+      },
+      "overnight_forecast_ml": {
+        "default": "mdi:weather-night"
+      },
+      "overnight_confidence": {
+        "default": "mdi:shield-moon-outline"
+      },
+      "effective_occupants": {
+        "default": "mdi:account-group"
+      },
+      "night_model_ml_h": {
+        "default": "mdi:chart-timeline-variant"
+      },
+      "history_removed_14d_ml": {
+        "default": "mdi:water-minus"
+      },
+      "history_cost_14d": {
+        "default": "mdi:currency-eur"
+      },
+      "estimated_moisture_generation_day_ml": {
+        "default": "mdi:water-plus"
+      },
+      "moisture_balance_today_ml": {
+        "default": "mdi:scale-balance"
+      },
+      "last_learning_diagnosis": {
+        "default": "mdi:brain"
+      },
+      "action": {
+        "default": "mdi:weather-windy"
+      },
+      "delta_g_m3": {
+        "default": "mdi:delta"
+      },
+      "potential_ml": {
+        "default": "mdi:water-minus"
+      },
+      "mould_level": {
+        "default": "mdi:alert-outline"
+      },
+      "learning_status": {
+        "default": "mdi:brain"
+      },
+      "learning_samples": {
+        "default": "mdi:counter"
+      },
+      "result_ml": {
+        "default": "mdi:water-sync"
+      },
+      "learning_diagnosis": {
+        "default": "mdi:brain"
+      },
+      "next_5_min_cost": {
+        "default": "mdi:currency-eur"
+      },
+      "moisture_effect_next_5_min_ml": {
+        "default": "mdi:water-sync"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "add_room": {
+        "sections": {
+          "identity": "mdi:label-outline",
+          "properties": "mdi:water-plus-outline",
+          "sensors": "mdi:thermometer-water",
+          "geometry": "mdi:ruler-square",
+          "optional_sensors": "mdi:access-point-plus",
+          "optional_actuators": "mdi:hvac"
+        }
+      },
+      "edit_room": {
+        "sections": {
+          "identity": "mdi:label-outline",
+          "properties": "mdi:water-plus-outline",
+          "sensors": "mdi:thermometer-water",
+          "geometry": "mdi:ruler-square",
+          "optional_sensors": "mdi:access-point-plus",
+          "optional_actuators": "mdi:hvac"
+        }
+      },
+      "model": {
+        "sections": {
+          "humidity_thresholds": "mdi:water-percent",
+          "recommendation_thresholds": "mdi:target",
+          "ventilation_timing": "mdi:timer-outline",
+          "efficiency": "mdi:gauge",
+          "health_limits": "mdi:shield-home-outline",
+          "learning": "mdi:brain"
+        }
+      },
+      "residents": {
+        "sections": {
+          "residents": "mdi:account-group-outline",
+          "presence": "mdi:motion-sensor",
+          "personalisation": "mdi:account-heart-outline",
+          "night": "mdi:weather-night",
+          "resident_profiles": "mdi:brain"
+        }
+      }
+    }
+  }
+}

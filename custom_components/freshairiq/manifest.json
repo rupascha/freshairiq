@@ -1,0 +1,20 @@
+{
+  "domain": "freshairiq",
+  "name": "FreshAirIQ",
+  "version": "0.25.0.35",
+  "config_flow": true,
+  "documentation": "https://github.com/rupascha/freshairiq",
+  "issue_tracker": "https://github.com/rupascha/freshairiq/issues",
+  "integration_type": "hub",
+  "iot_class": "calculated",
+  "single_config_entry": true,
+  "requirements": [],
+  "codeowners": [
+    "@rupascha"
+  ],
+  "dependencies": [
+    "frontend",
+    "http",
+    "lovelace"
+  ]
+}

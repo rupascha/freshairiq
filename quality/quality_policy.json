@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "name": "FreshAirIQ Continuous Quality System",
+  "version": "0.25.0.35",
+  "correctness": {
+    "pure_logic_coverage_percent": 100.0,
+    "ha_combined_coverage_percent": 99.0,
+    "ha_module_coverage_percent": 98.0,
+    "config_flow_coverage_percent": 100.0
+  },
+  "robustness": {
+    "required_test_files": [
+      "tests/test_fault_injection_022100.py",
+      "tests/test_robustness_022000.py",
+      "tests/test_reliability_hardening_025002.py",
+      "tests/test_numeric_hardening_024400.py",
+      "tests/test_optional_entities_024000.py",
+      "tests/test_diagnostics_transport_025022.py",
+      "tests/test_diagnostics_client_hardening_025023.py",
+      "tests/test_diagnostics_transport_performance_025024.py",
+      "tests/test_local_hub_staging_025025.py",
+      "tests/test_hotfix_025032_safe_cleanup.py",
+      "tests/test_hotfix_025033_maximum_hardening.py",
+      "tests/test_hotfix_025034_outer_hardening.py"
+    ]
+  },
+  "stability": {
+    "stress_cycles": 3000,
+    "max_retained_memory_kib": 768,
+    "max_peak_memory_kib": 16384,
+    "max_runtime_seconds": 12.0
+  },
+  "performance": {
+    "baseline_file": "quality/performance_baseline.json",
+    "warning_regression_percent": 15.0,
+    "failure_regression_percent": 30.0,
+    "rounds": 7
+  },
+  "compatibility": {
+    "python_required": [
+      "3.13",
+      "3.14"
+    ],
+    "home_assistant_required": [
+      ">=2026.8,<2026.9",
+      ">=2026.9,<2026.10"
+    ],
+    "home_assistant_edge": "latest",
+    "frontend_browsers": [
+      "chromium",
+      "webkit",
+      "firefox",
+      "android-webview"
+    ],
+    "frontend_viewports": [
+      {
+        "name": "iphone",
+        "width": 430,
+        "height": 932
+      },
+      {
+        "name": "ipad",
+        "width": 768,
+        "height": 1024
+      },
+      {
+        "name": "android",
+        "width": 412,
+        "height": 915
+      },
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 1000
+      }
+    ],
+    "android_webview": {
+      "engine": "chromium",
+      "android_version": "15",
+      "device_family": "Pixel-class phone",
+      "is_mobile": true,
+      "has_touch": true,
+      "device_scale_factor": 2.625,
+      "viewports": [
+        {
+          "width": 360,
+          "height": 800
+        },
+        {
+          "width": 412,
+          "height": 915
+        },
+        {
+          "width": 600,
+          "height": 960
+        },
+        {
+          "width": 800,
+          "height": 1280
+        }
+      ]
+    }
+  },
+  "release": {
+    "forbidden_path_parts": [
+      "__pycache__",
+      ".pytest_cache",
+      ".mypy_cache",
+      ".ruff_cache",
+      ".git",
+      "node_modules"
+    ],
+    "forbidden_suffixes": [
+      ".pyc",
+      ".pyo"
+    ],
+    "forbidden_file_names": [
+      ".coverage",
+      "coverage.xml",
+      ".DS_Store",
+      "Thumbs.db"
+    ],
+    "artifact_suffix": "Maximum-Hardening-Hotfix"
+  }
+}

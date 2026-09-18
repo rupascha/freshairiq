@@ -1,0 +1,96 @@
+rules:
+  # Bronze
+  action-setup: done
+  appropriate-polling: done
+  brands:
+    status: todo
+    comment: "Bundled branding assets exist; Home Assistant Brands/HACS publication still needs external verification."
+  common-modules: done
+  config-flow-test-coverage:
+    status: todo
+    comment: "Real Home Assistant config-flow tests exist; v1 requires measured 100% config_flow.py coverage in the canonical HA CI report before this can be marked done."
+  config-flow: done
+  dependency-transparency:
+    status: exempt
+    comment: "FreshAirIQ has no third-party runtime Python dependencies."
+  docs-actions: done
+  docs-conditions:
+    status: exempt
+    comment: "FreshAirIQ does not provide custom Home Assistant conditions."
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: "FreshAirIQ does not provide custom Home Assistant triggers."
+  entity-event-setup:
+    status: todo
+    comment: "Runtime listener lifecycle must still be covered by the real Home Assistant test suite."
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure:
+    status: exempt
+    comment: "FreshAirIQ is a local calculated integration; setup validates the required local outdoor source rather than connecting to an external service."
+  test-before-setup:
+    status: todo
+    comment: "Full setup failure/recovery coverage is still required in the HA-runtime suite."
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates:
+    status: exempt
+    comment: "FreshAirIQ performs centralized local calculations and does not poll parallel external devices."
+  reauthentication-flow:
+    status: exempt
+    comment: "FreshAirIQ has no authentication or remote account."
+  test-coverage:
+    status: todo
+    comment: "Pure logic is measured at 100%. The v1 canonical HA CI gate requires >=99% combined, >=98% for every Python integration module and 100% for config_flow.py; project target is 100%. Real HA runtime measurement must still pass before this can be marked done."
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: "FreshAirIQ models a user-configured dwelling and cannot be meaningfully auto-discovered as one external device."
+  discovery-update-info:
+    status: exempt
+    comment: "No discoverable external device is represented by the integration."
+  docs-data-update: done
+  docs-examples:
+    status: todo
+    comment: "Add polished automation/blueprint examples after action semantics are frozen."
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices: done
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: done
+  stale-devices: done
+
+  # Platinum
+  async-dependency:
+    status: exempt
+    comment: "FreshAirIQ has no third-party runtime dependency."
+  inject-websession:
+    status: exempt
+    comment: "FreshAirIQ does not create an HTTP client session."
+  strict-typing:
+    status: todo
+    comment: "Runtime/entity/settings core now uses a shared typed ConfigEntry contract with fully annotated signatures; Config Flow and remaining HA edge modules plus a real mypy strict gate are still required."
