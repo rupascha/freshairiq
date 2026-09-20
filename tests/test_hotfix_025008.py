@@ -81,8 +81,8 @@ def test_forecast_accuracy_remains_strict_after_followup_learning_hotfix():
 
 
 def test_release_version_is_025008():
-    assert 'VERSION = "0.25.0.41"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.42"' in (COMP / "const.py").read_text(encoding="utf-8")
     import json
-    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.41"
+    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.42"
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.41";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.42";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

@@ -54,7 +54,7 @@ def test_chart_and_learning_html_are_reference_cached_without_changing_math():
 
 def test_performance_hotfix_does_not_change_backend_version_contracts():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.0.41"
-    assert 'VERSION = "0.25.0.41"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == "0.25.0.42"
+    assert 'VERSION = "0.25.0.42"' in (COMP / "const.py").read_text(encoding="utf-8")
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.41";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.42";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

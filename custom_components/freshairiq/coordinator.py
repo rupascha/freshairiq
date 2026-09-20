@@ -39,6 +39,7 @@ from .seasonality import learn_seasonal_source, seasonal_context
 from .house_strategy import learn_house_outcome, house_strategy_fit, house_maturity
 from .consolidation import aggregate_close_allowed, aggregate_close_gate_ready, stabilise_recommendation
 from .decision_brain import build_unified_decision
+from .decision_trace import build_decision_trace, build_recommendation_quality
 from .diagnostics import FreshAirIQDiagnosticsRecorder
 from .telemetry import FreshAirIQDiagnosticsClient
 from .ventilation_result import append_completed_sessions, finalise_ventilation_group, include_ventilation_group_start, new_ventilation_group, update_session_cross_tracking
@@ -3167,6 +3168,19 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             intelligent_recommendation, results, options
         )
 
+        # Decision Intelligence & Validation v1: attach an observational trace
+        # only after every layer has finished. It cannot alter the canonical
+        # action and therefore cannot destabilise the proven ventilation logic.
+        _decision_validation = validation_summary(
+            self.store.data.get("forecast_validation_history") or [], days=30
+        )
+        intelligent_recommendation["decision_trace"] = build_decision_trace(
+            intelligent_recommendation, results, validation=_decision_validation
+        )
+        intelligent_recommendation["recommendation_quality"] = build_recommendation_quality(
+            _decision_validation
+        )
+
         if sync_active_recommendation(self.store.data, intelligent_recommendation, now):
             changed = True
         iq_state = build_intelligence_state(
@@ -3231,7 +3245,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "repaired_option_keys": list(self.robustness.repaired_option_keys),
             "overall": "Gut – Lernen läuft" if valid and not stale_rooms and not self.robustness.runtime_config_issues else ("Eingeschränkt – Konfiguration/Sensordaten prüfen" if valid else "Nicht bereit"),
         }
-        forecast_validation_status = validation_summary(self.store.data.get("forecast_validation_history") or [], days=30)
+        forecast_validation_status = _decision_validation
         forecast_backtest_status = backtest_summary(self.store.data.get("forecast_validation_history") or [], days=30)
         post_close_status = stabilization_summary(self.store.data.get("post_close_stabilization_history") or [])
         learning_components_status = build_learning_components_status(
@@ -3293,12 +3307,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "wind_bearing": wind_bearing, "wind_speed": wind_speed, "last_ventilation": self.store.data.get("last_ventilation"),
             "finalizing_measurements": finalizing_measurements,
             "forecast_validation": forecast_validation_status,
+            "recommendation_quality": intelligent_recommendation.get("recommendation_quality", {}),
+            "decision_trace": intelligent_recommendation.get("decision_trace", {}),
             "forecast_backtest": forecast_backtest_status,
             "post_close_stabilization": post_close_status,
             "learning_components": learning_components_status,
             "post_close_stabilization_history": list(self.store.data.get("post_close_stabilization_history") or [])[-100:],
             "intelligent_recommendation": intelligent_recommendation, "recommendation_engine": "v3", "house_ventilation_mode": house_ventilation_mode, "house_ventilation_active_ratio": round(active_ratio, 3), "floor_ventilation_mode": floor_ventilation_mode, "floor_ventilation_floor": floor_display_name if floor_ventilation_mode else None, "room_sort_order": [str(r.get("key")) for r in rooms_cfg], "system_check": system_check,
-            "iq_state": iq_state, "intelligence_engine": "v13", "decision_engine": "v6", "live_coach_engine": "v1", "anticipation_engine": "v1", "planner_engine": "v1", "seasonal_engine": "v1", "house_strategy_engine": "v1", "consolidation_engine": "v1", "decision_brain_engine": "v1",
+            "iq_state": iq_state, "intelligence_engine": "v13", "decision_engine": "v6", "live_coach_engine": "v1", "anticipation_engine": "v1", "planner_engine": "v1", "seasonal_engine": "v1", "house_strategy_engine": "v1", "consolidation_engine": "v1", "decision_brain_engine": "v1", "decision_trace_engine": "v1",
             "future_weather_available": bool(future_outdoor), "future_weather_boundaries": future_outdoor, "day_night_plan": day_night_plan,
             "house_strategy_maturity": house_maturity(self.store.data), "house_strategy_samples": int(self.store.data.get("house_strategy_samples", 0)),
             "sign_convention": "display: moisture_removed=-, moisture_added=+",

@@ -86,7 +86,7 @@ def test_measurement_frame_held_is_learning_only_and_truly_stale_is_rejected():
     coordinator = (root / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
     diagnostics = (root / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
     assert 'frame_learning_eligible = session_activity_eligible' in coordinator
-    # 0.25.0.41: legacy frame classes remain diagnostic context; actual
+    # 0.25.0.42: legacy frame classes remain diagnostic context; actual
     # in-session report timestamps are now the mandatory learning/validation gate.
     assert 'snapshot_frame_valid = bool(session_activity_eligible)' in coordinator
     assert 'start_learning_valid = session_activity_eligible' in coordinator

@@ -1,38 +1,36 @@
 {
   "schema": 1,
-  "version": "0.25.0.41",
+  "version": "0.25.0.42",
   "python": "3.13",
   "benchmarks": {
     "evaluate_room": {
-      "ratio": 7.446896373375087,
-      "us_per_call": 7.6150183333333334,
-      "workload_ms": 13.707033,
-      "control_ms": 1.840637,
+      "ratio": 6.6941202935909185,
+      "us_per_call": 11.456663333333333,
+      "workload_ms": 20.621994,
+      "control_ms": 3.080613,
       "baseline_ratio": 8.51026672339571,
-      "regression_percent": -12.49514715087946,
+      "regression_percent": -21.340652283106397,
       "status": "PASS"
     },
     "recommendation_12_rooms": {
-      "ratio": 101.89432605262746,
-      "us_per_call": 100.26244923076922,
-      "workload_ms": 65.170592,
-      "control_ms": 0.63959,
+      "ratio": 97.2423759137328,
+      "us_per_call": 168.66031846153848,
+      "workload_ms": 109.629207,
+      "control_ms": 1.127381,
       "baseline_ratio": 107.8768424167155,
-      "regression_percent": -5.545691021413369,
+      "regression_percent": -9.857969759536545,
       "status": "PASS"
     },
     "simulate_6_rooms": {
-      "ratio": 28.598656590463293,
-      "us_per_call": 26.94163,
-      "workload_ms": 37.718282,
-      "control_ms": 1.318883,
+      "ratio": 24.706358436731925,
+      "us_per_call": 42.85042571428572,
+      "workload_ms": 59.990596,
+      "control_ms": 2.428144,
       "baseline_ratio": 24.785748086860735,
-      "regression_percent": 15.38347154276063,
-      "status": "WARN"
+      "regression_percent": -0.320303627110996,
+      "status": "PASS"
     }
   },
-  "warnings": [
-    "simulate_6_rooms: +15.4% > 15.0%"
-  ],
+  "warnings": [],
   "failures": []
 }

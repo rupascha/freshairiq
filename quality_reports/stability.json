@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "version": "0.25.0.41",
+  "version": "0.25.0.42",
   "cycles": 3000,
   "deterministic": true,
   "digest": "5c0b48aedda2a1b9de43e435350e812f00d1057e71e5e2d0b9af7ef3d7f72bae",
-  "runtime_seconds": 8.386095605000008,
+  "runtime_seconds": 11.884093151999991,
   "retained_memory_kib": 0.1494140625,
   "peak_memory_kib": 38.56640625,
   "failures": []
