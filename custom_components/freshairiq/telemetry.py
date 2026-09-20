@@ -132,6 +132,13 @@ class FreshAirIQDiagnosticsClient:
             "hub_configured": bool(self.endpoint),
             "hub_environment": "local_staging" if self.endpoint.startswith("http://") else "production",
             "hub_enrolled": bool(self._state.get("hub_enrolled")),
+            "registered": bool(self._state.get("hub_enrolled")),
+            "initial_snapshot_received": bool(self._state.get("initial_snapshot_sent")),
+            "daily_upload_received": bool(self._state.get("regular_upload_sent")),
+            "last_successful_upload": self._state.get("last_success_at"),
+            "next_scheduled_upload": self._state.get("next_retry_at"),
+            "initial_snapshot_sent": bool(self._state.get("initial_snapshot_sent")),
+            "regular_upload_sent": bool(self._state.get("regular_upload_sent")),
             "state": self._runtime_state,
             "last_success_at": self._state.get("last_success_at"),
             "last_attempt_at": self._state.get("last_attempt_at"),
@@ -321,7 +328,7 @@ class FreshAirIQDiagnosticsClient:
             )
         return status
 
-    async def async_submit_feedback(self, feedback_type: str, message: str) -> dict[str, Any]:
+    async def async_submit_feedback(self, feedback_type: str, message: str, *, client_context: Mapping[str, Any] | None = None) -> dict[str, Any]:
         """Submit explicit user-authored feedback to the configured diagnostics Hub."""
         kind = str(feedback_type or "").strip()
         text = str(message or "").strip()
@@ -343,8 +350,27 @@ class FreshAirIQDiagnosticsClient:
         except (ImportError, AttributeError):
             ha_version = None
         payload = {"feedback_type": kind, "message": text, "freshairiq_version": VERSION, "home_assistant_version": ha_version, "diagnostics_schema_version": 10}
+        safe_client = {}
+        if isinstance(client_context, Mapping):
+            # Allow-list only anonymous UI compatibility fields. Never forward
+            # raw UA, exact model, device name, serial, IP/network data or stable IDs.
+            allowed = {"platform_family", "device_class", "companion_app", "companion_app_version", "browser_family", "webview_engine_version", "viewport_css_px", "device_pixel_ratio"}
+            safe_client = {str(k): v for k, v in client_context.items() if k in allowed}
+            if safe_client:
+                payload["client_context"] = safe_client
         headers = {"Authorization": f"Bearer {token}", "Content-Type":"application/json", "Accept":"application/json", "User-Agent":f"FreshAirIQ/{VERSION}"}
         async with session.post(f"{self.endpoint}/v1/feedback", json=payload, headers=headers, timeout=timeout) as response:
+            # Compatibility fallback for an older Hub that does not yet accept
+            # the optional anonymous client_context field. Feedback itself must
+            # never be lost because Hub and integration were updated separately.
+            if response.status in {400, 422} and "client_context" in payload:
+                legacy_payload = dict(payload)
+                legacy_payload.pop("client_context", None)
+                async with session.post(f"{self.endpoint}/v1/feedback", json=legacy_payload, headers=headers, timeout=timeout) as legacy:
+                    if 200 <= legacy.status < 300:
+                        result = await legacy.json()
+                        if isinstance(result, dict): result["client_context_accepted"] = False
+                        return result
             if response.status == 401:
                 self._state["hub_enrolled"] = False; await self._save_state()
                 token = await self._async_ensure_enrolled(session, installation_id, timeout, force=True)
@@ -453,6 +479,8 @@ class FreshAirIQDiagnosticsClient:
                 "last_problem_fingerprint": current_problem,
                 "last_batch_record_count": total_records,
                 "last_batch_chunk_count": len(chunks),
+                "initial_snapshot_sent": bool(self._state.get("initial_snapshot_sent")) or any(bool(c.get("initial_snapshot")) for c in chunks),
+                "regular_upload_sent": bool(self._state.get("regular_upload_sent")) or any(not bool(c.get("initial_snapshot")) for c in chunks),
                 "consecutive_failures": 0,
                 "next_retry_at": None,
                 "last_error_type": None,

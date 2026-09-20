@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.39 partial forecast validation hotfix."""
+"""Regression contracts for v0.25.0.40 partial forecast validation hotfix."""
 from datetime import datetime
 from pathlib import Path
 from custom_components.freshairiq.ventilation_result import finalise_ventilation_group
@@ -48,7 +48,7 @@ def test_no_strict_room_still_has_no_accuracy():
 
 
 def test_release_version_025036():
-    assert 'VERSION = "0.25.0.39"' in (COMP / "const.py").read_text()
-    assert '"version": "0.25.0.39"' in (COMP / "manifest.json").read_text()
+    assert 'VERSION = "0.25.0.40"' in (COMP / "const.py").read_text()
+    assert '"version": "0.25.0.40"' in (COMP / "manifest.json").read_text()
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.39";' in (COMP / "frontend" / name).read_text()
+        assert 'const FAIQ_VERSION = "0.25.0.40";' in (COMP / "frontend" / name).read_text()

@@ -223,8 +223,8 @@ def test_frontend_no_longer_uses_systematic_same_time_basis_error_text():
 
 
 def test_release_version_is_consistent():
-    assert 'VERSION = "0.25.0.39"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.39"
+    assert 'VERSION = "0.25.0.40"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.40"
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.39";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.40";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
     assert (ROOT / "RELEASE_NOTES_0.25.0.0.md").exists()

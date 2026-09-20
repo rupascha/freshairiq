@@ -626,7 +626,8 @@ class FreshAirIQFeedbackView(HomeAssistantView):
             coordinator = getattr(entry, "runtime_data", None)
             if coordinator is None:
                 raise ValueError("FreshAirIQ ist gerade nicht geladen.")
-            result = await coordinator.telemetry.async_submit_feedback(kind, message)
+            client_context = payload.get("client_context") if isinstance(payload.get("client_context"), dict) else None
+            result = await coordinator.telemetry.async_submit_feedback(kind, message, client_context=client_context)
             return self.json({"ok":True, **result})
         except ValueError as err:
             return self.json({"error":str(err)}, status_code=400)

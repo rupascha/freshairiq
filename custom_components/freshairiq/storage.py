@@ -357,7 +357,81 @@ class LearningStore:
                 else:
                     room.setdefault(key, value)
             self._sanitize_room_learning(room)
+            if not bool(room.get("time_evidence_migration_v025040")):
+                self._migrate_time_evidence(room)
+                room["time_evidence_migration_v025040"] = True
             sanitize_runtime_session(room)
+
+
+    @staticmethod
+    def _migrate_time_evidence(room: dict[str, Any]) -> None:
+        """Backfill only calendar evidence that is provable from persisted timestamps.
+
+        v0.25.0.15 introduced independent-day maturity gates. Existing learned
+        coefficients were intentionally preserved, but their already persisted
+        dated evidence was not migrated. Never infer days from counters.
+        """
+        def valid_day(value: Any) -> str | None:
+            raw = str(value or "").strip()[:10]
+            try:
+                datetime.fromisoformat(raw)
+            except (TypeError, ValueError):
+                return None
+            return raw
+
+        history = room.get("history")
+        session_days: set[str] = set()
+        measured_days: set[str] = set()
+        if isinstance(history, dict):
+            for raw_day, row in history.items():
+                day = valid_day(raw_day)
+                if not day or not isinstance(row, dict) or int(_finite_number(row.get("sessions"))) <= 0:
+                    continue
+                session_days.add(day)
+                if int(_finite_number(row.get("moisture_measured_sessions"))) > 0:
+                    measured_days.add(day)
+
+        def merge(field: str, proven: set[str]) -> None:
+            current = room.get(field)
+            values = {d for d in (valid_day(x) for x in current) if d} if isinstance(current, list) else set()
+            room[field] = sorted(values | proven)[-730:]
+
+        # Completed session history proves personal-context exposure. Measured
+        # sessions additionally prove that room physics had usable dated evidence.
+        merge("personal_context_observation_dates", session_days)
+        merge("learning_observation_dates", measured_days)
+        if int(_finite_number(room.get("strategy_outcome_samples"))) > 0:
+            merge("strategy_observation_dates", measured_days)
+
+        # Routine evidence can be reconstructed only from bucket timestamps.
+        routine_days: set[str] = set()
+        buckets = room.get("routine_source_buckets")
+        if isinstance(buckets, dict):
+            for row in buckets.values():
+                if isinstance(row, dict):
+                    day = valid_day(row.get("last_seen"))
+                    if day: routine_days.add(day)
+        merge("routine_observation_dates", routine_days)
+
+        # Seasonal profiles retain a last_seen timestamp per meteorological
+        # season. Preserve it as minimum truthful evidence; never fabricate the
+        # missing historical days from seasonal_samples.
+        obs = room.get("seasonal_observation_days")
+        if not isinstance(obs, dict): obs = {}
+        profiles = room.get("seasonal_source_profiles")
+        if isinstance(profiles, dict):
+            for season, row in profiles.items():
+                if not isinstance(row, dict): continue
+                raw = row.get("last_seen")
+                day = valid_day(raw)
+                if not day: continue
+                try: when = datetime.fromisoformat(str(raw))
+                except (TypeError, ValueError): continue
+                period_year = when.year - 1 if str(season) == "winter" and when.month in (1, 2) else when.year
+                period = f"{period_year}:{season}"
+                days = obs.get(period) if isinstance(obs.get(period), list) else []
+                obs[period] = sorted(set(str(x) for x in days if valid_day(x)) | {day})[-100:]
+        room["seasonal_observation_days"] = obs
 
     def _sanitize_global_learning(self) -> None:
         """Repair impossible/non-finite house-level adaptive persistence."""

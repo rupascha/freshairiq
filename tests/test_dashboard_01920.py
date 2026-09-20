@@ -40,7 +40,7 @@ def test_all_subdialogs_keep_stable_scrollers_while_values_update_live():
     assert 'if (this._info || this._dialogOpen)' in text
     assert 'this._queueLiveRefresh();' in text
     assert '_patchLiveNode(current, fresh)' in text
-    assert 'overscroll-behavior-y:none' in text
+    assert 'overscroll-behavior-y:contain' in text
     assert 'overflow-anchor:none' in text
     assert '-webkit-overflow-scrolling:touch' in text
 

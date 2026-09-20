@@ -1136,6 +1136,20 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 mem["session_start_frame_skew_s"] = measurement_frame.get("skew_s")
                 mem["session_start_frame_max_age_s"] = measurement_frame.get("max_age_s")
                 mem["session_start_frame_learning_eligible"] = bool(measurement_frame.get("learning_eligible"))
+                # Explain start evidence separately from the strict in-session gate.
+                # A held battery-sensor value can be plausible without being fresh;
+                # it never bypasses the later timestamp activity requirement.
+                try:
+                    _start_age = float(measurement_frame.get("max_age_s") or 0.0)
+                except (TypeError, ValueError, OverflowError):
+                    _start_age = 999999.0
+                if _start_age <= 300.0:
+                    mem["start_measurement_state"] = "fresh"
+                elif _start_age <= 1200.0 and measurement_frame.get("quality") not in {"invalid", "missing"}:
+                    mem["start_measurement_state"] = "held_plausible"
+                else:
+                    mem["start_measurement_state"] = "uncertain"
+                mem["start_measurement_in_session_gate_passed"] = False
                 mem["session_learning_started"] = now.isoformat() if measurement_frame.get("learning_eligible") else None
                 mem["session_last_eligible_ah"] = mem["session_start_ah"] if measurement_frame.get("learning_eligible") else None
                 mem["session_last_eligible_at"] = now.isoformat() if measurement_frame.get("learning_eligible") else None
@@ -2042,8 +2056,19 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "frame_age_temp_s": measurement_frame.get("age_temperature_s"), "frame_age_humidity_s": measurement_frame.get("age_humidity_s"),
                 "frame_age_reference_temp_s": measurement_frame.get("age_reference_temperature_s"), "frame_age_reference_humidity_s": measurement_frame.get("age_reference_humidity_s"),
                 "measurement_frame_reason": measurement_frame.get("reason"),
+                # Intelligence 2.0 time-evidence must travel with the room snapshot.
+                # build_learning_components_status() consumes `results`, not the
+                # raw persistence dict; omitting these fields flattened all
+                # independent-day counters to zero despite valid stored evidence.
+                "learning_observation_dates": list(mem.get("learning_observation_dates") or []),
+                "routine_observation_dates": list(mem.get("routine_observation_dates") or []),
+                "strategy_observation_dates": list(mem.get("strategy_observation_dates") or []),
+                "personal_context_observation_dates": list(mem.get("personal_context_observation_dates") or []),
+                "seasonal_observation_days": dict(mem.get("seasonal_observation_days") or {}),
                 "post_close_stabilization_active": bool(mem.get("post_close_active")),
                 "post_close_stabilization": mem.get("post_close_last_outcome"),
+                "start_measurement_state": mem.get("start_measurement_state"),
+                "start_measurement_in_session_gate_passed": bool(mem.get("start_measurement_in_session_gate_passed")),
                 "session_fresh_measurements": int(mem.get("session_fresh_measurements", 0)),
                 "session_temperature_reports": int(mem.get("session_temperature_reports", 0)),
                 "session_humidity_reports": int(mem.get("session_humidity_reports", 0)),
@@ -3554,6 +3579,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # longer make a session learnable when either room-climate channel never
         # produced a newer report after the physical opening.
         session_activity_eligible = bool(session_quality.get("timestamp_gate_passed"))
+        mem["start_measurement_in_session_gate_passed"] = session_activity_eligible
         # Objective validation now uses the same strict in-session timestamp
         # activity gate. Frame age/skew remains visible for diagnostics, but it
         # can neither bypass nor independently invalidate proven sensor activity.

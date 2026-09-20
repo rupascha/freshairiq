@@ -223,12 +223,25 @@ def build_learning_components_status(
             completed_seasons.add(key)
         season_breakdown.append({"key": key, "label": season_names[key], "optimized": full, "observed_days": best_days, "year": best_year})
     calendar_span_days = (max(all_dates) - min(all_dates)).days + 1 if len(all_dates) >= 2 else (1 if all_dates else 0)
-    seasonal_maturity = min(len(completed_seasons) / 4.0, 1.0) * 100.0
-    # Highest seasonal maturity is impossible before at least a full year of
-    # real calendar coverage, even if all counters are artificially huge.
+    # A partially traversed season is real evidence too. Each season contributes
+    # up to 25 points; only a fully traversed season may contribute the full 25.
+    # This makes "lernt gerade" visible without falsely declaring a mid-season
+    # installation optimized.
+    seasonal_evidence_days = sum(int(item["observed_days"]) for item in season_breakdown)
+    seasonal_progress_percent = 0.0
+    for item in season_breakdown:
+        if item["optimized"]:
+            seasonal_progress_percent += 25.0
+        else:
+            seasonal_progress_percent += min(float(item["observed_days"]) / 60.0, 0.996) * 25.0
+    seasonal_maturity = seasonal_progress_percent
+    # Full optimization still requires at least a year of real calendar span.
     if calendar_span_days < 365:
         seasonal_maturity = min(seasonal_maturity, min(calendar_span_days / 365.0, 1.0) * 91.9)
-    seasonal_detail = " · ".join(f"{x['label']}: {'optimiert' if x['optimized'] else str(x['observed_days']) + ' Tage'}" for x in season_breakdown)
+    seasonal_detail = " · ".join(
+        f"{x['label']}: {'optimiert' if x['optimized'] else (str(x['observed_days']) + ' Tage · wird gelernt' if x['observed_days'] else 'noch keine Tages-Evidenz')}"
+        for x in season_breakdown
+    )
 
     strategy_samples = sum(int(_num(r.get("strategy_samples"))) for r in valid)
     strategy_outcomes = sum(int(_num(r.get("strategy_outcome_samples"))) for r in valid)
@@ -289,8 +302,13 @@ def build_learning_components_status(
     validation_days = int(_num(backtest.get("distinct_validation_days")))
     evidence = min(min(validation_samples / 100.0, 1.0), min(validation_days / 30.0, 1.0)) * 100.0
     reliability_score = reliability.get("score_percent")
+    if validation_samples <= 2: validation_confidence = "Erste Daten"
+    elif validation_samples <= 4: validation_confidence = "Vorläufig"
+    elif validation_samples <= 9: validation_confidence = "Lernphase"
+    elif validation_samples <= 19: validation_confidence = "Zunehmend belastbar"
+    else: validation_confidence = "Belastbarer"
     validation_detail = (
-        f"Modellzuverlässigkeit {float(reliability_score):.0f} % · MAE {_num((backtest.get('overall') or {}).get('moisture_mae_ml')):.0f} ml · {validation_days} Validierungstage"
+        f"{validation_confidence} · Modellzuverlässigkeit {float(reliability_score):.0f} % · MAE {_num((backtest.get('overall') or {}).get('moisture_mae_ml')):.0f} ml · {validation_samples} Vergleiche / {validation_days} Tage"
         if reliability_score is not None and validation_samples > 0
         else "Sammelt saubere Startprognose-vs.-Messung-Vergleiche"
     )

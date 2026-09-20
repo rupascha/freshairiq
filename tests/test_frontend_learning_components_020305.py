@@ -27,6 +27,6 @@ def test_longterm_drilldown_uses_independent_time_evidence():
 
 
 def test_release_version_020305_is_consistent():
-    assert 'const FAIQ_VERSION = "0.25.0.39";' in JS
-    assert 'VERSION = "0.25.0.39"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.39"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.40";' in JS
+    assert 'VERSION = "0.25.0.40"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.40"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")

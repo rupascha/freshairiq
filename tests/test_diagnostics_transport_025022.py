@@ -1,4 +1,4 @@
-"""Privacy, cadence and minimisation contracts for v0.25.0.39 diagnostics transport."""
+"""Privacy, cadence and minimisation contracts for v0.25.0.40 diagnostics transport."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -37,7 +37,7 @@ def _export() -> dict:
     return {
         "format": "FreshAirIQ diagnostic export",
         "schema_version": 10,
-        "freshairiq_version": "0.25.0.39",
+        "freshairiq_version": "0.25.0.40",
         "exported_at": "2026-09-16T23:00:00+02:00",
         "field_test": {
             "anonymous_installation_id": "faiq-install-abc123def456",
@@ -71,7 +71,7 @@ def _export() -> dict:
                 "truncated": False,
                 "read_error_count": 0,
             },
-            "freshairiq_version_history": [{"version": "0.25.0.39", "record_count": 2}],
+            "freshairiq_version_history": [{"version": "0.25.0.40", "record_count": 2}],
             "home_assistant_version_history": [{"version": "2026.9.2", "record_count": 2}],
             "known_clients": [
                 {
@@ -107,7 +107,7 @@ def _export() -> dict:
             "window_event_count": 2,
             "average_room_data_quality_percent": 98.5,
             "configuration": {
-                "freshairiq_version": "0.25.0.39",
+                "freshairiq_version": "0.25.0.40",
                 "diagnostics_schema_version": 10,
                 "levels": ["EG Paul"],
                 "model_options": {

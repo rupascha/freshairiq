@@ -57,6 +57,6 @@ def test_forecast_help_separates_energy_cost_model():
 
 
 def test_release_version_020203():
-    assert 'VERSION = "0.25.0.39"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.39"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.0.39"' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.40"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.40"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.40"' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
