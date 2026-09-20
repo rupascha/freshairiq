@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "version": "0.25.0.41",
+  "python": "3.13",
+  "benchmarks": {
+    "evaluate_room": {
+      "ratio": 7.446896373375087,
+      "us_per_call": 7.6150183333333334,
+      "workload_ms": 13.707033,
+      "control_ms": 1.840637,
+      "baseline_ratio": 8.51026672339571,
+      "regression_percent": -12.49514715087946,
+      "status": "PASS"
+    },
+    "recommendation_12_rooms": {
+      "ratio": 101.89432605262746,
+      "us_per_call": 100.26244923076922,
+      "workload_ms": 65.170592,
+      "control_ms": 0.63959,
+      "baseline_ratio": 107.8768424167155,
+      "regression_percent": -5.545691021413369,
+      "status": "PASS"
+    },
+    "simulate_6_rooms": {
+      "ratio": 28.598656590463293,
+      "us_per_call": 26.94163,
+      "workload_ms": 37.718282,
+      "control_ms": 1.318883,
+      "baseline_ratio": 24.785748086860735,
+      "regression_percent": 15.38347154276063,
+      "status": "WARN"
+    }
+  },
+  "warnings": [
+    "simulate_6_rooms: +15.4% > 15.0%"
+  ],
+  "failures": []
+}

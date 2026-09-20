@@ -8,7 +8,7 @@ INIT = (COMP / "__init__.py").read_text(encoding="utf-8")
 
 def test_lovelace_dependency_and_version():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.0.40"
+    assert manifest["version"] == "0.25.0.41"
     assert "lovelace" in manifest["dependencies"]
 
 
@@ -41,6 +41,6 @@ def test_frontend_registration_failure_cannot_break_backend_setup():
 
 
 def test_all_version_markers_match():
-    assert 'VERSION = "0.25.0.40"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.0.40";' in (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
-    assert "Current release: 0.25.0.40" in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.41"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.41";' in (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert "Current release: 0.25.0.41" in (ROOT / "README.md").read_text(encoding="utf-8")

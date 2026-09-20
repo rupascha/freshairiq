@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.40 passive-open UI hotfix."""
+"""Regression contracts for v0.25.0.41 passive-open UI hotfix."""
 
 from custom_components.freshairiq.consolidation import stabilise_recommendation
 from custom_components.freshairiq.decision_brain import build_unified_decision
@@ -90,3 +90,36 @@ def test_frontend_has_dedicated_passive_open_presentation():
     assert 'DAUER-/KIPPLÜFTUNG WIRD ÜBERWACHT' in js
     assert 'passiveOpenRoom' in js
     assert 'Daueröffnung überwachen' in js
+
+
+def test_passive_open_monitor_is_not_overridden_by_night_strategy():
+    """A real long-open room remains authoritative over an unrelated night plan."""
+    rooms = {
+        "badezimmer": _bathroom(),
+        "wohnkueche": _bathroom(
+            key="wohnkueche", name="Wohnküche", active=False, action="Hold",
+            close_recommended=False, session_elapsed_min=0,
+        ),
+    }
+    stable = stabilise_recommendation(
+        {"kind": "close", "room_keys": ["badezimmer"]},
+        rooms,
+        {"max_duration_min": 20},
+    )
+    night = {
+        "active": True,
+        "action": "pre_ventilate",
+        "label": "NACHT · VORHER LÜFTEN",
+        "headline": "Trockene Nachtluft nutzen, aber nicht dauerhaft",
+        "instruction": "Vor dem Schlafengehen Wohnküche etwa 10 Minuten stoßlüften und danach schließen",
+        "selected_rooms": ["Wohnküche"],
+        "reasons": ["Nachtluft ist trockener"],
+        "confidence": 80,
+    }
+    out = build_unified_decision(stable, rooms, {}, night_strategy=night)
+    brain = out["decision_brain"]
+    assert out["status"] == "passive_open_monitor"
+    assert brain["night_strategy_primary"] is False
+    assert brain["decision_label"] == "DAUER-/KIPPLÜFTUNG"
+    assert "Daueröffnung" in brain["headline"]
+    assert "Wohnküche" not in brain["action_line"]

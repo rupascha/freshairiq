@@ -118,7 +118,7 @@ def test_pet_safe_sensor_is_effective_without_duplicate_general_selection():
 
 def test_frontend_hotfix_contracts_present():
     js = Path("custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
-    assert 'const FAIQ_VERSION = "0.25.0.40";' in js
+    assert 'const FAIQ_VERSION = "0.25.0.41";' in js
     assert '["group_basics","mdi:home-outline","Grundlagen"' in js
     assert '["building","mdi:home-city-outline","Gebäude"]' in js
     assert 'if (name === "building")' in js

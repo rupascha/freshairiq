@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "name": "FreshAirIQ Continuous Quality System",
+  "version": "0.25.0.41",
+  "profile": "local",
+  "status": "PASS",
+  "results": [
+    {
+      "name": "static-and-version",
+      "status": "PASS",
+      "python_files": 58,
+      "json_files": 5,
+      "node_checks": [
+        {
+          "name": "frontend syntax: freshairiq-card.js",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 0.032518232000001035
+        },
+        {
+          "name": "frontend syntax: freshairiq-panel.js",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 0.025202761999992163
+        },
+        {
+          "name": "frontend syntax: freshairiq-loader.js",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 0.024282245999984298
+        }
+      ]
+    },
+    {
+      "name": "correctness + pure-logic 100% coverage",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 7.297364528999992
+    },
+    {
+      "name": "robustness fault-injection suite",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 2.11879051599999
+    },
+    {
+      "name": "stability stress",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.335672846999984
+    },
+    {
+      "name": "performance regression",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 1.6158480619999978
+    }
+  ],
+  "failures": []
+}

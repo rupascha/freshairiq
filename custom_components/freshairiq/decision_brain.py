@@ -235,7 +235,7 @@ def build_unified_decision(
     # stronger immediate action. Urgent ventilation, close, pollen and sensor
     # decisions retain precedence and the night strategy remains contextual.
     ns = night_strategy if isinstance(night_strategy, dict) else {}
-    if ns.get("active") and kind in {"okay", "wait"} and ns.get("action") in {"close", "open_selected", "pre_ventilate", "closed_monitor"}:
+    if ns.get("active") and kind in {"okay", "wait"} and str(out.get("status") or "") != "passive_open_monitor" and ns.get("action") in {"close", "open_selected", "pre_ventilate", "closed_monitor"}:
         decision_label = str(ns.get("label") or "NACHTSTRATEGIE")
         headline = str(ns.get("headline") or headline)
         action_line = str(ns.get("instruction") or action_line)
