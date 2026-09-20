@@ -202,6 +202,19 @@ def finalise_ventilation_group(
         room["aligned_predicted_removed_ml"] = round(float(room["aligned_predicted_removed_ml"]), 1) if aligned_predicted_samples else None
         room["aligned_prediction_actual_removed_ml"] = round(float(room["aligned_prediction_actual_removed_ml"]), 1) if aligned_predicted_samples else None
         room["prediction_time_aligned_sessions"] = int(room.get("prediction_time_aligned_sessions", 0))
+        # v0.25.0.36: classify forecast evidence per room. A room with strict
+        # comparable sessions remains useful even when another room in the same
+        # house ventilation reported asynchronously.
+        aligned_count = room["prediction_time_aligned_sessions"]
+        comparable_count = room["prediction_comparable_sessions"]
+        if aligned_count <= 0:
+            room["prediction_validation_status"] = "unavailable"
+        elif comparable_count == aligned_count:
+            room["prediction_validation_status"] = "valid"
+        elif comparable_count > 0:
+            room["prediction_validation_status"] = "restricted"
+        else:
+            room["prediction_validation_status"] = "not_comparable"
         room["predicted_temperature_change_c"] = round(predicted_temp, 2) if predicted_temp is not None else None
         actions = room.pop("outcome_feedback_actions", [])
         reasons = room.pop("outcome_feedback_reasons", [])
@@ -239,13 +252,20 @@ def finalise_ventilation_group(
     prediction_time_aligned_sessions = sum(int(item.get("prediction_time_aligned_sessions", 0)) for item in room_results)
     prediction_time_aligned_rooms = sum(1 for item in room_results if int(item.get("prediction_time_aligned_sessions", 0)) > 0)
     aligned_prediction_error = (aligned_prediction_actual_removed - aligned_predicted_removed) if aligned_predicted_removed is not None and aligned_prediction_actual_removed is not None else None
-    # A same-duration replay is useful diagnostic evidence, but it must not be
-    # presented as forecast accuracy unless every contributing aligned session
-    # also passed the strict start/end measurement-frame validation. Otherwise
-    # a partial or asynchronous house result can look like a precise score.
+    # Same-duration replay remains diagnostic evidence only. The aligned score
+    # is still published exclusively when *all* aligned sessions are strict.
+    # Partial house validation uses the already strict prediction_* subset below
+    # instead of weakening any timestamp or measurement-frame gate.
     aligned_score_eligible = bool(
         prediction_time_aligned_sessions > 0
         and prediction_comparable_sessions == prediction_time_aligned_sessions
+    )
+    prediction_excluded_sessions = max(0, prediction_time_aligned_sessions - prediction_comparable_sessions)
+    prediction_excluded_rooms = sum(
+        1
+        for item in room_results
+        if int(item.get("prediction_time_aligned_sessions", 0)) > 0
+        and int(item.get("prediction_comparable_sessions", 0)) == 0
     )
     aligned_prediction_accuracy = None
     if aligned_score_eligible and aligned_predicted_removed is not None and aligned_prediction_actual_removed is not None:
@@ -305,6 +325,12 @@ def finalise_ventilation_group(
         if prediction_comparable_sessions == prediction_time_aligned_sessions:
             prediction_status_text = "Startprognose mit exakt derselben Messdauer verglichen"
             prediction_alignment_quality = "validated"
+        elif prediction_comparable_sessions > 0:
+            prediction_status_text = (
+                f"Teilvalidierung: {prediction_comparable_rooms} von {prediction_time_aligned_rooms} "
+                "Raum/Räumen für die Genauigkeitswertung verwertbar"
+            )
+            prediction_alignment_quality = "partial_validated"
         else:
             prediction_status_text = "Startprognose auf die tatsächliche Messdauer abgeglichen · Sensordaten nicht ausreichend synchron – keine Genauigkeitswertung"
             prediction_alignment_quality = "informational"
@@ -351,6 +377,8 @@ def finalise_ventilation_group(
         "aligned_prediction_accuracy_percent": round(aligned_prediction_accuracy) if aligned_prediction_accuracy is not None else None,
         "prediction_time_aligned_sessions": prediction_time_aligned_sessions,
         "prediction_time_aligned_rooms": prediction_time_aligned_rooms,
+        "prediction_excluded_sessions": prediction_excluded_sessions,
+        "prediction_excluded_rooms": prediction_excluded_rooms,
         "prediction_status_text": prediction_status_text,
         "prediction_alignment_quality": prediction_alignment_quality,
         "learning_feedback_action": feedback_action,

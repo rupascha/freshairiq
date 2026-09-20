@@ -1,4 +1,4 @@
-"""Regression contracts for 0.25.0.35 pure-logic coverage hotfix."""
+"""Regression contracts for 0.25.0.39 pure-logic coverage hotfix."""
 
 from pathlib import Path
 

@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.35 diagnostics transport performance hotfix."""
+"""Regression contracts for v0.25.0.39 diagnostics transport performance hotfix."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -14,7 +14,7 @@ COMP = ROOT / "custom_components/freshairiq"
 def _large_export(count: int = 120) -> dict:
     return {
         "schema_version": 10,
-        "freshairiq_version": "0.25.0.35",
+        "freshairiq_version": "0.25.0.39",
         "exported_at": "2026-09-17T08:00:00+00:00",
         "field_test": {
             "anonymous_installation_id": "faiq-install-performance",
@@ -47,9 +47,9 @@ def _large_export(count: int = 120) -> dict:
 def test_release_version_and_private_staging_endpoint_are_fixed():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.0.35"' in const
-    assert manifest["version"] == "0.25.0.35"
-    assert 'DIAGNOSTICS_HUB_ENDPOINT = "http://192.168.178.150"' in const
+    assert 'VERSION = "0.25.0.39"' in const
+    assert manifest["version"] == "0.25.0.39"
+    assert 'DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"' in const
 
 
 def test_ha_client_offloads_chunk_build_and_compression_from_event_loop():

@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.0.35";
+const FAIQ_VERSION = "0.25.0.39";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
@@ -785,7 +785,7 @@ class FreshAirIQCard extends HTMLElement {
         const showCrossVentilation = !respectPreferences || this._config.info_cross_ventilation !== false;
         const alignmentQuality = String(last.prediction_alignment_quality || "");
         const scoreValidated = alignmentQuality
-            ? ["validated", "legacy_validated"].includes(alignmentQuality)
+            ? ["validated", "partial_validated", "legacy_validated"].includes(alignmentQuality)
             : last.prediction_accuracy_percent != null;
         const displayAccuracy = scoreValidated ? last.prediction_accuracy_percent : null;
         const displayPredicted = scoreValidated ? last.predicted_removed_ml : null;
@@ -803,7 +803,10 @@ class FreshAirIQCard extends HTMLElement {
         if (Number(last.learning_valid_count || 0) > 0) qualityBits.push(`${Number(last.learning_valid_count)} Lernmessung(en) verwertbar`);
         if (Number(last.moisture_source_contaminated_rooms || 0) > 0) qualityBits.push(`${Number(last.moisture_source_contaminated_rooms)} Raum/Räume mit aktiver Feuchtequelle`);
         if (Number(last.prediction_time_aligned_rooms || 0) > 0) qualityBits.push(`${Number(last.prediction_time_aligned_rooms)} Raum/Räume mit zeitgleichem Startvergleich`);
-        if (Number(last.prediction_time_aligned_sessions || 0) > Number(last.prediction_comparable_sessions || 0)) qualityBits.push("Keine Genauigkeitswertung · Messdaten nicht streng genug synchronisiert");
+        if (alignmentQuality === "partial_validated") {
+            qualityBits.push(`${Number(last.prediction_comparable_rooms || 0)} von ${Number(last.prediction_time_aligned_rooms || 0)} Raum/Räumen für Genauigkeitswertung verwertbar`);
+            if (Number(last.prediction_excluded_rooms || 0) > 0) qualityBits.push(`${Number(last.prediction_excluded_rooms)} Raum/Räume wegen nicht ausreichend synchroner Messdaten ausgeschlossen`);
+        } else if (Number(last.prediction_time_aligned_sessions || 0) > Number(last.prediction_comparable_sessions || 0)) qualityBits.push("Keine Genauigkeitswertung · Messdaten nicht streng genug synchronisiert");
         else if (Number(last.prediction_comparable_rooms || 0) > 0) qualityBits.push(`${Number(last.prediction_comparable_rooms)} Raum/Räume für Genauigkeitswertung verwertbar`);
         const remaining = hero && Number(last._remainingMs) > 0 ? `<span class="result-countdown">Ergebnis noch ${Math.max(1, Math.ceil(Number(last._remainingMs) / 60000))} min im Dashboard</span>` : "";
         const resultHeadline = showMoisture ? (!moistureValid ? "Lüftung beendet · Feuchteergebnis nicht belastbar" : m.kind === "removed" ? "Feuchtigkeit erfolgreich reduziert" : m.kind === "added" ? "Feuchtigkeit ist angestiegen" : "Lüftung ausgewertet") : "Lüftung ausgewertet";
@@ -814,7 +817,9 @@ class FreshAirIQCard extends HTMLElement {
         if (showEnergy) metrics.push(`<div><span>WIEDERAUFHEIZEN</span><b>${fmt(last.cost || 0, 2)} €</b><small>${fmt(last.energy_kwh || 0, 2)} kWh</small></div>`);
         const learningFeedback = alignmentQuality === "informational"
             ? `<span class="result-learning-feedback">FreshAirIQ wartet bei zeitversetzt meldenden Sensoren auf einen belastbaren Messvergleich. Die Lern-Auswertung kann deshalb verzögert erscheinen. Dieser Vergleich wird wegen nicht ausreichend synchroner Messdaten nicht als Prognosegenauigkeit gewertet.${last.learning_feedback_text ? ` ${esc(last.learning_feedback_text)}` : ""}</span>`
-            : (last.learning_feedback_text ? `<span class="result-learning-feedback">${esc(last.learning_feedback_text)}</span>` : "");
+            : alignmentQuality === "partial_validated"
+                ? `<span class="result-learning-feedback">Die Genauigkeit wird ausschließlich aus den streng vergleichbaren Raummessungen berechnet. Asynchrone Räume bleiben sichtbar, beeinflussen diese Wertung aber nicht.${last.learning_feedback_text ? ` ${esc(last.learning_feedback_text)}` : ""}</span>`
+                : (last.learning_feedback_text ? `<span class="result-learning-feedback">${esc(last.learning_feedback_text)}</span>` : "");
         const iqMoistureSummary = !moistureValid ? "Feuchtevergleich nicht belastbar" : (predictionMeasured ? `Vergleichsmessung ${predictionMeasured.text}` : `Gesamtergebnis ${m.text}`);
         const iqEvaluation = showForecast ? `<div class="result-iq"><ha-icon icon="mdi:brain"></ha-icon><div><div class="tiny">IQ-AUSWERTUNG</div><b>${esc(accuracy)}</b><span>${showMoisture ? iqMoistureSummary : "Ergebnis gemessen"}${predicted}${displayError == null ? "" : ` · Abweichung ${signed(displayError, "ml")}`}</span>${learningFeedback}${qualityBits.length ? `<span>${qualityBits.map(esc).join(" · ")}</span>` : ""}</div></div>` : "";
         const openAttr = hero ? ` data-info="lastvent"` : "";

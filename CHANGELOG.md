@@ -1,3 +1,7 @@
+## 0.25.0.39 — Public Diagnostics Endpoint Hotfix
+- Diagnostics Hub endpoint switched from private LAN staging to `https://diagnostics.freshairiq.com`.
+- No ventilation/recommendation logic changes.
+
 # Changelog
 
 ## 0.25.0.35 – Passive-Open UI Hotfix

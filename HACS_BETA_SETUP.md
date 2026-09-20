@@ -25,7 +25,7 @@ For every later FreshAirIQ release:
 
 1. Update the version consistently in the project (especially `custom_components/freshairiq/manifest.json`).
 2. Commit and push the tested release.
-3. Create a matching tag, for example `v0.25.0.36`, and push the tag.
+3. Create a matching tag, for example `v0.25.0.38`, and push the tag.
 4. Wait for **Publish FreshAirIQ release** to complete successfully.
 5. HACS installations can then discover the new release as an update.
 

@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.35 passive-open UI hotfix."""
+"""Regression contracts for v0.25.0.39 passive-open UI hotfix."""
 
 from custom_components.freshairiq.consolidation import stabilise_recommendation
 from custom_components.freshairiq.decision_brain import build_unified_decision

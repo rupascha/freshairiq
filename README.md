@@ -7,7 +7,7 @@
 FreshAirIQ is a Home Assistant custom integration developed by **rupascha**. The current release combines the proven calculation principles with a dynamic room model, persistent learning, live forecasts, the adaptive dashboard card, the Continuous Quality System and the authenticated local staging connection to the FreshAirIQ Diagnostics Hub.
 
 
-## Current release: 0.25.0.35 – Passive-Open UI Hotfix
+## Current release: 0.25.0.39 – GitHub Release Gate
 
 
 - **Mess-/Lernlogik eingefroren:** Timestamp-Gate, 0,75/1,0-Gewichtung, Feuchtephysik, Forecast-Formeln und Lernformeln bleiben gegenüber 0.25.0.33 unverändert.
@@ -107,7 +107,7 @@ The main card now shows the current mould risk, explicitly warns **Nicht lüften
 
 For beta testers, FreshAirIQ can be installed and updated through HACS as a custom integration repository. Add `https://github.com/rupascha/freshairiq` under **HACS → Custom repositories**, choose **Integration**, install **FreshAirIQ**, restart Home Assistant, and then add FreshAirIQ under **Settings → Devices & services**.
 
-Published GitHub releases are the update source. Each release tag must match the version in `custom_components/freshairiq/manifest.json` (for example `v0.25.0.35` for manifest version `0.25.0.35`). Repository-owner and beta-tester instructions are documented in `HACS_BETA_SETUP.md`.
+Published GitHub releases are the update source. Each release tag must match the version in `custom_components/freshairiq/manifest.json` (for example `v0.25.0.39` for manifest version `0.25.0.39`). Repository-owner and beta-tester instructions are documented in `HACS_BETA_SETUP.md`.
 
 ## Manual installation
 
@@ -248,3 +248,6 @@ Real-home validation remains important after installation, sensor replacement or
 - **Developer:** rupascha
 - **Tagline:** *Intelligent lüften. Gesund wohnen. Energie sparen.*
 - **Integration domain:** `freshairiq`
+
+### HACS icon note (Home Assistant 2026.3+)
+FreshAirIQ ships the complete local Home Assistant brand set in `custom_components/freshairiq/brand/`. Home Assistant 2026.3+ can use these files directly. If HACS itself still shows **“icon not available”** in its Downloads list, this is a known upstream HACS frontend limitation: affected HACS builds still request custom-integration icons from the legacy public brands CDN instead of Home Assistant's authenticated local brands API. The FreshAirIQ release gate verifies that all local brand assets are present so a release cannot accidentally regress its branding.

@@ -76,6 +76,14 @@ def main() -> int:
             print("Release build aborted: staged release hygiene failed.")
             return hygiene.returncode
 
+        github_gate = subprocess.run(
+            [sys.executable, str(ROOT / "tools/github_release_gate.py"), "--source", str(stage)],
+            cwd=ROOT,
+        )
+        if github_gate.returncode:
+            print("Release build aborted: GitHub/HACS source gate failed.")
+            return github_gate.returncode
+
         output.parent.mkdir(parents=True, exist_ok=True)
         if output.exists():
             output.unlink()
@@ -91,6 +99,15 @@ def main() -> int:
             return 1
         print(f"Release ZIP: {output}")
         print(f"Files: {len(archive.infolist())}")
+
+    github_zip_gate = subprocess.run(
+        [sys.executable, str(ROOT / "tools/github_release_gate.py"), "--zip", str(output)],
+        cwd=ROOT,
+    )
+    if github_zip_gate.returncode:
+        print("Release build aborted: final GitHub/HACS ZIP gate failed.")
+        output.unlink(missing_ok=True)
+        return github_zip_gate.returncode
     return 0
 
 

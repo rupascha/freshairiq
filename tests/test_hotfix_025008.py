@@ -37,7 +37,7 @@ def test_informational_same_duration_replay_does_not_publish_accuracy():
     assert "keine Genauigkeitswertung" in result["prediction_status_text"]
 
 
-def test_mixed_house_result_does_not_turn_partial_rooms_into_house_accuracy():
+def test_mixed_house_result_scores_only_strict_comparable_subset():
     valid = _session(predicted=80, actual=100, comparable=True)
     valid["key"] = "bad"
     valid["name"] = "Bad"
@@ -46,8 +46,12 @@ def test_mixed_house_result_does_not_turn_partial_rooms_into_house_accuracy():
     result = finalise_ventilation_group(group, datetime.fromisoformat("2026-09-16T07:40:00+02:00"))
     assert result is not None
     assert result["prediction_accuracy_percent"] == 80  # strict subset retained for diagnostics
-    assert result["aligned_prediction_accuracy_percent"] is None  # no misleading whole-house score
-    assert result["prediction_alignment_quality"] == "informational"
+    assert result["aligned_prediction_accuracy_percent"] is None  # full-house aligned score remains suppressed
+    assert result["prediction_alignment_quality"] == "partial_validated"
+    assert result["prediction_comparable_rooms"] == 1
+    assert result["prediction_time_aligned_rooms"] == 2
+    assert result["prediction_excluded_rooms"] == 1
+    assert "1 von 2" in result["prediction_status_text"]
 
 
 def test_valid_same_duration_comparison_still_scores_normally():
@@ -66,7 +70,8 @@ def test_frontend_uses_only_strict_prediction_metrics_for_accuracy_card():
     assert "last.aligned_predicted_removed_ml" not in block
     assert "last.prediction_accuracy_percent" in block
     assert "scoreValidated" in block
-    assert "Keine Genauigkeitswertung · Messdaten nicht streng genug synchronisiert" in block
+    assert "partial_validated" in block
+    assert "wegen nicht ausreichend synchroner Messdaten ausgeschlossen" in block
 
 
 def test_forecast_accuracy_remains_strict_after_followup_learning_hotfix():
@@ -76,8 +81,8 @@ def test_forecast_accuracy_remains_strict_after_followup_learning_hotfix():
 
 
 def test_release_version_is_025008():
-    assert 'VERSION = "0.25.0.35"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.39"' in (COMP / "const.py").read_text(encoding="utf-8")
     import json
-    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.35"
+    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.39"
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.35";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.39";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

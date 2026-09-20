@@ -2,16 +2,15 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.0.35"
+VERSION = "0.25.0.39"
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}.learning"
 DEFAULT_SCAN_INTERVAL = 30
 
-# Diagnostics Hub local-staging connection. This private IPv4 endpoint is
-# intentionally reachable only from the developer's home LAN; production
-# rollout will replace it with a public HTTPS endpoint after staging validation.
-DIAGNOSTICS_HUB_ENDPOINT = "http://192.168.178.150"
+# Diagnostics Hub production endpoint. Public HTTPS is terminated by Cloudflare
+# and forwarded through the private Cloudflare Tunnel to the Diagnostics Hub.
+DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"
 DIAGNOSTICS_UPLOAD_MAX_BYTES = 2 * 1024 * 1024
 DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS = 20
 POST_VENTILATION_RESULT_MINUTES = 5
