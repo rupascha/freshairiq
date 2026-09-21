@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.25.0.42",
+  "version": "0.25.0.43",
   "profile": "local",
   "status": "PASS",
   "results": [

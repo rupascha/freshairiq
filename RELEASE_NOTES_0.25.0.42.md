@@ -1,4 +1,4 @@
-# FreshAirIQ 0.25.0.42 — Decision Intelligence & Validation
+# FreshAirIQ 0.25.0.43 — Decision Intelligence & Validation
 
 - Adds a final, observational Decision Trace after all decision/aggregation/presentation layers.
 - Records candidate options, winning overrides, final scope/action and consistency invariants.

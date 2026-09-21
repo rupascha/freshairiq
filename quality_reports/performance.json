@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.25.0.42",
+  "version": "0.25.0.43",
   "python": "3.13",
   "benchmarks": {
     "evaluate_room": {

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.25.0.42",
+  "version": "0.25.0.43",
   "cycles": 3000,
   "deterministic": true,
   "digest": "5c0b48aedda2a1b9de43e435350e812f00d1057e71e5e2d0b9af7ef3d7f72bae",

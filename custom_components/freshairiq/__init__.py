@@ -287,9 +287,26 @@ def _async_cleanup_removed_room_registry_entries(
 
     stale_devices = []
 
-    # Home Assistant 2026.9 exposes DeviceRegistry.devices as a read-only
-    # collection. Iterating it yields DeviceEntry objects directly.
-    for device in device_registry.devices:
+    # DeviceRegistry.devices is mapping-like in supported Home Assistant
+    # releases. Iterating the mapping itself yields device-id strings, not
+    # DeviceEntry objects. Iterate its values instead. Keep a defensive
+    # fallback for registry implementations exposing an iterable collection.
+    registered_devices = device_registry.devices
+    devices = (
+        registered_devices.values()
+        if hasattr(registered_devices, "values")
+        else registered_devices
+    )
+    for device in devices:
+        # A malformed/foreign registry item must never prevent FreshAirIQ from
+        # starting. Valid DeviceEntry objects expose both id and identifiers.
+        if not hasattr(device, "identifiers") or not hasattr(device, "id"):
+            _LOGGER.debug(
+                "Skipping unexpected device-registry item during room cleanup: %r",
+                device,
+            )
+            continue
+
         room_key = None
 
         for identifier in device.identifiers:
