@@ -48,7 +48,7 @@ async function mount(page, roomCount = 12) {
     const status = {
       entity_id: 'sensor.freshairiq_status', state: 'ok',
       attributes: {
-        freshairiq_transport: 'status_v2', freshairiq_version: '0.25.0.35',
+        freshairiq_transport: 'status_v2', freshairiq_version: '0.25.0.47',
         rooms, room_sort_order: Object.keys(rooms),
         learning_components: { overall_maturity_percent: 0, stage_label: 'Grundmodell', components },
         forecast_backtest: { reliability: { score_percent: 44, direction_accuracy_percent: 50, magnitude_accuracy_percent: 66, mae_ml: 16 } },
@@ -158,5 +158,81 @@ test('Android Home Assistant WebView emulation is mobile, touch-capable and over
     expect(metrics.hostOverflow).toBeLessThanOrEqual(2);
     expect(metrics.rootOverflow).toBeLessThanOrEqual(2);
   }
+  expect(errors).toEqual([]);
+});
+
+test('detail overlay performs real wheel scrolling and preserves its position after rerender', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  const errors = await mount(page, 50);
+  await page.locator('freshairiq-card').evaluate(el => {
+    el._info = 'rooms';
+    el._subdialogScrollTop = 0;
+    el._render();
+  });
+  const dialog = page.locator('freshairiq-card').locator('.subdialog');
+  await expect(dialog).toBeVisible();
+  const before = await dialog.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight, full: el.scrollHeight }));
+  expect(before.full).toBeGreaterThan(before.height + 200);
+  const box = await dialog.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box.x + Math.min(80, box.width / 2), box.y + Math.min(160, box.height / 2));
+  await page.mouse.wheel(0, 650);
+  await page.waitForTimeout(120);
+  const scrolled = await dialog.evaluate(el => el.scrollTop);
+  expect(scrolled).toBeGreaterThan(100);
+
+  await page.locator('freshairiq-card').evaluate(el => el._render());
+  await page.waitForTimeout(80);
+  const restored = await page.locator('freshairiq-card').locator('.subdialog').evaluate(el => el.scrollTop);
+  expect(restored).toBeGreaterThan(100);
+  expect(errors).toEqual([]);
+});
+
+test('Android WebView detail overlay responds to a trusted touch swipe and keeps scroll after rerender', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-webview', 'Trusted touch swipe uses the Chromium Android WebView project');
+  const errors = await mount(page, 50);
+  await page.locator('freshairiq-card').evaluate(el => {
+    el._info = 'rooms';
+    el._subdialogScrollTop = 0;
+    el._render();
+  });
+
+  const dialog = page.locator('freshairiq-card').locator('.subdialog');
+  await expect(dialog).toBeVisible();
+  const before = await dialog.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight, full: el.scrollHeight }));
+  expect(before.full).toBeGreaterThan(before.height + 200);
+
+  const box = await dialog.boundingBox();
+  expect(box).not.toBeNull();
+  const x = box.x + Math.min(Math.max(box.width * 0.5, 24), box.width - 24);
+  const startY = box.y + Math.min(box.height - 70, 650);
+  const endY = Math.max(box.y + 90, startY - 430);
+
+  // CDP dispatches trusted browser-level touch input. This exercises the same
+  // Chromium touch scrolling path used by the Android Home Assistant WebView;
+  // it is deliberately not a mouse/wheel fallback.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x, y: startY, id: 1, radiusX: 4, radiusY: 4, force: 1 }],
+  });
+  for (let i = 1; i <= 8; i++) {
+    const y = startY + ((endY - startY) * i / 8);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 }],
+    });
+    await page.waitForTimeout(18);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(180);
+
+  const touched = await dialog.evaluate(el => el.scrollTop);
+  expect(touched).toBeGreaterThan(100);
+
+  await page.locator('freshairiq-card').evaluate(el => el._render());
+  await page.waitForTimeout(80);
+  const restored = await page.locator('freshairiq-card').locator('.subdialog').evaluate(el => el.scrollTop);
+  expect(restored).toBeGreaterThan(100);
   expect(errors).toEqual([]);
 });

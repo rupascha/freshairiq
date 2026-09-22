@@ -77,14 +77,21 @@
           "air_purifier": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "floor": "Floor/area used for grouping and cross ventilation. Example: “Ground floor”. Default: not assigned.",
+          "humidity": "Humidity sensor for the room. Required for calculated rooms; default: no preselection.",
+          "name": "Custom display name, for example “Living room”. FreshAirIQ derives a stable internal room key from it.",
+          "temperature": "Temperature sensor for the room. Required for calculated rooms; default: no preselection."
         }
       },
       "more_rooms": {
         "title": "Room saved",
         "description": "{room_count} room(s) configured.",
         "data": {
-          "add_another": "Add another room"
+          "add_another": "Add another room (default: on)"
+        },
+        "data_description": {
+          "add_another": "Default: on. Enabled = add another room; disabled = finish setup."
         }
       },
       "legacy_import": {
@@ -92,6 +99,9 @@
         "description": "An existing Ventilation Assistant configuration was found. FreshAirIQ can import the outdoor reference, rooms, ventilation contacts and room parameters. Existing learning values are also migrated on first start.",
         "data": {
           "import_legacy": "Import existing configuration into FreshAirIQ"
+        },
+        "data_description": {
+          "import_legacy": "Default: on. Imports the existing legacy FreshAirIQ configuration so rooms and sensor assignments do not need to be recreated."
         }
       },
       "room_orientations": {
@@ -422,6 +432,9 @@
         "title": "Select room",
         "data": {
           "room": "Room to edit"
+        },
+        "data_description": {
+          "room": "Select the room whose sensors, size, area or optional devices you want to edit. Example: “Living room”. No preselection."
         }
       },
       "edit_room": {
@@ -522,6 +535,10 @@
         "data": {
           "room": "Room",
           "confirm": "Confirm removal"
+        },
+        "data_description": {
+          "confirm": "Safety confirmation. Default: off. Enable only when the selected room really should be removed.",
+          "room": "Select the room to remove. Rooms are deleted only after an additional confirmation."
         }
       },
       "model": {
@@ -580,7 +597,8 @@
           "co2_warn": "Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available.",
           "co2_critical": "Above this CO₂ value, air quality is treated as critical.",
           "learning_enabled": "Enables persistent learning of air exchange, routines and forecast corrections. Default: on.",
-          "learning_max_duration_min": "Longer sessions are not used as clean learning samples because weather, heating and occupancy effects increasingly dominate."
+          "learning_max_duration_min": "Longer sessions are not used as clean learning samples because weather, heating and occupancy effects increasingly dominate.",
+          "cross_ventilation_pairs": "Legacy compatibility display; cross ventilation is fully managed on the dedicated “Cross ventilation” page. Example: living_room+bedroom."
         },
         "sections": {
           "humidity_thresholds": {
@@ -660,6 +678,9 @@
         "description": "Choose the heating system. The next step shows only relevant cost inputs.",
         "data": {
           "heating_system": "Heating system (Default: heat_pump)"
+        },
+        "data_description": {
+          "heating_system": "Used only for reheating-cost calculations. Example: for a heat pump, electricity price and COP/SCOP are used. Default: heat pump."
         }
       },
       "notifications": {
@@ -685,7 +706,15 @@
           "notification_targets": "Select existing notify.* services. No push notifications are sent without a recipient.",
           "notification_scope": "House = central recommendations. Room = room-specific messages. Both = both levels.",
           "notification_room_keys": "Empty means all rooms. A selection limits room-specific messages to those rooms.",
-          "notification_cooldown_min": "Prevents repeated identical notifications within this period."
+          "notification_cooldown_min": "Prevents repeated identical notifications within this period.",
+          "notify_close": "Sends a notification when further air exchange no longer provides enough benefit or comfort limits are reached. Default: on.",
+          "notify_complete": "Sends the measured result after a completed ventilation session. Default: on.",
+          "notify_cooling": "Reports favourable windows for passive summer cooling. Default: on.",
+          "notify_learning": "Reports relevant learning progress. Default: off.",
+          "notify_mould": "Warns about relevant estimated surface/mould risk. Default: on.",
+          "notify_night": "Sends night-strategy hints. Default: off, so FreshAirIQ does not notify unexpectedly at night.",
+          "notify_sensor": "Warns when sensor data required for a reliable recommendation is missing or implausible. Default: on.",
+          "notify_ventilate": "Sends a notification when FreshAirIQ detects a useful time to start ventilation. Default: on."
         }
       },
       "statistics": {
@@ -703,13 +732,19 @@
         "data": {
           "confirm": "Really reset learning data"
         },
-        "description": "Deletes learned room air-exchange values, routines and the night model. Room configuration, options and statistics remain intact."
+        "description": "Deletes learned room air-exchange values, routines and the night model. Room configuration, options and statistics remain intact.",
+        "data_description": {
+          "confirm": "Default: off. Deletes only learned models; rooms, sensor assignments and global options remain."
+        }
       },
       "sort_rooms": {
         "title": "Sort rooms",
         "description": "Drag the rooms into the desired order.",
         "data": {
           "room_order": "Room order"
+        },
+        "data_description": {
+          "room_order": "Assign each room a position number. Example: Living room = 1, Kitchen = 2. Lower numbers appear first."
         }
       },
       "contact_delays_room": {
@@ -717,6 +752,9 @@
         "description": "Configure opening delay separately for every contact.",
         "data": {
           "room": "Room"
+        },
+        "data_description": {
+          "room": "Select the room whose window/door contacts should receive an opening delay. Example: count a basement door as ventilation only after 120 s."
         }
       },
       "contact_delays": {
@@ -777,7 +815,13 @@
         "data_description": {
           "heat_pump_cop": "The higher the COP/seasonal performance factor, the less electricity is required for reheating.",
           "gas_efficiency": "Usable share of the purchased gas energy.",
-          "oil_kwh_per_liter": "Typical heating value; can be adjusted to the fuel being used."
+          "oil_kwh_per_liter": "Typical heating value; can be adjusted to the fuel being used.",
+          "district_efficiency": "Accounts for distribution losses inside the home. 1.00 = no loss; default: 0.98.",
+          "district_price_per_kwh": "Your district-heating energy price. Example/default: €0.15/kWh.",
+          "electricity_price_per_kwh": "Your electricity energy price. Example: €0.30/kWh. Used for heat pumps and electric heating.",
+          "gas_price_per_kwh": "Your gas energy price. Example/default: €0.11/kWh.",
+          "oil_efficiency": "Usable share of the heat energy contained in heating oil. Default: 0.88.",
+          "oil_price_per_liter": "Heating-oil price per litre. Example/default: €1.00/l."
         }
       },
       "profile_details": {
@@ -791,6 +835,15 @@
           "cooling_min_outdoor_delta_c": "Outdoor air at least this much cooler (Default: 2.0)",
           "cooling_max_indoor_rh": "Maximum indoor RH for cooling (Default: 70.0)",
           "cooling_max_moisture_gain_5min_ml": "Maximum tolerated moisture gain in 5 min (Default: 60.0)"
+        },
+        "data_description": {
+          "cooling_max_indoor_rh": "Above this indoor humidity, cooling is not prioritised at the cost of additional moisture. Default: 70%.",
+          "cooling_max_moisture_gain_5min_ml": "Maximum accepted predicted moisture gain during five minutes of cooling. Default: 60 ml.",
+          "cooling_min_outdoor_delta_c": "Outdoor air must be at least this much cooler. Default: 2 °C.",
+          "cooling_start_temp_c": "Summer cooling is prioritised only above this room temperature. Default: 24 °C.",
+          "max_temp_loss_next_5_min_c": "Maximum tolerated additional room-temperature loss over the next five minutes. Example: 0.6 °C in Comfort mode.",
+          "min_efficiency_ml_per_01c": "Minimum ratio of moisture removal to temperature loss. Example: 8 ml per 0.1 °C.",
+          "min_return_next_5_min_ml": "Minimum additional moisture removal FreshAirIQ expects over the next five minutes. Example: 25 ml in Comfort mode."
         }
       },
       "contact_orientations_room": {
@@ -798,6 +851,9 @@
         "description": "Choose the room. The next step lets you assign an individual orientation to each ventilation contact.",
         "data": {
           "room": "Room"
+        },
+        "data_description": {
+          "room": "Select the room. Each ventilation contact can then receive its own compass direction, for example South or North-East."
         }
       },
       "contact_orientations": {
@@ -810,6 +866,9 @@
         "description": "Restores all FreshAirIQ options to documented defaults. Rooms, sensors and statistics remain unchanged.",
         "data": {
           "confirm": "Reset all settings to defaults"
+        },
+        "data_description": {
+          "confirm": "Default: off. Enabling resets only global options to documented defaults; rooms and sensor assignments remain."
         }
       },
       "levels": {
@@ -827,6 +886,9 @@
         "description": "Choose any name.",
         "data": {
           "name": "Floor/zone name"
+        },
+        "data_description": {
+          "name": "Custom display name. Example: “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty."
         }
       },
       "level_reorder": {
@@ -834,6 +896,9 @@
         "description": "Change order with drag and drop.",
         "data": {
           "level_order": "Order"
+        },
+        "data_description": {
+          "level_order": "Assign each area a position number. Example: Ground floor = 1, Upper floor = 2. Lower numbers appear first."
         }
       },
       "level_remove": {
@@ -841,6 +906,9 @@
         "description": "Only unused zones can be removed.",
         "data": {
           "name": "Zone"
+        },
+        "data_description": {
+          "name": "Select an unused area. Areas that still contain rooms must first be removed from those rooms."
         }
       },
       "home_setup": {
@@ -962,7 +1030,7 @@
           "diagnostics_sharing": "Diagnostics sharing"
         },
         "menu_option_descriptions": {
-          "statistics": "Set the displayed period between 1 and 30 days",
+          "statistics": "Set the displayed period between 1 and 365 days",
           "back_to_main": "Back to the main settings overview",
           "diagnostics_sharing": "Prepare optional automatic, locally pseudonymised diagnostics sharing"
         }

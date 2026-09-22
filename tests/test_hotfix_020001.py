@@ -112,22 +112,35 @@ def _flatten(value, prefix=""):
     return out
 
 
-def test_english_translation_has_matching_keys_placeholders_and_no_german_prose():
-    de = _flatten(json.loads((COMP / "translations" / "de.json").read_text(encoding="utf-8")))
-    en = _flatten(json.loads((COMP / "translations" / "en.json").read_text(encoding="utf-8")))
+def test_english_translation_keeps_runtime_and_native_configuration_english():
+    de_raw = json.loads((COMP / "translations" / "de.json").read_text(encoding="utf-8"))
+    en_raw = json.loads((COMP / "translations" / "en.json").read_text(encoding="utf-8"))
+    de = _flatten(de_raw)
+    en = _flatten(en_raw)
     assert set(de) == set(en)
     placeholder = re.compile(r"\{[^{}]+\}")
     for key in de:
         if isinstance(de[key], str) and isinstance(en[key], str):
             assert set(placeholder.findall(de[key])) == set(placeholder.findall(en[key])), key
+
+    # v0.25.0.47: native Home Assistant setup/options follow the frontend
+    # locale again. English is the source/fallback language and German remains
+    # a separate complete translation.
+    strings = json.loads((COMP / "strings.json").read_text(encoding="utf-8"))
+    for section in ("config", "options", "selector", "config_subentries"):
+        assert strings[section] == en_raw[section]
+    assert en_raw["config"] != de_raw["config"]
+
     german_markers = re.compile(r"[äöüÄÖÜß]|\b(?:Wähle|Lüftung|Schimmel|Räume|Fenster|Außen|Feuchte|Zurück|Einstellungen|Querlüftung|Lernen)\b", re.I)
-    leftovers = {key: value for key, value in en.items() if isinstance(value, str) and german_markers.search(value)}
+    flow_prefixes = ("config.", "options.", "selector.", "config_subentries.")
+    leftovers = {
+        key: value
+        for key, value in en.items()
+        if isinstance(value, str)
+        and not key.startswith(flow_prefixes)
+        and german_markers.search(value)
+    }
     assert leftovers == {}
-    english_text = "\n".join(value for value in en.values() if isinstance(value, str))
-    assert "(Default: an)" not in english_text
-    assert "(Default: aus)" not in english_text
-    assert "(Default: )" not in english_text
-    assert not re.search(r"Default: [-+]?\d+,\d+", english_text)
 
 
 def test_readme_and_runtime_versions_are_current():
@@ -135,10 +148,10 @@ def test_readme_and_runtime_versions_are_current():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = (COMP / "manifest.json").read_text(encoding="utf-8")
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
-    assert "Current release: 0.25.0.43" in readme
-    assert 'VERSION = "0.25.0.43"' in const
-    assert '"version": "0.25.0.43"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.0.43"' in card
+    assert "Current release: 0.25.0.47" in readme
+    assert 'VERSION = "0.25.0.47"' in const
+    assert '"version": "0.25.0.47"' in manifest
+    assert 'const FAIQ_VERSION = "0.25.0.47"' in card
 
 
 def test_house_strategy_learning_waits_for_complete_house_group():

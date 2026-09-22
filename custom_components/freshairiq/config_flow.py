@@ -12,6 +12,7 @@ from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.helpers import selector
 
 from .const import *
+from .settings_contract import native_option_key
 from .validation import option_relationship_error
 
 
@@ -540,40 +541,40 @@ def _model_schema(current: dict[str, Any]) -> vol.Schema:
     """Advanced ventilation model grouped into understandable sections."""
     return vol.Schema({
         vol.Required("humidity_thresholds"): section(vol.Schema({
-            vol.Required("start_rh", default=_bounded(current.get("start_rh"), 62, 40, 90)): _number(40, 90, 1, "%"),
-            vol.Required("high_rh", default=_bounded(current.get("high_rh"), 68, 45, 95)): _number(45, 95, 1, "%"),
-            vol.Required("target_rh", default=_bounded(current.get("target_rh"), 58, 35, 75)): _number(35, 75, 1, "%"),
-            vol.Required("min_delta", default=_bounded(current.get("min_delta"), 2.5, .1, 8)): _number(0.1, 8, 0.1, "g/m³"),
-            vol.Required("min_delta_high_rh", default=_bounded(current.get("min_delta_high_rh"), 1.5, .1, 5)): _number(0.1, 5, 0.1, "g/m³"),
-            vol.Required("close_delta", default=_bounded(current.get("close_delta"), .4, -1, 3)): _number(-1, 3, 0.1, "g/m³"),
+            vol.Required(native_option_key("start_rh"), default=_bounded(current.get("start_rh"), 62, 40, 90)): _number(40, 90, 1, "%"),
+            vol.Required(native_option_key("high_rh"), default=_bounded(current.get("high_rh"), 68, 45, 95)): _number(45, 95, 1, "%"),
+            vol.Required(native_option_key("target_rh"), default=_bounded(current.get("target_rh"), 58, 35, 75)): _number(35, 75, 1, "%"),
+            vol.Required(native_option_key("min_delta"), default=_bounded(current.get("min_delta"), 2.5, .1, 8)): _number(0.1, 8, 0.1, "g/m³"),
+            vol.Required(native_option_key("min_delta_high_rh"), default=_bounded(current.get("min_delta_high_rh"), 1.5, .1, 5)): _number(0.1, 5, 0.1, "g/m³"),
+            vol.Required(native_option_key("close_delta"), default=_bounded(current.get("close_delta"), .4, -1, 3)): _number(-1, 3, 0.1, "g/m³"),
         }), {"collapsed": False}),
         vol.Required("recommendation_thresholds"): section(vol.Schema({
             # House-wide threshold mode/value has its own guided settings step so
             # Home Assistant never shows percentage and mL inputs at the same time.
-            vol.Required("min_potential_room_ml", default=_bounded(current.get("min_potential_room_ml"), 100, 10, 1000)): _number(10, 1000, 10, "mL"),
+            vol.Required(native_option_key("min_potential_room_ml"), default=_bounded(current.get("min_potential_room_ml"), 100, 10, 1000)): _number(10, 1000, 10, "mL"),
         }), {"collapsed": False}),
         vol.Required("ventilation_timing"): section(vol.Schema({
-            vol.Required("min_duration_min", default=_bounded(current.get("min_duration_min"), 3, 1, 30)): _number(1, 30, 1, "min"),
-            vol.Required("max_duration_min", default=_bounded(current.get("max_duration_min"), 20, 3, 90)): _number(3, 90, 1, "min"),
-            vol.Required("post_ventilation_stabilization_min", default=_bounded(current.get("post_ventilation_stabilization_min"), 4, 1, 15)): _number(1, 15, 1, "min"),
-            vol.Required("repeat_recommendation_cooldown_min", default=_bounded(current.get("repeat_recommendation_cooldown_min"), 20, 5, 120)): _number(5, 120, 5, "min"),
-            vol.Required("repeat_min_benefit_ml", default=_bounded(current.get("repeat_min_benefit_ml"), 80, 10, 1000)): _number(10, 1000, 10, "mL"),
+            vol.Required(native_option_key("min_duration_min"), default=_bounded(current.get("min_duration_min"), 3, 1, 30)): _number(1, 30, 1, "min"),
+            vol.Required(native_option_key("max_duration_min"), default=_bounded(current.get("max_duration_min"), 20, 3, 90)): _number(3, 90, 1, "min"),
+            vol.Required(native_option_key("post_ventilation_stabilization_min"), default=_bounded(current.get("post_ventilation_stabilization_min"), 4, 1, 15)): _number(1, 15, 1, "min"),
+            vol.Required(native_option_key("repeat_recommendation_cooldown_min"), default=_bounded(current.get("repeat_recommendation_cooldown_min"), 20, 5, 120)): _number(5, 120, 5, "min"),
+            vol.Required(native_option_key("repeat_min_benefit_ml"), default=_bounded(current.get("repeat_min_benefit_ml"), 80, 10, 1000)): _number(10, 1000, 10, "mL"),
         }), {"collapsed": True}),
         vol.Required("efficiency"): section(vol.Schema({
-            vol.Required("min_return_next_5_min_ml", default=_bounded(current.get("min_return_next_5_min_ml"), 25, 0, 500)): _number(0, 500, 5, "mL"),
-            vol.Required("max_temp_loss_next_5_min_c", default=_bounded(current.get("max_temp_loss_next_5_min_c"), .6, .1, 5)): _number(0.1, 5, 0.1, "°C"),
-            vol.Required("min_efficiency_ml_per_01c", default=_bounded(current.get("min_efficiency_ml_per_01c"), 8, 0, 200)): _number(0, 200, 1, "mL/0,1°C"),
+            vol.Required(native_option_key("min_return_next_5_min_ml"), default=_bounded(current.get("min_return_next_5_min_ml"), 25, 0, 500)): _number(0, 500, 5, "mL"),
+            vol.Required(native_option_key("max_temp_loss_next_5_min_c"), default=_bounded(current.get("max_temp_loss_next_5_min_c"), .6, .1, 5)): _number(0.1, 5, 0.1, "°C"),
+            vol.Required(native_option_key("min_efficiency_ml_per_01c"), default=_bounded(current.get("min_efficiency_ml_per_01c"), 8, 0, 200)): _number(0, 200, 1, "mL/0,1°C"),
         }), {"collapsed": True}),
         vol.Required("health_limits"): section(vol.Schema({
-            vol.Required("surface_factor", default=_bounded(current.get("surface_factor"), .25, .05, .8)): _number(0.05, 0.8, 0.05),
-            vol.Required("mould_warn_surface_rh", default=_bounded(current.get("mould_warn_surface_rh"), 80, 60, 95)): _number(60, 95, 1, "%"),
-            vol.Required("mould_critical_surface_rh", default=_bounded(current.get("mould_critical_surface_rh"), 90, 70, 100)): _number(70, 100, 1, "%"),
-            vol.Required("co2_warn", default=_bounded(current.get("co2_warn"), 1000, 600, 2500)): _number(600, 2500, 50, "ppm"),
-            vol.Required("co2_critical", default=_bounded(current.get("co2_critical"), 1400, 800, 4000)): _number(800, 4000, 50, "ppm"),
+            vol.Required(native_option_key("surface_factor"), default=_bounded(current.get("surface_factor"), .25, .05, .8)): _number(0.05, 0.8, 0.05),
+            vol.Required(native_option_key("mould_warn_surface_rh"), default=_bounded(current.get("mould_warn_surface_rh"), 80, 60, 95)): _number(60, 95, 1, "%"),
+            vol.Required(native_option_key("mould_critical_surface_rh"), default=_bounded(current.get("mould_critical_surface_rh"), 90, 70, 100)): _number(70, 100, 1, "%"),
+            vol.Required(native_option_key("co2_warn"), default=_bounded(current.get("co2_warn"), 1000, 600, 2500)): _number(600, 2500, 50, "ppm"),
+            vol.Required(native_option_key("co2_critical"), default=_bounded(current.get("co2_critical"), 1400, 800, 4000)): _number(800, 4000, 50, "ppm"),
         }), {"collapsed": True}),
         vol.Required("learning"): section(vol.Schema({
-            vol.Required("learning_enabled", default=bool(current.get("learning_enabled", True))): bool,
-            vol.Required("learning_max_duration_min", default=_bounded(current.get("learning_max_duration_min"), 120, 15, 240)): _number(15, 240, 5, "min"),
+            vol.Required(native_option_key("learning_enabled"), default=bool(current.get("learning_enabled", True))): bool,
+            vol.Required(native_option_key("learning_max_duration_min"), default=_bounded(current.get("learning_max_duration_min"), 120, 15, 240)): _number(15, 240, 5, "min"),
         }), {"collapsed": True}),
     })
 
@@ -581,17 +582,17 @@ def _model_schema(current: dict[str, Any]) -> vol.Schema:
 def _cross_ventilation_schema(current: dict[str, Any]) -> vol.Schema:
     """Explicit cross-ventilation topology; kept separate because syntax needs examples."""
     return vol.Schema({
-        vol.Optional("cross_ventilation_pairs", default=str(current.get("cross_ventilation_pairs") or "")): selector.TextSelector(
+        vol.Optional(native_option_key("cross_ventilation_pairs"), default=str(current.get("cross_ventilation_pairs") or "")): selector.TextSelector(
             selector.TextSelectorConfig(multiline=True)
         ),
-        vol.Optional("cross_zone_connections", default=str(current.get("cross_zone_connections") or "")): selector.TextSelector(
+        vol.Optional(native_option_key("cross_zone_connections"), default=str(current.get("cross_zone_connections") or "")): selector.TextSelector(
             selector.TextSelectorConfig(multiline=True)
         ),
     })
 
 def _profile_schema(current: dict[str, Any]) -> vol.Schema:
     return vol.Schema({
-        vol.Required("operating_profile", default=current["operating_profile"]): selector.SelectSelector(
+        vol.Required(native_option_key("operating_profile"), default=current["operating_profile"]): selector.SelectSelector(
             selector.SelectSelectorConfig(options=[PROFILE_DEHUMIDIFY, PROFILE_COMFORT, PROFILE_SUMMER_COOLING], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="operating_profile")
         )
     })
@@ -604,21 +605,21 @@ def _profile_details_schema(current: dict[str, Any]) -> vol.Schema:
     profile = current.get("operating_profile", PROFILE_COMFORT)
     if profile == PROFILE_SUMMER_COOLING:
         return vol.Schema({
-            vol.Required("cooling_start_temp_c", default=current["cooling_start_temp_c"]): _number(18, 35, 0.5, "°C"),
-            vol.Required("cooling_min_outdoor_delta_c", default=current["cooling_min_outdoor_delta_c"]): _number(0.5, 10, 0.5, "°C"),
-            vol.Required("cooling_max_indoor_rh", default=current["cooling_max_indoor_rh"]): _number(40, 90, 1, "%"),
-            vol.Required("cooling_max_moisture_gain_5min_ml", default=current["cooling_max_moisture_gain_5min_ml"]): _number(0, 500, 5, "mL"),
+            vol.Required(native_option_key("cooling_start_temp_c"), default=current["cooling_start_temp_c"]): _number(18, 35, 0.5, "°C"),
+            vol.Required(native_option_key("cooling_min_outdoor_delta_c"), default=current["cooling_min_outdoor_delta_c"]): _number(0.5, 10, 0.5, "°C"),
+            vol.Required(native_option_key("cooling_max_indoor_rh"), default=current["cooling_max_indoor_rh"]): _number(40, 90, 1, "%"),
+            vol.Required(native_option_key("cooling_max_moisture_gain_5min_ml"), default=current["cooling_max_moisture_gain_5min_ml"]): _number(0, 500, 5, "mL"),
         })
     if profile == PROFILE_DEHUMIDIFY:
         return vol.Schema({
-            vol.Required("min_return_next_5_min_ml", default=current.get("min_return_next_5_min_ml", 15.0)): _number(0, 500, 5, "mL"),
-            vol.Required("max_temp_loss_next_5_min_c", default=current.get("max_temp_loss_next_5_min_c", 1.0)): _number(0.1, 5, 0.1, "°C"),
-            vol.Required("min_efficiency_ml_per_01c", default=current.get("min_efficiency_ml_per_01c", 5.0)): _number(0, 200, 1, "mL/0,1°C"),
+            vol.Required(native_option_key("min_return_next_5_min_ml"), default=current.get("min_return_next_5_min_ml", 15.0)): _number(0, 500, 5, "mL"),
+            vol.Required(native_option_key("max_temp_loss_next_5_min_c"), default=current.get("max_temp_loss_next_5_min_c", 1.0)): _number(0.1, 5, 0.1, "°C"),
+            vol.Required(native_option_key("min_efficiency_ml_per_01c"), default=current.get("min_efficiency_ml_per_01c", 5.0)): _number(0, 200, 1, "mL/0,1°C"),
         })
     return vol.Schema({
-        vol.Required("min_return_next_5_min_ml", default=current.get("min_return_next_5_min_ml", 25.0)): _number(0, 500, 5, "mL"),
-        vol.Required("max_temp_loss_next_5_min_c", default=current.get("max_temp_loss_next_5_min_c", 0.6)): _number(0.1, 5, 0.1, "°C"),
-        vol.Required("min_efficiency_ml_per_01c", default=current.get("min_efficiency_ml_per_01c", 8.0)): _number(0, 200, 1, "mL/0,1°C"),
+        vol.Required(native_option_key("min_return_next_5_min_ml"), default=current.get("min_return_next_5_min_ml", 25.0)): _number(0, 500, 5, "mL"),
+        vol.Required(native_option_key("max_temp_loss_next_5_min_c"), default=current.get("max_temp_loss_next_5_min_c", 0.6)): _number(0.1, 5, 0.1, "°C"),
+        vol.Required(native_option_key("min_efficiency_ml_per_01c"), default=current.get("min_efficiency_ml_per_01c", 8.0)): _number(0, 200, 1, "mL/0,1°C"),
     })
 
 
@@ -627,7 +628,7 @@ def _building_schema(current: dict[str, Any]) -> vol.Schema:
     """Native building-only settings matching the dashboard gear structure."""
     return vol.Schema({
         vol.Required(
-            "property_type",
+            native_option_key("property_type"),
             default=current.get("property_type", PROPERTY_HOUSE),
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -643,32 +644,32 @@ def _residents_schema(current: dict[str, Any]) -> vol.Schema:
     """Unified resident/presence/personalisation form used by native HA UI."""
     return vol.Schema({
         vol.Required("residents"): section(vol.Schema({
-            vol.Required("adult_occupants", default=current.get("adult_occupants", 2)): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=20, step=1, mode=selector.NumberSelectorMode.SLIDER)),
-            vol.Optional("adult_resident_names", default=str(current.get("adult_resident_names", ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)),
-            vol.Optional("adult_presence_entities", default=current.get("adult_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)),
-            vol.Required("child_occupants", default=current.get("child_occupants", 0)): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=20, step=1, mode=selector.NumberSelectorMode.SLIDER)),
-            vol.Optional("child_resident_names", default=str(current.get("child_resident_names", ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)),
-            vol.Optional("child_presence_entities", default=current.get("child_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)),
-            vol.Required("pets_in_household", default=bool(current.get("pets_in_household", False))): bool,
+            vol.Required(native_option_key("adult_occupants"), default=current.get("adult_occupants", 2)): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=20, step=1, mode=selector.NumberSelectorMode.SLIDER)),
+            vol.Optional(native_option_key("adult_resident_names"), default=str(current.get("adult_resident_names", ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)),
+            vol.Optional(native_option_key("adult_presence_entities"), default=current.get("adult_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)),
+            vol.Required(native_option_key("child_occupants"), default=current.get("child_occupants", 0)): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=20, step=1, mode=selector.NumberSelectorMode.SLIDER)),
+            vol.Optional(native_option_key("child_resident_names"), default=str(current.get("child_resident_names", ""))): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)),
+            vol.Optional(native_option_key("child_presence_entities"), default=current.get("child_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["person", "device_tracker"], multiple=True)),
+            vol.Required(native_option_key("pets_in_household"), default=bool(current.get("pets_in_household", False))): bool,
         }), {"collapsed": False}),
         vol.Optional("presence"): section(vol.Schema({
-            vol.Optional("presence_sensor_entities", default=current.get("presence_sensor_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
-            vol.Optional("pet_safe_presence_entities", default=current.get("pet_safe_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
-            vol.Required("untracked_follow_household", default=bool(current.get("untracked_follow_household", True))): bool,
+            vol.Optional(native_option_key("presence_sensor_entities"), default=current.get("presence_sensor_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
+            vol.Optional(native_option_key("pet_safe_presence_entities"), default=current.get("pet_safe_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
+            vol.Required(native_option_key("untracked_follow_household"), default=bool(current.get("untracked_follow_household", True))): bool,
         }), {"collapsed": True}),
         vol.Optional("personalisation"): section(vol.Schema({
-            vol.Required("personalisation_enabled", default=bool(current.get("personalisation_enabled", True))): bool,
-            vol.Required("thermal_preference", default=str(current.get("thermal_preference", "balanced"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["warm", "balanced", "cool"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="thermal_preference")),
-            vol.Required("personal_priority", default=str(current.get("personal_priority", "balanced"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["climate", "balanced", "energy"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="personal_priority")),
-            vol.Required("night_window_preference", default=str(current.get("night_window_preference", "automatic"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["automatic", "closed", "allowed"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="night_window_preference")),
+            vol.Required(native_option_key("personalisation_enabled"), default=bool(current.get("personalisation_enabled", True))): bool,
+            vol.Required(native_option_key("thermal_preference"), default=str(current.get("thermal_preference", "balanced"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["warm", "balanced", "cool"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="thermal_preference")),
+            vol.Required(native_option_key("personal_priority"), default=str(current.get("personal_priority", "balanced"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["climate", "balanced", "energy"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="personal_priority")),
+            vol.Required(native_option_key("night_window_preference"), default=str(current.get("night_window_preference", "automatic"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["automatic", "closed", "allowed"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="night_window_preference")),
         }), {"collapsed": True}),
         vol.Optional("night"): section(vol.Schema({
-            vol.Required("night_start_hour", default=_time_default(current.get("night_start_hour", "22:00"), "22:00")): selector.TimeSelector(),
-            vol.Required("night_end_hour", default=_time_default(current.get("night_end_hour", "07:00"), "07:00")): selector.TimeSelector(),
-            vol.Required("night_forecast_enabled", default=bool(current.get("night_forecast_enabled", True))): bool,
+            vol.Required(native_option_key("night_start_hour"), default=_time_default(current.get("night_start_hour", "22:00"), "22:00")): selector.TimeSelector(),
+            vol.Required(native_option_key("night_end_hour"), default=_time_default(current.get("night_end_hour", "07:00"), "07:00")): selector.TimeSelector(),
+            vol.Required(native_option_key("night_forecast_enabled"), default=bool(current.get("night_forecast_enabled", True))): bool,
         }), {"collapsed": True}),
         vol.Optional("resident_profiles"): section(vol.Schema({
-            vol.Optional("resident_room_profiles", default=str(current.get("resident_room_profiles", "{}"))): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+            vol.Optional(native_option_key("resident_room_profiles"), default=str(current.get("resident_room_profiles", "{}"))): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
         }), {"collapsed": True}),
     })
 
@@ -677,27 +678,27 @@ def _forecast_schema(current: dict[str, Any]) -> vol.Schema:
     """User-facing forecast horizon used consistently in dashboard and model output."""
     return vol.Schema({
         vol.Required(
-            "forecast_horizon_min",
+            native_option_key("forecast_horizon_min"),
             default=int(round(_bounded(current.get("forecast_horizon_min"), 5, 1, 120))),
         ): _number(1, 120, 1, "min"),
     })
 
 def _air_quality_schema(current: dict[str, Any]) -> vol.Schema:
     return vol.Schema({
-        vol.Required("voc_sensor_enabled", default=bool(current.get("voc_sensor_enabled", True))): bool,
-        vol.Required("pm25_sensor_enabled", default=bool(current.get("pm25_sensor_enabled", True))): bool,
-        vol.Required("illuminance_sensor_enabled", default=bool(current.get("illuminance_sensor_enabled", True))): bool,
-        vol.Required("pollen_enabled", default=bool(current.get("pollen_enabled", False))): bool,
-        vol.Required("pollen_max", default=_bounded(current.get("pollen_max"), 4.0, 0, 10)): _number(0, 10, 0.5),
-        vol.Required("pollen_strict_veto", default=bool(current.get("pollen_strict_veto", True))): bool,
-        vol.Required("wind_orientation_enabled", default=bool(current.get("wind_orientation_enabled", True))): bool,
-        vol.Required("voc_warn", default=_bounded(current.get("voc_warn"), 600.0, 50, 5000)): _number(50, 5000, 50),
-        vol.Required("voc_critical", default=_bounded(current.get("voc_critical"), 1200.0, 100, 10000)): _number(100, 10000, 50),
-        vol.Required("pm25_warn", default=_bounded(current.get("pm25_warn"), 15.0, 1, 250)): _number(1, 250, 1, "µg/m³"),
-        vol.Required("pm25_critical", default=_bounded(current.get("pm25_critical"), 35.0, 2, 500)): _number(2, 500, 1, "µg/m³"),
-        vol.Required("humidify_below_rh", default=_bounded(current.get("humidify_below_rh"), 35.0, 20, 50)): _number(20, 50, 1, "%"),
-        vol.Required("shade_above_temp_c", default=_bounded(current.get("shade_above_temp_c"), 24.0, 18, 35)): _number(18, 35, 0.5, "°C"),
-        vol.Required("shade_min_illuminance_lx", default=_bounded(current.get("shade_min_illuminance_lx"), 10000.0, 0, 100000)): _number(0, 100000, 500, "lx"),
+        vol.Required(native_option_key("voc_sensor_enabled"), default=bool(current.get("voc_sensor_enabled", True))): bool,
+        vol.Required(native_option_key("pm25_sensor_enabled"), default=bool(current.get("pm25_sensor_enabled", True))): bool,
+        vol.Required(native_option_key("illuminance_sensor_enabled"), default=bool(current.get("illuminance_sensor_enabled", True))): bool,
+        vol.Required(native_option_key("pollen_enabled"), default=bool(current.get("pollen_enabled", False))): bool,
+        vol.Required(native_option_key("pollen_max"), default=_bounded(current.get("pollen_max"), 4.0, 0, 10)): _number(0, 10, 0.5),
+        vol.Required(native_option_key("pollen_strict_veto"), default=bool(current.get("pollen_strict_veto", True))): bool,
+        vol.Required(native_option_key("wind_orientation_enabled"), default=bool(current.get("wind_orientation_enabled", True))): bool,
+        vol.Required(native_option_key("voc_warn"), default=_bounded(current.get("voc_warn"), 600.0, 50, 5000)): _number(50, 5000, 50),
+        vol.Required(native_option_key("voc_critical"), default=_bounded(current.get("voc_critical"), 1200.0, 100, 10000)): _number(100, 10000, 50),
+        vol.Required(native_option_key("pm25_warn"), default=_bounded(current.get("pm25_warn"), 15.0, 1, 250)): _number(1, 250, 1, "µg/m³"),
+        vol.Required(native_option_key("pm25_critical"), default=_bounded(current.get("pm25_critical"), 35.0, 2, 500)): _number(2, 500, 1, "µg/m³"),
+        vol.Required(native_option_key("humidify_below_rh"), default=_bounded(current.get("humidify_below_rh"), 35.0, 20, 50)): _number(20, 50, 1, "%"),
+        vol.Required(native_option_key("shade_above_temp_c"), default=_bounded(current.get("shade_above_temp_c"), 24.0, 18, 35)): _number(18, 35, 0.5, "°C"),
+        vol.Required(native_option_key("shade_min_illuminance_lx"), default=_bounded(current.get("shade_min_illuminance_lx"), 10000.0, 0, 100000)): _number(0, 100000, 500, "lx"),
     })
 
 
@@ -705,7 +706,7 @@ def _air_quality_schema(current: dict[str, Any]) -> vol.Schema:
 def _diagnostics_sharing_schema(current: dict[str, Any]) -> vol.Schema:
     return vol.Schema({
         vol.Required(
-            "diagnostics_reporting_mode",
+            native_option_key("diagnostics_reporting_mode"),
             default=str(current.get("diagnostics_reporting_mode", "off")),
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -719,39 +720,39 @@ def _diagnostics_sharing_schema(current: dict[str, Any]) -> vol.Schema:
             )
         ),
         vol.Required(
-            "diagnostics_include_client_context",
+            native_option_key("diagnostics_include_client_context"),
             default=bool(current.get("diagnostics_include_client_context", False)),
         ): bool,
     })
 
 def _energy_system_schema(current: dict[str, Any]) -> vol.Schema:
-    return vol.Schema({vol.Required("heating_system", default=current["heating_system"]): selector.SelectSelector(selector.SelectSelectorConfig(options=[HEATING_HEAT_PUMP, HEATING_GAS, HEATING_DISTRICT, HEATING_ELECTRIC, HEATING_OIL], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="heating_system"))})
+    return vol.Schema({vol.Required(native_option_key("heating_system"), default=current["heating_system"]): selector.SelectSelector(selector.SelectSelectorConfig(options=[HEATING_HEAT_PUMP, HEATING_GAS, HEATING_DISTRICT, HEATING_ELECTRIC, HEATING_OIL], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="heating_system"))})
 
 
 def _energy_details_schema(current: dict[str, Any]) -> vol.Schema:
     system = current.get("heating_system", HEATING_HEAT_PUMP)
     if system == HEATING_HEAT_PUMP:
         return vol.Schema({
-            vol.Required("electricity_price_per_kwh", default=current.get("electricity_price_per_kwh", 0.30)): _number(0, 5, 0.01, "€/kWh"),
-            vol.Required("heat_pump_cop", default=current.get("heat_pump_cop", 3.5)): _number(1, 10, 0.1),
+            vol.Required(native_option_key("electricity_price_per_kwh"), default=current.get("electricity_price_per_kwh", 0.30)): _number(0, 5, 0.01, "€/kWh"),
+            vol.Required(native_option_key("heat_pump_cop"), default=current.get("heat_pump_cop", 3.5)): _number(1, 10, 0.1),
         })
     if system == HEATING_GAS:
         return vol.Schema({
-            vol.Required("gas_price_per_kwh", default=current.get("gas_price_per_kwh", 0.11)): _number(0, 2, 0.001, "€/kWh"),
-            vol.Required("gas_efficiency", default=current.get("gas_efficiency", 0.92)): _number(0.5, 1.0, 0.01),
+            vol.Required(native_option_key("gas_price_per_kwh"), default=current.get("gas_price_per_kwh", 0.11)): _number(0, 2, 0.001, "€/kWh"),
+            vol.Required(native_option_key("gas_efficiency"), default=current.get("gas_efficiency", 0.92)): _number(0.5, 1.0, 0.01),
         })
     if system == HEATING_OIL:
         return vol.Schema({
-            vol.Required("oil_price_per_liter", default=current.get("oil_price_per_liter", 1.0)): _number(0, 5, 0.01, "€/l"),
-            vol.Required("oil_kwh_per_liter", default=current.get("oil_kwh_per_liter", 10.0)): _number(8, 12, 0.1, "kWh/l"),
-            vol.Required("oil_efficiency", default=current.get("oil_efficiency", 0.88)): _number(0.5, 1.0, 0.01),
+            vol.Required(native_option_key("oil_price_per_liter"), default=current.get("oil_price_per_liter", 1.0)): _number(0, 5, 0.01, "€/l"),
+            vol.Required(native_option_key("oil_kwh_per_liter"), default=current.get("oil_kwh_per_liter", 10.0)): _number(8, 12, 0.1, "kWh/l"),
+            vol.Required(native_option_key("oil_efficiency"), default=current.get("oil_efficiency", 0.88)): _number(0.5, 1.0, 0.01),
         })
     if system == HEATING_DISTRICT:
         return vol.Schema({
-            vol.Required("district_price_per_kwh", default=current.get("district_price_per_kwh", 0.15)): _number(0, 5, 0.01, "€/kWh"),
-            vol.Required("district_efficiency", default=current.get("district_efficiency", 0.98)): _number(0.5, 1.0, 0.01),
+            vol.Required(native_option_key("district_price_per_kwh"), default=current.get("district_price_per_kwh", 0.15)): _number(0, 5, 0.01, "€/kWh"),
+            vol.Required(native_option_key("district_efficiency"), default=current.get("district_efficiency", 0.98)): _number(0.5, 1.0, 0.01),
         })
-    return vol.Schema({vol.Required("electricity_price_per_kwh", default=current.get("electricity_price_per_kwh", 0.30)): _number(0, 5, 0.01, "€/kWh")})
+    return vol.Schema({vol.Required(native_option_key("electricity_price_per_kwh"), default=current.get("electricity_price_per_kwh", 0.30)): _number(0, 5, 0.01, "€/kWh")})
 
 
 def _notification_schema(hass, current: dict[str, Any], rooms: list[dict[str, Any]]) -> vol.Schema:
@@ -759,19 +760,19 @@ def _notification_schema(hass, current: dict[str, Any], rooms: list[dict[str, An
     targets = [{"value": s, "label": f"notify.{s}"} for s in services]
     room_opts = [{"value": r["key"], "label": r.get("name", r["key"])} for r in rooms]
     return vol.Schema({
-        vol.Required("notifications_enabled", default=current["notifications_enabled"]): bool,
-        vol.Optional("notification_targets", default=current.get("notification_targets", [])): selector.SelectSelector(selector.SelectSelectorConfig(options=targets, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)),
-        vol.Required("notification_scope", default=current["notification_scope"]): selector.SelectSelector(selector.SelectSelectorConfig(options=[NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_BOTH], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="notification_scope")),
-        vol.Optional("notification_room_keys", default=current.get("notification_room_keys", [])): selector.SelectSelector(selector.SelectSelectorConfig(options=room_opts, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)),
-        vol.Required("notify_ventilate", default=current["notify_ventilate"]): bool,
-        vol.Required("notify_close", default=current["notify_close"]): bool,
-        vol.Required("notify_complete", default=current["notify_complete"]): bool,
-        vol.Required("notify_cooling", default=current["notify_cooling"]): bool,
-        vol.Required("notify_mould", default=current["notify_mould"]): bool,
-        vol.Required("notify_sensor", default=current["notify_sensor"]): bool,
-        vol.Required("notify_night", default=current["notify_night"]): bool,
-        vol.Required("notify_learning", default=current["notify_learning"]): bool,
-        vol.Required("notification_cooldown_min", default=current["notification_cooldown_min"]): _number(10, 1440, 5, "min"),
+        vol.Required(native_option_key("notifications_enabled"), default=current["notifications_enabled"]): bool,
+        vol.Optional(native_option_key("notification_targets"), default=current.get("notification_targets", [])): selector.SelectSelector(selector.SelectSelectorConfig(options=targets, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)),
+        vol.Required(native_option_key("notification_scope"), default=current["notification_scope"]): selector.SelectSelector(selector.SelectSelectorConfig(options=[NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_BOTH], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="notification_scope")),
+        vol.Optional(native_option_key("notification_room_keys"), default=current.get("notification_room_keys", [])): selector.SelectSelector(selector.SelectSelectorConfig(options=room_opts, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)),
+        vol.Required(native_option_key("notify_ventilate"), default=current["notify_ventilate"]): bool,
+        vol.Required(native_option_key("notify_close"), default=current["notify_close"]): bool,
+        vol.Required(native_option_key("notify_complete"), default=current["notify_complete"]): bool,
+        vol.Required(native_option_key("notify_cooling"), default=current["notify_cooling"]): bool,
+        vol.Required(native_option_key("notify_mould"), default=current["notify_mould"]): bool,
+        vol.Required(native_option_key("notify_sensor"), default=current["notify_sensor"]): bool,
+        vol.Required(native_option_key("notify_night"), default=current["notify_night"]): bool,
+        vol.Required(native_option_key("notify_learning"), default=current["notify_learning"]): bool,
+        vol.Required(native_option_key("notification_cooldown_min"), default=current["notification_cooldown_min"]): _number(10, 1440, 5, "min"),
     })
 
 
@@ -1761,7 +1762,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         return self.async_show_form(
             step_id="threshold",
             data_schema=vol.Schema({
-                vol.Required("threshold_mode", default=_choice(self._working_options.get("threshold_mode"), "adaptive_home_size", ["adaptive_home_size", "percent_total_water", "fixed_ml"])): selector.SelectSelector(
+                vol.Required(native_option_key("threshold_mode"), default=_choice(self._working_options.get("threshold_mode"), "adaptive_home_size", ["adaptive_home_size", "percent_total_water", "fixed_ml"])): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=["adaptive_home_size", "percent_total_water", "fixed_ml"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="threshold_mode")
                 )
             }),
@@ -1778,7 +1779,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         return self.async_show_form(
             step_id="threshold_percent",
             data_schema=vol.Schema({
-                vol.Required("min_potential_percent_total_water", default=_bounded(self._working_options.get("min_potential_percent_total_water"), 10, 1, 30)): _number(1, 30, 0.5, "%")
+                vol.Required(native_option_key("min_potential_percent_total_water"), default=_bounded(self._working_options.get("min_potential_percent_total_water"), 10, 1, 30)): _number(1, 30, 0.5, "%")
             }),
         )
 
@@ -1793,7 +1794,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         return self.async_show_form(
             step_id="threshold_fixed",
             data_schema=vol.Schema({
-                vol.Required("min_potential_total_ml", default=_bounded(self._working_options.get("min_potential_total_ml"), 500, 50, 5000)): _number(50, 5000, 10, "mL")
+                vol.Required(native_option_key("min_potential_total_ml"), default=_bounded(self._working_options.get("min_potential_total_ml"), 500, 50, 5000)): _number(50, 5000, 10, "mL")
             }),
         )
 
@@ -1999,7 +2000,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        "statistics_days",
+                        native_option_key("statistics_days"),
                         default=_safe_int(self._working_options.get("statistics_days"), 14, minimum=1, maximum=365),
                     ): _number(1, 365, 1, "Tage")
                 }

@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.43 maximum hardening hotfix."""
+"""Regression contracts for v0.25.0.47 maximum hardening hotfix."""
 from __future__ import annotations
 
 import json
@@ -88,8 +88,8 @@ def test_staging_copy_is_version_neutral_and_release_versions_match() -> None:
 
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality" / "quality_policy.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.0.43"
-    assert policy["version"] == "0.25.0.43"
-    assert 'VERSION = "0.25.0.43"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == "0.25.0.47"
+    assert policy["version"] == "0.25.0.47"
+    assert 'VERSION = "0.25.0.47"' in (COMP / "const.py").read_text(encoding="utf-8")
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.43";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.47";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

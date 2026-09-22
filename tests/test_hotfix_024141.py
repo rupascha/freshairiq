@@ -159,13 +159,14 @@ def test_coordinator_uses_logical_measurement_start_and_replays_actual_measureme
 
 
 def _editable_keys() -> set[str]:
-    tree = ast.parse((COMP / "settings_api.py").read_text(encoding="utf-8"))
+    tree = ast.parse((COMP / "settings_contract.py").read_text(encoding="utf-8"))
     for node in tree.body:
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "EDITABLE_OPTION_KEYS" for t in node.targets):
-            return set(ast.literal_eval(node.value))
-        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == "EDITABLE_OPTION_KEYS":
-            return set(ast.literal_eval(node.value))
-    raise AssertionError("EDITABLE_OPTION_KEYS not found")
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "NATIVE_OPTION_KEYS" for t in node.targets):
+            value = node.value
+            if isinstance(value, ast.Call):
+                value = value.args[0]
+            return set(ast.literal_eval(value))
+    raise AssertionError("NATIVE_OPTION_KEYS not found")
 
 
 def test_dashboard_settings_cover_canonical_api_without_visible_duplicate_fields():
@@ -223,8 +224,8 @@ def test_frontend_no_longer_uses_systematic_same_time_basis_error_text():
 
 
 def test_release_version_is_consistent():
-    assert 'VERSION = "0.25.0.43"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.43"
+    assert 'VERSION = "0.25.0.47"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.47"
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.43";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.47";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
     assert (ROOT / "RELEASE_NOTES_0.25.0.0.md").exists()

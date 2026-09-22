@@ -1,4 +1,4 @@
-"""Static integration contracts for v0.25.0.43 Diagnostics Client Foundation."""
+"""Static integration contracts for v0.25.0.47 Diagnostics Client Foundation."""
 from __future__ import annotations
 
 import json
@@ -10,7 +10,7 @@ COMP = ROOT / "custom_components/freshairiq"
 
 def test_remote_diagnostics_is_opt_in_and_local_staging_endpoint_is_explicit():
     const = (COMP / "const.py").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.43"' in const
+    assert 'VERSION = "0.25.0.47"' in const
     assert 'DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"' in const
     assert '"diagnostics_reporting_mode": "off"' in const
     assert '"diagnostics_include_client_context": False' in const
@@ -27,11 +27,11 @@ def test_coordinator_owns_client_and_starts_and_stops_it_with_runtime():
 
 def test_native_and_dashboard_settings_expose_same_reporting_preferences():
     flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
-    api = (COMP / "settings_api.py").read_text(encoding="utf-8")
+    contract = (COMP / "settings_contract.py").read_text(encoding="utf-8")
     card = (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
     for key in ("diagnostics_reporting_mode", "diagnostics_include_client_context"):
         assert key in flow
-        assert key in api
+        assert key in contract
         assert key in card
     assert "diagnostics_sharing" in flow
     assert "diagnostics_sharing" in card
@@ -54,6 +54,6 @@ def test_transport_module_is_pure_and_telemetry_module_is_excluded_from_pure_cov
 
 def test_release_policy_makes_transport_privacy_tests_part_of_robustness_gate():
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert policy["version"] == "0.25.0.43"
+    assert policy["version"] == "0.25.0.47"
     assert "tests/test_diagnostics_transport_025022.py" in policy["robustness"]["required_test_files"]
-    assert policy["release"]["artifact_suffix"] == "Maximum-Hardening-Hotfix"
+    assert policy["release"]["artifact_suffix"] == "Release-Asset-Changelog-Hygiene-Hotfix"

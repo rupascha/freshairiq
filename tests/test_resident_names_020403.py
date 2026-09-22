@@ -80,7 +80,7 @@ def test_names_are_local_presentation_options_and_available_in_both_settings_uis
     root = Path(__file__).resolve().parents[1]
     card = (root / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     flow = (root / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
-    settings = (root / "custom_components/freshairiq/settings_api.py").read_text(encoding="utf-8")
+    settings = (root / "custom_components/freshairiq/settings_contract.py").read_text(encoding="utf-8")
     diagnostics = (root / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
     assert 'key:"adult_resident_names"' in card
     assert 'key:"child_resident_names"' in card

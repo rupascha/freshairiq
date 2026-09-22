@@ -11,14 +11,16 @@ PKG = ROOT / "custom_components" / "freshairiq"
 
 
 def _editable_option_keys() -> set[str]:
-    tree = ast.parse((PKG / "settings_api.py").read_text(encoding="utf-8"))
+    tree = ast.parse((PKG / "settings_contract.py").read_text(encoding="utf-8"))
     for node in tree.body:
         if not isinstance(node, ast.Assign):
             continue
-        if any(isinstance(target, ast.Name) and target.id == "EDITABLE_OPTION_KEYS" for target in node.targets):
-            value = ast.literal_eval(node.value)
-            return set(value)
-    raise AssertionError("EDITABLE_OPTION_KEYS not found")
+        if any(isinstance(target, ast.Name) and target.id == "NATIVE_OPTION_KEYS" for target in node.targets):
+            value = node.value
+            if isinstance(value, ast.Call):
+                value = value.args[0]
+            return set(ast.literal_eval(value))
+    raise AssertionError("NATIVE_OPTION_KEYS not found")
 
 
 def test_optional_sensor_controls_share_the_integration_settings_store() -> None:

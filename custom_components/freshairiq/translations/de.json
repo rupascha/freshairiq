@@ -77,14 +77,21 @@
           "air_purifier": "Optional. Alternative/Ergänzung bei Feinstaub, VOC oder pollenbedingt ungünstiger Außenluft.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "name": "Frei wählbarer Anzeigename, z. B. „Wohnzimmer“. Daraus erzeugt FreshAirIQ einen stabilen internen Raumschlüssel.",
+          "temperature": "Temperatursensor des Raums. Für berechnete Räume erforderlich; Standard: keine Vorauswahl.",
+          "humidity": "Luftfeuchtesensor des Raums. Für berechnete Räume erforderlich; Standard: keine Vorauswahl.",
+          "floor": "Stockwerk/Bereich für Gruppierung und Querlüftung. Beispiel: „Erdgeschoss“. Standard: nicht zugeordnet."
         }
       },
       "more_rooms": {
         "title": "Raum gespeichert",
         "description": "{room_count} Raum/Räume konfiguriert.",
         "data": {
-          "add_another": "Weiteren Raum hinzufügen (Standard: aus)"
+          "add_another": "Weiteren Raum hinzufügen (Standard: an)"
+        },
+        "data_description": {
+          "add_another": "Standard: an. Aktiviert = weiteren Raum anlegen; aus = Einrichtung abschließen."
         }
       },
       "legacy_import": {
@@ -92,6 +99,9 @@
         "description": "Es wurde eine bestehende Ventilation-Assistant-Konfiguration gefunden. FreshAirIQ kann Außenluftquelle, Räume, Lüftungskontakte und Raumparameter übernehmen. Vorhandene Lernwerte werden beim ersten Start ebenfalls übernommen.",
         "data": {
           "import_legacy": "Vorhandene Konfiguration importieren (Standard: an)"
+        },
+        "data_description": {
+          "import_legacy": "Standard: an. Übernimmt die vorhandene ältere FreshAirIQ-Konfiguration, damit Räume und Sensorzuordnungen nicht neu angelegt werden müssen."
         }
       },
       "room_orientations": {
@@ -265,7 +275,7 @@
     "step": {
       "init": {
         "title": "FreshAirIQ – Einstellungen",
-        "description": "Die Einstellungen sind nach Aufgabe gruppiert. Sobald du eine Seite mit „Speichern“ bestätigst, übernimmt FreshAirIQ diese Angaben sofort. „Fertig“ beendet nur noch den Einstellungsdialog.",
+        "description": "Schrittweise FreshAirIQ-Konfiguration direkt in Home Assistant. Wie bei einer guten nativen Config-Flow-Einrichtung sind Grunddaten und erweiterte Einstellungen getrennt; jede Seite erklärt Zweck, Standardwert und – wo sinnvoll – ein Beispiel. Gespeicherte Änderungen gelten sofort und werden identisch im Dashboard-Zahnrad verwendet.",
         "menu_options": {
           "home_setup": "Zuhause & Räume",
           "ventilation_settings": "Lüftung & Empfehlungen",
@@ -422,6 +432,9 @@
         "title": "Raum auswählen",
         "data": {
           "room": "Zu bearbeitender Raum (Standard: keine Vorauswahl)"
+        },
+        "data_description": {
+          "room": "Wähle den Raum, dessen Sensoren, Größe, Bereich oder optionale Geräte du ändern möchtest. Beispiel: „Wohnzimmer“. Keine Vorauswahl."
         }
       },
       "edit_room": {
@@ -522,6 +535,10 @@
         "data": {
           "room": "Raum (Standard: keine Vorauswahl)",
           "confirm": "Entfernen bestätigen (Standard: aus)"
+        },
+        "data_description": {
+          "room": "Wähle den zu entfernenden Raum. Räume werden erst nach zusätzlicher Bestätigung gelöscht.",
+          "confirm": "Sicherheitsabfrage. Standard: aus. Erst aktivieren, wenn der ausgewählte Raum wirklich entfernt werden soll."
         }
       },
       "model": {
@@ -580,7 +597,8 @@
           "co2_warn": "Ab diesem CO₂-Wert steigt die Lüftungspriorität, sofern ein CO₂-Sensor vorhanden ist.",
           "co2_critical": "Ab diesem CO₂-Wert wird die Luftqualität als kritisch behandelt.",
           "learning_enabled": "Aktiviert das persistente Lernen von Luftwechsel, Routinen und Prognosekorrekturen. Standard: an.",
-          "learning_max_duration_min": "Längere Sessions werden nicht als saubere Lernprobe verwendet, weil Wetter-, Heizungs- und Nutzungseinflüsse zunehmend dominieren."
+          "learning_max_duration_min": "Längere Sessions werden nicht als saubere Lernprobe verwendet, weil Wetter-, Heizungs- und Nutzungseinflüsse zunehmend dominieren.",
+          "cross_ventilation_pairs": "Veraltetete Kompatibilitätsanzeige; Querlüftung wird vollständig auf der eigenen Seite „Querlüftung“ gepflegt. Beispiel: wohnzimmer+schlafzimmer."
         },
         "sections": {
           "humidity_thresholds": {
@@ -660,6 +678,9 @@
         "description": "Wähle das Heizsystem für die Schätzung von Wiederaufheizkosten. Standard: Wärmepumpe. Im nächsten Schritt erscheinen nur passende Kostenparameter.",
         "data": {
           "heating_system": "Heizsystem (Standard: Wärmepumpe)"
+        },
+        "data_description": {
+          "heating_system": "Bestimmt ausschließlich die Berechnung der Wiederaufheizkosten. Beispiel: Bei einer Wärmepumpe werden Strompreis und COP/JAZ verwendet. Standard: Wärmepumpe."
         }
       },
       "notifications": {
@@ -685,7 +706,15 @@
           "notification_targets": "Wähle vorhandene notify.*-Dienste. Ohne Empfänger werden keine Pushmeldungen versendet.",
           "notification_scope": "Haus = zentrale Empfehlungen. Raum = raumbezogene Meldungen. Beides = beide Ebenen.",
           "notification_room_keys": "Leer bedeutet alle Räume. Auswahl begrenzt raumbezogene Meldungen auf bestimmte Räume.",
-          "notification_cooldown_min": "Verhindert wiederholte identische Meldungen innerhalb dieses Zeitraums."
+          "notification_cooldown_min": "Verhindert wiederholte identische Meldungen innerhalb dieses Zeitraums.",
+          "notify_ventilate": "Sendet eine Meldung, wenn FreshAirIQ einen sinnvollen Lüftungsstart erkennt. Standard: an.",
+          "notify_close": "Sendet eine Meldung, wenn weiterer Luftaustausch keinen ausreichenden Nutzen mehr bringt oder Komfortgrenzen erreicht werden. Standard: an.",
+          "notify_complete": "Sendet nach einer abgeschlossenen Lüftung das ermittelte Ergebnis. Standard: an.",
+          "notify_cooling": "Meldet günstige Fenster für passive Sommerkühlung. Standard: an.",
+          "notify_mould": "Warnt bei relevantem geschätztem Oberflächen-/Schimmelrisiko. Standard: an.",
+          "notify_sensor": "Warnt, wenn für eine belastbare Empfehlung erforderliche Sensordaten fehlen oder unplausibel sind. Standard: an.",
+          "notify_night": "Sendet Hinweise zur Nachtstrategie. Standard: aus, damit FreshAirIQ nachts nicht ungefragt meldet.",
+          "notify_learning": "Informiert über relevante Lernfortschritte. Standard: aus."
         }
       },
       "statistics": {
@@ -703,6 +732,9 @@
         "description": "Löscht gelernte Raum-Luftwechsel, Routinen und Nachtmodell. Raumkonfiguration, Optionen und Statistik bleiben erhalten.",
         "data": {
           "confirm": "Lerndaten wirklich zurücksetzen (Standard: aus)"
+        },
+        "data_description": {
+          "confirm": "Standard: aus. Löscht nur gelernte Modelle; Räume, Sensorzuordnungen und globale Optionen bleiben erhalten."
         }
       },
       "sort_rooms": {
@@ -710,6 +742,9 @@
         "description": "Vergib Positionsnummern. Standard: aktuelle Reihenfolge. Niedrigere Zahl = weiter oben im Dashboard und in Raumlisten.",
         "data": {
           "room_order": "Raumreihenfolge"
+        },
+        "data_description": {
+          "room_order": "Vergib je Raum eine Positionsnummer. Beispiel: Wohnzimmer = 1, Küche = 2. Niedrigere Zahlen erscheinen zuerst."
         }
       },
       "contact_delays_room": {
@@ -717,6 +752,9 @@
         "description": "Die Öffnungsverzögerung kann für jeden Kontaktsensor separat festgelegt werden.",
         "data": {
           "room": "Raum (Standard: keine Vorauswahl)"
+        },
+        "data_description": {
+          "room": "Wähle den Raum, dessen Fenster-/Türkontakte eine Öffnungsverzögerung erhalten sollen. Beispiel: Kellertür erst nach 120 s als Lüftung werten."
         }
       },
       "contact_delays": {
@@ -777,7 +815,13 @@
         "data_description": {
           "heat_pump_cop": "Je höher der COP/JAZ, desto weniger Strom muss zum Wiederaufheizen gekauft werden.",
           "gas_efficiency": "Nutzbarer Anteil der gekauften Gasenergie.",
-          "oil_kwh_per_liter": "Typischer Heizwert; kann an den verwendeten Brennstoff angepasst werden."
+          "oil_kwh_per_liter": "Typischer Heizwert; kann an den verwendeten Brennstoff angepasst werden.",
+          "electricity_price_per_kwh": "Arbeitspreis deines Stromtarifs. Beispiel: 0,30 €/kWh. Wird bei Wärmepumpe und Elektroheizung genutzt.",
+          "gas_price_per_kwh": "Arbeitspreis deines Gastarifs. Beispiel/Standard: 0,11 €/kWh.",
+          "district_price_per_kwh": "Arbeitspreis deiner Fernwärme. Beispiel/Standard: 0,15 €/kWh.",
+          "district_efficiency": "Berücksichtigt hausinterne Verteilverluste der Fernwärme. 1,00 = verlustfrei; Standard: 0,98.",
+          "oil_price_per_liter": "Preis je Liter Heizöl. Beispiel/Standard: 1,00 €/l.",
+          "oil_efficiency": "Nutzbarer Anteil der im Heizöl enthaltenen Wärmeenergie. Standard: 0,88."
         }
       },
       "profile_details": {
@@ -791,6 +835,15 @@
           "cooling_min_outdoor_delta_c": "Außenluft mindestens so viel kühler (Standard: 2,0)",
           "cooling_max_indoor_rh": "Maximale Raumfeuchte für Kühlmodus (Standard: 70,0)",
           "cooling_max_moisture_gain_5min_ml": "Maximal tolerierter Feuchteeintrag in 5 Min (Standard: 60,0)"
+        },
+        "data_description": {
+          "min_return_next_5_min_ml": "Zusätzlicher Feuchteabbau, den FreshAirIQ für die nächsten fünf Minuten mindestens erwartet. Beispiel: 25 ml im Komfortprofil.",
+          "max_temp_loss_next_5_min_c": "Maximal tolerierter zusätzlicher Raumtemperaturverlust in den nächsten fünf Minuten. Beispiel: 0,6 °C im Komfortprofil.",
+          "min_efficiency_ml_per_01c": "Mindestverhältnis von Feuchteabbau zu Temperaturverlust. Beispiel: 8 ml je 0,1 °C.",
+          "cooling_start_temp_c": "Sommerkühlung wird erst oberhalb dieser Raumtemperatur priorisiert. Standard: 24 °C.",
+          "cooling_min_outdoor_delta_c": "Die Außenluft muss mindestens um diesen Betrag kühler sein. Standard: 2 °C.",
+          "cooling_max_indoor_rh": "Oberhalb dieser Raumfeuchte wird Kühlung nicht auf Kosten zusätzlicher Feuchte priorisiert. Standard: 70 %.",
+          "cooling_max_moisture_gain_5min_ml": "Maximal akzeptierter prognostizierter Feuchteeintrag während fünf Minuten Kühlung. Standard: 60 ml."
         }
       },
       "contact_orientations_room": {
@@ -798,6 +851,9 @@
         "description": "Wähle den Raum. Im nächsten Schritt kannst du jedem Lüftungskontakt eine eigene Himmelsrichtung geben.",
         "data": {
           "room": "Raum (Standard: keine Vorauswahl)"
+        },
+        "data_description": {
+          "room": "Wähle den Raum. Anschließend bekommt jeder Lüftungskontakt seine eigene Himmelsrichtung, z. B. Süd oder Nordost."
         }
       },
       "contact_orientations": {
@@ -810,6 +866,9 @@
         "description": "Setzt alle globalen FreshAirIQ-Optionen auf die dokumentierten Standardwerte zurück. Räume, Sensorzuordnungen und gespeicherte Statistiken bleiben erhalten.",
         "data": {
           "confirm": "Zurücksetzen bestätigen (Standard: aus)"
+        },
+        "data_description": {
+          "confirm": "Standard: aus. Aktivieren setzt nur globale Optionen auf dokumentierte Standardwerte zurück; Räume und Sensorzuordnungen bleiben erhalten."
         }
       },
       "levels": {
@@ -827,6 +886,9 @@
         "description": "Name frei wählen, z. B. „Erdgeschoss“, „Kellergeschoss“, „Wintergarten“ oder „Anbau“. Standard: leer.",
         "data": {
           "name": "Name des Stockwerks/Bereichs (Standard: leer)"
+        },
+        "data_description": {
+          "name": "Frei wählbarer Anzeigename. Beispiel: „Erdgeschoss“, „Kellergeschoss“, „Wintergarten“ oder „Anbau“. Standard: leer."
         }
       },
       "level_reorder": {
@@ -834,6 +896,9 @@
         "description": "Jeder Bereich erhält eine Positionsnummer. Standard: aktuelle Reihenfolge. Niedrigere Zahl = weiter oben.",
         "data": {
           "level_order": "Reihenfolge"
+        },
+        "data_description": {
+          "level_order": "Vergib je Bereich eine Positionsnummer. Beispiel: Erdgeschoss = 1, Obergeschoss = 2. Niedrigere Zahlen erscheinen zuerst."
         }
       },
       "level_remove": {
@@ -841,11 +906,14 @@
         "description": "Nur Bereiche ohne zugeordnete Räume können entfernt werden. Standard: keine Vorauswahl.",
         "data": {
           "name": "Bereich (Standard: keine Vorauswahl)"
+        },
+        "data_description": {
+          "name": "Wähle einen unbenutzten Bereich. Bereiche mit noch zugeordneten Räumen müssen zuerst von diesen Räumen gelöst werden."
         }
       },
       "home_setup": {
         "title": "Zuhause & Räume",
-        "description": "Grunddaten deines Zuhauses. Die Struktur entspricht dem Dashboard-Zahnrad; dieselben ConfigEntry-Werte werden an beiden Stellen bearbeitet.",
+        "description": "Grunddaten deines Zuhauses. Geräte & Dienste und das Dashboard-Zahnrad bearbeiten dieselbe FreshAirIQ-Konfiguration; eine Änderung an einer Stelle ist an der anderen Stelle ebenfalls aktiv.",
         "menu_options": {
           "outdoor": "Außenluft & Wetter",
           "levels": "Stockwerke & Bereiche",
@@ -919,7 +987,7 @@
       },
       "ventilation_settings": {
         "title": "Lüftung & Empfehlungen",
-        "description": "Hier steuerst du, wie FreshAirIQ Lüftungen bewertet und Empfehlungen priorisiert. Die dokumentierten Standardwerte sind für die meisten Haushalte geeignet.",
+        "description": "Hier steuerst du, wie FreshAirIQ Lüftungen bewertet und Empfehlungen priorisiert. Jede Einstellung zeigt den dokumentierten Standardwert und eine Erklärung; für die meisten Haushalte sind die Standardwerte die richtige Ausgangsbasis.",
         "menu_options": {
           "profile": "Betriebsprofil",
           "forecast": "Prognosezeitraum",
@@ -962,7 +1030,7 @@
           "diagnostics_sharing": "Diagnose-Freigabe"
         },
         "menu_option_descriptions": {
-          "statistics": "Angezeigten Zeitraum zwischen 1 und 30 Tagen festlegen",
+          "statistics": "Angezeigten Zeitraum zwischen 1 und 365 Tagen festlegen",
           "back_to_main": "Zur Hauptübersicht der Einstellungen",
           "diagnostics_sharing": "Optionale automatische, lokal pseudonymisierte Diagnoseübertragung vorbereiten"
         }
@@ -1402,7 +1470,7 @@
       "step": {
         "user": {
           "title": "Raum hinzufügen",
-          "description": "Lege den Raum mit Sensoren, Größe und Eigenschaften an. Danach folgen Himmelsrichtungen und Kontaktverzögerungen. Standardwerte sind direkt an den Feldern erklärt.",
+          "description": "Lege den Raum mit Sensoren, Größe und Eigenschaften an. Danach folgen Himmelsrichtungen und Kontaktverzögerungen. Standardwerte sind direkt an den Feldern erklärt. Änderungen werden in derselben Konfiguration gespeichert, die auch das Dashboard-Zahnrad verwendet.",
           "data": {
             "name": "Raumname (Standard: keine Vorauswahl)",
             "temperature": "Temperatursensor (Standard: keine Vorauswahl)",
@@ -1468,7 +1536,7 @@
         },
         "reconfigure": {
           "title": "{room_name}",
-          "description": "Wähle den Bereich, den du ändern möchtest. Jede bestätigte Unterseite wird sofort gespeichert; „Fertig“ schließt nur noch die Raumeinstellungen.",
+          "description": "Wähle den Bereich, den du ändern möchtest. Jede bestätigte Unterseite wird sofort gespeichert; „Fertig“ schließt nur noch die Raumeinstellungen. Änderungen werden in derselben Konfiguration gespeichert, die auch das Dashboard-Zahnrad verwendet.",
           "menu_options": {
             "room_basics": "Raum, Sensoren & Eigenschaften",
             "room_orientations": "Fenster-Ausrichtung",

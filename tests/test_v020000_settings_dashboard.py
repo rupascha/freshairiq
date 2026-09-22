@@ -101,8 +101,12 @@ def test_dashboard_settings_cover_every_native_options_key():
         "notify_complete", "notify_cooling", "notify_mould", "notify_sensor", "notify_night", "notify_learning",
         "notification_cooldown_min", "statistics_days",
     }
+    # settings_api imports the canonical native key contract rather than
+    # duplicating every literal key in a second hand-maintained set.
+    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    assert "EDITABLE_OPTION_KEYS = set(NATIVE_OPTION_KEYS)" in api
     for key in native_keys:
-        assert f'"{key}"' in api, key
+        assert f'"{key}"' in flow, key
         assert f'key:"{key}"' in card, key
     for key in ("outdoor_weather", "outdoor_temperature", "outdoor_humidity", "pollen_entity"):
         assert f'key:"{key}"' in card

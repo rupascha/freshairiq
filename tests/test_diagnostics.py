@@ -474,3 +474,53 @@ def test_build_record_filters_corrupt_completed_sessions_and_window_events(tmp_p
     assert record["recommendation_tracking"]["followed_session_count"] == 1
     assert record["completed_sessions"] == [{"recommendation_followed": True}]
     assert record["window_events"] == [{"event": "ok"}]
+
+
+def test_monitor_only_room_is_not_counted_as_sensor_quality_problem(tmp_path: Path):
+    """A deliberately excluded room must stay visible without degrading quality."""
+    recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.47")
+    data = _data(False)
+    data["rooms"]["wintergarten"] = {
+        "key": "wintergarten",
+        "name": "Wintergarten",
+        "floor": "Wintergarten",
+        "volume_m3": 29.7,
+        "calculation_enabled": False,
+        "monitor_only": True,
+        "data_quality": "monitor_only",
+        "active": False,
+        "temperature": 16.2,
+        "humidity": 59.8,
+        "absolute_humidity": 8.24,
+    }
+
+    record = recorder._build_record(data, _store(), datetime(2026, 9, 22, 4, 0), "periodic", [])
+    quality = record["sensor_quality"]
+
+    assert quality["rooms_all_total"] == 2
+    assert quality["rooms_monitor_only"] == 1
+    assert quality["rooms_total"] == 1
+    assert quality["rooms_ok"] == 1
+    assert quality["rooms_with_issues"] == 0
+    assert quality["room_quality_percent"] == 100.0
+    assert quality["issues"] == []
+    # The monitor-only room must still be exported for diagnostics/visibility.
+    wintergarten = next(room for room in record["rooms"] if room["key"] == "wintergarten")
+    assert wintergarten["data_quality"] == "monitor_only"
+    assert wintergarten["calculation_enabled"] is False
+
+
+def test_calculation_active_bad_room_still_counts_as_sensor_quality_problem(tmp_path: Path):
+    """The monitor-only fix must not hide genuine calculation-room failures."""
+    recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.47")
+    data = _data(False, quality="missing_humidity")
+    data["rooms"]["living"]["calculation_enabled"] = True
+
+    record = recorder._build_record(data, _store(), datetime(2026, 9, 22, 4, 1), "periodic", [])
+    quality = record["sensor_quality"]
+
+    assert quality["rooms_total"] == 1
+    assert quality["rooms_monitor_only"] == 0
+    assert quality["rooms_with_issues"] == 1
+    assert quality["room_quality_percent"] == 0.0
+    assert quality["issues"][0]["room_key"] == "living"

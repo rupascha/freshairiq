@@ -1,8 +1,40 @@
+# FreshAirIQ Changelog
+
+## 0.25.0.47 – Release Asset & Changelog Hygiene Hotfix
+
+- GitHub tag releases now download the exact CLEAN ZIP produced by the mandatory quality workflow, revalidate it with the GitHub/HACS ZIP gate and attach that verified archive to the GitHub release.
+- Corrected the historically mislabelled `0.25.0.44 – Native Config, Scroll & Quality Hotfix` changelog entry so the later 0.25.0.45 locale correction is no longer contradictory.
+- Removed redundant secondary `# Changelog` wrapper headings while preserving all historical release entries.
+- No changes to ventilation physics, recommendation logic, forecasts, learning, diagnostics payload semantics or Decision Intelligence.
+
+## 0.25.0.46 – Android Touch & Settings Contract Hardening Hotfix
+
+- Android/WebView detail scrolling is now covered by a trusted touch-swipe E2E regression, not only mouse-wheel scrolling.
+- Every native Config Flow option key is resolved through the canonical settings contract and fails fast on drift/typos.
+- Added exact semantic regression coverage for all 92 native option keys.
+- Release artifact folder/ZIP naming now matches v0.25.0.46.
+- No changes to ventilation physics, recommendation logic, forecasts, learning or Decision Intelligence.
+
+## 0.25.0.45 – Release, Scroll & Locale Hardening Hotfix
+
+- Full Continuous Quality workflow is now a mandatory release dependency.
+- Real detail-overlay scroll E2E regression added.
+- English and German native Config Flow translations separated correctly.
+- Room-add default and statistics-range labels corrected.
+- Settings contract regression coverage strengthened.
+- Stability runtime separated from hard correctness/memory checks; dedicated performance gate remains authoritative for speed.
+
+## 0.25.0.44 — Native Config, Scroll & Quality Hotfix
+- Monitor-only bzw. von Berechnungen ausgeschlossene Räume bleiben diagnostisch sichtbar, werden aber nicht mehr als Sensorqualitätsfehler gezählt.
+- Detail-Unterfenster scrollen in Web/Home-Assistant-WebView wieder nativ vertikal; der blockierende `touch-action: none`-Ancestor wurde entfernt.
+- Geräte-&-Dienste-Config-Flow vollständig deutsch dokumentiert, einschließlich Erklärungen, Standardwerten und Beispielen; der Flow bleibt auch bei englischer Frontend-Sprache deutsch.
+- Dashboard-Zahnrad und nativer Options-Flow verwenden einen gemeinsamen kanonischen Einstellungsschlüssel-Vertrag und dieselbe ConfigEntry.
+- Keine Änderung an Lüftungsphysik, Prognose-, Lern- oder Decision-Intelligence-Logik.
+
 ## 0.25.0.39 — Public Diagnostics Endpoint Hotfix
 - Diagnostics Hub endpoint switched from private LAN staging to `https://diagnostics.freshairiq.com`.
 - No ventilation/recommendation logic changes.
 
-# Changelog
 
 ## 0.25.0.35 – Passive-Open UI Hotfix
 
@@ -134,7 +166,6 @@
 - Die objektive Prognosegenauigkeit bleibt streng auf `excellent`/`acceptable` begrenzt; `uncertain` und `stale` bleiben vom Prognoselernen ausgeschlossen.
 - Dashboard-Texte unterscheiden jetzt zwischen strenger Genauigkeitswertung und vorsichtigem Lernfeedback.
 
-# Changelog
 
 ## 0.25.0.3
 - Deutsche Etagenbezeichnungen in laufenden Etagenempfehlungen.
@@ -623,7 +654,6 @@
 ## 0.18.2.3
 - Hotfix: diagnostic learning keys, room-history fallback, stale status selection and safe dashboard control binding.
 
-# Changelog
 
 ## 0.18.2.2
 - Hotfix: preserve signed ventilation outcomes across statistics and learning.
@@ -698,7 +728,6 @@
 - Manual learning reset now also clears house-wide strategy learning and stale active recommendation episodes.
 - No new major intelligence feature; this release focuses on consistency, migration safety and release readiness.
 
-# Changelog
 
 ## 0.9.9.0
 - Phase 5: adaptive user-strategy learning for recommendation adherence and physical success.
@@ -763,7 +792,6 @@
 - Hotfix: Raumübersicht und Raumdetail werden während HA-State-Updates nicht mehr neu gerendert; verhindert sporadisches Zurückspringen des iOS/WebView-Scrollcontainers auf 0.
 - Keine Änderungen an Berechnungen, Empfehlungen oder UX-Struktur.
 
-# Changelog
 
 ## 0.9.4.3 — Scroll hotfix
 - Raumdetailansicht: verbleibendes sporadisches Hochspringen auf iOS/Home-Assistant-WebView behoben.
@@ -817,7 +845,6 @@ Hotfix based strictly on 0.9.4:
 - Vollständige Requirements-Release gemäß Anforderungskatalog v3 (20 Punkte).
 - Recommendation Engine v3, Stabilisierung/Wiederempfehlungslogik, zonenplausible Querlüftung, Presence-Sensorfusion/Haustiermodus, Hauswasser-Tagesstatistik und native Reorder-Listen.
 
-# Changelog
 
 ## 0.8.6
 - Optionale Zuordnung von Home-Assistant-`person`/`device_tracker`-Entitäten zu Erwachsenen und Kindern; Anwesenheitswechsel lösen sofort eine Neuberechnung aus.

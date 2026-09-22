@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.25.0.43",
+  "version": "0.25.0.47",
   "python": "3.13",
   "description": "Normalized ratios captured by tools/performance_gate.py.",
   "benchmarks": {

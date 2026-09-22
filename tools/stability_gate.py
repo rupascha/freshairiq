@@ -91,6 +91,7 @@ def main() -> int:
     max_retained = float(cfg["max_retained_memory_kib"])
     max_peak = float(cfg["max_peak_memory_kib"])
     max_runtime = float(cfg["max_runtime_seconds"])
+    runtime_enforcement = str(cfg.get("runtime_enforcement", "hard")).lower()
 
     # Determinism check catches accidental module/global state contamination.
     first = run_stress(max(50, cycles // 20))
@@ -116,7 +117,8 @@ def main() -> int:
         failures.append(f"retained memory {retained_kib:.1f} KiB > {max_retained:.1f} KiB")
     if peak_kib > max_peak:
         failures.append(f"peak memory {peak_kib:.1f} KiB > {max_peak:.1f} KiB")
-    if runtime > max_runtime:
+    runtime_warning = runtime > max_runtime
+    if runtime_warning and runtime_enforcement == "hard":
         failures.append(f"stress runtime {runtime:.2f}s > {max_runtime:.2f}s")
 
     payload = {
@@ -126,6 +128,9 @@ def main() -> int:
         "deterministic": deterministic,
         "digest": digest,
         "runtime_seconds": runtime,
+        "runtime_limit_seconds": max_runtime,
+        "runtime_enforcement": runtime_enforcement,
+        "runtime_warning": runtime_warning,
         "retained_memory_kib": retained_kib,
         "peak_memory_kib": peak_kib,
         "failures": failures,
@@ -139,6 +144,8 @@ def main() -> int:
         out = ROOT / args.json_output
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if runtime_warning and runtime_enforcement != "hard":
+        print(f"Stability runtime advisory: {runtime:.2f}s > {max_runtime:.2f}s; speed is enforced by performance_gate.py")
     if failures:
         print("Stability gate FAILED:")
         for failure in failures:

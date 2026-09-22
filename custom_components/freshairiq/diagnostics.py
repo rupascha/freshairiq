@@ -732,8 +732,33 @@ class FreshAirIQDiagnosticsRecorder:
 
     @staticmethod
     def _sensor_quality_summary(data: dict[str, Any]) -> dict[str, Any]:
+        """Summarise quality only for rooms that participate in calculations.
+
+        Monitor-only / structure-only rooms intentionally remain visible in the
+        diagnostic record, but they are not decision inputs.  Treating their
+        explicit ``monitor_only`` state as an error polluted the house quality
+        score and made the Diagnostics Hub reopen FAIQ-DATA-002 even though the
+        room was configured correctly (for example a conservatory used only as
+        a local climate reference).
+        """
         room_map = data.get("rooms") or {}
-        rooms = [room for room in room_map.values() if isinstance(room, dict)] if isinstance(room_map, dict) else []
+        all_rooms = (
+            [room for room in room_map.values() if isinstance(room, dict)]
+            if isinstance(room_map, dict)
+            else []
+        )
+
+        def _is_monitor_only(room: dict[str, Any]) -> bool:
+            # The explicit flags are authoritative for current records.  The
+            # data_quality fallback keeps older diagnostic records compatible.
+            return (
+                room.get("calculation_enabled") is False
+                or room.get("monitor_only") is True
+                or room.get("data_quality") == "monitor_only"
+            )
+
+        rooms = [room for room in all_rooms if not _is_monitor_only(room)]
+        monitor_only = [room for room in all_rooms if _is_monitor_only(room)]
         valid = [room for room in rooms if room.get("data_quality") == "ok"]
         issues = [
             {"room_key": str(room.get("key") or ""), "room_name": str(room.get("name") or ""),
@@ -745,6 +770,8 @@ class FreshAirIQDiagnosticsRecorder:
             "rooms_ok": len(valid),
             "rooms_with_issues": len(issues),
             "room_quality_percent": round(100.0 * len(valid) / max(len(rooms), 1), 1),
+            "rooms_all_total": len(all_rooms),
+            "rooms_monitor_only": len(monitor_only),
             "outdoor_data_quality": _json_safe(data.get("outdoor_data_quality")),
             "issues": issues,
         }

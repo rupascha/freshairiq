@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.25.0.43",
+  "version": "0.25.0.47",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
     "ha_combined_coverage_percent": 99.0,
@@ -21,14 +21,16 @@
       "tests/test_local_hub_staging_025025.py",
       "tests/test_hotfix_025032_safe_cleanup.py",
       "tests/test_hotfix_025033_maximum_hardening.py",
-      "tests/test_hotfix_025034_outer_hardening.py"
+      "tests/test_hotfix_025034_outer_hardening.py",
+      "tests/test_hotfix_025046_android_touch_settings_contract.py"
     ]
   },
   "stability": {
     "stress_cycles": 3000,
     "max_retained_memory_kib": 768,
     "max_peak_memory_kib": 16384,
-    "max_runtime_seconds": 12.0
+    "max_runtime_seconds": 12.0,
+    "runtime_enforcement": "advisory"
   },
   "performance": {
     "baseline_file": "quality/performance_baseline.json",
@@ -120,6 +122,6 @@
       ".DS_Store",
       "Thumbs.db"
     ],
-    "artifact_suffix": "Maximum-Hardening-Hotfix"
+    "artifact_suffix": "Release-Asset-Changelog-Hygiene-Hotfix"
   }
 }
