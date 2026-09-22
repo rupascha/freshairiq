@@ -1,0 +1,64 @@
+{
+  "fixture_schema": 1,
+  "source": "already_current_v8",
+  "input": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Neu",
+          "volume": 35,
+          "contacts": [],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "floor": "EG",
+          "sort_order": 0,
+          "include_in_calculations": false,
+          "window_orientation": "unknown",
+          "contact_delays": {},
+          "contact_orientations": {}
+        }
+      ],
+      "levels": [
+        "EG"
+      ],
+      "custom_future_key": {
+        "keep": true
+      }
+    },
+    "options": {
+      "threshold_mode": "adaptive_home_size",
+      "unknown_option": "keep"
+    }
+  },
+  "expected": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Neu",
+          "volume": 35,
+          "contacts": [],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "floor": "EG",
+          "sort_order": 0,
+          "include_in_calculations": false,
+          "window_orientation": "unknown",
+          "contact_delays": {},
+          "contact_orientations": {}
+        }
+      ],
+      "levels": [
+        "EG"
+      ],
+      "custom_future_key": {
+        "keep": true
+      }
+    },
+    "options": {
+      "threshold_mode": "adaptive_home_size",
+      "unknown_option": "keep"
+    }
+  }
+}

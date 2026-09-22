@@ -54,7 +54,7 @@ def test_dashboard_and_native_editable_option_surfaces_remain_in_parity() -> Non
 def test_optional_sensor_diagnostics_contract_is_exportable_for_30_days() -> None:
     """Beta diagnostics must retain the new optional sensor signals and state."""
     diagnostics = (PKG / "diagnostics.py").read_text(encoding="utf-8")
-    assert "DIAGNOSTICS_SCHEMA_VERSION = 10" in diagnostics
+    assert "DIAGNOSTICS_SCHEMA_VERSION = 11" in diagnostics
     assert "DIAGNOSTICS_RETENTION_DAYS = 30" in diagnostics
     for prefix in ("voc", "pm25", "illuminance"):
         for suffix in ("", "_available", "_enabled", "_configured"):

@@ -1,0 +1,59 @@
+{
+  "fixture_schema": 1,
+  "source": "legacy_single_contact",
+  "input": {
+    "version": 7,
+    "data": {
+      "rooms": [
+        {
+          "name": "Bad",
+          "volume": 24,
+          "temperature": "sensor.bad_temp",
+          "humidity": "sensor.bad_rh",
+          "contact": "binary_sensor.bad_fenster",
+          "contact_delay_seconds": "120"
+        }
+      ]
+    },
+    "options": {
+      "threshold_mode": "percent_total_water",
+      "min_potential_percent_total_water": 10.0
+    }
+  },
+  "expected": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Bad",
+          "volume": 24,
+          "temperature": "sensor.bad_temp",
+          "humidity": "sensor.bad_rh",
+          "contact_delay_seconds": "120",
+          "contacts": [
+            "binary_sensor.bad_fenster"
+          ],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "floor": "ground_floor",
+          "sort_order": 0,
+          "include_in_calculations": true,
+          "window_orientation": "unknown",
+          "contact_delays": {
+            "binary_sensor.bad_fenster": 120
+          },
+          "contact_orientations": {
+            "binary_sensor.bad_fenster": "unknown"
+          }
+        }
+      ],
+      "levels": [
+        "ground_floor"
+      ]
+    },
+    "options": {
+      "threshold_mode": "adaptive_home_size",
+      "min_potential_percent_total_water": 10.0
+    }
+  }
+}

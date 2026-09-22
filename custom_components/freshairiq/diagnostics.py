@@ -26,8 +26,9 @@ from homeassistant.util import dt as dt_util
 from .runtime import iter_runtime_coordinators
 from .const import DOMAIN
 from .diagnostic_transport import normalise_resident_names
+from .support_incident import build_support_incident
 
-DIAGNOSTICS_SCHEMA_VERSION = 10
+DIAGNOSTICS_SCHEMA_VERSION = 11
 DIAGNOSTICS_IDENTITY_SCHEMA_VERSION = 1
 DIAGNOSTICS_IDENTITY_FILENAME = "field_test_identity.json"
 DIAGNOSTICS_CLIENTS_FILENAME = "field_test_clients.json"
@@ -842,6 +843,12 @@ class FreshAirIQDiagnosticsRecorder:
         if window_events is None:
             window_events = self._window_events(data, now)
 
+        decision_trace = (data.get("intelligent_recommendation") or {}).get("decision_trace") or {}
+        sensor_quality = self._sensor_quality_summary(data)
+        support_incident = build_support_incident(
+            decision_trace, sensor_quality, diagnostics_error_type=(self.last_error or "").split(":", 1)[0] or None
+        )
+
         return {
             "schema_version": DIAGNOSTICS_SCHEMA_VERSION,
             "freshairiq_version": self.version,
@@ -859,7 +866,8 @@ class FreshAirIQDiagnosticsRecorder:
             "future_weather_boundaries": _json_safe(data.get("future_weather_boundaries") or {}),
             "completed_sessions": _json_safe(completed_sessions),
             "window_events": _json_safe(window_events),
-            "sensor_quality": self._sensor_quality_summary(data),
+            "sensor_quality": sensor_quality,
+            "support_incident": _json_safe(support_incident),
             "recommendation_tracking": {
                 "active_advice": _json_safe(store_data.get("iq_active_advice")),
                 "followed_session_count": sum(1 for item in completed_sessions if item.get("recommendation_followed")),

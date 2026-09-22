@@ -358,9 +358,16 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     if isinstance(contacts, str):
         contacts = [contacts]
     include = bool(user_input.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))
-    if include and not user_input.get(CONF_ROOM_TEMPERATURE):
+    # A room may intentionally be created before any sensors are installed.
+    # Keep it as a configured/passive room and activate calculations later,
+    # once the required temperature, humidity and opening contacts exist.
+    has_temperature = bool(user_input.get(CONF_ROOM_TEMPERATURE))
+    has_humidity = bool(user_input.get(CONF_ROOM_HUMIDITY))
+    if include and not has_temperature and not has_humidity and not contacts:
+        include = False
+    if include and not has_temperature:
         errors[CONF_ROOM_TEMPERATURE] = "required"
-    if include and not user_input.get(CONF_ROOM_HUMIDITY):
+    if include and not has_humidity:
         errors[CONF_ROOM_HUMIDITY] = "required"
     if include and not contacts:
         errors[CONF_ROOM_CONTACTS] = "ventilation_contact_required"

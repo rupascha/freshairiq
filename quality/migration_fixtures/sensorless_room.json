@@ -1,0 +1,43 @@
+{
+  "fixture_schema": 1,
+  "source": "sensorless_room",
+  "input": {
+    "version": 7,
+    "data": {
+      "rooms": [
+        {
+          "name": "Abstellraum",
+          "volume": 18.0,
+          "include_in_calculations": false
+        }
+      ]
+    },
+    "options": {}
+  },
+  "expected": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Abstellraum",
+          "volume": 18.0,
+          "include_in_calculations": false,
+          "contacts": [],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "floor": "ground_floor",
+          "sort_order": 0,
+          "window_orientation": "unknown",
+          "contact_delays": {},
+          "contact_orientations": {}
+        }
+      ],
+      "levels": [
+        "ground_floor"
+      ]
+    },
+    "options": {
+      "threshold_mode": "adaptive_home_size"
+    }
+  }
+}

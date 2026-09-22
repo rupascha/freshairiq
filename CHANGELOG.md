@@ -1,3 +1,10 @@
+# 0.25.0.49 – Sensorless Room Creation Hotfix
+
+- Räume können jetzt zunächst nur mit Name und Raumvolumen angelegt werden, auch wenn noch keine Sensoren installiert sind.
+- Vollständig sensorlose Räume werden sicher mit deaktivierter Berechnung gespeichert, bis die erforderlichen Sensoren/Kontakte ergänzt wurden.
+- Begonnene Sensorkonfigurationen behalten die bestehenden Vollständigkeitsprüfungen.
+- Keine Änderungen an Entscheidungs-, Lern-, Diagnose-, Übersetzungs- oder Workflow-Logik.
+
 # 0.25.0.48 – German Config Flow Completeness Hotfix
 
 - Behebt rohe interne Feldnamen in Home Assistant Datenabschnitten (z. B. `adult_occupants`, `adult_presence_entities`).

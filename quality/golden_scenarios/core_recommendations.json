@@ -1,0 +1,274 @@
+{
+  "schema": 1,
+  "suite": "core_recommendations",
+  "description": "Stable user-visible recommendation contracts. Inputs are deterministic and contain no personal data.",
+  "scenarios": [
+    {
+      "id": "normal_humidity_ventilation",
+      "input": {
+        "rooms": {
+          "living": {
+            "key": "living",
+            "name": "Wohnzimmer",
+            "calculation_enabled": true,
+            "data_quality": "ok",
+            "active": false,
+            "action": "Ventilate",
+            "humidity": 70,
+            "surface_rh": 60,
+            "mould_level": "Low",
+            "co2": 500,
+            "potential_ml": 180,
+            "realistic_potential_ml": 180,
+            "delta_g_m3": 2.5,
+            "airflow_factor": 1.0,
+            "forecast_confidence": 70,
+            "forecast_temperature_change_c": -0.2,
+            "forecast_cost": 0.0,
+            "ventilation_threshold_effective_ml": 100
+          }
+        },
+        "options": {
+          "start_rh": 62,
+          "high_rh": 68,
+          "mould_warn_surface_rh": 80,
+          "mould_critical_surface_rh": 90,
+          "co2_warn": 1000,
+          "co2_critical": 1400,
+          "min_potential_room_ml": 100,
+          "cross_ventilation_pairs": ""
+        },
+        "threshold_ml": 100,
+        "total_potential_ml": 180,
+        "recommended_duration_min": 8
+      },
+      "expect": {
+        "kind": "ventilate",
+        "status": "ventilate",
+        "room_keys": [
+          "living"
+        ]
+      }
+    },
+    {
+      "id": "low_potential_no_action",
+      "input": {
+        "rooms": {
+          "living": {
+            "key": "living",
+            "name": "Wohnzimmer",
+            "calculation_enabled": true,
+            "data_quality": "ok",
+            "active": false,
+            "action": "Ventilate",
+            "humidity": 63,
+            "surface_rh": 60,
+            "mould_level": "Low",
+            "co2": 500,
+            "potential_ml": 40,
+            "realistic_potential_ml": 40,
+            "delta_g_m3": 2.5,
+            "airflow_factor": 1.0,
+            "forecast_confidence": 70,
+            "ventilation_threshold_effective_ml": 100
+          }
+        },
+        "options": {
+          "start_rh": 62,
+          "high_rh": 68,
+          "mould_warn_surface_rh": 80,
+          "mould_critical_surface_rh": 90,
+          "co2_warn": 1000,
+          "co2_critical": 1400,
+          "min_potential_room_ml": 100,
+          "cross_ventilation_pairs": ""
+        },
+        "threshold_ml": 100,
+        "total_potential_ml": 40,
+        "recommended_duration_min": 8
+      },
+      "expect": {
+        "kind": "okay",
+        "status": "okay"
+      }
+    },
+    {
+      "id": "critical_surface_override",
+      "input": {
+        "rooms": {
+          "bath": {
+            "key": "bath",
+            "name": "Bad",
+            "calculation_enabled": true,
+            "data_quality": "ok",
+            "active": false,
+            "action": "Ventilate",
+            "humidity": 70,
+            "surface_rh": 95,
+            "mould_level": "Critical",
+            "co2": 500,
+            "potential_ml": 30,
+            "realistic_potential_ml": 30,
+            "delta_g_m3": 2.5,
+            "airflow_factor": 1.0,
+            "forecast_confidence": 70,
+            "ventilation_threshold_effective_ml": 1000
+          }
+        },
+        "options": {
+          "start_rh": 62,
+          "high_rh": 68,
+          "mould_warn_surface_rh": 80,
+          "mould_critical_surface_rh": 90,
+          "co2_warn": 1000,
+          "co2_critical": 1400,
+          "min_potential_room_ml": 100,
+          "cross_ventilation_pairs": ""
+        },
+        "threshold_ml": 500,
+        "total_potential_ml": 30,
+        "recommended_duration_min": 8
+      },
+      "expect": {
+        "kind": "ventilate",
+        "room_keys": [
+          "bath"
+        ]
+      }
+    },
+    {
+      "id": "all_sensors_invalid",
+      "input": {
+        "rooms": {
+          "bad": {
+            "key": "bad",
+            "name": "Bad",
+            "calculation_enabled": true,
+            "data_quality": "error"
+          }
+        },
+        "options": {},
+        "threshold_ml": 100,
+        "total_potential_ml": 0,
+        "recommended_duration_min": 10
+      },
+      "expect": {
+        "kind": "sensor",
+        "status": "sensor_error"
+      }
+    },
+    {
+      "id": "pollen_blocks_nonurgent",
+      "input": {
+        "rooms": {
+          "living": {
+            "key": "living",
+            "name": "Wohnzimmer",
+            "calculation_enabled": true,
+            "data_quality": "ok",
+            "active": false,
+            "action": "Ventilate",
+            "humidity": 70,
+            "surface_rh": 60,
+            "mould_level": "Low",
+            "co2": 500,
+            "potential_ml": 180,
+            "realistic_potential_ml": 180,
+            "delta_g_m3": 2.5,
+            "airflow_factor": 1.0,
+            "forecast_confidence": 70,
+            "ventilation_threshold_effective_ml": 100
+          }
+        },
+        "options": {
+          "start_rh": 62,
+          "high_rh": 68,
+          "mould_warn_surface_rh": 80,
+          "mould_critical_surface_rh": 90,
+          "co2_warn": 1000,
+          "co2_critical": 1400,
+          "min_potential_room_ml": 100,
+          "cross_ventilation_pairs": ""
+        },
+        "threshold_ml": 100,
+        "total_potential_ml": 180,
+        "recommended_duration_min": 8,
+        "pollen_blocked": true,
+        "pollen_index": 4
+      },
+      "expect": {
+        "kind": "pollen_wait",
+        "status": "pollen_warning"
+      }
+    },
+    {
+      "id": "running_session_continues",
+      "input": {
+        "rooms": {
+          "bath": {
+            "key": "bath",
+            "name": "Bad",
+            "calculation_enabled": true,
+            "data_quality": "ok",
+            "active": true,
+            "action": "Continue ventilating",
+            "humidity": 70,
+            "surface_rh": 60,
+            "delta_g_m3": 2.5,
+            "airflow_factor": 1,
+            "forecast_confidence": 70,
+            "session_elapsed_min": 3,
+            "forecast_moisture_effect_ml": 60
+          }
+        },
+        "options": {},
+        "threshold_ml": 100,
+        "total_potential_ml": 180,
+        "recommended_duration_min": 10
+      },
+      "expect": {
+        "kind": "continue",
+        "status": "ventilation_running",
+        "room_keys": [
+          "bath"
+        ],
+        "duration_min": {
+          "value": 7,
+          "abs_tol": 0.1
+        }
+      }
+    },
+    {
+      "id": "close_when_target_reached",
+      "input": {
+        "rooms": {
+          "bath": {
+            "key": "bath",
+            "name": "Bad",
+            "calculation_enabled": true,
+            "data_quality": "ok",
+            "active": true,
+            "action": "Close",
+            "close_recommended": true,
+            "humidity": 65,
+            "surface_rh": 60,
+            "airflow_factor": 1,
+            "forecast_confidence": 70,
+            "forecast_moisture_effect_ml": 8
+          }
+        },
+        "options": {},
+        "threshold_ml": 100,
+        "total_potential_ml": 180,
+        "recommended_duration_min": 10
+      },
+      "expect": {
+        "kind": "close",
+        "status": "close_windows",
+        "room_keys": [
+          "bath"
+        ]
+      }
+    }
+  ]
+}

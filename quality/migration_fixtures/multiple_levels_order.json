@@ -1,0 +1,83 @@
+{
+  "fixture_schema": 1,
+  "source": "multiple_levels_order",
+  "input": {
+    "version": 7,
+    "data": {
+      "rooms": [
+        {
+          "name": "Fitness",
+          "volume": 45,
+          "floor": "KG",
+          "sort_order": 3
+        },
+        {
+          "name": "Schlafen",
+          "volume": 40,
+          "floor": "EG",
+          "sort_order": 1
+        },
+        {
+          "name": "Gast",
+          "volume": 30,
+          "floor": "KG",
+          "sort_order": 2
+        }
+      ]
+    },
+    "options": {}
+  },
+  "expected": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Fitness",
+          "volume": 45,
+          "floor": "KG",
+          "sort_order": 3,
+          "contacts": [],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "include_in_calculations": true,
+          "window_orientation": "unknown",
+          "contact_delays": {},
+          "contact_orientations": {}
+        },
+        {
+          "name": "Schlafen",
+          "volume": 40,
+          "floor": "EG",
+          "sort_order": 1,
+          "contacts": [],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "include_in_calculations": true,
+          "window_orientation": "unknown",
+          "contact_delays": {},
+          "contact_orientations": {}
+        },
+        {
+          "name": "Gast",
+          "volume": 30,
+          "floor": "KG",
+          "sort_order": 2,
+          "contacts": [],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "include_in_calculations": true,
+          "window_orientation": "unknown",
+          "contact_delays": {},
+          "contact_orientations": {}
+        }
+      ],
+      "levels": [
+        "KG",
+        "EG"
+      ]
+    },
+    "options": {
+      "threshold_mode": "adaptive_home_size"
+    }
+  }
+}

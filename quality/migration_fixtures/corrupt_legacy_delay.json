@@ -1,0 +1,51 @@
+{
+  "fixture_schema": 1,
+  "source": "corrupt_legacy_delay",
+  "input": {
+    "version": 7,
+    "data": {
+      "rooms": [
+        {
+          "name": "Alt",
+          "volume": 20,
+          "contact": "binary_sensor.alt",
+          "contact_delay_seconds": "kaputt"
+        }
+      ]
+    },
+    "options": {}
+  },
+  "expected": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Alt",
+          "volume": 20,
+          "contact_delay_seconds": "kaputt",
+          "contacts": [
+            "binary_sensor.alt"
+          ],
+          "contact_mode": "any",
+          "volume_mode": "direct",
+          "floor": "ground_floor",
+          "sort_order": 0,
+          "include_in_calculations": true,
+          "window_orientation": "unknown",
+          "contact_delays": {
+            "binary_sensor.alt": 0
+          },
+          "contact_orientations": {
+            "binary_sensor.alt": "unknown"
+          }
+        }
+      ],
+      "levels": [
+        "ground_floor"
+      ]
+    },
+    "options": {
+      "threshold_mode": "adaptive_home_size"
+    }
+  }
+}

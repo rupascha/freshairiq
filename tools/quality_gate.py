@@ -163,6 +163,15 @@ def main() -> int:
         if correctness["returncode"]:
             failures.append("correctness / pure-logic coverage gate failed")
 
+        reliability = _run(
+            "reliability foundation contracts",
+            [sys.executable, "tools/reliability_foundation_gate.py"],
+            env=env,
+        )
+        results.append(reliability)
+        if reliability["returncode"]:
+            failures.append("reliability foundation gate failed")
+
         robustness_files = list(policy["robustness"]["required_test_files"])
         robustness = _run(
             "robustness fault-injection suite",

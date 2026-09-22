@@ -264,10 +264,17 @@ def re_time(value: str) -> bool:
 
 def _normalise_dashboard_room(raw: dict[str, Any], rooms: list[dict[str, Any]], keep_key: str | None = None) -> dict[str, Any]:
     raw = deepcopy(raw)
+    # A completely sensorless room is a valid planning shell. As soon as any
+    # measurement/opening configuration is started, retain the established
+    # completeness checks for an actively calculated room.
     include = bool(raw.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))
-    if include and not raw.get(CONF_ROOM_TEMPERATURE):
+    contacts = raw.get(CONF_ROOM_CONTACTS) or []
+    if isinstance(contacts, str):
+        contacts = [contacts]
+    sensor_setup_started = bool(raw.get(CONF_ROOM_TEMPERATURE) or raw.get(CONF_ROOM_HUMIDITY) or contacts)
+    if include and sensor_setup_started and not raw.get(CONF_ROOM_TEMPERATURE):
         raise ValueError("Temperatursensor fehlt")
-    if include and not raw.get(CONF_ROOM_HUMIDITY):
+    if include and sensor_setup_started and not raw.get(CONF_ROOM_HUMIDITY):
         raise ValueError("Luftfeuchtigkeitssensor fehlt")
     contact_mode = str(raw.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY))
     if contact_mode not in (CONTACT_MODE_ANY, CONTACT_MODE_ALL):

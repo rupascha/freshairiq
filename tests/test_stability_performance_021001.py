@@ -24,8 +24,11 @@ def test_structure_only_room_guard_precedes_calculation_pipeline():
 def test_native_room_flow_allows_structure_rooms_but_validates_active_rooms():
     assert '_optional(CONF_ROOM_TEMPERATURE' in CONFIG_FLOW
     assert '_optional(CONF_ROOM_HUMIDITY' in CONFIG_FLOW
-    assert 'if include and not user_input.get(CONF_ROOM_TEMPERATURE)' in CONFIG_FLOW
-    assert 'if include and not user_input.get(CONF_ROOM_HUMIDITY)' in CONFIG_FLOW
+    assert 'if include and not has_temperature and not has_humidity and not contacts:' in CONFIG_FLOW
+    assert 'include = False' in CONFIG_FLOW
+    assert 'if include and not has_temperature:' in CONFIG_FLOW
+    assert 'if include and not has_humidity:' in CONFIG_FLOW
+    assert 'if include and not contacts:' in CONFIG_FLOW
 
 
 def test_weather_failure_preserves_cache_and_retries_soon():

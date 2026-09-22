@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.0.48";
+const FAIQ_VERSION = "0.25.0.53";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
