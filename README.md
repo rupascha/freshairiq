@@ -7,7 +7,7 @@
 FreshAirIQ is a Home Assistant custom integration developed by **rupascha**. The current release combines the proven calculation principles with a dynamic room model, persistent learning, live forecasts, the adaptive dashboard card, the Continuous Quality System and the authenticated local staging connection to the FreshAirIQ Diagnostics Hub.
 
 
-## Current release: 0.25.0.47 – GitHub Release Gate
+## Current release: 0.25.0.48 – GitHub Release Gate
 
 
 - **Mess-/Lernlogik eingefroren:** Timestamp-Gate, 0,75/1,0-Gewichtung, Feuchtephysik, Forecast-Formeln und Lernformeln bleiben gegenüber 0.25.0.33 unverändert.
@@ -107,7 +107,7 @@ The main card now shows the current mould risk, explicitly warns **Nicht lüften
 
 For beta testers, FreshAirIQ can be installed and updated through HACS as a custom integration repository. Add `https://github.com/rupascha/freshairiq` under **HACS → Custom repositories**, choose **Integration**, install **FreshAirIQ**, restart Home Assistant, and then add FreshAirIQ under **Settings → Devices & services**.
 
-Published GitHub releases are the update source. Each release tag must match the version in `custom_components/freshairiq/manifest.json` (for example `v0.25.0.47` for manifest version `0.25.0.47`). Repository-owner and beta-tester instructions are documented in `HACS_BETA_SETUP.md`.
+Published GitHub releases are the update source. Each release tag must match the version in `custom_components/freshairiq/manifest.json` (for example `v0.25.0.48` for manifest version `0.25.0.48`). Repository-owner and beta-tester instructions are documented in `HACS_BETA_SETUP.md`.
 
 ## Manual installation
 

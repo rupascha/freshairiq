@@ -478,7 +478,7 @@ def test_build_record_filters_corrupt_completed_sessions_and_window_events(tmp_p
 
 def test_monitor_only_room_is_not_counted_as_sensor_quality_problem(tmp_path: Path):
     """A deliberately excluded room must stay visible without degrading quality."""
-    recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.47")
+    recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.48")
     data = _data(False)
     data["rooms"]["wintergarten"] = {
         "key": "wintergarten",
@@ -512,7 +512,7 @@ def test_monitor_only_room_is_not_counted_as_sensor_quality_problem(tmp_path: Pa
 
 def test_calculation_active_bad_room_still_counts_as_sensor_quality_problem(tmp_path: Path):
     """The monitor-only fix must not hide genuine calculation-room failures."""
-    recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.47")
+    recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.48")
     data = _data(False, quality="missing_humidity")
     data["rooms"]["living"]["calculation_enabled"] = True
 

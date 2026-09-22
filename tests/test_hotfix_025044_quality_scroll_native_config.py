@@ -1,4 +1,4 @@
-"""Regression contract for v0.25.0.47 quality/scroll/native-config hotfix."""
+"""Regression contract for v0.25.0.48 quality/scroll/native-config hotfix."""
 from __future__ import annotations
 
 import ast

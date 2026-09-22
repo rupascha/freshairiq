@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.47 outer hardening hotfix."""
+"""Regression contracts for v0.25.0.48 outer hardening hotfix."""
 from __future__ import annotations
 
 import json
@@ -87,19 +87,19 @@ def test_resident_names_are_parsed_from_real_compact_setting_format() -> None:
 
 def test_transport_redacts_string_resident_names_but_preserves_version_fields() -> None:
     export = {
-        "freshairiq_version": "0.25.0.47",
+        "freshairiq_version": "0.25.0.48",
         "field_test": {"anonymous_installation_id": "install-test"},
         "test_dossier": {
             "configuration": {
-                "freshairiq_version": "0.25.0.47",
+                "freshairiq_version": "0.25.0.48",
                 "adult_resident_names": "Paul, Lydia",
                 "child_resident_names": "Fiona, Maya",
             },
-            "freshairiq_version_history": [{"version": "0.25.0.47", "record_count": 1}],
+            "freshairiq_version_history": [{"version": "0.25.0.48", "record_count": 1}],
         },
         "records": [{
             "timestamp": "2026-09-18T10:00:00+02:00",
-            "freshairiq_version": "0.25.0.47",
+            "freshairiq_version": "0.25.0.48",
             "message": "Paul und Fiona sehen 192.168.1.5",
         }],
     }
@@ -111,10 +111,10 @@ def test_transport_redacts_string_resident_names_but_preserves_version_fields() 
     assert "Maya" not in text
     assert "192.168.1.5" not in text
     assert "<redacted_ip>" in text
-    assert metadata["freshairiq_version"] == "0.25.0.47"
-    assert metadata["test_dossier"]["configuration"]["freshairiq_version"] == "0.25.0.47"
-    assert metadata["test_dossier"]["freshairiq_version_history"][0]["version"] == "0.25.0.47"
-    assert records[0]["freshairiq_version"] == "0.25.0.47"
+    assert metadata["freshairiq_version"] == "0.25.0.48"
+    assert metadata["test_dossier"]["configuration"]["freshairiq_version"] == "0.25.0.48"
+    assert metadata["test_dossier"]["freshairiq_version_history"][0]["version"] == "0.25.0.48"
+    assert records[0]["freshairiq_version"] == "0.25.0.48"
 
 
 def test_diagnostics_counts_people_not_characters() -> None:

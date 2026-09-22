@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.47 release/scroll/locale hardening."""
+"""Regression contracts for v0.25.0.48 release/scroll/locale hardening."""
 from __future__ import annotations
 
 import ast

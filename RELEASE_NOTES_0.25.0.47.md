@@ -1,4 +1,4 @@
-# FreshAirIQ 0.25.0.47 – Release Asset & Changelog Hygiene Hotfix
+# FreshAirIQ 0.25.0.48 – Release Asset & Changelog Hygiene Hotfix
 
 This mini hotfix changes release/documentation hygiene only. Ventilation physics, recommendations, forecasts, learning, diagnostics payload semantics and Decision Intelligence are unchanged.
 

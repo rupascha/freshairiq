@@ -1,6 +1,14 @@
+# 0.25.0.48 – German Config Flow Completeness Hotfix
+
+- Behebt rohe interne Feldnamen in Home Assistant Datenabschnitten (z. B. `adult_occupants`, `adult_presence_entities`).
+- Übersetzt insbesondere Raum-, Sensor-, Bewohner-, Anwesenheits- und Expertenfelder in Geräte & Dienste vollständig ins Deutsche.
+- Nutzt die aktuelle Home-Assistant-Struktur für Abschnittsübersetzungen (`section`) und behält eine kompatible Spiegelung für ältere Frontends.
+- Jede deutsche Einstellung besitzt jetzt eine Erklärung sowie expliziten Standardwert und ein Beispiel.
+- Keine Änderung an Lüftungs-, Prognose-, Lern- oder Decision-Intelligence-Logik.
+
 # FreshAirIQ Changelog
 
-## 0.25.0.47 – Release Asset & Changelog Hygiene Hotfix
+## 0.25.0.48 – Release Asset & Changelog Hygiene Hotfix
 
 - GitHub tag releases now download the exact CLEAN ZIP produced by the mandatory quality workflow, revalidate it with the GitHub/HACS ZIP gate and attach that verified archive to the GitHub release.
 - Corrected the historically mislabelled `0.25.0.44 – Native Config, Scroll & Quality Hotfix` changelog entry so the later 0.25.0.45 locale correction is no longer contradictory.

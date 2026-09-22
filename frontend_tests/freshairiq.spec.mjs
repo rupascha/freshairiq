@@ -48,7 +48,7 @@ async function mount(page, roomCount = 12) {
     const status = {
       entity_id: 'sensor.freshairiq_status', state: 'ok',
       attributes: {
-        freshairiq_transport: 'status_v2', freshairiq_version: '0.25.0.47',
+        freshairiq_transport: 'status_v2', freshairiq_version: '0.25.0.48',
         rooms, room_sort_order: Object.keys(rooms),
         learning_components: { overall_maturity_percent: 0, stage_label: 'Grundmodell', components },
         forecast_backtest: { reliability: { score_percent: 44, direction_accuracy_percent: 50, magnitude_accuracy_percent: 66, mae_ml: 16 } },
