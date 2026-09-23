@@ -190,7 +190,7 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         _optional(CONF_ROOM_HUMIDIFIER, room.get(CONF_ROOM_HUMIDIFIER)): selector.EntitySelector(),
         _optional(CONF_ROOM_AIR_PURIFIER, room.get(CONF_ROOM_AIR_PURIFIER)): selector.EntitySelector(),
         vol.Optional(CONF_ROOM_FLOOR, default=room.get(CONF_ROOM_FLOOR, "")): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=_level_options(levels), mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
+            selector.SelectSelectorConfig(options=levels, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True, translation_key="floor")
         ),
         vol.Required(CONF_ROOM_INCLUDE_CALCULATIONS, default=bool(room.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))): bool,
         vol.Optional(CONF_ROOM_MOISTURE_SOURCES, default=room.get(CONF_ROOM_MOISTURE_SOURCES, [])): selector.SelectSelector(
@@ -223,7 +223,7 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
         vol.Required("identity"): section(vol.Schema({
             _required(CONF_ROOM_NAME, room.get(CONF_ROOM_NAME)): selector.TextSelector(),
             vol.Optional(CONF_ROOM_FLOOR, default=room.get(CONF_ROOM_FLOOR, "")): selector.SelectSelector(
-                selector.SelectSelectorConfig(options=_level_options(levels), mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
+                selector.SelectSelectorConfig(options=levels, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True, translation_key="floor")
             ),
             vol.Required(CONF_ROOM_INCLUDE_CALCULATIONS, default=bool(room.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))): bool,
         }), {"collapsed": False}),

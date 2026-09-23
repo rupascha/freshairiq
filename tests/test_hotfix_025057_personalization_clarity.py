@@ -5,8 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/'custom_components/freshairiq'
 
 def test_release_version():
-    assert json.loads((COMP/'manifest.json').read_text())['version']=='0.25.0.58'
-    assert 'VERSION = "0.25.0.58"' in (COMP/'const.py').read_text()
+    assert json.loads((COMP/'manifest.json').read_text())['version']=='0.25.0.59'
+    assert 'VERSION = "0.25.0.59"' in (COMP/'const.py').read_text()
 
 def test_native_level_labels_are_localized():
     s=(COMP/'config_flow.py').read_text()
@@ -16,8 +16,9 @@ def test_native_level_labels_are_localized():
 def test_decision_clarity_contracts():
     s=(COMP/'frontend/freshairiq-card.js').read_text()
     assert 'Anwesenheit & Bewohner' in s
-    assert 'BIS MORGEN · OHNE VORLÜFTEN' in s
-    assert 'BIS MORGEN · MIT EMPFEHLUNG' in s
+    assert 'WAS BRINGT LÜFTEN VOR DEM SCHLAFEN?' in s
+    assert 'OHNE ZUSÄTZLICHES LÜFTEN' in s
+    assert 'MIT EMPFEHLUNG' in s
     assert 'overflow-wrap:anywhere' in s
     assert 'nur eine grobe Einschätzung' in s
     assert 'Taupunkt an der konkreten Bauteiloberfläche' in s
