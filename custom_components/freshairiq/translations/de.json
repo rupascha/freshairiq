@@ -386,21 +386,21 @@
           "height": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
           "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_temperatur.",
           "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_luftfeuchtigkeit.",
-          "co2": "Optional. Mit CO₂-Sensor kann FreshAirIQ Luftqualität zusätzlich zur Feuchte bewerten. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
+          "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
           "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen. Standard: nicht zugeordnet. Beispiel: Erdgeschoss.",
           "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht. Standard: an. Beispiel: an.",
           "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna und/oder Kochen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen. Standard: keine. Beispiel: keine.",
-          "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen (gasförmige Stoffe z. B. aus Reinigern, Möbeln oder Kochdämpfen). Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
-          "pm25": "Optional. PM2.5-Sensoren messen sehr feinen Schwebstaub mit Partikeln bis 2,5 µm, typischerweise in µg/m³; solche Sensoren stecken z. B. in Luftqualitätsmessgeräten und manchen Luftreinigern. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
-          "illuminance": "Optional. Ein Helligkeits-/Beleuchtungsstärkesensor misst Licht in Lux (lx), z. B. ein Zigbee-Helligkeitssensor oder der Lux-Sensor eines Präsenzmelders. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Verschattungs-Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit.",
+          "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
+          "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
+          "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit.",
           "covers": "Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion. Standard: nicht gesetzt. Beispiel: cover.wohnzimmer_rollladen.",
-          "climate": "Optional. Wird als alternative Kühl-/Heizmaßnahme berücksichtigt, aber nicht selbstständig geschaltet. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
-          "exhaust_fan": "Optional. Besonders für Dusche, Bad, Küche oder andere Feuchtequellen. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
-          "supply_fan": "Optional. Kann Frischluftbedarf bei CO₂ oder Lüftungsempfehlungen unterstützen. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
-          "ventilation_device": "Optional. Zentrale/dezentrale Lüftung, WRG oder vergleichbares Gerät. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
-          "dehumidifier": "Optional. Alternative bei hoher Feuchte, ungünstiger Außenluft oder Pollen-Veto. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
-          "humidifier": "Optional. Wird nur bei deutlich zu trockener Raumluft empfohlen. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
-          "air_purifier": "Optional. Alternative/Ergänzung bei Feinstaub, VOC oder pollenbedingt ungünstiger Außenluft. Standard: nicht gesetzt. Beispiel: fan.luftreiniger.",
+          "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
+          "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
+          "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
+          "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
+          "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
+          "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
+          "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.luftreiniger.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang. Standard: Automatisch. Beispiel: Automatisch.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums. Standard: 5 %. Beispiel: 5 %.",
           "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf. Standard: 100 ml. Beispiel: 100 ml."
@@ -470,7 +470,7 @@
           },
           "optional_sensors": {
             "name": "Optionale Zusatzsensoren & Referenzen",
-            "description": "Optional und ohne Einfluss auf die bestehende Feuchte-, Lüftungs- oder ml-Prognoseberechnung: Referenzsensoren beschreiben besondere Zuluftbereiche. VOC/TVOC misst gasförmige Luftschadstoffe, PM2.5 misst sehr feinen Schwebstaub bis 2,5 µm und Helligkeitssensoren messen Beleuchtungsstärke in Lux. Diese Zusatzwerte können ergänzende Empfehlungen liefern und werden – wenn aktiviert – für die 30-Tage-Diagnostik gesammelt, damit spätere FreshAirIQ-Funktionserweiterungen darauf aufbauen können.",
+            "description": "Referenztemperatur und Referenzfeuchte können bei besonderen Zuluftbereichen in die Berechnung eingehen. CO₂, VOC/TVOC, PM2.5 und Helligkeit werden derzeit nur protokolliert und für spätere Funktionen gesammelt; sie verändern die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
             "data": {
               "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.",
               "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
@@ -482,15 +482,15 @@
             "data_description": {
               "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_temperatur.",
               "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_luftfeuchtigkeit.",
-              "co2": "Optional. Mit CO₂-Sensor kann FreshAirIQ Luftqualität zusätzlich zur Feuchte bewerten. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
-              "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen (gasförmige Stoffe z. B. aus Reinigern, Möbeln oder Kochdämpfen). Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
-              "pm25": "Optional. PM2.5-Sensoren messen sehr feinen Schwebstaub mit Partikeln bis 2,5 µm, typischerweise in µg/m³; solche Sensoren stecken z. B. in Luftqualitätsmessgeräten und manchen Luftreinigern. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
-              "illuminance": "Optional. Ein Helligkeits-/Beleuchtungsstärkesensor misst Licht in Lux (lx), z. B. ein Zigbee-Helligkeitssensor oder der Lux-Sensor eines Präsenzmelders. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Verschattungs-Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit."
+              "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
+              "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
+              "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
+              "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit."
             }
           },
           "optional_actuators": {
-            "name": "Optionale Raumklima-Geräte",
-            "description": "FreshAirIQ bewertet diese Geräte als zusätzliche Maßnahmen. Ohne explizite Home-Assistant-Aktion wird nichts automatisch geschaltet.",
+            "name": "Optionale Geräte – Datensammlung",
+            "description": "Diese Geräte werden derzeit nur protokolliert. Die Daten werden für spätere FreshAirIQ-Funktionen gesammelt; aktuell verändern sie die Lüftungs-/ml-Empfehlung nicht und werden nicht automatisch geschaltet.",
             "data": {
               "climate": "Klimaanlage/Heizung (optional) (Standard: nicht gesetzt)",
               "exhaust_fan": "Abluftgerät (optional) (Standard: nicht gesetzt)",
@@ -501,13 +501,13 @@
               "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)"
             },
             "data_description": {
-              "climate": "Optional. Wird als alternative Kühl-/Heizmaßnahme berücksichtigt, aber nicht selbstständig geschaltet. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
-              "exhaust_fan": "Optional. Besonders für Dusche, Bad, Küche oder andere Feuchtequellen. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
-              "supply_fan": "Optional. Kann Frischluftbedarf bei CO₂ oder Lüftungsempfehlungen unterstützen. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
-              "ventilation_device": "Optional. Zentrale/dezentrale Lüftung, WRG oder vergleichbares Gerät. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
-              "dehumidifier": "Optional. Alternative bei hoher Feuchte, ungünstiger Außenluft oder Pollen-Veto. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
-              "humidifier": "Optional. Wird nur bei deutlich zu trockener Raumluft empfohlen. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
-              "air_purifier": "Optional. Alternative/Ergänzung bei Feinstaub, VOC oder pollenbedingt ungünstiger Außenluft. Standard: nicht gesetzt. Beispiel: fan.luftreiniger."
+              "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
+              "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
+              "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
+              "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
+              "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
+              "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
+              "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.luftreiniger."
             }
           }
         },
@@ -673,21 +673,21 @@
           "height": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
           "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_temperatur.",
           "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_luftfeuchtigkeit.",
-          "co2": "Optional. Mit CO₂-Sensor kann FreshAirIQ Luftqualität zusätzlich zur Feuchte bewerten. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
+          "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
           "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen. Standard: nicht zugeordnet. Beispiel: Erdgeschoss.",
           "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht. Standard: an. Beispiel: an.",
           "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna und/oder Kochen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen. Standard: keine. Beispiel: keine.",
-          "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen (gasförmige Stoffe z. B. aus Reinigern, Möbeln oder Kochdämpfen). Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
-          "pm25": "Optional. PM2.5-Sensoren messen sehr feinen Schwebstaub mit Partikeln bis 2,5 µm, typischerweise in µg/m³; solche Sensoren stecken z. B. in Luftqualitätsmessgeräten und manchen Luftreinigern. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
-          "illuminance": "Optional. Ein Helligkeits-/Beleuchtungsstärkesensor misst Licht in Lux (lx), z. B. ein Zigbee-Helligkeitssensor oder der Lux-Sensor eines Präsenzmelders. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Verschattungs-Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit.",
+          "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
+          "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
+          "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit.",
           "covers": "Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion. Standard: nicht gesetzt. Beispiel: cover.wohnzimmer_rollladen.",
-          "climate": "Optional. Wird als alternative Kühl-/Heizmaßnahme berücksichtigt, aber nicht selbstständig geschaltet. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
-          "exhaust_fan": "Optional. Besonders für Dusche, Bad, Küche oder andere Feuchtequellen. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
-          "supply_fan": "Optional. Kann Frischluftbedarf bei CO₂ oder Lüftungsempfehlungen unterstützen. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
-          "ventilation_device": "Optional. Zentrale/dezentrale Lüftung, WRG oder vergleichbares Gerät. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
-          "dehumidifier": "Optional. Alternative bei hoher Feuchte, ungünstiger Außenluft oder Pollen-Veto. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
-          "humidifier": "Optional. Wird nur bei deutlich zu trockener Raumluft empfohlen. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
-          "air_purifier": "Optional. Alternative/Ergänzung bei Feinstaub, VOC oder pollenbedingt ungünstiger Außenluft. Standard: nicht gesetzt. Beispiel: fan.luftreiniger.",
+          "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
+          "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
+          "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
+          "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
+          "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
+          "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
+          "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.luftreiniger.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang. Standard: Automatisch. Beispiel: Automatisch.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums. Standard: 5 %. Beispiel: 5 %.",
           "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf. Standard: 100 ml. Beispiel: 100 ml."
@@ -757,7 +757,7 @@
           },
           "optional_sensors": {
             "name": "Optionale Zusatzsensoren & Referenzen",
-            "description": "Optional und ohne Einfluss auf die bestehende Feuchte-, Lüftungs- oder ml-Prognoseberechnung: Referenzsensoren beschreiben besondere Zuluftbereiche. VOC/TVOC misst gasförmige Luftschadstoffe, PM2.5 misst sehr feinen Schwebstaub bis 2,5 µm und Helligkeitssensoren messen Beleuchtungsstärke in Lux. Diese Zusatzwerte können ergänzende Empfehlungen liefern und werden – wenn aktiviert – für die 30-Tage-Diagnostik gesammelt, damit spätere FreshAirIQ-Funktionserweiterungen darauf aufbauen können.",
+            "description": "Referenztemperatur und Referenzfeuchte können bei besonderen Zuluftbereichen in die Berechnung eingehen. CO₂, VOC/TVOC, PM2.5 und Helligkeit werden derzeit nur protokolliert und für spätere Funktionen gesammelt; sie verändern die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
             "data": {
               "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.",
               "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
@@ -769,15 +769,15 @@
             "data_description": {
               "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_temperatur.",
               "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_luftfeuchtigkeit.",
-              "co2": "Optional. Mit CO₂-Sensor kann FreshAirIQ Luftqualität zusätzlich zur Feuchte bewerten. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
-              "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen (gasförmige Stoffe z. B. aus Reinigern, Möbeln oder Kochdämpfen). Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
-              "pm25": "Optional. PM2.5-Sensoren messen sehr feinen Schwebstaub mit Partikeln bis 2,5 µm, typischerweise in µg/m³; solche Sensoren stecken z. B. in Luftqualitätsmessgeräten und manchen Luftreinigern. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
-              "illuminance": "Optional. Ein Helligkeits-/Beleuchtungsstärkesensor misst Licht in Lux (lx), z. B. ein Zigbee-Helligkeitssensor oder der Lux-Sensor eines Präsenzmelders. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Verschattungs-Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit."
+              "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
+              "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
+              "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
+              "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit."
             }
           },
           "optional_actuators": {
-            "name": "Optionale Raumklima-Geräte",
-            "description": "FreshAirIQ bewertet diese Geräte als zusätzliche Maßnahmen. Ohne explizite Home-Assistant-Aktion wird nichts automatisch geschaltet.",
+            "name": "Optionale Geräte – Datensammlung",
+            "description": "Diese Geräte werden derzeit nur protokolliert. Die Daten werden für spätere FreshAirIQ-Funktionen gesammelt; aktuell verändern sie die Lüftungs-/ml-Empfehlung nicht und werden nicht automatisch geschaltet.",
             "data": {
               "climate": "Klimaanlage/Heizung (optional) (Standard: nicht gesetzt)",
               "exhaust_fan": "Abluftgerät (optional) (Standard: nicht gesetzt)",
@@ -788,13 +788,13 @@
               "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)"
             },
             "data_description": {
-              "climate": "Optional. Wird als alternative Kühl-/Heizmaßnahme berücksichtigt, aber nicht selbstständig geschaltet. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
-              "exhaust_fan": "Optional. Besonders für Dusche, Bad, Küche oder andere Feuchtequellen. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
-              "supply_fan": "Optional. Kann Frischluftbedarf bei CO₂ oder Lüftungsempfehlungen unterstützen. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
-              "ventilation_device": "Optional. Zentrale/dezentrale Lüftung, WRG oder vergleichbares Gerät. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
-              "dehumidifier": "Optional. Alternative bei hoher Feuchte, ungünstiger Außenluft oder Pollen-Veto. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
-              "humidifier": "Optional. Wird nur bei deutlich zu trockener Raumluft empfohlen. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
-              "air_purifier": "Optional. Alternative/Ergänzung bei Feinstaub, VOC oder pollenbedingt ungünstiger Außenluft. Standard: nicht gesetzt. Beispiel: fan.luftreiniger."
+              "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
+              "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
+              "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
+              "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
+              "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
+              "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
+              "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.luftreiniger."
             }
           }
         },
@@ -2256,49 +2256,153 @@
             "moisture_sources": "Feuchtequellen im Raum (Standard: keine)",
             "ventilation_threshold_mode": "Individuelle Lüftungsgrenze (Standard: Automatisch)",
             "ventilation_threshold_percent": "Raumgrenze in Prozent (Standard: 5 %)",
-            "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)"
+            "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)",
+            "voc": "VOC-/TVOC-Sensor (optional) (Standard: nicht gesetzt)",
+            "pm25": "PM2.5-Sensor (optional) (Standard: nicht gesetzt)",
+            "illuminance": "Helligkeitssensor (optional) (Standard: nicht gesetzt)",
+            "climate": "Klimaanlage/Heizung (optional) (Standard: nicht gesetzt)",
+            "exhaust_fan": "Abluftgerät (optional) (Standard: nicht gesetzt)",
+            "supply_fan": "Zuluftgerät (optional) (Standard: nicht gesetzt)",
+            "ventilation_device": "Lüftungs-/WRG-Gerät (optional) (Standard: nicht gesetzt)",
+            "dehumidifier": "Entfeuchter (optional) (Standard: nicht gesetzt)",
+            "humidifier": "Luftbefeuchter (optional) (Standard: nicht gesetzt)",
+            "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)"
           },
           "sections": {
             "identity": {
               "name": "Raum & Zuordnung",
-              "description": "Name, Stockwerk/Bereich und Teilnahme an den Berechnungen."
+              "description": "Name, Stockwerk/Bereich und Teilnahme an den Berechnungen.",
+              "data": {
+                "name": "Raumname (Standard: keine Vorauswahl)",
+                "floor": "Stockwerk/Bereich (Standard: nicht zugeordnet)",
+                "include_in_calculations": "In Berechnungen einbeziehen (Standard: an)"
+              },
+              "data_description": {
+                "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel. Standard: keine Vorauswahl. Beispiel: Wohnzimmer.",
+                "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen. Standard: nicht zugeordnet. Beispiel: Erdgeschoss.",
+                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht. Standard: an. Beispiel: an."
+              }
             },
             "properties": {
               "name": "Raumeigenschaften",
-              "description": "Besondere Eigenschaften wie Dusche, Badewanne oder Sauna. Standard: keine Feuchtequelle hinterlegt."
+              "description": "Besondere Eigenschaften wie Dusche, Badewanne oder Sauna. Standard: keine Feuchtequelle hinterlegt.",
+              "data": {
+                "moisture_sources": "Feuchtequellen im Raum (Standard: keine)",
+                "ventilation_threshold_mode": "Individuelle Lüftungsgrenze (Standard: Automatisch)",
+                "ventilation_threshold_percent": "Raumgrenze in Prozent (Standard: 5 %)",
+                "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)"
+              },
+              "data_description": {
+                "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna und/oder Kochen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen. Standard: keine. Beispiel: keine.",
+                "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang. Standard: Automatisch. Beispiel: Automatisch.",
+                "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums. Standard: 5 %. Beispiel: 5 %.",
+                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf. Standard: 100 ml. Beispiel: 100 ml."
+              }
             },
             "sensors": {
               "name": "Sensoren & Fenster",
-              "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt."
+              "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.",
+              "data": {
+                "temperature": "Temperatursensor (Standard: keine Vorauswahl)",
+                "humidity": "Feuchtesensor (Standard: keine Vorauswahl)",
+                "contacts": "Fenster-/Türkontakte (Standard: leer)",
+                "contact_mode": "Kontaktlogik (Standard: „Mindestens einer offen“)"
+              },
+              "data_description": {
+                "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst. Standard: keine Vorauswahl. Beispiel: sensor.wohnzimmer_temperatur.",
+                "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen. Standard: keine Vorauswahl. Beispiel: sensor.wohnzimmer_luftfeuchtigkeit.",
+                "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll. Standard: leer. Beispiel: binary_sensor.wohnzimmer_fenster.",
+                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad. Standard: „Mindestens einer offen“. Beispiel: „Mindestens einer offen“."
+              }
             },
             "geometry": {
               "name": "Raumgröße",
-              "description": "Standard: keine Vorauswahl. Entweder Volumen direkt oder vollständige Maße angeben."
+              "description": "Standard: keine Vorauswahl. Entweder Volumen direkt oder vollständige Maße angeben.",
+              "data": {
+                "volume": "Raumvolumen direkt (Standard: leer)",
+                "length": "Raumlänge (Standard: leer)",
+                "width": "Raumbreite (Standard: leer)",
+                "height": "Raumhöhe (Standard: leer)"
+              },
+              "data_description": {
+                "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden. Standard: leer. Beispiel: leer.",
+                "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
+                "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
+                "height": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer."
+              }
             },
             "optional_sensors": {
               "name": "Optionale Zusatzsensoren & Referenzen",
-              "description": "Optional und ohne Einfluss auf die bestehende Feuchte-, Lüftungs- oder ml-Prognoseberechnung: Referenzsensoren beschreiben besondere Zuluftbereiche. VOC/TVOC misst gasförmige Luftschadstoffe, PM2.5 misst sehr feinen Schwebstaub bis 2,5 µm und Helligkeitssensoren messen Beleuchtungsstärke in Lux. Diese Zusatzwerte können ergänzende Empfehlungen liefern und werden – wenn aktiviert – für die 30-Tage-Diagnostik gesammelt, damit spätere FreshAirIQ-Funktionserweiterungen darauf aufbauen können."
+              "description": "Referenztemperatur und Referenzfeuchte können bei besonderen Zuluftbereichen in die Berechnung eingehen. CO₂, VOC/TVOC, PM2.5 und Helligkeit werden derzeit nur protokolliert und für spätere Funktionen gesammelt; sie verändern die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+              "data": {
+                "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.",
+                "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
+                "co2": "CO₂-Sensor (Standard: nicht gesetzt)",
+                "voc": "VOC-/TVOC-Sensor (optional) (Standard: nicht gesetzt)",
+                "pm25": "PM2.5-Sensor (optional) (Standard: nicht gesetzt)",
+                "illuminance": "Helligkeitssensor (optional) (Standard: nicht gesetzt)"
+              },
+              "data_description": {
+                "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_temperatur.",
+                "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_luftfeuchtigkeit.",
+                "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
+                "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
+                "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
+                "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit."
+              }
+            },
+            "optional_actuators": {
+              "name": "Optionale Geräte – Datensammlung",
+              "description": "Diese Geräte werden derzeit nur protokolliert. Die Daten werden für spätere FreshAirIQ-Funktionen gesammelt; aktuell verändern sie die Lüftungs-/ml-Empfehlung nicht und werden nicht automatisch geschaltet.",
+              "data": {
+                "climate": "Klimaanlage/Heizung (optional) (Standard: nicht gesetzt)",
+                "exhaust_fan": "Abluftgerät (optional) (Standard: nicht gesetzt)",
+                "supply_fan": "Zuluftgerät (optional) (Standard: nicht gesetzt)",
+                "ventilation_device": "Lüftungs-/WRG-Gerät (optional) (Standard: nicht gesetzt)",
+                "dehumidifier": "Entfeuchter (optional) (Standard: nicht gesetzt)",
+                "humidifier": "Luftbefeuchter (optional) (Standard: nicht gesetzt)",
+                "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)"
+              },
+              "data_description": {
+                "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
+                "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
+                "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
+                "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
+                "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
+                "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
+                "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.luftreiniger."
+              }
             }
           },
           "data_description": {
-            "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
-            "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
-            "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-            "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
-            "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
-            "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
-            "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
-            "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
-            "height": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
-            "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.",
-            "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
-            "co2": "Optional. Mit CO₂-Sensor kann FreshAirIQ Luftqualität zusätzlich zur Feuchte bewerten.",
-            "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-            "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
-            "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna und/oder Kochen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
-            "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
-            "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-            "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+            "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel. Standard: keine Vorauswahl. Beispiel: Wohnzimmer.",
+            "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst. Standard: keine Vorauswahl. Beispiel: sensor.wohnzimmer_temperatur.",
+            "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen. Standard: keine Vorauswahl. Beispiel: sensor.wohnzimmer_luftfeuchtigkeit.",
+            "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll. Standard: leer. Beispiel: binary_sensor.wohnzimmer_fenster.",
+            "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad. Standard: „Mindestens einer offen“. Beispiel: „Mindestens einer offen“.",
+            "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden. Standard: leer. Beispiel: leer.",
+            "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
+            "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
+            "height": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird. Standard: leer. Beispiel: leer.",
+            "reference_temperature": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_temperatur.",
+            "reference_humidity": "Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft. Standard: aktueller FreshAirIQ-Standard. Beispiel: sensor.wintergarten_luftfeuchtigkeit.",
+            "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_co2.",
+            "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen. Standard: nicht zugeordnet. Beispiel: Erdgeschoss.",
+            "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht. Standard: an. Beispiel: an.",
+            "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna und/oder Kochen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen. Standard: keine. Beispiel: keine.",
+            "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang. Standard: Automatisch. Beispiel: Automatisch.",
+            "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums. Standard: 5 %. Beispiel: 5 %.",
+            "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf. Standard: 100 ml. Beispiel: 100 ml.",
+            "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_voc.",
+            "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_pm25.",
+            "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht. Standard: nicht gesetzt. Beispiel: sensor.wohnzimmer_helligkeit.",
+            "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: climate.wohnzimmer.",
+            "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.bad_abluft.",
+            "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.zuluft.",
+            "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.lueftungsanlage.",
+            "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.entfeuchter.",
+            "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: humidifier.wohnzimmer.",
+            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch. Standard: nicht gesetzt. Beispiel: fan.luftreiniger."
           }
         },
         "add_orientations": {

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.0.55"
+VERSION = "0.25.0.56"
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}.learning"

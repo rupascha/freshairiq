@@ -161,6 +161,6 @@ def test_partial_local_reference_never_mixes_with_outdoor_pair():
 
 
 def test_release_version_023011():
-    assert 'VERSION = "0.25.0.55"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.55"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.0.55";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.56"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.56"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.56";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

@@ -8,4 +8,4 @@ def test_legacy_learning_status_removed():
     assert "FRESHAIRIQ INTELLIGENCE 2.0" in CARD
 
 def test_runtime_version():
-    assert 'const FAIQ_VERSION = "0.25.0.55"' in CARD
+    assert 'const FAIQ_VERSION = "0.25.0.56"' in CARD
