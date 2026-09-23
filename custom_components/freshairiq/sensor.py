@@ -239,6 +239,7 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
                 "moisture_balance_today_ml": self.coordinator.data["moisture_balance_today_ml"],
                 "forecast_validation": self.coordinator.data.get("forecast_validation", {}),
                 "forecast_backtest": self.coordinator.data.get("forecast_backtest", {}),
+                "learning_effectiveness": self.coordinator.data.get("learning_effectiveness", {}),
                 "post_close_stabilization": self.coordinator.data.get("post_close_stabilization", {}),
                 "learning_components": self.coordinator.data.get("learning_components", {}),
                 "diagnostics": self.coordinator.data.get("diagnostics", {}),

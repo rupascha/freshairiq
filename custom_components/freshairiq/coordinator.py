@@ -52,6 +52,13 @@ from .forecast_validation import (
     validation_summary,
 )
 from .forecast_backtest import backtest_summary
+from .learning_effectiveness import (
+    baseline_context_from_start,
+    build_effectiveness_sample,
+    freeze_learning_effectiveness_context,
+    learning_effectiveness_summary,
+    previous_model_context_from_start,
+)
 from .measurement_frame import build_measurement_frame, last_valid_session_measurement, report_timestamp_after_boundary, session_measurement_quality, trusted_session_end_baseline
 from .post_stabilization import start_post_close_observation, update_post_close_observation, prune_history as prune_stabilization_history, stabilization_summary
 from .learning_components import build_learning_components_status
@@ -1811,6 +1818,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         start_temp_c=start_temp,
                         start_source_temp_c=start_source_temp,
                     )
+                    effectiveness_context = freeze_learning_effectiveness_context(
+                        start_context,
+                        mem,
+                        history=self.store.data.get("forecast_validation_history") or [],
+                        room_key=cfg.get("key"),
+                    )
+                    if effectiveness_context is not None:
+                        start_context["learning_effectiveness"] = effectiveness_context
                     start_prediction = evaluate_start_forecast_at_duration(start_context, initial_horizon)
                     if start_prediction is not None:
                         mem["session_prediction_start_context"] = start_context
@@ -3247,6 +3262,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
         forecast_validation_status = _decision_validation
         forecast_backtest_status = backtest_summary(self.store.data.get("forecast_validation_history") or [], days=30)
+        learning_effectiveness_status = learning_effectiveness_summary(
+            self.store.data.get("forecast_validation_history") or [], days=30
+        )
         post_close_status = stabilization_summary(self.store.data.get("post_close_stabilization_history") or [])
         learning_components_status = build_learning_components_status(
             results,
@@ -3310,6 +3328,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "recommendation_quality": intelligent_recommendation.get("recommendation_quality", {}),
             "decision_trace": intelligent_recommendation.get("decision_trace", {}),
             "forecast_backtest": forecast_backtest_status,
+            "learning_effectiveness": learning_effectiveness_status,
             "post_close_stabilization": post_close_status,
             "learning_components": learning_components_status,
             "post_close_stabilization_history": list(self.store.data.get("post_close_stabilization_history") or [])[-100:],
@@ -3723,6 +3742,21 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         start_context = mem.get("session_prediction_start_context")
         aligned_prediction = evaluate_start_forecast_at_duration(start_context, validation_elapsed)
+        baseline_prediction = evaluate_start_forecast_at_duration(
+            baseline_context_from_start(start_context), validation_elapsed
+        )
+        previous_model_prediction = evaluate_start_forecast_at_duration(
+            previous_model_context_from_start(start_context), validation_elapsed
+        )
+        learning_effectiveness_sample = build_effectiveness_sample(
+            start_context,
+            duration_min=validation_elapsed,
+            production_prediction=aligned_prediction,
+            baseline_prediction=baseline_prediction,
+            previous_model_prediction=previous_model_prediction,
+            actual_removed_ml=validation_removed,
+            ended_at=now.isoformat(),
+        )
         prediction_time_aligned = aligned_prediction is not None
         if aligned_prediction is not None:
             mem["session_predicted_removed_ml"] = aligned_prediction["predicted_removed_ml"]
@@ -3868,6 +3902,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "prediction_time_aligned": bool(prediction_time_aligned),
             "prediction_measurement_duration_min": round(validation_elapsed, 3),
             "prediction_comparable": bool(prediction_comparable),
+            "learning_effectiveness": learning_effectiveness_sample,
             "forecast_timeline": list(mem.get("session_forecast_timeline") or []) + [{
                 "kind": "end",
                 "checkpoint_min": round(measurement_elapsed, 3),

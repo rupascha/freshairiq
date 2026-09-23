@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.0.54";
+const FAIQ_VERSION = "0.25.0.55";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
@@ -1676,8 +1676,9 @@ class FreshAirIQCard extends HTMLElement {
     _learningComponentsCard(st, rooms) {
         const model = st.learning_components || {};
         const backtest = st.forecast_backtest || {};
+        const effectiveness = st.learning_effectiveness || {};
         const cached = this._learningCardCache;
-        if (cached && cached.model === model && cached.backtest === backtest) return cached.html;
+        if (cached && cached.model === model && cached.backtest === backtest && cached.effectiveness === effectiveness) return cached.html;
         const reliability = backtest.reliability || {};
         const components = Array.isArray(model.components) ? model.components : [];
         const byKey = Object.fromEntries(components.map(c => [String(c.key || ""), c]));
@@ -1704,7 +1705,7 @@ class FreshAirIQCard extends HTMLElement {
         const seasonDone = Number(season.samples || 0);
         const categories = [
             ["learning:home", "mdi:home-outline", "Dein Zuhause", ["room_physics","post_close","house_strategy"], `${roomDays || 0} unterschiedliche Lerntage · ${Number(room.samples || 0)} Lernlüftungen`],
-            ["learning:forecast", "mdi:chart-line", "Prognosen & Lernen", ["live_forecast","forecast_feedback","shadow_learning","forecast_validation"], `${Number(validation.samples || 0)} Realvergleiche · Prognosegüte ${reliabilityScore == null ? "–" : Math.round(reliabilityScore)+" %"}`],
+            ["learning:forecast", "mdi:chart-line", "Prognosen & Lernen", ["live_forecast","forecast_feedback","shadow_learning","forecast_validation"], `${Number(validation.samples || 0)} Realvergleiche · ${Number(effectiveness.independent_sessions || 0)} unabhängige Lüftungen · Lernwirkung ${effectiveness.improvement_percent == null ? "–" : (Number(effectiveness.improvement_percent) >= 0 ? "+" : "") + fmt(effectiveness.improvement_percent, 0) + "%"}`],
             ["learning:habits", "mdi:account-outline", "Deine Gewohnheiten", ["routines","user_strategy","personal_context"], `${routineDays} Tage · ${Number(personal.samples || 0)} Lüftungen`],
             ["learning:longterm", "mdi:leaf", "Langzeitlernen", ["seasonality","night_model"], `${seasonDone}/4 Jahreszeiten · ${nightCount}/120 Nächte`],
         ];
@@ -1714,12 +1715,13 @@ class FreshAirIQCard extends HTMLElement {
         }).join("");
         const activeLearning = [room, routines, night].filter(c => c && c.label).map(c => c.label).slice(0,3).join(" · ") || "Raumphysik · Prognosemodell";
         const html = `<section class="learning-overview-card"><div class="learning-overview-hero"><div class="intelligence-orbit"><ha-icon icon="mdi:brain"></ha-icon></div><div class="learning-overview-copy"><div class="tiny">FRESHAIRIQ INTELLIGENCE 2.0</div><div class="learning-overview-title"><h2>Lernt dein Zuhause kennen</h2><span>${esc(stage)}</span></div><p>${esc(stageCopy)}</p></div></div><div class="learning-kpis"><div><span><ha-icon icon="mdi:sprout-outline"></ha-icon> Erfahrungsreife</span><b>${Math.round(overall)} %</b><i><em style="width:${overall}%"></em></i></div><div><span><ha-icon icon="mdi:star-outline"></ha-icon> Prognosequalität</span><b>${reliabilityScore == null ? "–" : Math.round(reliabilityScore)+" %"}</b><i><em style="width:${reliabilityScore == null ? 0 : reliabilityScore}%"></em></i></div></div><button class="learning-now clickable" data-info="learning:quality"><ha-icon icon="mdi:lightbulb-outline"></ha-icon><span><b>Aktuell lernt FreshAirIQ</b><small>${esc(activeLearning)}</small></span><ha-icon icon="mdi:chevron-right"></ha-icon></button><div class="learning-area-head"><b>Lernfortschritt nach Bereichen</b><span>Tippe auf einen Bereich, um Details zu sehen.</span></div><div class="learning-area-list">${categoryHtml}</div><div class="learning-overview-note"><ha-icon icon="mdi:information-outline"></ha-icon><span>Reife zeigt unabhängige Erfahrung. Prognosequalität zeigt getrennt davon, wie gut Vorhersagen bisher zur Realität passen.</span></div></section>`;
-        this._learningCardCache = { model, backtest, html };
+        this._learningCardCache = { model, backtest, effectiveness, html };
         return html;
     }
     _learningPanel(st) {
         const model = st.learning_components || {};
         const backtest = st.forecast_backtest || {};
+        const effectiveness = st.learning_effectiveness || {};
         const reliability = backtest.reliability || {};
         const components = Array.isArray(model.components) ? model.components : [];
         const byKey = Object.fromEntries(components.map(c => [String(c.key || ""), c]));
@@ -1735,7 +1737,11 @@ class FreshAirIQCard extends HTMLElement {
         };
         if (this._info === "learning:quality") {
             const score = reliability.score_percent == null ? null : Number(reliability.score_percent);
-            return `<section class="info-panel learning-detail-panel"><div class="tiny info-kicker">MODELLQUALITÄT & DIAGNOSE</div><h3>Wie gut FreshAirIQ aktuell vorhersagt</h3><p>Lernreife und Prognosequalität sind getrennt. Wenige unabhängige Erfahrungen können bereits gute Treffer liefern, gelten aber noch nicht als belastbar eingelernt.</p><div class="learning-quality-grid"><div><span>Prognosegüte</span><b>${score == null ? "–" : Math.round(score)+" %"}</b></div><div><span>Betragsgenauigkeit</span><b>${reliability.magnitude_accuracy_percent == null ? "–" : fmt(reliability.magnitude_accuracy_percent,0)+" %"}</b></div><div><span>Richtung</span><b>${reliability.direction_accuracy_percent == null ? "–" : fmt(reliability.direction_accuracy_percent,0)+" %"}</b></div><div><span>MAE</span><b>${(backtest.overall||{}).moisture_mae_ml == null ? "–" : fmt((backtest.overall||{}).moisture_mae_ml,0)+" ml"}</b></div></div>${byKey.forecast_validation ? componentCard(byKey.forecast_validation) : ""}</section>`;
+            const effect = effectiveness.improvement_percent == null ? null : Number(effectiveness.improvement_percent);
+            const effectLabel = effectiveness.status_label || "Sammelt Vergleichsdaten";
+            const generation = effectiveness.generation_effectiveness || {};
+            const generationEffect = generation.improvement_percent == null ? null : Number(generation.improvement_percent);
+            return `<section class="info-panel learning-detail-panel"><div class="tiny info-kicker">MODELLQUALITÄT & DIAGNOSE</div><h3>Wie gut FreshAirIQ aktuell vorhersagt</h3><p>Lernreife und Prognosequalität sind getrennt. Zusätzlich vergleicht FreshAirIQ jede neue geeignete Lüftung paarweise mit einem eingefrorenen, ungelernten Grundmodell. Sobald für denselben Raum eine ältere, abweichende Forecast-Generation existiert, wird außerdem die aktuelle Generation gegen diesen unmittelbaren beobachteten Vorgänger unter derselben Startlage und Messdauer replayt.</p><div class="learning-quality-grid"><div><span>Prognosegüte</span><b>${score == null ? "–" : Math.round(score)+" %"}</b></div><div><span>Betragsgenauigkeit</span><b>${reliability.magnitude_accuracy_percent == null ? "–" : fmt(reliability.magnitude_accuracy_percent,0)+" %"}</b></div><div><span>Richtung</span><b>${reliability.direction_accuracy_percent == null ? "–" : fmt(reliability.direction_accuracy_percent,0)+" %"}</b></div><div><span>MAE</span><b>${(backtest.overall||{}).moisture_mae_ml == null ? "–" : fmt((backtest.overall||{}).moisture_mae_ml,0)+" ml"}</b></div><div><span>Lernwirkung vs. Grundmodell</span><b>${effect == null ? "–" : (effect >= 0 ? "+" : "") + fmt(effect,1)+" %"}</b></div><div><span>Aktuell vs. vorherige Generation</span><b>${generationEffect == null ? "–" : (generationEffect >= 0 ? "+" : "") + fmt(generationEffect,1)+" %"}</b></div><div><span>Paarvergleiche</span><b>${Number(effectiveness.samples || 0)}</b></div><div><span>Unabhängige Lüftungen</span><b>${Number(effectiveness.independent_sessions || 0)}</b></div><div><span>Generationenvergleiche</span><b>${Number(generation.independent_sessions || 0)}</b></div><div><span>Unterschiedliche Tage</span><b>${Number(effectiveness.distinct_days || 0)}</b></div><div><span>Gelerntes Modell MAE</span><b>${effectiveness.production_mae_ml == null ? "–" : fmt(effectiveness.production_mae_ml,0)+" ml"}</b></div><div><span>Grundmodell MAE</span><b>${effectiveness.baseline_mae_ml == null ? "–" : fmt(effectiveness.baseline_mae_ml,0)+" ml"}</b></div><div><span>Aktuelle Generation MAE</span><b>${generation.current_model_mae_ml == null ? "–" : fmt(generation.current_model_mae_ml,0)+" ml"}</b></div><div><span>Vorherige Generation MAE</span><b>${generation.previous_model_mae_ml == null ? "–" : fmt(generation.previous_model_mae_ml,0)+" ml"}</b></div><div><span>95-%-Intervall Lerngewinn</span><b>${effectiveness.paired_gain_ci95_low_ml == null || effectiveness.paired_gain_ci95_high_ml == null ? "–" : signed(effectiveness.paired_gain_ci95_low_ml," ml")+" bis "+signed(effectiveness.paired_gain_ci95_high_ml," ml")}</b></div></div><div class="learning-overview-note"><ha-icon icon="mdi:compare-horizontal"></ha-icon><span><b>${esc(effectLabel)}</b> · Belegt wird eine Verbesserung erst nach mindestens ${Number((effectiveness.evidence_rules||{}).minimum_samples || 12)} geeigneten Raumvergleichen aus ${Number((effectiveness.evidence_rules||{}).minimum_independent_sessions || 8)} unabhängigen Lüftungen an ${Number((effectiveness.evidence_rules||{}).minimum_distinct_days || 4)} unterschiedlichen Tagen und einem vollständig positiven, nach Lüftungen geclusterten Fehlerintervall. Der Generationenvergleich verwendet dieselben konservativen Evidenzregeln.</span></div>${byKey.forecast_validation ? componentCard(byKey.forecast_validation) : ""}</section>`;
         }
         if (this._info === "learning:longterm") {
             const season = byKey.seasonality || {}, night = byKey.night_model || {};

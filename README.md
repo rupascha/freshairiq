@@ -7,18 +7,20 @@
 FreshAirIQ is a Home Assistant custom integration developed by **rupascha**. The current release combines the proven calculation principles with a dynamic room model, persistent learning, live forecasts, the adaptive dashboard card, the Continuous Quality System and the authenticated local staging connection to the FreshAirIQ Diagnostics Hub.
 
 
-## Current release: 0.25.0.54 – Sensorless Room Creation Hotfix
+## Current release: 0.25.0.55 – Learning Effectiveness Validation v1
 
 
-- **Mess-/Lernlogik eingefroren:** Timestamp-Gate, 0,75/1,0-Gewichtung, Feuchtephysik, Forecast-Formeln und Lernformeln bleiben gegenüber 0.25.0.33 unverändert.
-- **Fehlender Abschluss-Refresh verwirft keine gültige Lüftung:** antworten die Sensoren nach dem letzten Schließen nicht erneut, bleibt der zuletzt vorhandene numerische Zustand verwendbar; die Session behält ihre bereits nachgewiesene In-Session-Evidenz.
-- **Deterministischer 10-s-Failsafe:** wird ein Klimasensor beim Ablauf der Abschlusswartezeit tatsächlich `unavailable`, wird zuerst der letzte gültige numerische Zustand derselben laufenden Session verwendet. Dieser Fallback erzeugt keine neue Timestamp-Evidenz und kann den strikten Lern-Gate nicht umgehen.
-- **Kein Endwert vorhanden:** nur wenn selbst innerhalb derselben Session kein nutzbarer numerischer Endzustand vorhanden ist, wird die Lüftung sauber als *nicht ausreichend gemessen* abgeschlossen – ohne erfundenen ml-Wert, ohne physikalisches Lernen, ohne Prognosekalibrierung und ohne vertrauenswürdige Endbaseline.
-- **Diagnostics Privacy Hardening:** Bewohnernamen aus der realen kommagetrennten Konfiguration werden auch in Freitexten anonymisiert; echte IP-Adressen bleiben geschützt, während bekannte FreshAirIQ-Versionsfelder wie `0.25.0.34` nicht mehr fälschlich als IPv4 geschwärzt werden.
-- **Diagnosezählung korrigiert:** `resident_profile_count` zählt Bewohner statt Zeichen im Namensstring.
-- **Android-Test gehärtet:** der Android-WebView-Playwright-Test setzt nun einen echten Mobile-Viewport-Meta-Tag und verifiziert die tatsächliche CSS-Breite bei 360, 412, 600 und 800 px.
-- **Abschlussbenachrichtigung korrekt:** nicht ausreichend gemessene Sessions melden keinen erfundenen Wert wie „0 ml entfernt“.
-- **Diagnostics HA / Hub kompatibel:** Upload-Schema, Cursor-Schema, Diagnose-Schema, Enrollment-, Chunk-, Feedback- und Migrationspfade bleiben unverändert.
+- **Production Incident Replay Foundation bleibt erhalten:** die in 0.25.0.54 eingeführten datenschutzminimierten Replay-Snapshots und der deterministische Produktions-Replay-Pfad bleiben unverändert Bestandteil der Basis.
+- **Gepaarte Same-Session-Validierung:** jede neue objektiv vergleichbare Lüftung bewertet das tatsächlich verwendete gelernte Prognosemodell gegen ein eingefrorenes, ungelerntes 0,03/min-Grundmodell bei identischer Startlage, Wettergrenze, Steuerung und realer Messdauer.
+- **Lernwirkung statt bloßer Lernmenge:** FreshAirIQ weist getrennt MAE des gelernten Modells, MAE des Grundmodells, gepaarten Fehlergewinn, prozentuale Lernwirkung, Richtungsgenauigkeit und Gewinner aus.
+- **Konservative Evidenz:** eine Verbesserung gilt erst als belegt, wenn mindestens 12 Raumvergleiche aus 8 unabhängigen Lüftungen an mindestens 4 unterschiedlichen Tagen vorliegen, der Effekt mindestens 5 % beträgt, die unabhängige Gewinnrate mindestens 55 % erreicht und das nach Lüftungen geclusterte 95-%-Fehlerintervall vollständig positiv ist.
+- **Keine Pseudoreplikation durch mehrere Räume:** gleichzeitig gelüftete Räume zählen für das Konfidenzintervall gemeinsam als eine unabhängige Lüftung.
+- **Auswertungen nach Kontext:** Lernwirkung wird insgesamt sowie pro Raum, Prognosehorizont, Jahreszeit, Außen-/Referenztemperatur, AH-Differenz und Lernstufe ausgewiesen; ab genügend unabhängigen Lüftungen erscheint zusätzlich ein früher-vs.-aktuell-Verlauf.
+- **Modellgenerationen nachvollziehbar:** ein Forecast-Snapshot-Hash ändert sich nur bei Parametern, die die Horizon-Prognose tatsächlich beeinflussen. Shadow-/Outcome-Zähler werden diagnostisch mitgeführt, aber nicht fälschlich als Forecast-Modelländerung gewertet.
+- **Aktuell gegen vorherige Generation:** sobald für einen Raum ein vorheriger, abweichender Forecast-Snapshot aus einer real vergleichbaren Session vorliegt, replayt FreshAirIQ diesen Vorgänger unter exakt der aktuellen Startlage und Messdauer; MAE, Gewinn, Status und 95-%-Intervall werden separat ausgewiesen.
+- **Rein beobachtend:** die neue Validierung ändert weder Lernparameter noch Shadow Learning, Empfehlungen, Grenzwerte oder Lüftungsentscheidungen. Alte Sessions ohne eingefrorene Baseline bleiben kompatibel und werden nicht nachträglich künstlich rekonstruiert.
+- **Dashboard & Diagnose:** die FreshAirIQ-Karte zeigt Lernwirkung, unabhängige Lüftungen, unterschiedliche Tage, gelerntes/Grundmodell-MAE und das 95-%-Intervall; Diagnoseexporte enthalten dieselben Kennzahlen für Hub-/Support-Auswertung.
+- **Regression Protection:** 100 % Pure-Logic-Coverage inklusive des neuen Moduls; Same-Session-Replay, Baseline-Isolation, statistische Evidenzregeln, Persistenz, UI-/Diagnose-Verkabelung und Abwärtskompatibilität sind automatisiert abgesichert.
 
 ### Continuous Quality lokal
 

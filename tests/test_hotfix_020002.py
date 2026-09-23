@@ -45,6 +45,6 @@ def test_mobile_room_detail_metrics_are_compact_two_column_grid():
 
 def test_hotfix_version_is_consistent():
     text = card_text()
-    assert 'const FAIQ_VERSION = "0.25.0.54";' in text
-    assert 'VERSION = "0.25.0.54"' in (ROOT / 'custom_components/freshairiq/const.py').read_text(encoding='utf-8')
-    assert '"version": "0.25.0.54"' in (ROOT / 'custom_components/freshairiq/manifest.json').read_text(encoding='utf-8')
+    assert 'const FAIQ_VERSION = "0.25.0.55";' in text
+    assert 'VERSION = "0.25.0.55"' in (ROOT / 'custom_components/freshairiq/const.py').read_text(encoding='utf-8')
+    assert '"version": "0.25.0.55"' in (ROOT / 'custom_components/freshairiq/manifest.json').read_text(encoding='utf-8')

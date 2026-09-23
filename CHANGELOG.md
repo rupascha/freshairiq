@@ -1,3 +1,21 @@
+# 0.25.0.55 – Learning Effectiveness Validation v1
+
+- Führt eine gepaarte Same-Session-Baseline ein, damit der reale Nutzen gelernter Forecast-Parameter unabhängig von wechselnden Start-/Wetterbedingungen messbar wird.
+- Aggregiert Lernwirkung konservativ nach unabhängigen Lüftungen und verhindert Scheinsicherheit durch gleichzeitig gelüftete Räume.
+- Zeigt Lernwirkung, gelerntes/Grundmodell-MAE, Evidenzstatus und 95-%-Intervall im Dashboard und Diagnoseexport.
+- Segmentiert die Auswertung nach Raum, Horizont, Jahreszeit, Quelltemperatur, AH-Differenz und Lernstufe.
+- Vergleicht zusätzlich jede aktuelle Forecast-Generation mit dem neuesten abweichenden, zuvor real beobachteten Modell-Snapshot desselben Raums unter identischer aktueller Startlage und realer Messdauer.
+- Ändert keinerlei produktive Lernparameter oder Lüftungsentscheidungen; die Funktion ist ausschließlich beobachtend.
+- Ergänzt umfassende Regressionstests und hält die Pure-Logic-Coverage bei 100 %.
+
+# 0.25.0.54 – Production Incident Replay Foundation
+
+- Erweitert datenschutzminimierte Sensor-Incidents um einen versionierten, identitätsfreien Replay-Snapshot.
+- Speichert nur aggregierte Entscheidungsinputs: Anzahl gültiger Räume, Sensor-Qualitätsklassen/-anzahlen und Außenluft-Qualitätsstatus.
+- Ergänzt einen deterministischen Replay-Runner, der die bestehende produktive `build_recommendation()`-Engine ausführt statt Entscheidungslogik zu duplizieren.
+- Regressionstests belegen, dass vollständige Sensor-Ausfälle `sensor_error` reproduzieren, gemischte gültige/ungültige Zustände aber keinen falschen Haus-Sensorfehler erzeugen.
+- Keine Raum-Namen, Raum-Schlüssel, Entity-IDs oder Freitexte werden dem Replay-Snapshot hinzugefügt.
+
 # 0.25.0.49 – Sensorless Room Creation Hotfix
 
 - Räume können jetzt zunächst nur mit Name und Raumvolumen angelegt werden, auch wenn noch keine Sensoren installiert sind.

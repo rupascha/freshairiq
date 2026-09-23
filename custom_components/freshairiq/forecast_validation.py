@@ -348,6 +348,7 @@ def build_validation_record(
             "end_measurement_frame_quality": item.get("end_measurement_frame_quality"),
             "end_measurement_frame_skew_s": _number(item.get("end_measurement_frame_skew_s")),
             "end_measurement_frame_max_age_s": _number(item.get("end_measurement_frame_max_age_s")),
+            "learning_effectiveness": deepcopy(item.get("learning_effectiveness")) if isinstance(item.get("learning_effectiveness"), dict) else None,
         }
         timeline = _timeline_rows(item, actual_moisture, actual_temp)
         row["forecast_timeline"] = timeline

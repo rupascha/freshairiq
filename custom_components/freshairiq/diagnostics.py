@@ -895,6 +895,7 @@ class FreshAirIQDiagnosticsRecorder:
             "post_close_stabilization": _json_safe(data.get("post_close_stabilization") or {}),
             "post_close_stabilization_history": _json_safe(data.get("post_close_stabilization_history") or []),
             "forecast_backtest": _json_safe(data.get("forecast_backtest") or {}),
+            "learning_effectiveness": _json_safe(data.get("learning_effectiveness") or {}),
             "learning_components": _json_safe(data.get("learning_components") or {}),
             "learning": {
                 "last_diagnosis": _json_safe(store_data.get("last_diagnosis")),
@@ -1227,6 +1228,7 @@ class FreshAirIQDiagnosticsRecorder:
         last_timestamp = records[-1].get("timestamp") if records else None
         latest_validation: dict[str, Any] = {}
         latest_backtest: dict[str, Any] = {}
+        latest_effectiveness: dict[str, Any] = {}
         for record in reversed(records):
             candidate = record.get("forecast_validation")
             if isinstance(candidate, dict) and candidate:
@@ -1234,7 +1236,10 @@ class FreshAirIQDiagnosticsRecorder:
             candidate_backtest = record.get("forecast_backtest")
             if isinstance(candidate_backtest, dict) and candidate_backtest:
                 latest_backtest = candidate_backtest
-            if latest_validation and latest_backtest:
+            candidate_effectiveness = record.get("learning_effectiveness")
+            if isinstance(candidate_effectiveness, dict) and candidate_effectiveness:
+                latest_effectiveness = candidate_effectiveness
+            if latest_validation and latest_backtest and latest_effectiveness:
                 break
         parsed_timestamps: list[datetime] = []
         recorded_days: set[str] = set()
@@ -1377,6 +1382,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "configuration": _json_safe(self._config_snapshot),
                 "forecast_validation": _json_safe(latest_validation),
                 "forecast_backtest": _json_safe(latest_backtest),
+                "learning_effectiveness": _json_safe(latest_effectiveness),
             },
             "record_count": len(records),
             "truncated": len(records) >= DIAGNOSTICS_MAX_EXPORT_RECORDS or truncated_by_bytes,

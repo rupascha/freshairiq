@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.25.0.54",
+  "version": "0.25.0.55",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
     "ha_combined_coverage_percent": 99.0,
@@ -22,7 +22,8 @@
       "tests/test_hotfix_025032_safe_cleanup.py",
       "tests/test_hotfix_025033_maximum_hardening.py",
       "tests/test_hotfix_025034_outer_hardening.py",
-      "tests/test_hotfix_025046_android_touch_settings_contract.py"
+      "tests/test_hotfix_025046_android_touch_settings_contract.py",
+      "tests/test_learning_effectiveness_025055.py"
     ]
   },
   "stability": {
@@ -122,6 +123,6 @@
       ".DS_Store",
       "Thumbs.db"
     ],
-    "artifact_suffix": "Sensorless-Room-Creation-Hotfix"
+    "artifact_suffix": "Learning-Effectiveness-Validation-v1"
   }
 }
