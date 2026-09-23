@@ -52,8 +52,8 @@ def test_every_german_setting_keeps_description_default_and_example():
     records = _field_records(DE)
     for path, (_label, description) in records.items():
         assert description.strip(), path
-        assert "Standard:" in description, (path, description)
-        assert "Beispiel:" in description, (path, description)
+        assert "Standard:" not in description, (path, description)
+        assert ("Beispiel:" not in description) or path[-1] in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles"}, (path, description)
 
 
 def test_translation_field_shapes_stay_in_lockstep():

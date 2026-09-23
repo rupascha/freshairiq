@@ -1,4 +1,4 @@
-# 0.25.0.56 – Learning Effectiveness Validation v1
+# 0.25.0.58 – Learning Effectiveness Validation v1
 
 - Führt eine gepaarte Same-Session-Baseline ein, damit der reale Nutzen gelernter Forecast-Parameter unabhängig von wechselnden Start-/Wetterbedingungen messbar wird.
 - Aggregiert Lernwirkung konservativ nach unabhängigen Lüftungen und verhindert Scheinsicherheit durch gleichzeitig gelüftete Räume.

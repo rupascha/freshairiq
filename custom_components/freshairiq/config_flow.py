@@ -1704,12 +1704,14 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
 
     async def async_step_level_reorder(self, user_input=None):
         levels = list(self._working_data.get(CONF_LEVELS, []))
+        # Home Assistant renders dynamic schema keys literally. Localized labels
+        # therefore become the form keys, while stored level ids stay unchanged.
         if user_input is not None:
             indexed = {level: i for i, level in enumerate(levels)}
             ordered = sorted(
                 levels,
                 key=lambda level: (
-                    int(user_input.get(level, indexed[level] + 1)),
+                    int(user_input.get(_level_label(level), indexed[level] + 1)),
                     indexed[level],
                 ),
             )
@@ -1717,7 +1719,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             self._persist_working_state()
             return await self.async_step_levels()
         fields = {
-            vol.Required(level, default=idx, description=_level_label(level)): _number(
+            vol.Required(_level_label(level), default=idx): _number(
                 1, max(len(levels), 1), 1
             )
             for idx, level in enumerate(levels, start=1)
@@ -1725,7 +1727,8 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         if not fields:
             return await self.async_step_levels()
         return self.async_show_form(
-            step_id="level_reorder", data_schema=vol.Schema(fields)
+            step_id="level_reorder",
+            data_schema=vol.Schema(fields),
         )
 
     async def async_step_level_remove(self, user_input=None):

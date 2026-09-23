@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 ROOT=Path(__file__).resolve().parents[1]; COMP=ROOT/'custom_components'/'freshairiq'
 def test_release_version_is_025040():
- assert json.loads((COMP/'manifest.json').read_text())['version']=='0.25.0.56'; assert 'VERSION = "0.25.0.56"' in (COMP/'const.py').read_text()
+ assert json.loads((COMP/'manifest.json').read_text())['version']=='0.25.0.58'; assert 'VERSION = "0.25.0.58"' in (COMP/'const.py').read_text()
 def test_time_evidence_migration_is_proof_only_and_one_time():
  t=(COMP/'storage.py').read_text(); assert 'time_evidence_migration_v025040' in t; assert 'session_days' in t and 'routine_source_buckets' in t and 'seasonal_source_profiles' in t
 def test_coordinator_forwards_time_evidence_into_learning_snapshot():

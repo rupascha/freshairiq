@@ -156,6 +156,29 @@ def adapt_language_confidence(
         summary = (confidence_text + " " + original_summary).strip()
 
     reasons = list(brain.get("why") or out.get("reasons") or [])
+    # Surface the strongest already-learned personal signal. This changes only
+    # wording/reason priority, never the selected action or physical thresholds.
+    personal_traces: list[tuple[float, str]] = []
+    for room in selected:
+        name = str(room.get("name") or "Dieser Raum")
+        routine_maturity = _f(room.get("routine_maturity"))
+        routine_samples = int(_f(room.get("routine_source_samples")))
+        routine_rate = room.get("routine_expected_source_ml_min")
+        if routine_samples >= 8 and routine_maturity >= 25 and routine_rate is not None:
+            hourly = _f(routine_rate) * 60.0
+            if abs(hourly) >= 10:
+                direction = "Feuchtezunahme" if hourly > 0 else "Feuchteabnahme"
+                personal_traces.append((routine_maturity, f"Persönliches Muster: {name} zeigt um diese Zeit häufig eine {direction} von etwa {abs(hourly):.0f} ml/h"))
+        strategy_samples = int(_f(room.get("strategy_samples")))
+        success = _f(room.get("outcome_success_rate"))
+        feedback = int(_f(room.get("outcome_feedback_samples")))
+        if strategy_samples >= 10 and feedback >= 5 and success > 0:
+            personal_traces.append((min(100.0, strategy_samples / 2.0), f"Gelernte Erfahrung: {name} · {feedback} überprüfte Ergebnisse · Prognosetreffer {success:.0f} %"))
+    if personal_traces:
+        personal_traces.sort(key=lambda item: item[0], reverse=True)
+        trace_text = personal_traces[0][1]
+        if trace_text not in reasons:
+            reasons.insert(0, trace_text)
     # One compact, factual trace makes the change visible without turning the
     # recommendation into a diagnostics panel.
     trace = f"Lernstand: {band_label} ({maturity:.0f} %) · Situationssicherheit {situation:.0f} %"
