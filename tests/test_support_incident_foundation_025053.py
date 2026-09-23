@@ -40,3 +40,25 @@ def test_fingerprint_groups_equal_incidents_without_names_or_entities():
 def test_list_shaped_sensor_issue_is_classified():
     incident=build_support_incident(trace(), {"stale_rooms":["room-token"]})
     assert incident["support_code"] == "FAIQ-SENSOR-DATA-001"
+
+
+def test_sensor_incident_contains_privacy_safe_replay_snapshot():
+    incident = build_support_incident(
+        trace("sensor", "sensor_error"),
+        {"rooms_ok": 0, "issue_quality_counts": {"missing": 2, "stale": 1}, "outdoor_data_quality": "ok"},
+    )
+    snapshot = incident["replay_snapshot"]
+    assert snapshot == {
+        "schema_version": 1,
+        "target": "build_recommendation",
+        "rooms_ok": 0,
+        "issue_quality_counts": {"missing": 2, "stale": 1},
+        "outdoor_data_quality": "ok",
+    }
+    payload = str(snapshot)
+    assert "room_key" not in payload and "room_name" not in payload and "entity_id" not in payload
+
+
+def test_non_sensor_incident_has_no_replay_snapshot():
+    incident = build_support_incident(trace(), diagnostics_error_type="OSError")
+    assert incident["replay_snapshot"] is None

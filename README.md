@@ -7,7 +7,7 @@
 FreshAirIQ is a Home Assistant custom integration developed by **rupascha**. The current release combines the proven calculation principles with a dynamic room model, persistent learning, live forecasts, the adaptive dashboard card, the Continuous Quality System and the authenticated local staging connection to the FreshAirIQ Diagnostics Hub.
 
 
-## Current release: 0.25.0.53 – Sensorless Room Creation Hotfix
+## Current release: 0.25.0.54 – Sensorless Room Creation Hotfix
 
 
 - **Mess-/Lernlogik eingefroren:** Timestamp-Gate, 0,75/1,0-Gewichtung, Feuchtephysik, Forecast-Formeln und Lernformeln bleiben gegenüber 0.25.0.33 unverändert.

@@ -49,6 +49,6 @@ def test_release_version_020401_is_consistent():
     const = (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
     manifest = (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
     frontend = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.53"' in const
-    assert '"version": "0.25.0.53"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.0.53";' in frontend
+    assert 'VERSION = "0.25.0.54"' in const
+    assert '"version": "0.25.0.54"' in manifest
+    assert 'const FAIQ_VERSION = "0.25.0.54";' in frontend

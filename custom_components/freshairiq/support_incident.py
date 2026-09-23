@@ -10,6 +10,8 @@ import hashlib
 import json
 from typing import Any, Mapping
 
+from .support_replay import build_sensor_replay_snapshot
+
 SUPPORT_SCHEMA_VERSION = 1
 
 
@@ -84,6 +86,7 @@ def build_support_incident(
     raw = json.dumps(cluster, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
     fingerprint = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
     trace_raw = json.dumps(trace, sort_keys=True, ensure_ascii=True, separators=(",", ":"), default=str)
+    replay_snapshot = build_sensor_replay_snapshot(sensor_quality) if code == "FAIQ-SENSOR-DATA-001" else None
     return {
         "schema_version": SUPPORT_SCHEMA_VERSION,
         "support_code": code,
@@ -91,6 +94,7 @@ def build_support_incident(
         "fingerprint": f"faiq-{fingerprint}",
         "decision_trace_id": f"trace-{hashlib.sha256(trace_raw.encode('utf-8')).hexdigest()[:24]}",
         "classification": cluster,
+        "replay_snapshot": replay_snapshot,
         "privacy": {
             "contains_entity_ids": False,
             "contains_room_names": False,

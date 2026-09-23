@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.53 safe code cleanup."""
+"""Regression contracts for v0.25.0.54 safe code cleanup."""
 from __future__ import annotations
 
 import ast
@@ -13,9 +13,9 @@ def test_release_version_and_cleanup_suffix_are_consistent():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.0.53"' in const
-    assert manifest["version"] == "0.25.0.53"
-    assert policy["version"] == "0.25.0.53"
+    assert 'VERSION = "0.25.0.54"' in const
+    assert manifest["version"] == "0.25.0.54"
+    assert policy["version"] == "0.25.0.54"
     assert str(policy["release"]["artifact_suffix"]).strip()
 
 

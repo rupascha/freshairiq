@@ -766,6 +766,15 @@ class FreshAirIQDiagnosticsRecorder:
              "data_quality": _json_safe(room.get("data_quality"))}
             for room in rooms if room.get("data_quality") != "ok"
         ]
+        # Aggregate quality classes are deliberately identity-free. They are
+        # sufficient to replay the sensor-safety branch without exporting a
+        # room key, room label or Home Assistant entity ID.
+        issue_quality_counts: dict[str, int] = {}
+        for room in rooms:
+            if room.get("data_quality") == "ok":
+                continue
+            quality = str(room.get("data_quality") or "unknown").strip().lower()[:32]
+            issue_quality_counts[quality] = issue_quality_counts.get(quality, 0) + 1
         return {
             "rooms_total": len(rooms),
             "rooms_ok": len(valid),
@@ -773,6 +782,7 @@ class FreshAirIQDiagnosticsRecorder:
             "room_quality_percent": round(100.0 * len(valid) / max(len(rooms), 1), 1),
             "rooms_all_total": len(all_rooms),
             "rooms_monitor_only": len(monitor_only),
+            "issue_quality_counts": dict(sorted(issue_quality_counts.items())),
             "outdoor_data_quality": _json_safe(data.get("outdoor_data_quality")),
             "issues": issues,
         }
