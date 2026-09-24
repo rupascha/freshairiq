@@ -1,7 +1,7 @@
 {
   "domain": "freshairiq",
   "name": "FreshAirIQ",
-  "version": "0.25.0.65",
+  "version": "0.25.0.66",
   "config_flow": true,
   "documentation": "https://github.com/rupascha/freshairiq",
   "issue_tracker": "https://github.com/rupascha/freshairiq/issues",

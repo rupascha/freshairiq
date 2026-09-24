@@ -1254,7 +1254,7 @@ class FreshAirIQDiagnosticsRecorder:
         first_timestamp = records[0].get("timestamp") if records else None
         last_timestamp = records[-1].get("timestamp") if records else None
 
-        # v0.25.0.65: privacy-preserving beta/adoption funnel.  Every stage is
+        # v0.25.0.66: privacy-preserving beta/adoption funnel.  Every stage is
         # derived from diagnostics evidence FreshAirIQ already records; no new
         # personal identifiers or raw interaction stream is collected.
         active_days = sorted({

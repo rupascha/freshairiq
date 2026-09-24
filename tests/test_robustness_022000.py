@@ -95,7 +95,7 @@ def test_storage_hardening_guards_nonfinite_learning_state():
 
 
 def test_release_version_022000_is_consistent():
-    assert 'VERSION = "0.25.0.65"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.65"' in (COMP / "manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.0.65";' in (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.66"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.66"' in (COMP / "manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.66";' in (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     assert (ROOT / "RELEASE_NOTES_0.25.0.0.md").exists()

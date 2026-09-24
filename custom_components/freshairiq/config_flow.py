@@ -714,7 +714,7 @@ def _diagnostics_sharing_schema(current: dict[str, Any]) -> vol.Schema:
     return vol.Schema({
         vol.Required(
             native_option_key("diagnostics_reporting_mode"),
-            default=str(current.get("diagnostics_reporting_mode", "off")),
+            default=str(current.get("diagnostics_reporting_mode", "daily")),
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=[
@@ -728,7 +728,7 @@ def _diagnostics_sharing_schema(current: dict[str, Any]) -> vol.Schema:
         ),
         vol.Required(
             native_option_key("diagnostics_include_client_context"),
-            default=bool(current.get("diagnostics_include_client_context", False)),
+            default=bool(current.get("diagnostics_include_client_context", True)),
         ): bool,
     })
 

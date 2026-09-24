@@ -1859,10 +1859,10 @@
       },
       "diagnostics_sharing": {
         "title": "Diagnose-Freigabe",
-        "description": "Optional und standardmäßig aus. FreshAirIQ bereitet die technisch vollständige 30-Tage-Diagnostik lokal für die Analyse auf, entfernt bzw. pseudonymisiert direkte Identifikatoren und überträgt große Historien in Chunks. Nach dem ersten bestätigten Vollabgleich werden nur neue Diagnosedatensätze übertragen. Diese Staging-Konfiguration ist ausschließlich mit dem lokalen Diagnostics Hub im privaten Heimnetz verbunden. Eine Übertragung startet erst nach ausdrücklicher Auswahl eines Modus ungleich „Aus“; der spätere öffentliche Betrieb wird nur über HTTPS freigegeben.",
+        "description": "Während der öffentlichen Beta standardmäßig täglich nachts aktiv; jederzeit abschaltbar. FreshAirIQ bereitet die technisch vollständige 30-Tage-Diagnostik lokal für die Analyse auf, entfernt bzw. pseudonymisiert direkte Identifikatoren und überträgt große Historien in Chunks. Nach dem ersten bestätigten Vollabgleich werden nur neue Diagnosedatensätze übertragen. Diese Staging-Konfiguration ist ausschließlich mit dem lokalen Diagnostics Hub im privaten Heimnetz verbunden. Die Beta-Voreinstellung ist „Täglich nachts“; der spätere öffentliche Betrieb wird nur über HTTPS freigegeben.",
         "data": {
-          "diagnostics_reporting_mode": "Automatische Diagnoseübertragung (Standard: Aus)",
-          "diagnostics_include_client_context": "Groben Geräte-/Browser-Kontext mitsenden (Standard: Aus)"
+          "diagnostics_reporting_mode": "Automatische Diagnoseübertragung (Beta-Standard: Täglich nachts)",
+          "diagnostics_include_client_context": "Groben Geräte-/Browser-Kontext mitsenden (Beta-Standard: An)"
         },
         "data_description": {
           "diagnostics_reporting_mode": "Aus, nur bei erkannten Problemen, täglich nachts oder wöchentlich. Ein künftiger Nachtversand wird pro Installation deterministisch zwischen 02:00 und 03:59 Uhr verteilt.",

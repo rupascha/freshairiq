@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.0.65"
+VERSION = "0.25.0.66"
 DIAGNOSTICS_SCHEMA_VERSION = 12
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -268,11 +268,11 @@ DEFAULT_OPTIONS = {
     # Statistics
     "statistics_days": 14,
 
-    # Optional remote diagnostics sharing. Selecting any non-off mode is an
-    # explicit opt-in. v0.25.0.28 is wired only to the private local staging
-    # Hub; the default stays off and public rollout still requires HTTPS.
-    "diagnostics_reporting_mode": "off",
-    "diagnostics_include_client_context": False,
+    # Public-beta diagnostics defaults. Beta installations send one
+    # pseudonymised diagnostic package nightly and include coarse client
+    # compatibility context. Both settings remain user-configurable.
+    "diagnostics_reporting_mode": "daily",
+    "diagnostics_include_client_context": True,
 
     # Dashboard visibility defaults (card editor can override per card).
     "dashboard_show_temperature": True,

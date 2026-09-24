@@ -1844,10 +1844,10 @@
       },
       "diagnostics_sharing": {
         "title": "Diagnostics sharing",
-        "description": "Optional and off by default. FreshAirIQ prepares the technically complete retained diagnostics history locally for analysis, removes or pseudonymises direct identifiers, and transfers large histories in chunks. After the first acknowledged full sync, only new diagnostic records are transferred. This staging configuration connects only to the local Diagnostics Hub on the private LAN. Transmission starts only after explicitly selecting a mode other than Off; any later public deployment will require HTTPS.",
+        "description": "During the public beta, nightly sharing is enabled by default and can be disabled at any time. FreshAirIQ prepares the technically complete retained diagnostics history locally for analysis, removes or pseudonymises direct identifiers, and transfers large histories in chunks. After the first acknowledged full sync, only new diagnostic records are transferred. This staging configuration connects only to the local Diagnostics Hub on the private LAN. The beta preset is Nightly; any later public deployment will require HTTPS.",
         "data": {
-          "diagnostics_reporting_mode": "Automatic diagnostics sharing (default: Off)",
-          "diagnostics_include_client_context": "Include coarse device/browser context (default: Off)"
+          "diagnostics_reporting_mode": "Automatic diagnostics sharing (beta default: Nightly)",
+          "diagnostics_include_client_context": "Include coarse device/browser context (beta default: On)"
         },
         "data_description": {
           "diagnostics_reporting_mode": "Off, only for detected problems, nightly, or weekly. A future nightly upload is deterministically distributed between 02:00 and 03:59 local time.",

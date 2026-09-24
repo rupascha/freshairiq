@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.25.0.65",
+  "version": "0.25.0.66",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
     "ha_combined_coverage_percent": 99.0,
@@ -125,6 +125,6 @@
       ".DS_Store",
       "Thumbs.db"
     ],
-    "artifact_suffix": "Production-Hardening-Contract-Hotfix"
+    "artifact_suffix": "Public-Beta-Diagnostics-README-Screenshots-CLEAN"
   }
 }

@@ -127,7 +127,7 @@ class FreshAirIQDiagnosticsClient:
 
     @property
     def status(self) -> dict[str, Any]:
-        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "off"))
+        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "daily"))
         return {
             "reporting_mode": mode,
             "hub_configured": bool(self.endpoint),
@@ -152,7 +152,7 @@ class FreshAirIQDiagnosticsClient:
             "last_record_cursor": self._state.get("last_record_cursor"),
             "last_batch_record_count": self._state.get("last_batch_record_count"),
             "last_batch_chunk_count": self._state.get("last_batch_chunk_count"),
-            "client_context_enabled": bool(self.entry.options.get("diagnostics_include_client_context", False)),
+            "client_context_enabled": bool(self.entry.options.get("diagnostics_include_client_context", True)),
         }
 
     async def async_start(self) -> None:
@@ -389,7 +389,7 @@ class FreshAirIQDiagnosticsClient:
         Returns ``True`` only after the hub accepted the payload.  Every failure
         is isolated from the coordinator and kept as a coarse error type only.
         """
-        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "off"))
+        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "daily"))
         if mode == "off":
             self._runtime_state = "disabled"
             return False
@@ -443,7 +443,7 @@ class FreshAirIQDiagnosticsClient:
             chunks = await self._async_cpu_job(
                 build_upload_chunks,
                 exported,
-                include_client_context=bool(self.entry.options.get("diagnostics_include_client_context", False)),
+                include_client_context=bool(self.entry.options.get("diagnostics_include_client_context", True)),
                 after_cursor=self._state.get("last_record_cursor"),
                 max_chunk_bytes=self.max_chunk_bytes,
             )
