@@ -1,5 +1,5 @@
 
-## 0.25.0.61
+## 0.25.0.64
 - Hotfix: freigegebene Dashboard-Einstellungen und Geräte-&-Dienste-Konfiguration durch verpflichtende UI-/Configuration-Contracts gegen unbeabsichtigte Regressionen geschützt.
 - Keine Änderung der FreshAirIQ-Fachlogik.
 # 0.25.0.60 – Learning Effectiveness Validation v1

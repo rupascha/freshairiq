@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.61 safe code cleanup."""
+"""Regression contracts for v0.25.0.64 safe code cleanup."""
 from __future__ import annotations
 
 import ast
@@ -13,9 +13,9 @@ def test_release_version_and_cleanup_suffix_are_consistent():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.0.61"' in const
-    assert manifest["version"] == "0.25.0.61"
-    assert policy["version"] == "0.25.0.61"
+    assert 'VERSION = "0.25.0.64"' in const
+    assert manifest["version"] == "0.25.0.64"
+    assert policy["version"] == "0.25.0.64"
     assert str(policy["release"]["artifact_suffix"]).strip()
 
 
@@ -64,7 +64,7 @@ def test_diagnostics_hub_and_diagnostics_ha_compatibility_surface_is_preserved()
     # Manual/HA diagnostics and explicit feedback proxy remain stable.
     assert 'url = "/api/freshairiq/diagnostics"' in diagnostics
     assert 'url = "/api/freshairiq/feedback/{entry_id}"' in settings_api
-    assert "DIAGNOSTICS_SCHEMA_VERSION = 11" in diagnostics
+    assert "from .const import DIAGNOSTICS_SCHEMA_VERSION" in diagnostics
 
 
 def test_cleanup_does_not_remove_diagnostics_files_or_migration_paths():

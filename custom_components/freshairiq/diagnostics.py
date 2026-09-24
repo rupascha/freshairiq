@@ -24,11 +24,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .runtime import iter_runtime_coordinators
-from .const import DOMAIN
+from .const import DIAGNOSTICS_SCHEMA_VERSION, DOMAIN
 from .diagnostic_transport import normalise_resident_names
 from .support_incident import build_support_incident
 
-DIAGNOSTICS_SCHEMA_VERSION = 11
 DIAGNOSTICS_IDENTITY_SCHEMA_VERSION = 1
 DIAGNOSTICS_IDENTITY_FILENAME = "field_test_identity.json"
 DIAGNOSTICS_CLIENTS_FILENAME = "field_test_clients.json"
@@ -84,6 +83,32 @@ _SAFE_OPTION_KEYS = (
     "diagnostics_reporting_mode", "diagnostics_include_client_context",
 )
 
+
+def _collection_size(value: Any) -> int:
+    if isinstance(value, (list, tuple, dict)):
+        return min(len(value), 1_000_000)
+    return 0
+
+def _latest_evidence(value: Any) -> Any:
+    if isinstance(value, list):
+        return value[-1] if value else {}
+    if not isinstance(value, dict):
+        return {}
+    compact = dict(value)
+    for key in ("history", "records", "samples", "validations", "entries", "observations"):
+        raw = compact.get(key)
+        if isinstance(raw, list):
+            compact[f"{key}_count"] = len(raw)
+            compact[f"latest_{key[:-1] if key.endswith('s') else key}"] = raw[-1] if raw else None
+            compact.pop(key, None)
+    return compact
+
+def _compact_learning_components(value: Any) -> Any:
+    if not isinstance(value, (dict, list)):
+        return {}
+    if isinstance(value, list):
+        return [_latest_evidence(item) if isinstance(item, dict) else item for item in value[:64]]
+    return {str(key): _latest_evidence(item) if isinstance(item, dict) else item for key, item in value.items()}
 
 def _safe_int(value: Any, default: int = 0, *, low: int = 0, high: int = 1_000_000) -> int:
     """Return a bounded integer for persisted/runtime diagnostic counters."""
@@ -891,12 +916,14 @@ class FreshAirIQDiagnosticsRecorder:
                 "physical_heating_state": None,
                 "physical_heating_state_reason": "No dedicated heating-state entity is configured in FreshAirIQ.",
             },
-            "forecast_validation": _json_safe(data.get("forecast_validation") or {}),
+            "forecast_validation": _json_safe(_latest_evidence(data.get("forecast_validation"))),
             "post_close_stabilization": _json_safe(data.get("post_close_stabilization") or {}),
-            "post_close_stabilization_history": _json_safe(data.get("post_close_stabilization_history") or []),
-            "forecast_backtest": _json_safe(data.get("forecast_backtest") or {}),
+            "diagnostic_history_summary": {
+                "post_close_stabilization_samples": _collection_size(data.get("post_close_stabilization_history")),
+                "forecast_backtest_samples": _collection_size(data.get("forecast_backtest")),
+            },
             "learning_effectiveness": _json_safe(data.get("learning_effectiveness") or {}),
-            "learning_components": _json_safe(data.get("learning_components") or {}),
+            "learning_components": _json_safe(_compact_learning_components(data.get("learning_components"))),
             "learning": {
                 "last_diagnosis": _json_safe(store_data.get("last_diagnosis")),
                 "night_model_ml_h": _json_safe(store_data.get("night_model_ml_h")),

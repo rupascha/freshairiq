@@ -90,7 +90,7 @@ def test_measurement_frame_held_is_learning_only_and_truly_stale_is_rejected():
     # in-session report timestamps are now the mandatory learning/validation gate.
     assert 'snapshot_frame_valid = bool(session_activity_eligible)' in coordinator
     assert 'start_learning_valid = session_activity_eligible' in coordinator
-    assert 'DIAGNOSTICS_SCHEMA_VERSION = 11' in diagnostics
+    assert 'from .const import DIAGNOSTICS_SCHEMA_VERSION' in diagnostics
 
 
 def test_slow_weather_reference_cadence_does_not_poison_room_learning():

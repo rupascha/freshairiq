@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.25.0.61",
+  "version": "0.25.0.64",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
     "ha_combined_coverage_percent": 99.0,
@@ -24,7 +24,8 @@
       "tests/test_hotfix_025034_outer_hardening.py",
       "tests/test_hotfix_025046_android_touch_settings_contract.py",
       "tests/test_learning_effectiveness_025055.py",
-      "tests/test_ui_configuration_contract_025061.py"
+      "tests/test_ui_configuration_contract_025061.py",
+      "tests/test_release_artifact_self_contained_025063.py"
     ]
   },
   "stability": {
@@ -124,6 +125,6 @@
       ".DS_Store",
       "Thumbs.db"
     ],
-    "artifact_suffix": "UI-Configuration-Contract-Protection-Hotfix"
+    "artifact_suffix": "Production-Hardening-Contract-Hotfix"
   }
 }

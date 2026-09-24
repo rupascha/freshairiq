@@ -37,8 +37,8 @@ def test_panel_custom_no_longer_required():
 
 
 def test_version_is_current():
-    assert MANIFEST['version'] == '0.25.0.61'
-    assert 'const FAIQ_VERSION = "0.25.0.61";' in CARD
+    assert MANIFEST['version'] == '0.25.0.64'
+    assert 'const FAIQ_VERSION = "0.25.0.64";' in CARD
 
 
 def test_old_loader_resource_is_migrated_not_used():

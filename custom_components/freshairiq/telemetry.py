@@ -28,6 +28,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     DIAGNOSTICS_HUB_ENDPOINT,
+    DIAGNOSTICS_SCHEMA_VERSION,
     DIAGNOSTICS_UPLOAD_MAX_BYTES,
     DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS,
     DOMAIN,
@@ -349,7 +350,7 @@ class FreshAirIQDiagnosticsClient:
             from homeassistant.const import __version__ as ha_version
         except (ImportError, AttributeError):
             ha_version = None
-        payload = {"feedback_type": kind, "message": text, "freshairiq_version": VERSION, "home_assistant_version": ha_version, "diagnostics_schema_version": 10}
+        payload = {"feedback_type": kind, "message": text, "freshairiq_version": VERSION, "home_assistant_version": ha_version, "diagnostics_schema_version": DIAGNOSTICS_SCHEMA_VERSION}
         safe_client = {}
         if isinstance(client_context, Mapping):
             # Allow-list only anonymous UI compatibility fields. Never forward

@@ -8,8 +8,8 @@ CONST = (COMP / "const.py").read_text(encoding="utf-8")
 
 
 def test_023009_version_is_current():
-    assert 'VERSION = "0.25.0.61"' in CONST
-    assert 'const FAIQ_VERSION = "0.25.0.61";' in JS
+    assert 'VERSION = "0.25.0.64"' in CONST
+    assert 'const FAIQ_VERSION = "0.25.0.64";' in JS
 
 
 def test_reference_pair_is_atomic_in_devices_services_flow():
