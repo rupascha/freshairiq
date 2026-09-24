@@ -1253,6 +1253,63 @@ class FreshAirIQDiagnosticsRecorder:
                 quality_values.append(float(quality))
         first_timestamp = records[0].get("timestamp") if records else None
         last_timestamp = records[-1].get("timestamp") if records else None
+
+        # v0.25.0.65: privacy-preserving beta/adoption funnel.  Every stage is
+        # derived from diagnostics evidence FreshAirIQ already records; no new
+        # personal identifiers or raw interaction stream is collected.
+        active_days = sorted({
+            str(record.get("timestamp"))[:10]
+            for record in records
+            if isinstance(record.get("timestamp"), str) and len(str(record.get("timestamp"))) >= 10
+        })
+        first_valid_analysis_at = None
+        first_recommendation_at = None
+        first_followed_recommendation_at = None
+        first_completed_session_at = None
+        recommendation_opportunities = 0
+        for record in records:
+            stamp = record.get("timestamp") if isinstance(record.get("timestamp"), str) else None
+            quality = record.get("sensor_quality") if isinstance(record.get("sensor_quality"), dict) else {}
+            if first_valid_analysis_at is None and isinstance(quality.get("room_quality_percent"), (int, float)) and float(quality.get("room_quality_percent") or 0) > 0:
+                first_valid_analysis_at = stamp
+            rooms = record.get("rooms") if isinstance(record.get("rooms"), list) else []
+            record_opportunities = sum(
+                _safe_int(room.get("recommendation_opportunities"))
+                for room in rooms if isinstance(room, dict)
+            )
+            recommendation_opportunities = max(recommendation_opportunities, record_opportunities)
+            if first_recommendation_at is None and record_opportunities > 0:
+                first_recommendation_at = stamp
+            sessions = record.get("completed_sessions") if isinstance(record.get("completed_sessions"), list) else []
+            if first_completed_session_at is None and sessions:
+                first_completed_session_at = stamp
+            if first_followed_recommendation_at is None and any(
+                isinstance(item, dict) and item.get("recommendation_followed") for item in sessions
+            ):
+                first_followed_recommendation_at = stamp
+
+        configured_rooms = 0
+        if isinstance(self._config_snapshot, dict):
+            rooms_cfg = self._config_snapshot.get("rooms")
+            configured_rooms = len(rooms_cfg) if isinstance(rooms_cfg, (list, dict)) else 0
+        setup_completed = bool(configured_rooms or records)
+        beta_funnel = {
+            "schema_version": 1,
+            "setup_completed": setup_completed,
+            "configured_rooms": configured_rooms,
+            "first_valid_analysis_at": first_valid_analysis_at,
+            "first_recommendation_at": first_recommendation_at,
+            "first_followed_recommendation_at": first_followed_recommendation_at,
+            "first_completed_session_at": first_completed_session_at,
+            "active_days_30d": len(active_days),
+            "returning_user": len(active_days) >= 2,
+            "retained_7d_signal": len(active_days) >= 2 and bool(active_days and first_timestamp and active_days[-1] > str(first_timestamp)[:10]),
+            "recommendation_opportunities": recommendation_opportunities,
+            "completed_sessions": completed_session_count,
+            "followed_sessions": followed_session_count,
+            "follow_rate_percent": round(100.0 * followed_session_count / completed_session_count, 1) if completed_session_count else None,
+            "measurement_window_days": 30,
+        }
         latest_validation: dict[str, Any] = {}
         latest_backtest: dict[str, Any] = {}
         latest_effectiveness: dict[str, Any] = {}
@@ -1404,6 +1461,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "reason_counts": reason_counts,
                 "completed_session_count": completed_session_count,
                 "recommendation_followed_session_count": followed_session_count,
+                "beta_funnel": beta_funnel,
                 "window_event_count": window_event_count,
                 "average_room_data_quality_percent": round(sum(quality_values) / len(quality_values), 1) if quality_values else None,
                 "configuration": _json_safe(self._config_snapshot),

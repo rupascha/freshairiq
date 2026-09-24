@@ -73,7 +73,7 @@ class _Recorder:
         self.export_calls += 1
         return {
             "schema_version": 10,
-            "freshairiq_version": "0.25.0.64",
+            "freshairiq_version": "0.25.0.65",
             "exported_at": "2026-09-16T23:00:00+00:00",
             "field_test": {
                 "anonymous_installation_id": "faiq-install-runtime",
@@ -153,12 +153,12 @@ def test_successful_force_upload_is_gzipped_minimised_and_persisted():
         enroll_body = json.loads(enroll_call["data"].decode())
         assert enroll_body["anonymous_installation_id"] == "faiq-install-runtime"
         assert enroll_body["upload_schema_version"] == 2
-        assert enroll_body["freshairiq_version"] == "0.25.0.64"
+        assert enroll_body["freshairiq_version"] == "0.25.0.65"
         assert len(enroll_body["client_token"]) >= 32
         assert call["endpoint"] == "https://hub.example/v1/diagnostics/chunks"
         assert call["headers"]["Authorization"] == f"Bearer {enroll_body['client_token']}"
         assert call["headers"]["Content-Encoding"] == "gzip"
-        assert call["headers"]["User-Agent"] == "FreshAirIQ/0.25.0.64"
+        assert call["headers"]["User-Agent"] == "FreshAirIQ/0.25.0.65"
         import gzip
         body = json.loads(gzip.decompress(call["data"]).decode())
         text = json.dumps(body)

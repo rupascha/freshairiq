@@ -5,9 +5,9 @@ JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_te
 
 
 def test_release_version_is_020102():
-    assert 'const FAIQ_VERSION = "0.25.0.64"' in JS
-    assert 'VERSION = "0.25.0.64"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.64"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.65"' in JS
+    assert 'VERSION = "0.25.0.65"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.65"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
 
 
 def test_every_open_window_receives_coalesced_live_updates():

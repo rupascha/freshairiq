@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.64 release-asset/changelog hygiene."""
+"""Regression contracts for v0.25.0.65 release-asset/changelog hygiene."""
 from pathlib import Path
 import json
 
@@ -27,11 +27,11 @@ def test_release_metadata_is_025047_and_hygiene_named():
     manifest = json.loads((ROOT / "custom_components/freshairiq/manifest.json").read_text())
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text())
     package = json.loads((ROOT / "package.json").read_text())
-    assert manifest["version"] == "0.25.0.64"
-    assert policy["version"] == "0.25.0.64"
-    assert package["version"] == "0.25.0.64"
+    assert manifest["version"] == "0.25.0.65"
+    assert policy["version"] == "0.25.0.65"
+    assert package["version"] == "0.25.0.65"
     assert str(policy["release"]["artifact_suffix"]).strip()
-    assert (ROOT / "RELEASE_NOTES_0.25.0.64.md").is_file()
+    assert (ROOT / "RELEASE_NOTES_0.25.0.65.md").is_file()
 
 
 def test_mini_hotfix_does_not_touch_core_runtime_files_beyond_version_markers():
@@ -40,6 +40,6 @@ def test_mini_hotfix_does_not_touch_core_runtime_files_beyond_version_markers():
     const = (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
     manifest = (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
     card = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.64"' in const
-    assert '"version": "0.25.0.64"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.0.64";' in card
+    assert 'VERSION = "0.25.0.65"' in const
+    assert '"version": "0.25.0.65"' in manifest
+    assert 'const FAIQ_VERSION = "0.25.0.65";' in card
