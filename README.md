@@ -7,7 +7,7 @@
 FreshAirIQ is a Home Assistant custom integration developed by **rupascha**. The current release combines the proven calculation principles with a dynamic room model, persistent learning, live forecasts, the adaptive dashboard card, the Continuous Quality System and the authenticated local staging connection to the FreshAirIQ Diagnostics Hub.
 
 
-## Current release: 0.25.0.59 – Learning Effectiveness Validation v1
+## Current release: 0.25.0.61 – Learning Effectiveness Validation v1
 
 
 - **Production Incident Replay Foundation bleibt erhalten:** die in 0.25.0.54 eingeführten datenschutzminimierten Replay-Snapshots und der deterministische Produktions-Replay-Pfad bleiben unverändert Bestandteil der Basis.

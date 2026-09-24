@@ -9,7 +9,7 @@ import sys
 import zipfile
 from pathlib import Path, PurePosixPath
 
-REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", ".github/workflows/validate.yml", ".github/workflows/release.yml")
+REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", ".github/workflows/quality.yml", ".github/workflows/validate.yml", ".github/workflows/release.yml")
 REQUIRED_COMPONENT = ("__init__.py", "manifest.json", "config_flow.py")
 REQUIRED_BRAND = ("icon.png", "icon@2x.png", "dark_icon.png", "dark_icon@2x.png", "logo.png", "logo@2x.png", "dark_logo.png", "dark_logo@2x.png")
 FORBIDDEN_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules", "quality_reports"}

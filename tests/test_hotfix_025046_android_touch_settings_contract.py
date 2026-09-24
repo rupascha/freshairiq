@@ -1,4 +1,4 @@
-"""Regression contracts for v0.25.0.58 Android touch/settings-contract hardening."""
+"""Regression contracts for v0.25.0.61 Android touch/settings-contract hardening."""
 from __future__ import annotations
 
 import ast
@@ -62,7 +62,7 @@ def test_version_and_release_artifact_suffix_are_consistent():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.0.58"
-    assert policy["version"] == "0.25.0.58"
-    assert package["version"] == "0.25.0.58"
+    assert manifest["version"] == "0.25.0.61"
+    assert policy["version"] == "0.25.0.61"
+    assert package["version"] == "0.25.0.61"
     assert str(policy["release"]["artifact_suffix"]).strip()

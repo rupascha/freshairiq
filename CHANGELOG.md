@@ -1,4 +1,8 @@
-# 0.25.0.59 – Learning Effectiveness Validation v1
+
+## 0.25.0.61
+- Hotfix: freigegebene Dashboard-Einstellungen und Geräte-&-Dienste-Konfiguration durch verpflichtende UI-/Configuration-Contracts gegen unbeabsichtigte Regressionen geschützt.
+- Keine Änderung der FreshAirIQ-Fachlogik.
+# 0.25.0.60 – Learning Effectiveness Validation v1
 
 - Führt eine gepaarte Same-Session-Baseline ein, damit der reale Nutzen gelernter Forecast-Parameter unabhängig von wechselnden Start-/Wetterbedingungen messbar wird.
 - Aggregiert Lernwirkung konservativ nach unabhängigen Lüftungen und verhindert Scheinsicherheit durch gleichzeitig gelüftete Räume.
