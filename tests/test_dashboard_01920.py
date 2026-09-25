@@ -30,7 +30,7 @@ def test_nested_detail_navigation_uses_history_stack():
     text = card_text()
     assert 'this._infoStack = []' in text
     assert 'if (this._info) this._infoStack.push(this._info)' in text
-    assert 'this._info = this._infoStack.length ? this._infoStack.pop() : null' in text
+    assert 'const parent = this._infoStack.length ? this._infoStack.pop() : null' in text
     assert '_infoBackButton()' in text
     assert '_infoNav()' in text
 
@@ -81,4 +81,4 @@ def test_hotfix_01921_all_windows_keep_navigation_visible_while_scrolling():
     # The subwindow back button is always rendered; with an empty history the
     # existing handler returns to the dashboard instead of inventing a fake level.
     assert 'return `<button class="info-back" id="info-back" aria-label="Zurück"' in text
-    assert 'this._info = this._infoStack.length ? this._infoStack.pop() : null' in text
+    assert 'const parent = this._infoStack.length ? this._infoStack.pop() : null' in text

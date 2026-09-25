@@ -9,7 +9,8 @@ def test_setup_requires_real_room_configuration():
 
 def test_back_navigation_uses_pending_scroll_restore_not_overwritten_by_child_view():
     assert "this._pendingSubdialogScrollTop = restoreTop; this._render();" in JS
-    assert "const oldSubScroll = this._pendingSubdialogScrollTop !== null ? this._pendingSubdialogScrollTop : this._subdialogScrollTop;" in JS
+    assert "const oldSubScroll = this._pendingSubdialogScrollTop !== null" in JS
+    assert "this._infoScrollByView" in JS
     assert "this._pendingSubdialogScrollTop = null;" in JS
 
 def test_forward_navigation_explicitly_starts_new_view_at_top():

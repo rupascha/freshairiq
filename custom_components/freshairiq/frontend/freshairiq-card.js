@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.0.71";
+const FAIQ_VERSION = "0.25.0.72";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
@@ -153,14 +153,40 @@ class FreshAirIQCard extends HTMLElement {
         const restore = () => { for (const [node, top, left] of snap.nodes || []) { if (node?.isConnected) { node.scrollTop = top; node.scrollLeft = left; } } window.scrollTo(snap.x || 0, snap.y || 0); };
         restore(); requestAnimationFrame(restore);
     }
-    _pushInfoViewport() {
+    _rememberInfoViewport(view = this._info) {
+        if (!this._infoScrollByView) this._infoScrollByView = new Map();
+        if (!view) return 0;
         const current = this.shadowRoot?.querySelector(".subdialog");
+        const top = current ? current.scrollTop : (this._infoScrollByView.get(view) ?? this._subdialogScrollTop ?? 0);
+        this._infoScrollByView.set(view, top);
+        return top;
+    }
+    _pushInfoViewport() {
         if (this._info) {
             this._infoStack.push(this._info);
-            this._infoScrollStack.push(current ? current.scrollTop : this._subdialogScrollTop || 0);
+            this._infoScrollStack.push(this._rememberInfoViewport(this._info));
         }
     }
-    _resetInfoNavigation() { this._infoStack = []; this._infoScrollStack = []; this._subdialogScrollTop = 0; }
+    _resetInfoNavigation() { this._infoStack = []; this._infoScrollStack = []; if (this._infoScrollByView) this._infoScrollByView.clear(); this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; }
+    _installAndroidTouchScroll(scroller) {
+        if (!scroller || !/Android/i.test(navigator.userAgent || "")) return;
+        let startY = 0, startTop = 0, dragging = false;
+        scroller.addEventListener("touchstart", e => {
+            if (!e.touches || e.touches.length !== 1) return;
+            startY = e.touches[0].clientY; startTop = scroller.scrollTop; dragging = false;
+        }, { passive: true });
+        scroller.addEventListener("touchmove", e => {
+            if (!e.touches || e.touches.length !== 1 || scroller.scrollHeight <= scroller.clientHeight) return;
+            const delta = startY - e.touches[0].clientY;
+            if (!dragging && Math.abs(delta) < 4) return;
+            dragging = true;
+            const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+            const next = Math.max(0, Math.min(max, startTop + delta));
+            if (next !== scroller.scrollTop) scroller.scrollTop = next;
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+    }
     _closeOverlayToCard() {
         this._dialogOpen = false; this._info = null; this._resetInfoNavigation();
         this._render(); this._restoreOverlayViewport();
@@ -1834,10 +1860,14 @@ class FreshAirIQCard extends HTMLElement {
         if (oldDialog)
             this._dialogScrollTop = oldDialog.scrollTop;
         const oldSubdialog = this.shadowRoot.querySelector(".subdialog");
-        if (oldSubdialog)
+        if (oldSubdialog) {
             this._subdialogScrollTop = oldSubdialog.scrollTop;
+            if (this._info) { if (!this._infoScrollByView) this._infoScrollByView = new Map(); this._infoScrollByView.set(this._info, oldSubdialog.scrollTop); }
+        }
         const oldScroll = this._forceDialogTop ? 0 : this._dialogScrollTop;
-        const oldSubScroll = this._pendingSubdialogScrollTop !== null ? this._pendingSubdialogScrollTop : this._subdialogScrollTop;
+        const oldSubScroll = this._pendingSubdialogScrollTop !== null
+            ? this._pendingSubdialogScrollTop
+            : (this._info ? ((this._infoScrollByView && this._infoScrollByView.get(this._info)) ?? this._subdialogScrollTop) : this._subdialogScrollTop);
         this._pendingSubdialogScrollTop = null;
         this._forceDialogTop = false;
         const entity = this._statusEntity();
@@ -2116,7 +2146,7 @@ class FreshAirIQCard extends HTMLElement {
             await this._settingsPost({ action });
         }));
         (_s = this.shadowRoot.getElementById("info-close")) === null || _s === void 0 ? void 0 : _s.addEventListener("click", e => { e.stopPropagation(); this._info = null; this._resetInfoNavigation(); this._render(); this._restoreOverlayViewport(); });
-        (_t = this.shadowRoot.getElementById("info-back")) === null || _t === void 0 ? void 0 : _t.addEventListener("click", e => { e.stopPropagation(); clearTimeout(this._deferredRender); this._deferredRender = null; const restoreTop = this._infoScrollStack.length ? this._infoScrollStack.pop() : 0; this._info = this._infoStack.length ? this._infoStack.pop() : null; this._pendingSubdialogScrollTop = restoreTop; this._render(); });
+        (_t = this.shadowRoot.getElementById("info-back")) === null || _t === void 0 ? void 0 : _t.addEventListener("click", e => { e.stopPropagation(); clearTimeout(this._deferredRender); this._deferredRender = null; this._rememberInfoViewport(this._info); const stackTop = this._infoScrollStack.length ? this._infoScrollStack.pop() : 0; const parent = this._infoStack.length ? this._infoStack.pop() : null; const restoreTop = parent ? ((this._infoScrollByView && this._infoScrollByView.get(parent)) ?? stackTop) : 0; this._info = parent; this._pendingSubdialogScrollTop = restoreTop; this._render(); });
         const thresholdMode = this.shadowRoot.getElementById("threshold-mode-direct");
         if (thresholdMode) thresholdMode.addEventListener("change", async e => {
             e.stopPropagation();
@@ -2180,6 +2210,7 @@ class FreshAirIQCard extends HTMLElement {
             // feeling in older FreshAirIQ builds.
             newDialog.scrollTop = oldScroll;
             this._dialogScrollTop = newDialog.scrollTop;
+            this._installAndroidTouchScroll(newDialog);
             newDialog.addEventListener("scroll", () => {
                 this._dialogScrollTop = newDialog.scrollTop;
                 this._lastScrollAt = Date.now();
@@ -2211,8 +2242,10 @@ class FreshAirIQCard extends HTMLElement {
             // WebView can stop scrolling when a nested touchmove handler calls
             // preventDefault at container boundaries. CSS overscroll containment
             // prevents scroll chaining without cancelling the gesture.
+            this._installAndroidTouchScroll(newSubdialog);
             newSubdialog.addEventListener("scroll", () => {
                 this._subdialogScrollTop = newSubdialog.scrollTop;
+                if (this._info) { if (!this._infoScrollByView) this._infoScrollByView = new Map(); this._infoScrollByView.set(this._info, newSubdialog.scrollTop); }
                 this._lastScrollAt = Date.now();
             }, { passive: true });
             // Desktop HA can hand wheel events through the shadow-DOM overlay to

@@ -1148,3 +1148,7 @@ Hotfix based strictly on 0.9.4:
 - Diagnoseexport bleibt bei beschädigten JSONL-/Session-/Raumstrukturen funktionsfähig und nachvollziehbar.
 - 476 Regressionstests; Pure-Logic-Coverage 92,986 %, CI-Floor 92,9 %.
 
+
+## 0.25.0.72
+- Hotfix: Scrollpositionen werden pro Detail-/Raumansicht gespeichert und bei Back-Navigation wiederhergestellt.
+- Android: Touch-Scroll-Fallback für `.dialog-scroll` und `.subdialog`; iOS-native Scrollpfade bleiben unverändert.

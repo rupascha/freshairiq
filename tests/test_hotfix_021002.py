@@ -40,7 +40,7 @@ def test_resident_profile_is_prominently_exposed():
 
 
 def test_release_version_021002_everywhere():
-    assert 'VERSION = "0.25.0.71"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.71"' in (COMP / "manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.0.71";' in JS
+    assert 'VERSION = "0.25.0.72"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.72"' in (COMP / "manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.72";' in JS
     assert 'Current release:' not in (ROOT / "README.md").read_text(encoding="utf-8")
