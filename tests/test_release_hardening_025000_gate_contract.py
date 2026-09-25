@@ -9,12 +9,12 @@ COMP = ROOT / "custom_components" / "freshairiq"
 
 
 def test_release_version_is_consistent_across_runtime_and_frontend():
-    version = "0.25.0.66"
+    version = "0.25.0.70"
     assert f'VERSION = "{version}"' in (COMP / "const.py").read_text(encoding="utf-8")
     assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == version
     for filename in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
         assert f'const FAIQ_VERSION = "{version}";' in (COMP / "frontend" / filename).read_text(encoding="utf-8")
-    assert f"Current release: {version}" in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "Current release:" not in (ROOT / "README.md").read_text(encoding="utf-8")
     assert (ROOT / f"RELEASE_NOTES_{version}.md").is_file()
 
 

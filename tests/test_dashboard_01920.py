@@ -61,7 +61,7 @@ def test_close_controls_respect_safe_area_and_have_large_targets():
     assert '.info-back{position:static;width:42px;height:42px' in text
     assert '.dialog-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px' in text
     assert '.dialog-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px 42px;align-items:center;gap:8px;position:relative' in text
-    assert '.dialog-scroll{min-height:0;flex:1 1 auto;overflow-y:auto' in text
+    assert '.dialog-scroll{min-height:0;height:0;flex:1 1 auto;overflow-y:scroll' in text
     assert '.close{font-size:18px;width:42px;height:42px' in text
 
 

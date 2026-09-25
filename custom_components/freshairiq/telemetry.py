@@ -45,6 +45,7 @@ from .diagnostic_transport import (
 _LOGGER = logging.getLogger(__name__)
 _STORE_VERSION = 1
 _CHECK_INTERVAL = timedelta(minutes=15)
+_INITIAL_UPLOAD_GRACE = timedelta(minutes=30)
 _GZIP_COMPRESSLEVEL = 4
 
 
@@ -164,6 +165,9 @@ class FreshAirIQDiagnosticsClient:
             stored = None
             _LOGGER.debug("Could not load FreshAirIQ diagnostics-upload state", exc_info=True)
         self._state = dict(stored) if isinstance(stored, dict) else {}
+        if not self._state and not self._state.get("diagnostics_first_seen_at"):
+            self._state["diagnostics_first_seen_at"] = dt_util.now().isoformat()
+            await self._save_state()
         self._started = True
         self._runtime_state = "idle"
         self._unsub = async_track_time_interval(self.hass, self._schedule_check, _CHECK_INTERVAL)
@@ -415,6 +419,7 @@ class FreshAirIQDiagnosticsClient:
         if not installation_id:
             self._runtime_state = "identity_unavailable"
             return False
+
         first_sync_due = not self._state.get("last_success_at") and (
             mode in {"daily", "weekly"} or current_problem is not None
         )
@@ -429,16 +434,42 @@ class FreshAirIQDiagnosticsClient:
             self._runtime_state = "waiting"
             return False
 
+        # Register the anonymous installation immediately once reporting is due,
+        # but deliberately keep diagnostic/device payloads out of the Hub during
+        # the first 30 minutes of a brand-new installation.
+        session = async_get_clientsession(self.hass)
+        timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+        try:
+            await self._async_ensure_enrolled(session, installation_id, timeout)
+        except (ClientError, TimeoutError, RuntimeError, ValueError, TypeError, OSError) as err:
+            failures = self._safe_failure_count(self._state.get("consecutive_failures")) + 1
+            delay = retry_delay_seconds(failures)
+            self._state.update({
+                "consecutive_failures": failures,
+                "next_retry_at": (now + timedelta(seconds=delay)).isoformat(),
+                "last_error_type": type(err).__name__,
+            })
+            self._runtime_state = "error"
+            await self._save_state()
+            return False
+        first_seen = self._parse_dt(self._state.get("diagnostics_first_seen_at"))
+        if not force and not self._state.get("last_success_at") and first_seen is not None:
+            if now.tzinfo is not None and first_seen.tzinfo is None:
+                first_seen = first_seen.replace(tzinfo=now.tzinfo)
+            elif now.tzinfo is None and first_seen.tzinfo is not None:
+                first_seen = first_seen.replace(tzinfo=None)
+            if now < first_seen + _INITIAL_UPLOAD_GRACE:
+                self._runtime_state = "onboarding_grace"
+                return False
+
         self._runtime_state = "preparing"
         self._state["last_attempt_at"] = now.isoformat()
         await self._save_state()
         try:
-            session = async_get_clientsession(self.hass)
-            timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
-            # Authenticate before doing the relatively expensive 30-day export
-            # and chunk build. An unreachable Hub therefore fails fast without
-            # spending several seconds on diagnostics preparation.
-            token = await self._async_ensure_enrolled(session, installation_id, timeout)
+            # Enrollment already happened before the onboarding grace gate.
+            # Reusing the persistent token here keeps installation registration
+            # and diagnostic upload as two separate lifecycle stages.
+            token = await self._async_client_token()
             exported = await self.recorder.async_export()
             chunks = await self._async_cpu_job(
                 build_upload_chunks,

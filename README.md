@@ -11,8 +11,7 @@ FreshAirIQ ist eine Home-Assistant-Integration für intelligente, nachvollziehba
 **Warten → Lüften → Weiterlüften → Schließen.** Für einzelne Räume, Etagen oder das ganze Haus.
 
 > [!IMPORTANT]
-> ## 🧪 Öffentliche Beta · Version 0.25.0.68
-> **Current release: 0.25.0.68 – Public Beta**
+> ## 🧪 Öffentliche Beta
 > FreshAirIQ startet in die öffentliche Beta. Gesucht werden zunächst rund 20 deutschsprachige Home-Assistant-Haushalte mit unterschiedlichen Gebäuden, Sensoren und Lüftungsgewohnheiten. Feedback und Fehler können direkt aus FreshAirIQ an den Diagnose-Hub gesendet werden.
 >
 > **Beta-Diagnostik:** Bei dieser Beta ist die pseudonymisierte automatische Diagnoseübertragung standardmäßig auf **„Täglich nachts“** gesetzt. Der grobe **Geräte-/Browser-Kontext** ist standardmäßig **aktiv**, um Android-, iOS-, Browser- und Darstellungsprobleme unterscheiden zu können. Beide Einstellungen können jederzeit unter **FreshAirIQ → Energie & Daten → Diagnose-Freigabe** geändert oder deaktiviert werden. Direkte Identifikatoren wie Bewohnernamen, Entity-IDs, IP-Adressen, E-Mail-Adressen und URLs werden vor der Übertragung entfernt oder pseudonymisiert.
@@ -197,7 +196,7 @@ Feedback, Fehlermeldungen und Beta-Tests sind genauso wertvoll und ausdrücklich
 
 ## Projektstatus
 
-**FreshAirIQ 0.25.0.68 · Public Beta**
+**FreshAirIQ · Public Beta**
 
 FreshAirIQ befindet sich aktiv in Entwicklung. Prognosen und Empfehlungen sind Entscheidungshilfen für das Raumklima und ersetzen keine fachliche Gebäude-, Schimmel-, Gesundheits- oder Sicherheitsdiagnostik.
 

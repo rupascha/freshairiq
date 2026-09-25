@@ -14,6 +14,9 @@ from .const import (
     MOISTURE_SOURCE_SAUNA,
     MOISTURE_SOURCE_SHOWER,
     MOISTURE_SOURCE_COOKING,
+    MOISTURE_SOURCE_WASHING_MACHINE,
+    MOISTURE_SOURCE_DRYER,
+    MOISTURE_SOURCE_IRONING_STATION,
 )
 from .energy import exchanged_air_fraction
 
@@ -22,6 +25,9 @@ _LABELS = {
     MOISTURE_SOURCE_BATH: "Bad",
     MOISTURE_SOURCE_SAUNA: "Sauna",
     MOISTURE_SOURCE_COOKING: "Kochen",
+    MOISTURE_SOURCE_WASHING_MACHINE: "Waschmaschine",
+    MOISTURE_SOURCE_DRYER: "Trockner",
+    MOISTURE_SOURCE_IRONING_STATION: "Bügelstation",
 }
 
 
@@ -50,6 +56,9 @@ def _identify_source(configured: set[str], *, temp_rise: float, source_rate: flo
         MOISTURE_SOURCE_SHOWER: "Dusche erkannt. Genieß die warme Dusche – um die frische Luft kümmert sich FreshAirIQ danach. 🚿",
         MOISTURE_SOURCE_BATH: "Bad erkannt. Zeit zum Entspannen – FreshAirIQ behält die Feuchteentwicklung im Blick. 🛁",
         MOISTURE_SOURCE_SAUNA: "Sauna erkannt. FreshAirIQ berücksichtigt Wärme und Feuchte und plant die passende Nachlüftung.",
+        MOISTURE_SOURCE_WASHING_MACHINE: "Waschmaschine als Feuchtequelle erkannt. FreshAirIQ berücksichtigt die zusätzliche Raumfeuchte im Wäscheraum.",
+        MOISTURE_SOURCE_DRYER: "Trockner als Feuchtequelle erkannt. FreshAirIQ berücksichtigt die zusätzliche Wärme und Feuchte im Wäscheraum.",
+        MOISTURE_SOURCE_IRONING_STATION: "Bügelstation als Feuchtequelle erkannt. FreshAirIQ berücksichtigt den zusätzlichen Wasserdampf im Wäscheraum.",
     }.get(key, "Zusätzliche Feuchtigkeit erkannt.")
     return label, key, text
 

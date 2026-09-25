@@ -63,7 +63,7 @@
           "reference_humidity": "Optional together with the alternative reference temperature.",
           "co2": "Optional for additional air-quality assessment.",
           "include_in_calculations": "Off = the room remains visible but is excluded from recommendations, house balance, statistics and learning.",
-          "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. Used as context for automatic moisture-source detection.",
+          "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
           "voc": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "pm25": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "illuminance": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
@@ -239,7 +239,10 @@
         "shower": "Shower",
         "bath": "Bath",
         "sauna": "Sauna",
-        "cooking": "Cooking"
+        "cooking": "Cooking",
+        "washing_machine": "Washing machine",
+        "dryer": "Dryer",
+        "ironing_station": "Ironing station"
       }
     },
     "thermal_preference": {
@@ -395,7 +398,7 @@
               "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
             },
             "data_description": {
-              "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -491,7 +494,7 @@
           "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
-          "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+          "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
           "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
           "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
           "illuminance": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance.",
@@ -532,7 +535,7 @@
               "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
             },
             "data_description": {
-              "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -682,7 +685,7 @@
               "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
             },
             "data_description": {
-              "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -778,7 +781,7 @@
           "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
-          "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+          "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
           "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
           "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
           "illuminance": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance.",
@@ -819,7 +822,7 @@
               "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
             },
             "data_description": {
-              "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -2196,7 +2199,7 @@
             "co2": "Optional. With a CO₂ sensor, FreshAirIQ can assess air quality in addition to humidity.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
-            "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+            "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -2330,7 +2333,7 @@
                 "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
               },
               "data_description": {
-                "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+                "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
                 "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
                 "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
                 "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -2374,7 +2377,7 @@
             "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
-            "moisture_sources": "Multiple selection is possible: shower, bathtub and/or sauna. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+            "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",

@@ -44,7 +44,7 @@ def test_frontend_does_not_claim_non_scored_comparison_is_learning_blocked():
 
 def test_release_version_is_025009():
     import json
-    assert 'VERSION = "0.25.0.66"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.66"
+    assert 'VERSION = "0.25.0.70"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.0.70"
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.66";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.70";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

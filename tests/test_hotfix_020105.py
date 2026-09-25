@@ -101,7 +101,7 @@ def test_details_header_is_separate_from_scroll_body_and_learning_feedback_is_vi
     assert '<div class="dialog-scroll"><div class="overview">' in JS
     assert '.dialog{width:calc(100vw - 28px)' in JS
     assert 'display:flex;flex-direction:column;overflow:hidden' in JS
-    assert '.dialog-scroll{min-height:0;flex:1 1 auto;overflow-y:auto' in JS
+    assert '.dialog-scroll{min-height:0;height:0;flex:1 1 auto;overflow-y:scroll' in JS
     assert 'last.learning_feedback_text' in JS
     assert 'result-learning-feedback' in JS
 
