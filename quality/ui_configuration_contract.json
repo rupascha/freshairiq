@@ -6,6 +6,6 @@
   "dashboard_settings_events_sha256": "7309083f2a903d850e458ab4db476ad0d73cffb44c069771366bcaf1fa7ef0ee",
   "config_flow_sha256": "da8e251d2de6c2f0b1acb44f4e7b900874f3adbcb10d5328084766d00f7b70e8",
   "de_configuration_sha256": "b470dbbb6d50afc592235cba58ab9e19ad3caa9ee6974e095a6815cd50774745",
-  "en_configuration_sha256": "64079850d42398c3e3e88a2a8d3d498bea8951f7a9ce36b5d41fad219d922d4e",
-  "strings_configuration_sha256": "64079850d42398c3e3e88a2a8d3d498bea8951f7a9ce36b5d41fad219d922d4e"
+  "en_configuration_sha256": "befb649169bba2603a9d2d8bdc62143f65216c85a84ea3f266350d03c5c11dbf",
+  "strings_configuration_sha256": "befb649169bba2603a9d2d8bdc62143f65216c85a84ea3f266350d03c5c11dbf"
 }

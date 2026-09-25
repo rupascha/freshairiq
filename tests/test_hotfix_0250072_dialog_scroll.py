@@ -21,4 +21,4 @@ def test_android_has_scoped_touch_scroll_fallback_without_changing_ios_path():
 
 
 def test_current_version():
-    assert 'const FAIQ_VERSION = "0.25.0.73";' in JS
+    assert 'const FAIQ_VERSION = "0.25.0.75";' in JS

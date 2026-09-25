@@ -16,4 +16,4 @@ def test_release_version_is_025049():
     manifest = json.loads((ROOT / "custom_components/freshairiq/manifest.json").read_text())
     package = json.loads((ROOT / "package.json").read_text())
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text())
-    assert manifest["version"] == package["version"] == policy["version"] == "0.25.0.73"
+    assert manifest["version"] == package["version"] == policy["version"] == "0.25.0.75"

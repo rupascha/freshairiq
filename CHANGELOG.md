@@ -1,3 +1,8 @@
+## 0.25.0.75
+- Added automatic English dashboard localization for non-German Home Assistant profiles.
+- German dashboard behavior remains unchanged.
+- No calculation, learning, diagnostics or scroll/navigation logic changed.
+
 
 ## 0.25.0.64
 - Hotfix: freigegebene Dashboard-Einstellungen und Geräte-&-Dienste-Konfiguration durch verpflichtende UI-/Configuration-Contracts gegen unbeabsichtigte Regressionen geschützt.

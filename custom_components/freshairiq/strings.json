@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Local outdoor-air reference",
-        "description": "Select a local weather entity OR separate outdoor temperature and humidity sensors. An optional pollen index sensor can also be configured.",
+        "description": "FreshAirIQ can be added immediately without configuring any rooms. The outdoor-air source, rooms and all other settings are optional here and can be configured later under Devices & services or via the dashboard settings button. Until the required climate sources are available, FreshAirIQ does not perform ventilation calculations, but the dashboard remains available.",
         "data": {
           "outdoor_weather": "Local weather entity (recommended)",
           "outdoor_temperature": "Outdoor temperature sensor (optional)",
@@ -12,7 +12,7 @@
           "pollen_entity": "Pollen index sensor (optional)"
         },
         "data_description": {
-          "outdoor_weather": "Recommended default source for current outdoor-air data.",
+          "outdoor_weather": "Optional. Recommended source for outdoor air and weather forecasts. It can be added at any time after installation.",
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
           "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
@@ -31,8 +31,8 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Alternative reference temperature",
-          "reference_humidity": "Alternative reference humidity",
+          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
@@ -59,14 +59,14 @@
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
           "height": "Only required when no direct room volume is entered.",
-          "reference_temperature": "Optional for local reference air, e.g. a conservatory.",
-          "reference_humidity": "Optional together with the alternative reference temperature.",
+          "reference_temperature": "Reference sensors describe the air entering through this ventilation opening. The default is normal outdoor air. Set a different temperature here only if the entire room ventilates into another air zone, for example a conservatory. Temperature and humidity must measure the same air zone. If windows/doors lead to different air zones, assign the reference precisely per contact in the FreshAirIQ dashboard.",
+          "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
           "co2": "Optional for additional air-quality assessment.",
           "include_in_calculations": "Off = the room remains visible but is excluded from recommendations, house balance, statistics and learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
-          "voc": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
-          "pm25": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
-          "illuminance": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
+          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds (gaseous substances, for example from cleaning products, furniture or cooking fumes). They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
+          "pm25": "Optional. PM2.5 sensors measure very fine airborne particles up to 2.5 µm, typically in µg/m³; such sensors are found, for example, in air-quality monitors and some air purifiers. They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
+          "illuminance": "Optional. An illuminance sensor measures light in lux (lx), for example a Zigbee light sensor or the lux sensor of an occupancy detector. It does not change the humidity/ventilation physics or the ml forecast. It can provide supplementary shading recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "exhaust_fan": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
@@ -116,7 +116,7 @@
       },
       "reconfigure": {
         "title": "Reconfigure outdoor-air reference",
-        "description": "Change the mandatory outdoor-air source used by FreshAirIQ. Choose either a weather entity or a matching outdoor temperature/humidity pair.",
+        "description": "Change the outdoor-air source or deliberately leave it empty. FreshAirIQ can remain installed without an outdoor source; ventilation calculations start only when a valid source is available. Without a weather entity, outdoor temperature and outdoor humidity must always be configured together.",
         "data": {
           "outdoor_weather": "Local weather entity (recommended)",
           "outdoor_temperature": "Outdoor temperature sensor (optional)",
@@ -133,7 +133,7 @@
     },
     "error": {
       "outdoor_source_required": "Select a local weather entity or both a temperature and humidity sensor.",
-      "ventilation_contact_required": "Select at least one contact that actually ventilates this room.",
+      "ventilation_contact_required": "Select at least one contact that actually ventilates this room. It may also be a window or door located in another room.",
       "room_volume_required": "Enter either room volume or complete length, width and height.",
       "room_volume_too_small": "Room volume must be at least 2 m³.",
       "room_name_required": "Enter a room name.",
@@ -278,7 +278,7 @@
     "step": {
       "init": {
         "title": "Settings",
-        "description": "Settings are grouped by task. Room-specific details are edited directly on each room.",
+        "description": "Step-by-step FreshAirIQ configuration directly in Home Assistant. As in a well-structured native config flow, basic data and advanced settings are separated; each page explains the purpose, default value and, where useful, an example. Saved changes take effect immediately and are used identically by the dashboard settings.",
         "menu_options": {
           "home_setup": "Home & rooms",
           "comfort_health": "Comfort & air quality",
@@ -304,7 +304,7 @@
       },
       "outdoor": {
         "title": "Change outdoor-air source",
-        "description": "Dedicated outdoor temperature and humidity sensors take precedence over the weather.* entity.",
+        "description": "Optional outdoor-air reference. Without a source, FreshAirIQ remains installed and the dashboard stays available, but no reliable ventilation calculations are produced. Without a weather entity, outdoor temperature and outdoor humidity must be configured together.",
         "data": {
           "outdoor_weather": "Local weather entity",
           "outdoor_temperature": "Outdoor temperature sensor (optional)",
@@ -341,7 +341,7 @@
       },
       "add_room": {
         "title": "Add room",
-        "description": "Set sensors, ventilation contacts and room volume.",
+        "description": "Configure the room completely. After saving, contact orientations and contact delays follow. Each confirmed page is saved immediately.",
         "data": {
           "name": "Room name",
           "temperature": "Temperature sensor",
@@ -352,8 +352,8 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Alternative reference temperature",
-          "reference_humidity": "Alternative reference humidity",
+          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
@@ -440,16 +440,16 @@
             "name": "Optional additional sensors & references",
             "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
             "data": {
-              "reference_temperature": "Alternative reference temperature",
-              "reference_humidity": "Alternative reference humidity",
+              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)"
             },
             "data_description": {
-              "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-              "reference_humidity": "Optional; use together with the alternative reference temperature.",
+              "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
               "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
               "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
@@ -489,8 +489,8 @@
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
           "height": "Only required when no direct room volume is entered.",
-          "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-          "reference_humidity": "Optional; use together with the alternative reference temperature.",
+          "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+          "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
           "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
@@ -575,22 +575,22 @@
           },
           "optional_sensors": {
             "name": "Optional sensors",
-            "description": "Only configure sensors that are actually available in this room.",
+            "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them.",
             "data": {
-              "reference_temperature": "Alternative reference temperature",
-              "reference_humidity": "Alternative reference humidity",
+              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)"
             },
             "data_description": {
-              "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-              "reference_humidity": "Optional; use together with the alternative reference temperature.",
+              "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "Optional. With a CO₂ sensor, FreshAirIQ can assess air quality in addition to humidity.",
-              "voc": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
-              "pm25": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
-              "illuminance": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds (gaseous substances, for example from cleaning products, furniture or cooking fumes). They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
+              "pm25": "Optional. PM2.5 sensors measure very fine airborne particles up to 2.5 µm, typically in µg/m³; such sensors are found, for example, in air-quality monitors and some air purifiers. They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
+              "illuminance": "Optional. An illuminance sensor measures light in lux (lx), for example a Zigbee light sensor or the lux sensor of an occupancy detector. It does not change the humidity/ventilation physics or the ml forecast. It can provide supplementary shading recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions."
             }
           },
           "optional_actuators": {
@@ -628,7 +628,7 @@
       },
       "edit_room": {
         "title": "Edit {room_name}",
-        "description": "Changes are applied after Save and reload.",
+        "description": "Change room data, sensors, moisture sources and calculation parameters. Each confirmed page is saved immediately.",
         "data": {
           "name": "Room name",
           "temperature": "Temperature sensor",
@@ -639,8 +639,8 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Alternative reference temperature",
-          "reference_humidity": "Alternative reference humidity",
+          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
@@ -727,16 +727,16 @@
             "name": "Optional additional sensors & references",
             "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
             "data": {
-              "reference_temperature": "Alternative reference temperature",
-              "reference_humidity": "Alternative reference humidity",
+              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)"
             },
             "data_description": {
-              "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-              "reference_humidity": "Optional; use together with the alternative reference temperature.",
+              "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
               "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
               "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
@@ -776,8 +776,8 @@
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
           "height": "Only required when no direct room volume is entered.",
-          "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-          "reference_humidity": "Optional; use together with the alternative reference temperature.",
+          "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+          "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
           "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
@@ -862,22 +862,22 @@
           },
           "optional_sensors": {
             "name": "Optional sensors",
-            "description": "Only configure sensors that are actually available in this room.",
+            "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them.",
             "data": {
-              "reference_temperature": "Alternative reference temperature",
-              "reference_humidity": "Alternative reference humidity",
+              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)"
             },
             "data_description": {
-              "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-              "reference_humidity": "Optional; use together with the alternative reference temperature.",
+              "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
               "co2": "Optional. With a CO₂ sensor, FreshAirIQ can assess air quality in addition to humidity.",
-              "voc": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
-              "pm25": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
-              "illuminance": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds (gaseous substances, for example from cleaning products, furniture or cooking fumes). They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
+              "pm25": "Optional. PM2.5 sensors measure very fine airborne particles up to 2.5 µm, typically in µg/m³; such sensors are found, for example, in air-quality monitors and some air purifiers. They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions.",
+              "illuminance": "Optional. An illuminance sensor measures light in lux (lx), for example a Zigbee light sensor or the lux sensor of an occupancy detector. It does not change the humidity/ventilation physics or the ml forecast. It can provide supplementary shading recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions."
             }
           },
           "optional_actuators": {
@@ -1212,7 +1212,7 @@
       },
       "energy": {
         "title": "Heating system",
-        "description": "Choose the heating system. The next step shows only relevant cost inputs.",
+        "description": "Select the heating system used to estimate reheating costs. Default: heat pump. The next step shows only the applicable cost parameters.",
         "data": {
           "heating_system": "Heating system (Default: heat_pump)"
         },
@@ -1276,7 +1276,7 @@
       },
       "sort_rooms": {
         "title": "Sort rooms",
-        "description": "Drag the rooms into the desired order.",
+        "description": "Assign position numbers. Default: current order. A lower number places the room higher in the dashboard and room lists.",
         "data": {
           "room_order": "Room order"
         },
@@ -1296,7 +1296,7 @@
       },
       "contact_delays": {
         "title": "Opening delays · {room_name}",
-        "description": "Each contact must remain open for this duration before a ventilation session starts. Field names are entity IDs.",
+        "description": "Time a contact must remain continuously open before FreshAirIQ starts a ventilation session. Default: 0 s. Example: 120 s ignores brief door openings and counts the contact as ventilation only after two minutes.",
         "data": {}
       },
       "air_quality": {
@@ -1337,7 +1337,7 @@
       },
       "energy_details": {
         "title": "Heating costs · {heating_system}",
-        "description": "Used only to estimate reheating cost after ventilation-related temperature loss.",
+        "description": "These values are used only to estimate the cost of reheating the heat lost through ventilation. The default values are approximations and can be adjusted to your tariff or heating system.",
         "data": {
           "electricity_price_per_kwh": "Electricity price (Default: 0.3)",
           "heat_pump_cop": "COP / seasonal performance (Default: 3.5)",
@@ -1395,7 +1395,7 @@
       },
       "contact_orientations": {
         "title": "Windows/doors · {room_name}",
-        "description": "Each contact can have its own orientation. This is intended for corner rooms with openings on multiple façades.",
+        "description": "Assign the actual compass orientation to each contact. Default: Unknown. Example: a window facing the morning sun = East; the opposite window = West. This information improves wind and cross-ventilation assessment.",
         "data": {}
       },
       "reset_defaults": {
@@ -1410,7 +1410,7 @@
       },
       "levels": {
         "title": "Floors & zones",
-        "description": "Create, sort and manage your own floors/zones. Current: {levels}",
+        "description": "Create, sort and manage custom floors/zones. Default: no additional preset; existing room assignments are adopted automatically. Current: {levels}",
         "data": {
           "action": "Action"
         },
@@ -1420,7 +1420,7 @@
       },
       "level_add": {
         "title": "Add zone",
-        "description": "Choose any name.",
+        "description": "Choose any name, for example “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty.",
         "data": {
           "name": "Floor/zone name"
         },
@@ -1430,7 +1430,7 @@
       },
       "level_reorder": {
         "title": "Sort zones",
-        "description": "Change order with drag and drop.",
+        "description": "Each area receives a position number. Default: current order. A lower number places it higher.",
         "data": {
           "level_order": "Order"
         },
@@ -1499,7 +1499,7 @@
       },
       "maintenance": {
         "title": "Maintenance & reset",
-        "description": "Occasional actions for resetting learning or settings.",
+        "description": "Maintenance functions that are rarely needed. Room assignments and sensors are changed only where this is explicitly stated.",
         "menu_options": {
           "reset_learning": "Reset learning data only",
           "reset_defaults": "Restore default settings",
@@ -2141,7 +2141,7 @@
       "step": {
         "user": {
           "title": "Add room",
-          "description": "Create the room with its sensors and ventilation contacts. Orientations and optional contact delays follow.",
+          "description": "Configure the room with its sensors, size and properties. Contact orientations and delays follow. Default values are explained directly at the fields. Changes are stored in the same configuration used by the dashboard settings.",
           "data": {
             "name": "Room name",
             "temperature": "Temperature sensor",
@@ -2152,8 +2152,8 @@
             "length": "Length",
             "width": "Width",
             "height": "Height",
-            "reference_temperature": "Reference temperature sensor",
-            "reference_humidity": "Reference humidity sensor",
+            "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+            "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
             "co2": "CO₂ sensor",
             "floor": "Floor / zone",
             "include_in_calculations": "Include in calculations",
@@ -2177,7 +2177,7 @@
             },
             "optional_sensors": {
               "name": "Optional sensors",
-              "description": "Only configure sensors that are actually available in this room."
+              "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them."
             },
             "properties": {
               "name": "Room properties",
@@ -2194,8 +2194,8 @@
             "length": "Only required when no direct room volume is entered.",
             "width": "Only required when no direct room volume is entered.",
             "height": "Only required when no direct room volume is entered.",
-            "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-            "reference_humidity": "Optional; use together with the alternative reference temperature.",
+            "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+            "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
             "co2": "Optional. With a CO₂ sensor, FreshAirIQ can assess air quality in addition to humidity.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
@@ -2207,7 +2207,7 @@
         },
         "reconfigure": {
           "title": "{room_name}",
-          "description": "What would you like to change? Changes are applied only after selecting “Save changes”.",
+          "description": "Select the section you want to change. Each confirmed subpage is saved immediately; “Done” only closes the room settings. Changes are stored in the same configuration used by the dashboard settings.",
           "menu_options": {
             "room_basics": "Room, sensors & size",
             "room_orientations": "Window orientation",
@@ -2236,8 +2236,8 @@
             "length": "Room length",
             "width": "Room width",
             "height": "Room height",
-            "reference_temperature": "Alternative reference temperature",
-            "reference_humidity": "Alternative reference humidity",
+            "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+            "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
             "co2": "CO₂ sensor (optional)",
             "floor": "Floor",
             "include_in_calculations": "Include in FreshAirIQ calculations",
@@ -2307,16 +2307,16 @@
               "name": "Optional additional sensors & references",
               "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
               "data": {
-                "reference_temperature": "Alternative reference temperature",
-                "reference_humidity": "Alternative reference humidity",
+                "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+                "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
                 "co2": "CO₂ sensor (optional)",
                 "voc": "VOC/TVOC sensor (optional)",
                 "pm25": "PM2.5 sensor (optional)",
                 "illuminance": "Illuminance sensor (optional)"
               },
               "data_description": {
-                "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-                "reference_humidity": "Optional; use together with the alternative reference temperature.",
+                "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+                "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
                 "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
                 "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
                 "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
@@ -2372,8 +2372,8 @@
             "length": "Only required when no direct room volume is entered.",
             "width": "Only required when no direct room volume is entered.",
             "height": "Only required when no direct room volume is entered.",
-            "reference_temperature": "Optional for special cases, e.g. a conservatory as a local reference. Otherwise FreshAirIQ uses the normal outdoor-air reference.",
-            "reference_humidity": "Optional; use together with the alternative reference temperature.",
+            "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+            "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
             "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
@@ -2395,12 +2395,12 @@
         },
         "add_orientations": {
           "title": "{room_name} · Orientations",
-          "description": "Assign the actual compass orientation to every window/door contact.",
+          "description": "Assign the actual compass orientation to each contact. Default: Unknown. Example: morning sun = East, opposite side = West.",
           "data": {}
         },
         "room_orientations": {
           "title": "{room_name} · Orientations",
-          "description": "Assign the actual compass orientation to every window/door contact.",
+          "description": "Assign the actual compass orientation to each contact. Default: Unknown. The confirmed page is saved immediately.",
           "data": {}
         },
         "add_delays": {
@@ -2410,7 +2410,7 @@
         },
         "room_delays": {
           "title": "{room_name} · Contact delays",
-          "description": "Optional delay per window/door contact.",
+          "description": "Delay per window/door contact. Default: 0 s. Example: 120 s means the contact counts as ventilation only after it has remained open for two minutes. The confirmed page is saved immediately.",
           "data": {}
         },
         "add_references": {
