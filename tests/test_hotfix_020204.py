@@ -76,6 +76,6 @@ def test_passive_display_is_estimate_and_separate_from_house_balance():
 
 def test_release_version_020204_artifacts_preserved_and_current_release_advanced():
     assert (ROOT / "RELEASE_NOTES_0.20.2.4.md").exists()
-    assert 'VERSION = "0.25.0.70"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.70"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.0.70";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.0.71"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.0.71"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.0.71";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

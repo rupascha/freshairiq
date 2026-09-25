@@ -63,7 +63,7 @@ def test_nested_detail_window_allows_native_touch_scrolling():
 
     # An ancestor touch-action:none prevents descendants from re-enabling pan.
     assert "touch-action:none" not in submodal_css
-    assert "touch-action:pan-y pinch-zoom" in submodal_css
+    assert "touch-action:" not in submodal_css
     assert "overflow-y:auto" in subdialog_css
     assert "overflow-x:hidden" in subdialog_css
     assert "-webkit-overflow-scrolling:touch" in subdialog_css

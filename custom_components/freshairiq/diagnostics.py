@@ -1292,7 +1292,7 @@ class FreshAirIQDiagnosticsRecorder:
         if isinstance(self._config_snapshot, dict):
             rooms_cfg = self._config_snapshot.get("rooms")
             configured_rooms = len(rooms_cfg) if isinstance(rooms_cfg, (list, dict)) else 0
-        setup_completed = bool(configured_rooms or records)
+        setup_completed = configured_rooms > 0
         beta_funnel = {
             "schema_version": 1,
             "setup_completed": setup_completed,

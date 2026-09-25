@@ -11,14 +11,14 @@ SENSOR = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="u
 def test_details_dialog_owns_scrolling_and_backdrop_cannot_scroll_behind_header():
     assert '.modal{position:fixed' in JS
     assert 'display:flex;align-items:flex-start;justify-content:center' in JS
-    assert 'overflow:hidden;touch-action:pan-y' in JS
+    assert 'overflow:hidden}.dialog{' in JS
     assert '.dialog{width:calc(100vw - 28px)' in JS
     assert 'display:flex;flex-direction:column;overflow:hidden' in JS
     assert '.dialog-head{' in JS and 'position:relative;flex:0 0 auto' in JS
-    assert '.dialog-scroll{min-height:0;height:0;flex:1 1 auto;overflow-y:scroll' in JS
+    assert '.dialog-scroll{min-height:0;flex:1 1 0;overflow-y:auto' in JS
     assert 'const oldDialog = this.shadowRoot.querySelector(".dialog-scroll")' in JS
     assert 'const newDialog = this.shadowRoot.querySelector(".dialog-scroll")' in JS
-    assert '.dialog-scroll,.dialog-scroll *{touch-action:pan-y}' in JS
+    assert '.dialog-scroll{touch-action:pan-y pinch-zoom}' in JS
 
 
 def test_forecast_keeps_decision_target_cap_but_exposes_horizon_dependent_physical_effect():

@@ -10,4 +10,4 @@ def test_main_details_dialog_handles_desktop_wheel_inside_scrollport():
     assert '{ passive: false }' in JS
 
 def test_main_dialog_keeps_native_overflow_scrolling():
-    assert '.dialog-scroll{min-height:0;height:0;flex:1 1 auto;overflow-y:scroll' in JS
+    assert '.dialog-scroll{min-height:0;flex:1 1 0;overflow-y:auto' in JS

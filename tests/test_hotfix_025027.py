@@ -25,7 +25,7 @@ def test_validation_prefers_time_aligned_objective_outcome_fields():
         "prediction_measurement_frame_quality": "excellent",
         "end_measurement_frame_quality": "acceptable",
     }
-    record = build_validation_record({"started_at": "a", "ended_at": "b"}, [session], model_version="0.25.0.70")
+    record = build_validation_record({"started_at": "a", "ended_at": "b"}, [session], model_version="0.25.0.71")
     assert record["valid"] is True
     assert record["actual_removed_ml"] == 22.0
     assert record["moisture_abs_error_ml"] == 2.0
@@ -48,7 +48,7 @@ def test_release_version_025027_is_consistent():
     manifest = (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
     card = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     package = (ROOT / "package.json").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.70"' in const
-    assert '"version": "0.25.0.70"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.0.70";' in card
-    assert '"version": "0.25.0.70"' in package
+    assert 'VERSION = "0.25.0.71"' in const
+    assert '"version": "0.25.0.71"' in manifest
+    assert 'const FAIQ_VERSION = "0.25.0.71";' in card
+    assert '"version": "0.25.0.71"' in package
