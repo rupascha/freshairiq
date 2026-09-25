@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.0.75";
+const FAIQ_VERSION = "0.25.0.76";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 // Frontend locale bridge: the historical dashboard copy is authored in German.

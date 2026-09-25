@@ -5,7 +5,7 @@ JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_te
 
 
 def test_performance_release_version_and_render_filter_present():
-    assert 'const FAIQ_VERSION = "0.25.0.75"' in JS
+    assert 'const FAIQ_VERSION = "0.25.0.76"' in JS
     assert "_relevantStateChanged(previous, next)" in JS
     assert "if (!relevantChanged) return;" in JS
     assert "_queueRender()" in JS

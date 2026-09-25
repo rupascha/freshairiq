@@ -1,4 +1,4 @@
-"""Static integration contracts for v0.25.0.75 Diagnostics Client Foundation."""
+"""Static integration contracts for v0.25.0.76 Diagnostics Client Foundation."""
 from __future__ import annotations
 
 import json
@@ -10,7 +10,7 @@ COMP = ROOT / "custom_components/freshairiq"
 
 def test_remote_diagnostics_is_opt_in_and_local_staging_endpoint_is_explicit():
     const = (COMP / "const.py").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.75"' in const
+    assert 'VERSION = "0.25.0.76"' in const
     assert 'DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"' in const
     assert '"diagnostics_reporting_mode": "daily"' in const
     assert '"diagnostics_include_client_context": True' in const
@@ -54,6 +54,6 @@ def test_transport_module_is_pure_and_telemetry_module_is_excluded_from_pure_cov
 
 def test_release_policy_makes_transport_privacy_tests_part_of_robustness_gate():
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert policy["version"] == "0.25.0.75"
+    assert policy["version"] == "0.25.0.76"
     assert "tests/test_diagnostics_transport_025022.py" in policy["robustness"]["required_test_files"]
     assert str(policy["release"]["artifact_suffix"]).strip()

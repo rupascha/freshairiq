@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult, section
-from homeassistant.helpers import selector
+from homeassistant.helpers import area_registry as ar, floor_registry as fr, selector
 
 from .const import *
 from .settings_contract import native_option_key
@@ -1199,6 +1199,7 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
 class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
     def __init__(self) -> None:
         self._working_data = None; self._working_options = None; self._selected_room_key = None
+        self._ha_import_queue: list[dict[str, str]] = []
 
     def _ensure_working_copy(self) -> None:
         if self._working_data is None:
@@ -1421,11 +1422,100 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_rooms(self, user_input=None):
         # Global room administration only. Per-room sensors, directions and
         # contact delays also remain available on each native room subentry.
-        menu = ["add_room"]
+        menu = ["add_room", "import_ha_rooms"]
         if self._rooms():
             menu.extend(["edit_room_select", "sort_rooms", "remove_room"])
         menu.append("back_to_home_setup")
         return self.async_show_menu(step_id="rooms", menu_options=menu)
+
+    def _ha_area_options(self) -> tuple[list[dict[str, str]], dict[str, dict[str, str]]]:
+        """Return HA areas as import choices plus their FreshAirIQ defaults."""
+        area_reg = ar.async_get(self.hass)
+        floor_reg = fr.async_get(self.hass)
+        existing_names = {str(room.get(CONF_ROOM_NAME, "")).strip().casefold() for room in self._rooms()}
+        choices: list[dict[str, str]] = []
+        defaults: dict[str, dict[str, str]] = {}
+        for area in sorted(area_reg.async_list_areas(), key=lambda item: item.name.casefold()):
+            if area.name.strip().casefold() in existing_names:
+                continue
+            floor_name = "Unzugeordnet"
+            if area.floor_id:
+                floor = floor_reg.async_get_floor(area.floor_id)
+                if floor is not None and floor.name:
+                    floor_name = floor.name
+            label = f"{floor_name} · {area.name}" if floor_name != "Unzugeordnet" else area.name
+            choices.append({"value": area.id, "label": label})
+            defaults[area.id] = {CONF_ROOM_NAME: area.name, CONF_ROOM_FLOOR: floor_name}
+        return choices, defaults
+
+    async def async_step_import_ha_rooms(self, user_input=None):
+        """Import HA floor/area structure and complete each room in FreshAirIQ."""
+        choices, defaults = self._ha_area_options()
+        if not choices:
+            return self.async_show_form(
+                step_id="import_ha_rooms",
+                data_schema=vol.Schema({}),
+                errors={"base": "no_ha_areas_to_import"},
+            )
+        if user_input is not None:
+            selected = user_input.get("areas") or []
+            if isinstance(selected, str):
+                selected = [selected]
+            self._ha_import_queue = [defaults[area_id] for area_id in selected if area_id in defaults]
+            if not self._ha_import_queue:
+                return self.async_show_form(
+                    step_id="import_ha_rooms",
+                    data_schema=vol.Schema({
+                        vol.Required("areas"): selector.SelectSelector(
+                            selector.SelectSelectorConfig(options=choices, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)
+                        )
+                    }),
+                    errors={"base": "select_ha_area"},
+                )
+            return await self.async_step_import_ha_room_details()
+        return self.async_show_form(
+            step_id="import_ha_rooms",
+            data_schema=vol.Schema({
+                vol.Required("areas"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=choices, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)
+                )
+            }),
+        )
+
+    async def async_step_import_ha_room_details(self, user_input=None):
+        """Complete required FreshAirIQ data for one imported HA area."""
+        if not self._ha_import_queue:
+            self._persist_working_state()
+            return await self.async_step_rooms()
+        imported = self._ha_import_queue[0]
+        errors = {}
+        if user_input is not None:
+            room, errors = _normalise_room(user_input, self._rooms())
+            if room and not errors:
+                self._rooms().append(room)
+                floor = room.get(CONF_ROOM_FLOOR)
+                levels = self._working_data.setdefault(CONF_LEVELS, [])
+                if floor and floor not in levels:
+                    levels.append(floor)
+                self._ha_import_queue.pop(0)
+                self._persist_working_state()
+                return await self.async_step_import_ha_room_details()
+        defaults = {
+            CONF_ROOM_NAME: imported[CONF_ROOM_NAME],
+            CONF_ROOM_FLOOR: imported[CONF_ROOM_FLOOR],
+            CONF_ROOM_INCLUDE_CALCULATIONS: False,
+        }
+        if user_input is not None:
+            defaults.update(user_input)
+        return self.async_show_form(
+            step_id="import_ha_room_details",
+            data_schema=_room_section_schema(defaults, levels=list(dict.fromkeys([*self._working_data.get(CONF_LEVELS, []), imported[CONF_ROOM_FLOOR]]))),
+            errors=errors,
+            description_placeholders={
+                "room_name": imported[CONF_ROOM_NAME],
+                "remaining": str(len(self._ha_import_queue)),
+            },
+        )
 
     async def async_step_add_room(self, user_input=None):
         errors = {}

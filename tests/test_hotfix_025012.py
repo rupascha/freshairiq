@@ -40,7 +40,7 @@ def test_active_resource_is_direct_card_not_proxy_loader():
 
 def test_release_version_is_consistent():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.0.75"
-    assert 'VERSION = "0.25.0.75"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == "0.25.0.76"
+    assert 'VERSION = "0.25.0.76"' in (COMP / "const.py").read_text(encoding="utf-8")
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.0.75";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.0.76";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

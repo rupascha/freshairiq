@@ -3,7 +3,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
 def test_english_dashboard_locale_bridge_exists():
-    assert 'const FAIQ_VERSION = "0.25.0.75";' in CARD
+    assert 'const FAIQ_VERSION = "0.25.0.76";' in CARD
     assert '_uiLanguage()' in CARD
     assert 'raw.startsWith("de") ? "de" : "en"' in CARD
     assert '_localizeRenderedUi(this.shadowRoot);' in CARD

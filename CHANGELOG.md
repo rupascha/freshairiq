@@ -1,4 +1,10 @@
 ## 0.25.0.75
+
+## 0.25.0.76
+- Added import of Home Assistant Areas and Floor assignments into FreshAirIQ room setup.
+- Multiple HA areas can be selected and completed sequentially with FreshAirIQ-specific room data.
+- Existing FreshAirIQ room names are excluded from import to prevent accidental duplicates.
+
 - Added automatic English dashboard localization for non-German Home Assistant profiles.
 - German dashboard behavior remains unchanged.
 - No calculation, learning, diagnostics or scroll/navigation logic changed.

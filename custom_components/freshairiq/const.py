@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.0.75"
+VERSION = "0.25.0.76"
 DIAGNOSTICS_SCHEMA_VERSION = 12
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1

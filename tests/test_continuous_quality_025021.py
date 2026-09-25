@@ -1,4 +1,4 @@
-"""Contracts for the 0.25.0.75 Continuous Quality System."""
+"""Contracts for the 0.25.0.76 Continuous Quality System."""
 from __future__ import annotations
 
 import json
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_quality_policy_covers_all_five_quality_axes():
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert policy["version"] == "0.25.0.75"
+    assert policy["version"] == "0.25.0.76"
     for key in ("correctness", "robustness", "stability", "performance", "compatibility", "release"):
         assert key in policy
     assert policy["correctness"]["pure_logic_coverage_percent"] == 100.0
@@ -19,7 +19,7 @@ def test_quality_policy_covers_all_five_quality_axes():
 
 def test_performance_baseline_tracks_all_representative_core_workloads():
     baseline = json.loads((ROOT / "quality/performance_baseline.json").read_text(encoding="utf-8"))
-    assert baseline["version"] == "0.25.0.75"
+    assert baseline["version"] == "0.25.0.76"
     assert set(baseline["benchmarks"]) == {
         "evaluate_room",
         "recommendation_12_rooms",

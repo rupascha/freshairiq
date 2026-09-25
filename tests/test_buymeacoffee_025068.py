@@ -15,5 +15,5 @@ def test_025068_versions_aligned():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality" / "quality_policy.json").read_text(encoding="utf-8"))
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == policy["version"] == package["version"] == "0.25.0.75"
-    assert 'VERSION = "0.25.0.75"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == policy["version"] == package["version"] == "0.25.0.76"
+    assert 'VERSION = "0.25.0.76"' in (COMP / "const.py").read_text(encoding="utf-8")
