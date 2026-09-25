@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.0.72";
+const FAIQ_VERSION = "0.25.0.73";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
@@ -1861,8 +1861,12 @@ class FreshAirIQCard extends HTMLElement {
             this._dialogScrollTop = oldDialog.scrollTop;
         const oldSubdialog = this.shadowRoot.querySelector(".subdialog");
         if (oldSubdialog) {
+            // The DOM still represents the view that was rendered before a navigation
+            // event changed this._info. Navigation handlers persist that old view
+            // explicitly before changing this._info. Never write oldSubdialog.scrollTop
+            // into the *new* logical view here, otherwise Back overwrites the parent's
+            // saved position with the child's scroll position (usually 0).
             this._subdialogScrollTop = oldSubdialog.scrollTop;
-            if (this._info) { if (!this._infoScrollByView) this._infoScrollByView = new Map(); this._infoScrollByView.set(this._info, oldSubdialog.scrollTop); }
         }
         const oldScroll = this._forceDialogTop ? 0 : this._dialogScrollTop;
         const oldSubScroll = this._pendingSubdialogScrollTop !== null

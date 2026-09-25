@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "approved_from_version": "0.25.0.72",
+  "approved_from_version": "0.25.0.73",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change.",
   "dashboard_settings_methods_sha256": "e77b59006e61166b92c31119760a8056bd38ba0101ca236ac6b1070cef571198",
   "dashboard_settings_events_sha256": "7309083f2a903d850e458ab4db476ad0d73cffb44c069771366bcaf1fa7ef0ee",

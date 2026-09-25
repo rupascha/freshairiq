@@ -99,7 +99,7 @@ def _sample(*, gain: float, ended_at: str, record_id: str, room: str = "bad") ->
     }
 
 
-def _record(day: int, gains: list[float], *, model_version: str = "0.25.0.72") -> dict:
+def _record(day: int, gains: list[float], *, model_version: str = "0.25.0.73") -> dict:
     ended = datetime(2026, 9, 1, 18, 0) + timedelta(days=day)
     rooms = []
     for index, gain in enumerate(gains):
@@ -316,7 +316,7 @@ def test_scope_extract_grouping_and_record_identity_are_defensive():
     extracted = le._extract_samples([_record(0, [20, -5])])
     assert len(extracted) == 2
     assert extracted[0]["validation_record_id"] == extracted[1]["validation_record_id"]
-    assert extracted[0]["model_version"] == "0.25.0.72"
+    assert extracted[0]["model_version"] == "0.25.0.73"
     assert le._record_id({"started_at": "x", "ended_at": "y"}, 1) != le._record_id({"started_at": "x", "ended_at": "y"}, 2)
     grouped = le._grouped(extracted, lambda x: x["horizon_bucket"])
     assert {row["bucket"] for row in grouped} == {"0-5", "15-30"}
@@ -386,7 +386,7 @@ def test_validation_record_persists_effectiveness_only_as_observational_evidence
     record = build_validation_record(
         {"started_at": "2026-09-23T10:00:00+02:00", "ended_at": "2026-09-23T10:10:00+02:00", "removed_ml": 100, "duration_min": 10},
         [session],
-        model_version="0.25.0.72",
+        model_version="0.25.0.73",
     )
     assert record["room_results"][0]["learning_effectiveness"] == effectiveness
     effectiveness["paired_error_gain_ml"] = -999

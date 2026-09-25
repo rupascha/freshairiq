@@ -1152,3 +1152,8 @@ Hotfix based strictly on 0.9.4:
 ## 0.25.0.72
 - Hotfix: Scrollpositionen werden pro Detail-/Raumansicht gespeichert und bei Back-Navigation wiederhergestellt.
 - Android: Touch-Scroll-Fallback für `.dialog-scroll` und `.subdialog`; iOS-native Scrollpfade bleiben unverändert.
+
+
+## 0.25.0.73
+- Root-Cause-Hotfix: Back-Navigation überschreibt die gespeicherte Scrollposition der Parent-Ansicht nicht mehr mit der Scrollposition des Child-Fensters.
+- Betrifft Details-/Räume-Unterfenster; Android-Touch-Scroll-Verhalten aus 0.25.0.72 bleibt unverändert.

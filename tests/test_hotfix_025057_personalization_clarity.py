@@ -5,8 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/'custom_components/freshairiq'
 
 def test_release_version():
-    assert json.loads((COMP/'manifest.json').read_text())['version']=='0.25.0.72'
-    assert 'VERSION = "0.25.0.72"' in (COMP/'const.py').read_text()
+    assert json.loads((COMP/'manifest.json').read_text())['version']=='0.25.0.73'
+    assert 'VERSION = "0.25.0.73"' in (COMP/'const.py').read_text()
 
 def test_native_level_labels_are_localized():
     s=(COMP/'config_flow.py').read_text()
