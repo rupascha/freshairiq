@@ -36,7 +36,7 @@ def _check_version_contract(version: str) -> list[str]:
     package = ROOT / "package.json"
     if package.exists() and json.loads(package.read_text(encoding="utf-8")).get("version") != version:
         failures.append("package.json version differs from manifest")
-    if not (ROOT / f"RELEASE_NOTES_{version}.md").exists():
+    if not (ROOT / "docs" / "releases" / f"RELEASE_NOTES_{version}.md").exists():
         failures.append(f"release notes missing for {version}")
     return failures
 

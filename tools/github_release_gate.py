@@ -101,7 +101,7 @@ def _check_common(paths: set[str], read_text, errors: list[str]) -> str | None:
         elif needle not in read_text(path):
             fail(errors, f"version mismatch in {path}; expected {version}")
 
-    notes = f"RELEASE_NOTES_{version}.md"
+    notes = f"docs/releases/RELEASE_NOTES_{version}.md"
     if notes not in paths:
         fail(errors, f"missing release notes for manifest version: {notes}")
     return version

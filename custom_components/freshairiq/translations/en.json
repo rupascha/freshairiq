@@ -3,7 +3,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Local outdoor-air reference",
+        "title": "Add FreshAirIQ",
         "description": "FreshAirIQ can be added immediately without configuring any rooms. The outdoor-air source, rooms and all other settings are optional here and can be configured later under Devices & services or via the dashboard settings button. Until the required climate sources are available, FreshAirIQ does not perform ventilation calculations, but the dashboard remains available.",
         "data": {
           "outdoor_weather": "Local weather entity (recommended)",

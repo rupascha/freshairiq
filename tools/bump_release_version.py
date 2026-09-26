@@ -22,7 +22,8 @@ def main()->int:
         s=p.read_text(encoding='utf-8')
         if old not in s: continue
         p.write_text(s.replace(old,new),encoding='utf-8'); changed.append(str(p.relative_to(ROOT)))
-    notes=ROOT/f'RELEASE_NOTES_{new}.md'
+    notes=ROOT/'docs'/'releases'/f'RELEASE_NOTES_{new}.md'
+    notes.parent.mkdir(parents=True, exist_ok=True)
     if not notes.exists():
         notes.write_text(f'# FreshAirIQ {new}\n\n## Reliability Foundation v1\n\n- Release-Metadaten zentral synchronisiert.\n- Verhaltensbasierte Regression-Gates konsolidiert.\n- Release wird bei roten Pflichtprüfungen blockiert.\n',encoding='utf-8')
     print(f'FreshAirIQ version: {old} -> {new}')

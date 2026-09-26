@@ -21,4 +21,4 @@ def test_all_action_buttons_are_optional():
 def test_central_recommendation_and_reasons_remain_visible():
     text=card_text()
     assert '${why.length ? `<div class="decision-why">' in text
-    assert "const intelligentPanel = this._intelligentPanel(st, rooms);" in text
+    assert 'dashboardVariant === "classic" ? this._intelligentPanel(st, rooms) : this._compactAIPanel(st, rooms)' in text

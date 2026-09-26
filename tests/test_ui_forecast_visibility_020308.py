@@ -25,6 +25,6 @@ def test_iq_header_shows_forecast_horizon_only_when_ventilation_is_active():
 
 
 def test_release_version_020308_is_consistent():
-    assert 'const FAIQ_VERSION = "0.25.0.76";' in CARD.read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.76"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.0.76"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert 'const FAIQ_VERSION = "0.25.1.6";' in CARD.read_text(encoding="utf-8")
+    assert 'VERSION = "0.25.1.6"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert '"version": "0.25.1.6"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")

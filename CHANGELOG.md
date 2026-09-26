@@ -1,6 +1,13 @@
+## 0.25.1.1
+- New compact AI-first dashboard: FreshAirIQ summarizes the current decision instead of exposing raw analysis by default.
+- Animated FreshAirIQ mascot reacts to normal, recommendation, live ventilation and warning states.
+- Rooms needing attention are surfaced first; healthy rooms collapse into one status line.
+- Night, pollen and learning remain one-tap detail areas; all existing detailed analysis stays available.
+- Respects reduced-motion accessibility preferences.
+
 ## 0.25.0.75
 
-## 0.25.0.76
+## 0.25.1.1
 - Added import of Home Assistant Areas and Floor assignments into FreshAirIQ room setup.
 - Multiple HA areas can be selected and completed sequentially with FreshAirIQ-specific room data.
 - Existing FreshAirIQ room names are excluded from import to prevent accidental duplicates.

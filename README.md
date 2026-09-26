@@ -1,5 +1,7 @@
 # FreshAirIQ
 
+**Deutsch** · [English](README_EN.md)
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
 </p>

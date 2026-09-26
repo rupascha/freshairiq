@@ -37,9 +37,9 @@ def test_version_is_consistent():
     const = (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
     manifest = (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
     card = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.0.76"' in const
-    assert '"version": "0.25.0.76"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.0.76"' in card
+    assert 'VERSION = "0.25.1.6"' in const
+    assert '"version": "0.25.1.6"' in manifest
+    assert 'const FAIQ_VERSION = "0.25.1.6"' in card
 
 
 def test_room_payload_merge_is_scoped_to_current_config_entry():

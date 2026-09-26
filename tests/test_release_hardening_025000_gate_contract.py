@@ -9,13 +9,13 @@ COMP = ROOT / "custom_components" / "freshairiq"
 
 
 def test_release_version_is_consistent_across_runtime_and_frontend():
-    version = "0.25.0.76"
+    version = "0.25.1.6"
     assert f'VERSION = "{version}"' in (COMP / "const.py").read_text(encoding="utf-8")
     assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == version
     for filename in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
         assert f'const FAIQ_VERSION = "{version}";' in (COMP / "frontend" / filename).read_text(encoding="utf-8")
     assert "Current release:" not in (ROOT / "README.md").read_text(encoding="utf-8")
-    assert (ROOT / f"RELEASE_NOTES_{version}.md").is_file()
+    assert (ROOT / "docs" / "releases" / f"RELEASE_NOTES_{version}.md").is_file()
 
 
 def test_v1_coverage_policy_is_a_hard_gate_not_a_reporting_hint():
@@ -38,7 +38,7 @@ def test_v1_coverage_policy_is_a_hard_gate_not_a_reporting_hint():
 
 def test_v1_quality_gate_document_keeps_unverified_real_ha_work_open():
     quality = (ROOT / "QUALITY_GATES_1.0.md").read_text(encoding="utf-8")
-    notes = (ROOT / "RELEASE_NOTES_0.25.0.7.md").read_text(encoding="utf-8")
+    notes = (ROOT / "docs" / "releases" / "RELEASE_NOTES_0.25.0.7.md").read_text(encoding="utf-8")
 
     assert "Pure Logic: 100 %" in quality
     assert "mindestens **99 %**" in quality
