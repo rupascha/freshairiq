@@ -10,7 +10,7 @@ def _native_pairs():
     return json.loads(match.group(1))
 
 def test_025101_release_version_and_ai_i18n_contract():
-    assert 'const FAIQ_VERSION = "0.25.1.6";' in CARD
+    assert 'const FAIQ_VERSION = "0.25.1.8";' in CARD
     for token in [
         '["FreshAirIQ übernimmt", "FreshAirIQ is handling it"]',
         'more rooms without urgent action needed',

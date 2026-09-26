@@ -1,4 +1,4 @@
-# FreshAirIQ 0.25.1.6 – Semantic i18n Hardening Hotfix
+# FreshAirIQ 0.25.1.8 – Semantic i18n Hardening Hotfix
 
 ## Deutsch / English
 - Migriert die Dual-Dashboard-Auswahl vollständig auf zentrale DE/EN-i18n-Keys.

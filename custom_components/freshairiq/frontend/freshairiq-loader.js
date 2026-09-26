@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.6";
+const FAIQ_VERSION = "0.25.1.8";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_EDITOR = "freshairiq-card-editor";
 const FAIQ_IMPL = "freshairiq-card-impl";

@@ -43,4 +43,4 @@ def test_import_strings_exist_in_both_languages():
 
 
 def test_current_version():
-    assert '0.25.1.6' in (ROOT / 'custom_components/freshairiq/const.py').read_text(encoding='utf-8')
+    assert '0.25.1.8' in (ROOT / 'custom_components/freshairiq/const.py').read_text(encoding='utf-8')

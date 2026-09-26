@@ -35,6 +35,33 @@ def _sensor_issue(sensor_quality: Mapping[str, Any] | None) -> bool:
     return False
 
 
+def _transient_startup_sensor_state(sensor_quality: Mapping[str, Any] | None) -> bool:
+    """Recognise the narrow HA-startup state before climate entities settle.
+
+    This must stay deliberately strict: only zero valid rooms, exclusively
+    ``unknown`` room quality and missing/invalid outdoor data qualify. Real
+    missing/stale/invalid/unavailable sensor faults remain incidents.
+    """
+    quality = sensor_quality if isinstance(sensor_quality, Mapping) else {}
+    try:
+        rooms_ok = int(quality.get("rooms_ok", 0))
+    except (TypeError, ValueError, OverflowError):
+        return False
+    counts = quality.get("issue_quality_counts")
+    if rooms_ok != 0 or not isinstance(counts, Mapping) or not counts:
+        return False
+    normalized = {str(key or "unknown").strip().lower(): value for key, value in counts.items()}
+    if set(normalized) != {"unknown"}:
+        return False
+    try:
+        unknown_count = int(normalized.get("unknown", 0))
+    except (TypeError, ValueError, OverflowError):
+        return False
+    if unknown_count <= 0:
+        return False
+    return str(quality.get("outdoor_data_quality") or "").strip().lower() == "missing_or_invalid"
+
+
 def classify_support_code(
     decision_trace: Mapping[str, Any] | None,
     sensor_quality: Mapping[str, Any] | None = None,
@@ -52,6 +79,8 @@ def classify_support_code(
         return "FAIQ-CONFIG-RUNTIME-001"
     if failures:
         return "FAIQ-DECISION-INVARIANT-001"
+    if _transient_startup_sensor_state(sensor_quality):
+        return None
     if _text(final.get("kind")) == "sensor" or _sensor_issue(sensor_quality):
         return "FAIQ-SENSOR-DATA-001"
     return None
