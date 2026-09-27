@@ -387,14 +387,15 @@ class FreshAirIQDiagnosticsClient:
                 raise RuntimeError(f"feedback_http_{response.status}")
             return await response.json()
 
-    async def async_maybe_upload(self, *, force: bool = False) -> bool:
+    async def async_maybe_upload(self, *, force: bool = False, manual: bool = False) -> bool:
         """Upload once if the opt-in cadence is due.
 
         Returns ``True`` only after the hub accepted the payload.  Every failure
         is isolated from the coordinator and kept as a coarse error type only.
         """
         mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "daily"))
-        if mode == "off":
+        # if mode == "off": scheduled uploads are disabled; an explicit manual send is separate consent.
+        if mode == "off" and not manual:
             self._runtime_state = "disabled"
             return False
         if not self.endpoint:

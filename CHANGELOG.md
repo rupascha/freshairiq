@@ -1,4 +1,8 @@
-## 0.25.1.18
+## 0.25.1.20
+
+- Add explicit user-controlled sharing of the detailed diagnostics JSON to FreshAirIQ support.
+- Use the native file share sheet where supported; fallback downloads the JSON and opens a pre-addressed support e-mail.
+- Keep support diagnostics separate from anonymous Diagnostics Hub telemetry; no support file is uploaded automatically.
 
 ## 0.25.1.19
 
@@ -11,6 +15,8 @@
 - Keeps neutral/wait states free of airflow, makes pre-night Freshy visibly tired but awake with a sleep cap, and adds the approved purple moon ambience to night mode.
 - Keeps all new motion loops seamless and clips effects at the hero boundary instead of shrinking Freshy.
 - No changes to ventilation physics, learning logic, thresholds, diagnostics transport or sensor handling.
+
+## 0.25.1.18
 
 ## 0.25.1.17
 - Reworks Freshy toward the reference design with a three-quarter side view instead of a flat frontal presentation.

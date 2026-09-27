@@ -13,9 +13,9 @@ def test_release_version_and_cleanup_suffix_are_consistent():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.1.19"' in const
-    assert manifest["version"] == "0.25.1.19"
-    assert policy["version"] == "0.25.1.19"
+    assert 'VERSION = "0.25.1.20"' in const
+    assert manifest["version"] == "0.25.1.20"
+    assert policy["version"] == "0.25.1.20"
     assert str(policy["release"]["artifact_suffix"]).strip()
 
 
