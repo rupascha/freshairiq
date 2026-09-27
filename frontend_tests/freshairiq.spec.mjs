@@ -236,3 +236,68 @@ test('Android WebView detail overlay responds to a trusted touch swipe and keeps
   expect(restored).toBeGreaterThan(100);
   expect(errors).toEqual([]);
 });
+
+
+test('closing an overlay restores the exact dashboard page position after delayed layout scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  const errors = await mount(page, 24);
+  await page.evaluate(() => {
+    document.body.style.minHeight = '5000px';
+    document.querySelector('main').style.marginTop = '1800px';
+  });
+  await page.evaluate(() => window.scrollTo(0, 1375));
+  await page.waitForTimeout(80);
+  const before = await page.evaluate(() => window.scrollY);
+  expect(before).toBeGreaterThan(1300);
+
+  await page.locator('freshairiq-card').locator('#rooms').click();
+  await expect(page.locator('freshairiq-card').locator('.subdialog')).toBeVisible();
+  await page.locator('freshairiq-card').locator('#info-close').click();
+
+  // Emulate Home Assistant/WebView performing a late focus/layout scroll after
+  // the overlay DOM has already been removed. The restore transaction must win.
+  await page.waitForTimeout(90);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(330);
+  const after = await page.evaluate(() => window.scrollY);
+  expect(Math.abs(after - before)).toBeLessThanOrEqual(2);
+  expect(errors).toEqual([]);
+});
+
+
+test('Freshy follows configured night window and keeps live ventilation priority', async ({ page }) => {
+  const errors = await mount(page, 1);
+  const states = await page.locator('freshairiq-card').evaluate(el => {
+    const st = { night_start_hour: '23:30', night_end_hour: '07:15' };
+    return {
+      beforeWindow: el._freshyTimeKind(st, new Date(2026, 8, 27, 22, 29)),
+      preNightStart: el._freshyTimeKind(st, new Date(2026, 8, 27, 22, 30)),
+      preNightLate: el._freshyTimeKind(st, new Date(2026, 8, 27, 23, 29)),
+      nightStart: el._freshyTimeKind(st, new Date(2026, 8, 27, 23, 30)),
+      afterMidnight: el._freshyTimeKind(st, new Date(2026, 8, 28, 2, 0)),
+      nightEndBoundary: el._freshyTimeKind(st, new Date(2026, 8, 28, 7, 15)),
+      defaultNight: el._freshyTimeKind({}, new Date(2026, 8, 27, 22, 0)),
+    };
+  });
+  expect(states).toEqual({
+    beforeWindow: 'good',
+    preNightStart: 'pre-night',
+    preNightLate: 'pre-night',
+    nightStart: 'night',
+    afterMidnight: 'night',
+    nightEndBoundary: 'good',
+    defaultNight: 'night',
+  });
+
+  const liveClass = await page.locator('freshairiq-card').evaluate(el => {
+    const status = el._hass.states['sensor.freshairiq_status'];
+    status.attributes.night_start_hour = '00:00';
+    status.attributes.night_end_hour = '23:59';
+    status.attributes.rooms.room_0.active = true;
+    status.attributes.rooms.room_0.session_finalization_pending = false;
+    el._render();
+    return el.shadowRoot.querySelector('.ai-compact')?.className || '';
+  });
+  expect(liveClass).toContain('live');
+  expect(errors).toEqual([]);
+});

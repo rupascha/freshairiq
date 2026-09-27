@@ -20,6 +20,12 @@ FreshAirIQ ist eine Home-Assistant-Integration für intelligente, nachvollziehba
 
 ---
 
+## Zwei Dashboard-Stile – mit Freshy an deiner Seite
+
+Die FreshAirIQ Community-Dashboard-Karte bringt **zwei Dashboard-Darstellungen** mit. In der Dashboard-Konfiguration kannst du jederzeit zwischen **Classic** und **FreshAirIQ IQ** wechseln. So kannst du entweder die vertraute klassische Ansicht nutzen oder die stärker visuelle FreshAirIQ-Oberfläche – beide Darstellungen bleiben verfügbar.
+
+Mit **Freshy** hat FreshAirIQ außerdem ein eigenes Maskottchen. Freshy behält das Klima deines Hauses im Blick und macht den aktuellen Zustand auf einen Blick verständlicher: Beim Lüften segelt Freshy durch den Wind, kurz vor der Nacht macht er sich mit Schlafmütze bereit und nachts schläft er. Weitere Zustände reagieren passend auf die aktuelle Situation im Haus.
+
 ## FreshAirIQ in Aktion
 
 <p align="center">

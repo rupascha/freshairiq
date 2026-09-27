@@ -65,6 +65,7 @@ from .learning_components import build_learning_components_status
 from .robustness import RobustnessMonitor, finite_float, prepare_runtime_rooms, safe_options
 from .intervention import build_interventions
 from .repairs import async_sync_missing_entity_issue
+from .sensor_recovery import advance_sensor_recovery
 
 if TYPE_CHECKING:
     from .typing import FreshAirIQConfigEntry
@@ -521,6 +522,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             },
         )
         self._unavailable_required_sources: set[str] = set()
+        # Short source outages are common while HA integrations (for example MQTT/Zigbee)
+        # restore after startup. Keep them separate from persistent sensor failures.
+        self._sensor_recovery_started_at: datetime | None = None
+        self._sensor_recovery_valid_cycles = 0
+        self._sensor_recovery_grace_seconds = 90
+        self._sensor_recovery_required_valid_cycles = 2
 
 
     def _required_source_entities(self) -> set[str]:
@@ -542,7 +549,6 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     entity_id = room.get(key)
                     if entity_id:
                         required.add(str(entity_id))
-                required.update(str(entity_id) for entity_id in _contact_ids(room) if entity_id)
         return required
 
     def _log_required_source_availability(self) -> None:
@@ -859,6 +865,24 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         wind_bearing, wind_speed = _weather_wind(self.hass, self.entry.data.get(CONF_OUTDOOR_WEATHER))
         pollen = _float_state(self.hass, self.entry.data.get(CONF_POLLEN_ENTITY)) or 0.0
         now = dt_util.now(); results: dict[str, Any] = {}; changed = False; completed_sessions = []
+        # Sensor recovery guard: integrations can restore after FreshAirIQ during a HA
+        # restart. A brief all-source unavailable phase must not become a support
+        # incident or a false sensor_error. Persistent failures still surface after
+        # the grace period. After recovery, require two valid coordinator cycles
+        # before normal recommendations resume.
+        required_unavailable = bool(self._unavailable_required_sources)
+        (
+            self._sensor_recovery_started_at,
+            self._sensor_recovery_valid_cycles,
+            sensor_recovery_grace,
+        ) = advance_sensor_recovery(
+            self._sensor_recovery_started_at,
+            self._sensor_recovery_valid_cycles,
+            required_unavailable=required_unavailable,
+            now=now,
+            grace_seconds=self._sensor_recovery_grace_seconds,
+            required_valid_cycles=self._sensor_recovery_required_valid_cycles,
+        )
         completed_house_sessions: list[dict[str, Any]] = []
         weather_entity = self.entry.data.get(CONF_OUTDOOR_WEATHER)
         if weather_entity and (
@@ -2385,7 +2409,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and pollen > float(options.get("pollen_max", 4.0))
             and not urgent_any
         )
-        if bad: status = "sensor_error"; status_text = f"Check {len(bad)} room sensor set(s)"
+        if bad and sensor_recovery_grace:
+            status = "sensor_recovering"
+            status_text = "Sensor data is recovering after a temporary source outage"
+        elif bad: status = "sensor_error"; status_text = f"Check {len(bad)} room sensor set(s)"
         elif close: status = "close_windows"; status_text = f"Close {len(close)} room(s)"
         elif active:
             status = "ventilation_running"
@@ -3309,6 +3336,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "overnight_hours_remaining": round(night_hours, 2), "overnight_confidence": night_confidence,
             "night_model_ml_h": round(effective_night_rate_ml_h(options, self.store.data.get("night_model_ml_h"), int(self.store.data.get("night_model_samples", 0)), effective_adults, effective_children), 1),
             "night_model_samples": night_samples, "night_recommendation": night_recommendation,
+            "night_start_hour": options.get("night_start_hour", "22:00"), "night_end_hour": options.get("night_end_hour", "07:00"),
             "night_strategy": night_strategy,
             "history_14d": history, "water_history_14d": self.store.water_history_days(stats_days), "history_summary": history_summary, "statistics_days": stats_days,
             "occupants": adults + children, "adult_occupants": adults, "child_occupants": children,
@@ -3341,6 +3369,13 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "outdoor_humidity": round(outdoor_rh, 2) if outdoor_rh is not None else None,
             "outdoor_absolute_humidity": round(absolute_humidity(outdoor_t, outdoor_rh), 3) if outdoor_t is not None and outdoor_rh is not None and -30 < outdoor_t < 60 and 0 <= outdoor_rh <= 100 else None,
             "outdoor_data_quality": "ok" if outdoor_t is not None and outdoor_rh is not None and -30 < outdoor_t < 60 and 0 <= outdoor_rh <= 100 else "missing_or_invalid",
+            "sensor_recovery": {
+                "active": sensor_recovery_grace,
+                "required_sources_unavailable": len(self._unavailable_required_sources),
+                "valid_cycles": self._sensor_recovery_valid_cycles,
+                "required_valid_cycles": self._sensor_recovery_required_valid_cycles,
+                "grace_seconds": self._sensor_recovery_grace_seconds,
+            },
         }
         changed = changed or await process_notifications(self.hass, self.store, data, options, now, completed_sessions)
         if changed: await self.store.async_save()

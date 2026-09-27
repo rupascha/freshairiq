@@ -1,3 +1,23 @@
+## 0.25.1.13
+- Freshy verwendet jetzt denselben konfigurierten Nachtzeitraum wie FreshAirIQ (`night_start_hour` / `night_end_hour`) statt fester Uhrzeiten.
+- Die Schlafmütze beginnt exakt 60 Minuten vor dem konfigurierten Nachtstart; ab Nachtstart schläft Freshy bis zum konfigurierten Nachtende.
+- Aktive Lüftung behält Vorrang: Während einer Lüftung segelt Freshy auch innerhalb des Nachtzeitraums weiter durch den Wind.
+- Browser-Verhaltenstest für benutzerdefinierten Nachtstart, Nachtende, Mitternachtswechsel, Standardwerte und Live-Lüftungspriorität ergänzt.
+- Keine Änderung an Lüftungsphysik, Lernlogik, Sensor-Recovery oder Dashboard-Navigation.
+
+## 0.25.1.13
+- Sensor-Recovery als echte, isoliert testbare State-Machine abgesichert: 89 s Grace, Eskalation nach 90 s, erster gültiger Zyklus weiter gesperrt, Freigabe nach zwei gültigen Zyklen.
+- Dashboard-Bezeichnungen in README/HACS-Beschreibung an die tatsächliche Auswahl **Classic** / **FreshAirIQ IQ** angeglichen.
+- Freshy-Beschreibung und Community-Dashboard-Hinweis beibehalten.
+- Keine Änderung an Lüftungsphysik, Lernlogik, Schwellenwerten oder Freshy-Animationen.
+
+## 0.25.1.13
+- Sensor-Recovery auf die für Feuchteberechnungen erforderlichen Klimaquellen begrenzt; Fensterkontakte bleiben im separaten Startup-/Session-Schutz.
+- Pure-Logic-Coverage wieder auf 100 % abgesichert.
+- Echter Browser-Regressionstest für exakte Dashboard-Scrollposition nach Schließen eines FreshAirIQ-Fensters ergänzt.
+- Frontend-CI-Abhängigkeit fest gepinnt und npm-Lock-Vertrag ergänzt.
+- Keine weiteren Änderungen an Lüftungs-, Lern- oder Freshy-Logik.
+
 ## 0.25.1.1
 - New compact AI-first dashboard: FreshAirIQ summarizes the current decision instead of exposing raw analysis by default.
 - Animated FreshAirIQ mascot reacts to normal, recommendation, live ventilation and warning states.
