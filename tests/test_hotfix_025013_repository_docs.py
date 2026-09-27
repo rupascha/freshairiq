@@ -10,10 +10,10 @@ def test_current_release_notes_live_in_docs_folder():
     assert (ROOT / "docs" / "releases" / f"RELEASE_NOTES_{version}.md").is_file()
 
 def test_readme_has_english_counterpart_and_language_switch():
-    de = (ROOT / "README.md").read_text(encoding="utf-8")
-    en = (ROOT / "README_EN.md").read_text(encoding="utf-8")
-    assert "[English](README_EN.md)" in de
-    assert "[Deutsch](README.md)" in en
+    de = (ROOT / "README_DE.md").read_text(encoding="utf-8")
+    en = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "[English](README.md)" in de
+    assert "[Deutsch](README_DE.md)" in en
     assert "Installation via HACS" in en
     assert "Diagnostics & privacy" in en
     assert "Technical principles" in en

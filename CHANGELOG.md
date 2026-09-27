@@ -1,3 +1,10 @@
+## 0.25.1.14
+- Restores the exact Home Assistant/dashboard scroll position after closing any FreshAirIQ overlay opened from the card, including direct detail and room windows.
+- Reworks Freshy's live-ventilation motion: the external wind stripes are removed and replaced by a contained, subtle sailing motion/glow that stays inside the card.
+- HACS now renders the English README by default, with a German description linked at the top.
+- Adds the Freshy dashboard screenshot to the HACS/README presentation using the clean screenshot without the overflowing wind effect.
+- No changes to ventilation physics, learning logic, thresholds, diagnostics transport, or sensor handling.
+
 ## 0.25.1.13
 - Freshy verwendet jetzt denselben konfigurierten Nachtzeitraum wie FreshAirIQ (`night_start_hour` / `night_end_hour`) statt fester Uhrzeiten.
 - Die Schlafmütze beginnt exakt 60 Minuten vor dem konfigurierten Nachtstart; ab Nachtstart schläft Freshy bis zum konfigurierten Nachtende.
@@ -5,13 +12,11 @@
 - Browser-Verhaltenstest für benutzerdefinierten Nachtstart, Nachtende, Mitternachtswechsel, Standardwerte und Live-Lüftungspriorität ergänzt.
 - Keine Änderung an Lüftungsphysik, Lernlogik, Sensor-Recovery oder Dashboard-Navigation.
 
-## 0.25.1.13
 - Sensor-Recovery als echte, isoliert testbare State-Machine abgesichert: 89 s Grace, Eskalation nach 90 s, erster gültiger Zyklus weiter gesperrt, Freigabe nach zwei gültigen Zyklen.
 - Dashboard-Bezeichnungen in README/HACS-Beschreibung an die tatsächliche Auswahl **Classic** / **FreshAirIQ IQ** angeglichen.
 - Freshy-Beschreibung und Community-Dashboard-Hinweis beibehalten.
 - Keine Änderung an Lüftungsphysik, Lernlogik, Schwellenwerten oder Freshy-Animationen.
 
-## 0.25.1.13
 - Sensor-Recovery auf die für Feuchteberechnungen erforderlichen Klimaquellen begrenzt; Fensterkontakte bleiben im separaten Startup-/Session-Schutz.
 - Pure-Logic-Coverage wieder auf 100 % abgesichert.
 - Echter Browser-Regressionstest für exakte Dashboard-Scrollposition nach Schließen eines FreshAirIQ-Fensters ergänzt.
@@ -25,17 +30,14 @@
 - Night, pollen and learning remain one-tap detail areas; all existing detailed analysis stays available.
 - Respects reduced-motion accessibility preferences.
 
-## 0.25.0.75
-
-## 0.25.1.1
 - Added import of Home Assistant Areas and Floor assignments into FreshAirIQ room setup.
 - Multiple HA areas can be selected and completed sequentially with FreshAirIQ-specific room data.
 - Existing FreshAirIQ room names are excluded from import to prevent accidental duplicates.
-
 - Added automatic English dashboard localization for non-German Home Assistant profiles.
 - German dashboard behavior remains unchanged.
 - No calculation, learning, diagnostics or scroll/navigation logic changed.
 
+## 0.25.0.75
 
 ## 0.25.0.64
 - Hotfix: freigegebene Dashboard-Einstellungen und Geräte-&-Dienste-Konfiguration durch verpflichtende UI-/Configuration-Contracts gegen unbeabsichtigte Regressionen geschützt.
@@ -358,7 +360,6 @@
 - Zusätzliche Regression für Feuchtequellen, Pollen, CO₂, Querlüftung, Nachtvorbereitung und Abschlussfeedback.
 - Pure-Logic-Coverage auf rund 92,9 % erhöht; CI-Floor auf 92 %.
 
-## 0.24.4.0
 - Pure-Logic-Coverage-Gate auf 90 % angehoben; 422 Tests, gemessen 90,01 %.
 - Settings API tief getestet (92 %) und gegen beschädigte Legacy-Raumsortierung gehärtet.
 - Notification-Orchestrierung tief getestet (97 %) und gegen NaN/inf, malformed Sessions/Payloads sowie ungültige Nachtprognosen gehärtet.

@@ -9,11 +9,11 @@ def test_buy_me_a_coffee_funding_and_readme():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "buy_me_a_coffee: freshairiq" in funding
     assert "https://buymeacoffee.com/freshairiq" in readme
-    assert "freiwillig unterstützen" in readme
+    assert "support continued development voluntarily" in readme
 
 def test_025068_versions_aligned():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality" / "quality_policy.json").read_text(encoding="utf-8"))
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == policy["version"] == package["version"] == "0.25.1.13"
-    assert 'VERSION = "0.25.1.13"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == policy["version"] == package["version"] == "0.25.1.14"
+    assert 'VERSION = "0.25.1.14"' in (COMP / "const.py").read_text(encoding="utf-8")

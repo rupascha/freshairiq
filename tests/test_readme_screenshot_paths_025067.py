@@ -16,7 +16,7 @@ def test_readme_images_use_hacs_safe_absolute_urls_and_exist():
 
 def test_public_beta_screenshot_gallery_is_complete():
     shots = sorted((ROOT / "docs" / "screenshots").glob("*.jpeg"))
-    assert len(shots) == 8
+    assert len(shots) == 9
     text = README.read_text(encoding="utf-8")
     for shot in shots:
         assert RAW_PREFIX + shot.relative_to(ROOT).as_posix() in text
