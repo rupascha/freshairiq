@@ -1,4 +1,11 @@
 ## 0.25.1.18
+
+## 0.25.1.19
+
+- Removed the visible rectangular Freshy mascot tile from the assistant hero.
+- Replaced hard mascot-area clipping with soft airflow fading while preserving the card boundaries.
+- Allows subtle airflow/glow to extend toward the copy while keeping the text readable above it.
+- No ventilation, recommendation, learning, sensor, or diagnostic logic changed.
 - Rebuilds Freshy around the approved visual state design with a larger three-quarter 3D presence and compact, nearly horizontal leaf wings.
 - Makes active ventilation visibly dynamic while continuous ventilation uses only one faint, slow airflow stream and no flying particles.
 - Keeps neutral/wait states free of airflow, makes pre-night Freshy visibly tired but awake with a sleep cap, and adds the approved purple moon ambience to night mode.

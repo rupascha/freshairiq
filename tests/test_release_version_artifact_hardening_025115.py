@@ -1,11 +1,11 @@
-"""Regression guards for v0.25.1.18 release version/artifact hygiene hardening."""
+"""Regression guards for v0.25.1.19 release version/artifact hygiene hardening."""
 from pathlib import Path
 import json
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_all_release_version_sources_match_manifest():
     version = json.loads((ROOT/'custom_components/freshairiq/manifest.json').read_text())['version']
-    assert version == '0.25.1.18'
+    assert version == '0.25.1.19'
     assert json.loads((ROOT/'package.json').read_text())['version'] == version
     lock = json.loads((ROOT/'package-lock.json').read_text())
     assert lock['version'] == version
