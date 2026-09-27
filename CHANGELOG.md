@@ -1,4 +1,4 @@
-## 0.25.1.14
+## 0.25.1.15
 - Restores the exact Home Assistant/dashboard scroll position after closing any FreshAirIQ overlay opened from the card, including direct detail and room windows.
 - Reworks Freshy's live-ventilation motion: the external wind stripes are removed and replaced by a contained, subtle sailing motion/glow that stays inside the card.
 - HACS now renders the English README by default, with a German description linked at the top.

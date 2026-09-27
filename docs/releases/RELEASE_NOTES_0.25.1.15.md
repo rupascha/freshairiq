@@ -1,4 +1,4 @@
-# FreshAirIQ 0.25.1.14
+# FreshAirIQ 0.25.1.15
 
 ## Scroll restoration, Freshy ventilation motion & HACS documentation
 

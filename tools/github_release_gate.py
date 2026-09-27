@@ -94,6 +94,8 @@ def _check_common(paths: set[str], read_text, errors: list[str]) -> str | None:
         "custom_components/freshairiq/frontend/freshairiq-loader.js": f'const FAIQ_VERSION = "{version}";',
         "quality/quality_policy.json": f'"version": "{version}"',
         "package.json": f'"version": "{version}"',
+        "package-lock.json": f'"version": "{version}"',
+        "quality/performance_baseline.json": f'"version": "{version}"',
     }
     for path, needle in version_sources.items():
         if path not in paths:

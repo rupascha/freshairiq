@@ -59,8 +59,9 @@ def test_scroll_restore_keeps_snapshot_through_delayed_ha_layout():
     assert "parentRoot.querySelectorAll('*').forEach(remember)" in CARD
 
 def test_freshy_has_distinct_live_pre_night_and_night_states():
-    assert 'kind = active.length ? "live"' in CARD
+    assert 'active.length && passiveOpenMonitor ? "continuous"' in CARD
+    assert ': active.length ? "live"' in CARD
     assert 'isNight ? "night"' in CARD
     assert 'isPreNight ? "pre-night"' in CARD
     assert "faiqSail" in CARD and "faiqBedtime" in CARD and "faiqSleep" in CARD
-    assert "ai-sleepcap" in CARD and "ai-zzz" in CARD and "ai-wind" in CARD
+    assert "ai-sleepcap" in CARD and "ai-zzz" in CARD and "ai-airflow" in CARD
