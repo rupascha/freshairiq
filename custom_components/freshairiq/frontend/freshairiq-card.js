@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.20";
+const FAIQ_VERSION = "0.25.1.21";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -1239,6 +1239,14 @@ class FreshAirIQCard extends HTMLElement {
         const isNight = freshyTimeKind === "night";
         const isPreNight = freshyTimeKind === "pre-night";
         const passiveOpenMonitor = status === "passive_open_monitor" || heroTitle.includes("daueröffnung");
+        // Semantic Freshy state: a primary night recommendation must stay visually "night" even
+        // when its selected rooms also carry the normal Ventilate action. Active ventilation
+        // still wins so an already running session keeps the live sailing animation.
+        const nightStrategy = st.night_strategy || {};
+        const nightRecommendation = !active.length && (
+            Boolean(nightStrategy.primary || st.night_strategy_primary) ||
+            heroTitle.includes("nacht") || heroTitle.includes("night")
+        );
         const kind = active.length && passiveOpenMonitor ? "continuous"
             : active.length ? "live"
             : bad.length && status !== "sensor_recovering" ? "sensor"
@@ -1247,6 +1255,7 @@ class FreshAirIQCard extends HTMLElement {
             : status === "cooling_recommended" || vent.some(r => r.action === "Ventilate for cooling") ? "cooling"
             : heroTitle.includes("abwarten") || heroTitle.includes("nicht lüften") ? "wait"
             : ["completed", "complete", "success", "ventilation_completed"].includes(status) ? "success"
+            : nightRecommendation ? "night"
             : vent.length || status === "ventilate" ? "recommend"
             : isNight ? "night"
             : isPreNight ? "pre-night"

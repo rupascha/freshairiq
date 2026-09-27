@@ -13,4 +13,4 @@ def test_render_does_not_overwrite_parent_scroll_with_stale_child_dom():
 
 
 def test_current_version():
-    assert 'const FAIQ_VERSION = "0.25.1.20";' in JS
+    assert 'const FAIQ_VERSION = "0.25.1.21";' in JS

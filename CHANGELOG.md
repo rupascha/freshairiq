@@ -1,3 +1,10 @@
+## 0.25.1.21
+
+- Fix Freshy state selection so primary night-ventilation recommendations use the dedicated night animation instead of the generic ventilation-recommendation animation.
+- Preserve live/continuous animation priority once ventilation is actually running.
+- Add regression coverage for the semantic night-state precedence.
+- No changes to ventilation physics, recommendation calculations, learning, diagnostics or sensor handling.
+
 ## 0.25.1.20
 
 - Add explicit user-controlled sharing of the detailed diagnostics JSON to FreshAirIQ support.

@@ -149,9 +149,9 @@ def test_readme_and_runtime_versions_are_current():
     manifest = (COMP / "manifest.json").read_text(encoding="utf-8")
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     assert "Current release:" not in readme
-    assert 'VERSION = "0.25.1.20"' in const
-    assert '"version": "0.25.1.20"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.1.20"' in card
+    assert 'VERSION = "0.25.1.21"' in const
+    assert '"version": "0.25.1.21"' in manifest
+    assert 'const FAIQ_VERSION = "0.25.1.21"' in card
 
 
 def test_house_strategy_learning_waits_for_complete_house_group():
