@@ -1,3 +1,17 @@
+## 0.25.1.17
+- Reworks Freshy toward the reference design with a three-quarter side view instead of a flat frontal presentation.
+- Keeps Freshy's green leaf as a permanent wing behind the body and adds state-specific seamless wing motion.
+- Preserves bounded airflow animations so Freshy, the wing and airflow effects remain inside the dashboard animation area.
+- Keeps the hardened Pure Logic coverage, release packaging, version consistency and artifact-hygiene safeguards.
+- No changes to ventilation physics, learning logic, thresholds, diagnostics transport or sensor handling.
+
+## 0.25.1.16
+- Adds Freshy's dimensional dark-sphere rendering with cyan rim light, bloom and permanent green leaf wing.
+- Separates active-ventilation sailing from gentle continuous-ventilation animation while keeping animation loops bounded and seamless.
+- Hardens release packaging, version consistency, safe version bumping and cache/build-artifact hygiene.
+- Defines and enforces the 100% Pure Logic line-coverage scope with denominator-integrity protection.
+- No changes to ventilation physics, learning thresholds or recommendation semantics.
+
 ## 0.25.1.15
 - Restores the exact Home Assistant/dashboard scroll position after closing any FreshAirIQ overlay opened from the card, including direct detail and room windows.
 - Reworks Freshy's live-ventilation motion: the external wind stripes are removed and replaced by a contained, subtle sailing motion/glow that stays inside the card.

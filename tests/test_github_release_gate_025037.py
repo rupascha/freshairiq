@@ -34,3 +34,12 @@ def test_github_hacs_gate_requires_complete_local_brand_set():
     ):
         assert name in source
     assert "missing required local brand asset" in source
+
+
+def test_github_hacs_gate_requires_current_changelog_entry():
+    source = (ROOT / "tools/github_release_gate.py").read_text(encoding="utf-8")
+    assert '"CHANGELOG.md"' in source
+    assert "CHANGELOG.md is missing an entry for manifest version" in source
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## 0.25.1.17" in changelog
+

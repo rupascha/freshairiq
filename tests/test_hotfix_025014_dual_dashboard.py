@@ -29,4 +29,4 @@ def test_dashboard_variant_is_selectable_and_bilingual():
 
 def test_version_is_025014():
     text = CARD.read_text(encoding='utf-8')
-    assert 'const FAIQ_VERSION = "0.25.1.16";' in text
+    assert 'const FAIQ_VERSION = "0.25.1.17";' in text

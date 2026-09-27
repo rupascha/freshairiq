@@ -9,7 +9,7 @@ import sys
 import zipfile
 from pathlib import Path, PurePosixPath
 
-REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", ".coveragerc-pure", ".github/workflows/quality.yml", ".github/workflows/validate.yml", ".github/workflows/release.yml")
+REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", "CHANGELOG.md", ".coveragerc-pure", ".github/workflows/quality.yml", ".github/workflows/validate.yml", ".github/workflows/release.yml")
 REQUIRED_COMPONENT = ("__init__.py", "manifest.json", "config_flow.py")
 REQUIRED_BRAND = ("icon.png", "icon@2x.png", "dark_icon.png", "dark_icon@2x.png", "logo.png", "logo@2x.png", "dark_logo.png", "dark_logo@2x.png")
 FORBIDDEN_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules", "quality_reports"}
@@ -106,6 +106,13 @@ def _check_common(paths: set[str], read_text, errors: list[str]) -> str | None:
     notes = f"docs/releases/RELEASE_NOTES_{version}.md"
     if notes not in paths:
         fail(errors, f"missing release notes for manifest version: {notes}")
+
+    changelog = "CHANGELOG.md"
+    if changelog in paths:
+        changelog_text = read_text(changelog)
+        heading_re = re.compile(rf"(?m)^##\s+{re.escape(version)}(?:\s|$)")
+        if not heading_re.search(changelog_text):
+            fail(errors, f"CHANGELOG.md is missing an entry for manifest version: {version}")
     return version
 
 
