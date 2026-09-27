@@ -1,3 +1,10 @@
+## 0.25.1.18
+- Rebuilds Freshy around the approved visual state design with a larger three-quarter 3D presence and compact, nearly horizontal leaf wings.
+- Makes active ventilation visibly dynamic while continuous ventilation uses only one faint, slow airflow stream and no flying particles.
+- Keeps neutral/wait states free of airflow, makes pre-night Freshy visibly tired but awake with a sleep cap, and adds the approved purple moon ambience to night mode.
+- Keeps all new motion loops seamless and clips effects at the hero boundary instead of shrinking Freshy.
+- No changes to ventilation physics, learning logic, thresholds, diagnostics transport or sensor handling.
+
 ## 0.25.1.17
 - Reworks Freshy toward the reference design with a three-quarter side view instead of a flat frontal presentation.
 - Keeps Freshy's green leaf as a permanent wing behind the body and adds state-specific seamless wing motion.

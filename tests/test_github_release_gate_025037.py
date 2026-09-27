@@ -41,5 +41,5 @@ def test_github_hacs_gate_requires_current_changelog_entry():
     assert '"CHANGELOG.md"' in source
     assert "CHANGELOG.md is missing an entry for manifest version" in source
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    assert "## 0.25.1.17" in changelog
+    assert "## 0.25.1.18" in changelog
 

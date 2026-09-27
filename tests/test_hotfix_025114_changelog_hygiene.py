@@ -1,4 +1,4 @@
-"""Regression contract for v0.25.1.17 changelog heading hygiene hotfix."""
+"""Regression contract for v0.25.1.18 changelog heading hygiene hotfix."""
 from collections import Counter
 from pathlib import Path
 import re
