@@ -84,3 +84,31 @@ def test_remaining_learning_component_defensive_and_high_fallback(monkeypatch):
     monkeypatch.setattr(lc,"_component",fake)
     out=lc.build_learning_components_status([],{},forecast_backtest={"room_sample_count":120,"reliability":{"score_percent":95}})
     assert out["stage_key"] == "sehr_gut_eingelernt"
+
+
+def test_language_confidence_personal_trace_paths():
+    rec={"kind":"ventilate","room_keys":["r"],"summary":"Lüften","confidence":90,"reasons":[]}
+    room={
+        "name":"Bad","learning_samples":80,"outcome_feedback_samples":20,
+        "strategy_samples":20,"behaviour_recommendation_opportunities":20,
+        "behaviour_duration_samples":20,"forecast_confidence":90,
+        "measurement_frame_quality":"excellent","routine_maturity":60,
+        "routine_source_samples":10,"routine_expected_source_ml_min":-0.5,
+        "outcome_success_rate":82,
+    }
+    out=lang.adapt_language_confidence(rec,{"r":room},{})
+    reasons=out["reasons"]
+    assert any("Persönliches Muster" in reason and "Feuchteabnahme" in reason for reason in reasons)
+    learned_room=dict(room)
+    learned_room["routine_source_samples"]=0
+    learned=lang.adapt_language_confidence(rec,{"r":learned_room},{})
+    assert any("Gelernte Erfahrung" in reason for reason in learned["reasons"])
+
+    # Positive source rate covers the opposite direction while a tiny rate must
+    # not create a routine trace. Existing reasons also exercise de-duplication.
+    room["routine_expected_source_ml_min"]=0.5
+    positive=lang.adapt_language_confidence(rec,{"r":room},{})
+    assert any("Feuchtezunahme" in reason for reason in positive["reasons"])
+    room["routine_expected_source_ml_min"]=0.01
+    quiet=lang.adapt_language_confidence(rec,{"r":room},{})
+    assert not any("Persönliches Muster" in reason for reason in quiet["reasons"])

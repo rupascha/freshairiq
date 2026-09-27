@@ -150,13 +150,18 @@ def main() -> int:
         report_dir.mkdir(parents=True, exist_ok=True)
         env["COVERAGE_FILE"] = str(report_dir / ".coverage")
 
+        pure_scope = _run(
+            "pure-logic scope classification",
+            [sys.executable, "tools/pure_logic_scope_gate.py"],
+            env=env,
+        )
+        results.append(pure_scope)
+        if pure_scope["returncode"]:
+            failures.append("pure-logic scope classification gate failed")
+
         correctness = _run(
             "correctness + pure-logic 100% coverage",
-            [
-                sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests",
-                "--cov=custom_components.freshairiq", "--cov-config=.coveragerc-pure",
-                "--cov-report=term-missing", f"--cov-fail-under={policy['correctness']['pure_logic_coverage_percent']}",
-            ],
+            [sys.executable, "tools/pure_logic_coverage_gate.py"],
             env=env,
         )
         results.append(correctness)

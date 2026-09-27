@@ -18,4 +18,4 @@ def test_dashboard_variant_change_contract_remains_intact():
     assert 'new CustomEvent("config-changed"' in editor
 
 def test_release_version_is_025018():
-    assert 'const FAIQ_VERSION = "0.25.1.15";' in CARD
+    assert 'const FAIQ_VERSION = "0.25.1.16";' in CARD

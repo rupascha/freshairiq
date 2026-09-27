@@ -51,7 +51,7 @@ Die Release-Prüfung ist in fünf feste Qualitätsachsen aufgeteilt: **Korrekthe
 
 ## Aktueller verifizierter Stand
 - Der lokale Gesamtstand wird bei jedem Release erneut durch das Continuous Quality System bestimmt; die verbindliche Zahl steht im zugehörigen Release-Report.
-- Pure-Logic-Coverage: **100,00 % = 5.313/5.313 Statements** im definierten Scope.
+- Pure-Logic-Coverage: **100,00 % = 6.194/6.194 Statements** in 39 automatisch klassifizierten Pure-Logic-Modulen.
 - Stabilitäts-Gate lokal bestanden: **3.000 Zyklen**, deterministische Entscheidungen, retained memory praktisch null und Peak weit unter dem 16-MiB-Limit.
 - Performance-Baseline wurde für drei repräsentative Kernpfade erzeugt und der direkte Wiederholungslauf lag innerhalb der definierten Warn-/Fehlergrenzen.
 - Diagnostics-Transport: die Performance-Härtung sowie der authentifizierte `/v1/enroll` → Bearer-Chunk-Vertrag für den privaten Staging-Hub bleiben Bestandteil des verpflichtenden Kompatibilitätsvertrags.

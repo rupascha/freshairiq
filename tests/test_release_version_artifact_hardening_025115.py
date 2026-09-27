@@ -1,11 +1,11 @@
-"""Regression guards for v0.25.1.15 release version/artifact hygiene hardening."""
+"""Regression guards for v0.25.1.16 release version/artifact hygiene hardening."""
 from pathlib import Path
 import json
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_all_release_version_sources_match_manifest():
     version = json.loads((ROOT/'custom_components/freshairiq/manifest.json').read_text())['version']
-    assert version == '0.25.1.15'
+    assert version == '0.25.1.16'
     assert json.loads((ROOT/'package.json').read_text())['version'] == version
     lock = json.loads((ROOT/'package-lock.json').read_text())
     assert lock['version'] == version
@@ -51,3 +51,12 @@ def test_bump_tool_never_mutates_tests_or_historical_fixtures():
     assert 'tests/*.py' not in bump
     assert "ROOT / 'tests'" not in bump
     assert '.glob(' not in bump
+
+
+def test_release_requires_pure_coverage_configuration():
+    coverage = ROOT / '.coveragerc-pure'
+    assert coverage.is_file()
+    text = coverage.read_text(encoding='utf-8')
+    assert 'fail_under = 100' in text
+    gate = (ROOT/'tools/github_release_gate.py').read_text(encoding='utf-8')
+    assert '".coveragerc-pure"' in gate
