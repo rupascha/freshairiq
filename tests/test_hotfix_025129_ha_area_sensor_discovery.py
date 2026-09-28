@@ -69,4 +69,5 @@ def test_existing_rooms_are_not_modified_by_discovery():
 
 
 def test_release_version_025129():
-    assert 'VERSION = "0.25.1.29"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    # Historical regression: prove the 0.25.1.29 release evidence remains preserved.
+    assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.29.md").is_file()

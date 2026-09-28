@@ -19,7 +19,7 @@ from .moisture_source import update_moisture_source
 from .notifications import process_notifications
 from .presence import resolve_occupancy
 from .recommendation import build_recommendation
-from .opening_strategy import enrich_opening_recommendation
+from .opening_strategy import enrich_opening_recommendation, synchronize_room_presentation_actions
 from .personal_context import build_resident_context, personalise_recommendation
 from .language_confidence import adapt_language_confidence
 from .live_coach import refine_live_recommendation
@@ -3269,6 +3269,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 next5_effect = float(_house_short)
                 if forecast_horizon == 5:
                     forecast_effect = float(_house_short)
+
+        # Keep every dashboard surface semantically aligned with the final
+        # recommendation. Canonical room actions are preserved as metadata and
+        # this happens only after all physics/learning decisions are complete.
+        synchronize_room_presentation_actions(intelligent_recommendation, results)
 
         # summaries in coordinator data so the dashboard payload stays small.
         for _room in results.values():

@@ -247,3 +247,46 @@ def enrich_opening_recommendation(
             brain["why"] = why[:6]
             brain["opening_guidance"] = metadata
     return recommendation
+
+
+def synchronize_room_presentation_actions(
+    recommendation: dict[str, Any],
+    rooms: dict[str, dict[str, Any]],
+) -> None:
+    """Align exported room actions with the final user-facing recommendation.
+
+    The room engine's original action is retained as ``canonical_action`` for
+    diagnostics. This runs only after physics, forecasting, learning and the
+    final recommendation are complete, so it cannot feed presentation choices
+    back into canonical calculations.
+    """
+    if not isinstance(recommendation, dict) or not isinstance(rooms, dict):
+        return
+    kind = str(recommendation.get("kind") or "")
+    if kind not in {"ventilate", "continue", "close"}:
+        return
+    selected = {str(key) for key in (recommendation.get("room_keys") or [])}
+    if not selected:
+        return
+    guidance = {
+        str(item.get("room_key")): item
+        for item in (recommendation.get("opening_guidance") or [])
+        if isinstance(item, dict) and item.get("room_key") is not None
+    }
+    for key in selected:
+        room = rooms.get(key)
+        if not isinstance(room, dict):
+            continue
+        current = str(room.get("action") or "")
+        final_action: str | None = None
+        if kind == "close":
+            final_action = "Close"
+        elif kind == "continue" and bool(room.get("active")):
+            final_action = "Continue ventilating"
+        elif kind == "ventilate" and not bool(room.get("active")):
+            final_action = "Ventilate"
+        if key in guidance and str(guidance[key].get("mode") or "") == "adjust_running":
+            final_action = "Continue ventilating"
+        if final_action and current != final_action:
+            room["canonical_action"] = current
+            room["action"] = final_action

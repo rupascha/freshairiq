@@ -1,3 +1,10 @@
+# FreshAirIQ v0.25.1.30 — Presentation Consistency Hotfix
+
+## 0.25.1.30
+- Keeps visible room recommendations consistent with the final FreshAirIQ decision.
+- Preserves canonical physical actions and intentional mixed-opening strategies.
+- Includes the Home Assistant area/sensor discovery improvements from v0.25.1.29.
+
 # FreshAirIQ v0.25.1.29 — HA Area Sensor Discovery
 
 ## 0.25.1.29
