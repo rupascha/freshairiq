@@ -1,3 +1,10 @@
+# FreshAirIQ v0.25.1.33 — Disclosure State & Readability Hotfix
+
+## 0.25.1.33
+- Preserves opened decision and room disclosure sections across Home Assistant live state refreshes.
+- Raises Classic dashboard typography materially across summaries, metrics, reasons and room explanations while retaining responsive overflow protection.
+- No ventilation, forecast, learning, or recommendation logic changed.
+
 # FreshAirIQ v0.25.1.32 — Classic Dashboard Progressive Disclosure Hotfix
 
 ## 0.25.1.32
