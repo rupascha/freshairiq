@@ -139,9 +139,12 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
     _unrecorded_attributes = frozenset({MATCH_ALL})
 
     def __init__(self, coordinator: FreshAirIQCoordinator, entry: FreshAirIQConfigEntry, desc: Description) -> None:
+        # translation_key must exist before the base entity decides whether a fallback
+        # English name is needed. Otherwise Home Assistant keeps that fallback name
+        # and never renders the localized entity name from translations/<lang>.json.
+        self._attr_translation_key = desc.key
         super().__init__(coordinator, entry, desc.key, desc.name)
         self.desc = desc
-        self._attr_translation_key = desc.key
         self._attr_native_unit_of_measurement = desc.unit
         self._attr_device_class = desc.device_class
         self._attr_entity_registry_enabled_default = desc.enabled_default
@@ -271,6 +274,9 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
         enabled_default: bool = True,
     ) -> None:
         # Entity name is only the measurement; the device supplies the room name.
+        # Set the translation key before the base constructor so it does not persist
+        # the English fallback label as the entity name.
+        self._attr_translation_key = field
         super().__init__(
             coordinator,
             entry,
@@ -281,7 +287,6 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
         )
         self.room_key = room_key
         self.field = field
-        self._attr_translation_key = field
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
         self._attr_entity_registry_enabled_default = enabled_default

@@ -25,8 +25,8 @@ async def async_setup_entry(
 class CrossVentilationSensor(FreshAirIQEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: FreshAirIQCoordinator, entry: FreshAirIQConfigEntry) -> None:
-        super().__init__(coordinator, entry, "cross_ventilation", "Cross ventilation")
         self._attr_translation_key = "cross_ventilation"
+        super().__init__(coordinator, entry, "cross_ventilation", "Cross ventilation")
 
     @property
     def is_on(self) -> bool:
@@ -39,6 +39,7 @@ class RoomCloseSensor(FreshAirIQEntity, BinarySensorEntity):
         self, coordinator: FreshAirIQCoordinator, entry: FreshAirIQConfigEntry,
         room_key: str, room_name: str
     ) -> None:
+        self._attr_translation_key = "close_recommended"
         super().__init__(
             coordinator,
             entry,
@@ -48,7 +49,6 @@ class RoomCloseSensor(FreshAirIQEntity, BinarySensorEntity):
             room_name=room_name,
         )
         self.room_key = room_key
-        self._attr_translation_key = "close_recommended"
 
     @property
     def is_on(self) -> bool:

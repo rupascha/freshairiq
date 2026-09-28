@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.30";
+const FAIQ_VERSION = "0.25.1.31";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -374,9 +374,14 @@ const FAIQ_AI_COMPACT_CSS = `
 @media(max-width:520px){.ai-mascot-wrap{overflow:visible;contain:none;background:none}}
 
 `;
+
+/* v0.25.1.31 compact readability + progressive disclosure */
+const FAIQ_COMPACT_DISCLOSURE_CSS = `
+.ai-copy h2{font-size:21px;line-height:24px}.ai-copy p{font-size:11px;line-height:15px;-webkit-line-clamp:2}.ai-kicker{font-size:8px}.ai-facts span{font-size:9.5px}.ai-attention{grid-template-columns:1fr}.ai-room-wrap{min-width:0}.ai-room{grid-template-columns:32px minmax(0,1fr) 20px;padding:9px 10px}.ai-room b{font-size:11.5px}.ai-room small{font-size:9.5px;line-height:13px}.ai-all-good{font-size:9.5px}.ai-context b{font-size:9.5px}.ai-context small{font-size:8px}.compact-actions .details-btn{font-size:9.5px}.ai-inline-detail{margin-top:-3px;padding:10px 11px;border-radius:0 0 12px 12px;background:color-mix(in srgb,var(--detail) 5%,rgba(255,255,255,.018));border:1px solid color-mix(in srgb,var(--detail) 22%,transparent);border-top:0;display:grid;gap:6px;min-width:0}.ai-inline-detail>div:not(.ai-inline-title):not(.ai-inline-values){display:grid;grid-template-columns:17px minmax(0,1fr);gap:6px;align-items:start}.ai-inline-detail>div>ha-icon{--mdc-icon-size:15px;color:var(--detail)}.ai-inline-detail>div>span{font-size:11px;line-height:15px;color:#c7d1d7;overflow-wrap:anywhere}.ai-inline-title{font-size:8.5px;font-weight:950;letter-spacing:.65px;color:var(--detail)}.ai-inline-values{display:flex!important;grid-template-columns:none!important;gap:6px!important;flex-wrap:wrap;margin-top:2px}.ai-inline-values span{font-size:9.5px!important;font-weight:800;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.04);color:#b9c7ce!important}.ai-more{appearance:none;border:0;background:transparent;color:var(--detail);padding:5px 0 1px;font:inherit;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:flex-end;gap:3px;cursor:pointer}.ai-more ha-icon{--mdc-icon-size:15px}.ai-expand-chevron{transition:transform .15s ease}.decision-inline-detail{margin-top:-12px;padding-top:17px}.ai-assistant,.ai-room{min-width:0;overflow:hidden}.ai-copy,.ai-room>div{min-width:0}@media(max-width:520px){.ai-copy h2{font-size:19px;line-height:22px}.ai-copy p{font-size:10.5px;line-height:14px}.ai-context small{display:block;font-size:7.5px}.ai-context button{grid-template-columns:16px minmax(0,1fr);padding:7px 5px}.ai-context b{font-size:9px}.ai-inline-detail>div>span{font-size:10.5px;line-height:14px}}
+`;
 class FreshAirIQCard extends HTMLElement {
     static getStubConfig() { return { dashboard_variant: "classic" }; }
-    constructor() { super(); this.attachShadow({ mode: "open" }); this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; }
+    constructor() { super(); this.attachShadow({ mode: "open" }); this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; this._compactExpanded = null; }
     _uiLanguage() {
         const raw = String((this._hass && (this._hass.language || this._hass.locale?.language)) || navigator.language || "en").toLowerCase();
         return raw.startsWith("de") ? "de" : "en";
@@ -501,7 +506,7 @@ class FreshAirIQCard extends HTMLElement {
         if (!style) {
             style = document.createElement("style");
             style.id = "faiq-static-style";
-            style.textContent = FAIQ_CARD_CSS + FAIQ_AI_COMPACT_CSS;
+            style.textContent = FAIQ_CARD_CSS + FAIQ_AI_COMPACT_CSS + FAIQ_COMPACT_DISCLOSURE_CSS;
             this.shadowRoot.prepend(style);
         }
         return style;
@@ -1284,18 +1289,27 @@ class FreshAirIQCard extends HTMLElement {
             const [accent,,icon] = styleFor(r.action);
             const label = r.active ? this._t("iq.active") : (this._uiLanguage() === "de" ? actionDE(r.action) : faiqEnglishText(actionDE(r.action)));
             const mins = Number(r.recommended_duration_min || r.remaining_duration_min || 0);
-            return `<div class="ai-room" data-room="${esc(r.key)}" style="--room:${accent}"><ha-icon icon="${icon}"></ha-icon><div><b>${esc(r.name || r.key)}</b><small>${esc(label)}${mins > 0 ? ` · ${Math.round(mins)} min` : ""}</small></div><ha-icon icon="mdi:chevron-right"></ha-icon></div>`;
+            const expanded = this._compactExpanded === `room:${r.key}`;
+            const rawReasons = (r.recommendation_reasons || []).filter(Boolean);
+            const reasons = rawReasons.length ? rawReasons : [reasonDE(r.reason)].filter(Boolean);
+            const reasonHtml = reasons.slice(0, 4).map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(this._uiLanguage() === "de" ? x : faiqEnglishText(x))}</span></div>`).join("");
+            const details = expanded ? `<div class="ai-inline-detail room-inline-detail" style="--detail:${accent}"><div class="ai-inline-title">${this._uiLanguage() === "de" ? "WARUM DIESER RAUM?" : "WHY THIS ROOM?"}</div>${reasonHtml || `<div><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(this._uiLanguage() === "de" ? "Die aktuelle FreshAirIQ-Entscheidung basiert auf den verfügbaren Raum- und Außendaten." : "The current FreshAirIQ decision is based on the available room and outdoor data.")}</span></div>`}<div class="ai-inline-values"><span>${fmt(r.temperature, 1)} °C · ${Math.round(Number(r.humidity || 0))} %</span><span>${fmt(r.absolute_humidity, 1)} g/m³</span>${Number(r.potential_ml || 0) > 0 ? `<span>≈ ${Math.round(Number(r.potential_ml))} ml</span>` : ""}</div><button class="ai-more" data-room="${esc(r.key)}">${this._uiLanguage() === "de" ? "Alle Raumdetails" : "All room details"}<ha-icon icon="mdi:chevron-right"></ha-icon></button></div>` : "";
+            return `<div class="ai-room-wrap"><div class="ai-room" role="button" tabindex="0" data-compact-toggle="room:${esc(r.key)}" aria-expanded="${expanded ? "true" : "false"}" style="--room:${accent}"><ha-icon icon="${icon}"></ha-icon><div><b>${esc(r.name || r.key)}</b><small>${esc(label)}${mins > 0 ? ` · ${Math.round(mins)} min` : ""}</small></div><ha-icon class="ai-expand-chevron" icon="${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></div>${details}</div>`;
         }).join("");
         const healthyCount = Math.max(0, calc.length - priority.length);
         const nightImportant = Boolean((st.night_strategy || {}).primary || st.night_strategy_primary || Number(st.overnight_forecast_ml || 0) > 0);
         const pollenBlocked = Boolean(st.pollen_blocked);
         const learningText = String(st.learning_status || st.learning_stage || this._t("iq.learning_active")).replaceAll("_", " ");
+        const decisionExpanded = this._compactExpanded === "decision";
+        const decisionReasons = (st.intelligent_recommendation?.reasons || st.intelligent_recommendation?.why || []).filter(Boolean).slice(0, 4);
+        const decisionDetail = decisionExpanded ? `<div class="ai-inline-detail decision-inline-detail" style="--detail:${color}"><div class="ai-inline-title">${this._uiLanguage() === "de" ? "WARUM DIESE EMPFEHLUNG?" : "WHY THIS RECOMMENDATION?"}</div>${decisionReasons.map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(this._uiLanguage() === "de" ? x : faiqEnglishText(x))}</span></div>`).join("") || `<div><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(this._uiLanguage() === "de" ? (hero.sub || "FreshAirIQ bewertet fortlaufend Raum-, Außen- und Prognosedaten.") : faiqEnglishText(hero.sub || "FreshAirIQ continuously evaluates room, outdoor and forecast data."))}</span></div>`}<button class="ai-more" data-info="decision">${this._uiLanguage() === "de" ? "Vollständige Entscheidung" : "Full decision"}<ha-icon icon="mdi:chevron-right"></ha-icon></button></div>` : "";
         return `<section class="ai-compact ${kind}" style="--ai:${color}">
-          <div class="ai-assistant clickable" data-info="decision">
+          <div class="ai-assistant" role="button" tabindex="0" data-compact-toggle="decision" aria-expanded="${decisionExpanded ? "true" : "false"}">
             <div class="ai-mascot-wrap" aria-hidden="true"><span class="ai-airflow a"></span><span class="ai-airflow b"></span><span class="ai-airflow c"></span><span class="ai-air-leaf one"></span><span class="ai-air-leaf two"></span><div class="ai-freshy-angle"><div class="ai-mascot"><span class="ai-sleepcap"></span><span class="ai-zzz">Z z</span><span class="ai-smile"></span><span class="ai-leaf"></span><span class="ai-leaf-right"></span></div></div><span class="ai-moon"></span></div>
             <div class="ai-copy"><div class="ai-kicker">${esc(this._t("iq.handling"))}</div><h2>${esc(this._uiLanguage() === "de" ? (hero.title || this._t("iq.all_good")) : faiqEnglishText(hero.title || this._t("iq.all_good")))}</h2><p>${esc(summary)}</p><div class="ai-facts">${factTime}${factMoisture}</div></div>
-            <ha-icon class="ai-chevron" icon="mdi:chevron-right"></ha-icon>
+            <ha-icon class="ai-chevron" icon="${decisionExpanded ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon>
           </div>
+          ${decisionDetail}
           ${roomCards ? `<div class="ai-attention">${roomCards}</div>` : ""}
           <div class="ai-all-good clickable" data-info="rooms"><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${priority.length ? this._t("iq.more_rooms_ok", { count: healthyCount }) : this._t("iq.all_rooms_ok", { count: calc.length })}</span><ha-icon icon="mdi:chevron-right"></ha-icon></div>
           <div class="ai-context">
@@ -2407,6 +2421,11 @@ class FreshAirIQCard extends HTMLElement {
         });
         const settingsRetry = this.shadowRoot.getElementById("settings-retry");
         if (settingsRetry) settingsRetry.addEventListener("click", async (e) => { e.stopPropagation(); await this._loadSettings(true); });
+        this.shadowRoot.querySelectorAll("[data-compact-toggle]").forEach(el => {
+            const toggle = e => { e.stopPropagation(); const key = el.dataset.compactToggle; if (!key) return; this._compactExpanded = this._compactExpanded === key ? null : key; this._render(); };
+            el.addEventListener("click", toggle);
+            el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(e); } });
+        });
         this.shadowRoot.querySelectorAll("[data-settings-section]").forEach(el => el.addEventListener("click", e => {
             e.stopPropagation();
             const section = el.dataset.settingsSection;

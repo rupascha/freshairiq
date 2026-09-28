@@ -1,3 +1,11 @@
+# FreshAirIQ v0.25.1.31 — Compact Readability & Room Explanation Hotfix
+
+## 0.25.1.31
+- Larger, more readable compact-dashboard typography with overflow-safe layouts.
+- Progressive disclosure for the primary recommendation and recommended rooms.
+- Room-specific rationale is shown from the existing canonical recommendation reasons.
+- Existing full detail views remain reachable; no decision logic changed.
+
 # FreshAirIQ v0.25.1.30 — Presentation Consistency Hotfix
 
 ## 0.25.1.30
