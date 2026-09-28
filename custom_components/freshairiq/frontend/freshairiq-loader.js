@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.27";
+const FAIQ_VERSION = "0.25.1.28";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_EDITOR = "freshairiq-card-editor";
 const FAIQ_IMPL = "freshairiq-card-impl";
@@ -10,6 +10,9 @@ const FAIQ_STRATEGY_ELEMENT = "ll-strategy-dashboard-freshairiq";
 // custom Lovelace resource before it starts constructing cards/strategies. Keep
 // the elements HA looks for in this tiny module and load the 250 kB UI only
 // behind those stable proxies.
+const faiqLoaderLanguage = () => String(navigator.language || "en").toLowerCase().startsWith("de") ? "de" : "en";
+const faiqLoaderCopy = (de, en) => faiqLoaderLanguage() === "de" ? de : en;
+
 let implementationPromise = null;
 function loadImplementation() {
   if (!implementationPromise) {
@@ -47,7 +50,7 @@ class FreshAirIQLoaderProxy extends HTMLElement {
   _showLoadError() {
     if (this._impl) return;
     if (!this.shadowRoot) this.attachShadow({mode:"open"});
-    this.shadowRoot.innerHTML = `<ha-card><div style="padding:16px"><b>FreshAirIQ wird geladen</b><div style="margin-top:6px;color:var(--secondary-text-color);font-size:12px">Das Kartenmodul konnte auf diesem Gerät noch nicht vollständig geladen werden. Die FreshAirIQ-Konfiguration selbst ist nicht beschädigt.</div></div></ha-card>`;
+    this.shadowRoot.innerHTML = `<ha-card><div style="padding:16px"><b>${faiqLoaderCopy("FreshAirIQ wird geladen", "FreshAirIQ is loading")}</b><div style="margin-top:6px;color:var(--secondary-text-color);font-size:12px">${faiqLoaderCopy("Das Kartenmodul konnte auf diesem Gerät noch nicht vollständig geladen werden. Die FreshAirIQ-Konfiguration selbst ist nicht beschädigt.", "The card module could not be fully loaded on this device yet. Your FreshAirIQ configuration is not damaged.")}</div></div></ha-card>`;
   }
   async _ensureImplementation() {
     if (this._impl || this._loading) return;
@@ -71,7 +74,7 @@ class FreshAirIQLoaderProxy extends HTMLElement {
 }
 class FreshAirIQLoaderCard extends FreshAirIQLoaderProxy {
   static getConfigElement() { return document.createElement(FAIQ_EDITOR); }
-  static getStubConfig() { return {}; }
+  static getStubConfig() { return {dashboard_variant:"classic"}; }
   getCardSize() { return this._impl && this._impl.getCardSize ? this._impl.getCardSize() : 5; }
 }
 class FreshAirIQLoaderEditor extends FreshAirIQLoaderProxy {
@@ -91,11 +94,11 @@ if (!customElements.get(FAIQ_STRATEGY_ELEMENT)) customElements.define(FAIQ_STRAT
 
 window.customCards = window.customCards || [];
 if (!window.customCards.some(card => card.type === FAIQ_CARD)) {
-  window.customCards.push({type:FAIQ_CARD,name:"FreshAirIQ",description:"Intelligente Lüftungs-, Feuchte-, Energie- und Lernübersicht.",preview:true});
+  window.customCards.push({type:FAIQ_CARD,name:"FreshAirIQ",description:faiqLoaderCopy("Intelligente Lüftungs-, Feuchte-, Energie- und Lernübersicht.", "Intelligent ventilation, humidity, energy and learning overview."),preview:true});
 }
 window.customStrategies = window.customStrategies || [];
 if (!window.customStrategies.some(strategy => strategy.type === FAIQ_STRATEGY && strategy.strategyType === "dashboard")) {
-  window.customStrategies.push({type:FAIQ_STRATEGY,strategyType:"dashboard",name:"FreshAirIQ Dashboard",description:"Native FreshAirIQ Einstiegskarte; öffnet das robuste FreshAirIQ Panel."});
+  window.customStrategies.push({type:FAIQ_STRATEGY,strategyType:"dashboard",name:"FreshAirIQ Dashboard",description:faiqLoaderCopy("Native FreshAirIQ Einstiegskarte; öffnet das robuste FreshAirIQ Panel.", "Native FreshAirIQ entry card; opens the robust FreshAirIQ panel.")});
 }
 
 // Start preloading only after the public registrations above are visible.

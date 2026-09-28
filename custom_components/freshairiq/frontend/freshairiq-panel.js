@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.27";
+const FAIQ_VERSION = "0.25.1.28";
 const FAIQ_IMPL = "freshairiq-card-impl";
 
 // FreshAirIQ safe panel.
@@ -44,6 +44,13 @@ class FreshAirIQPanel extends HTMLElement {
     this._ensureCard();
   }
 
+  _language() {
+    const raw = String((this._hass && (this._hass.language || this._hass.locale?.language)) || navigator.language || "en").toLowerCase();
+    return raw.startsWith("de") ? "de" : "en";
+  }
+
+  _copy(de, en) { return this._language() === "de" ? de : en; }
+
   _renderShell() {
     if (!this.shadowRoot) return;
     this.shadowRoot.innerHTML = `
@@ -55,7 +62,7 @@ class FreshAirIQPanel extends HTMLElement {
           color:var(--secondary-text-color); font:14px/1.4 sans-serif;
         }
       </style>
-      <div id="host"><div id="loading">FreshAirIQ wird geladen …</div></div>`;
+      <div id="host"><div id="loading">${this._copy("FreshAirIQ wird geladen …", "FreshAirIQ is loading …")}</div></div>`;
   }
 
   async _ensureCard() {
@@ -89,9 +96,9 @@ class FreshAirIQPanel extends HTMLElement {
         host.innerHTML = `
           <ha-card>
             <div style="padding:16px">
-              <b>FreshAirIQ konnte nicht geladen werden</b>
+              <b>${this._copy("FreshAirIQ konnte nicht geladen werden", "FreshAirIQ could not be loaded")}</b>
               <div style="margin-top:6px;color:var(--secondary-text-color);font-size:12px">
-                Das sichere FreshAirIQ-Panel konnte sein Frontend-Modul nicht initialisieren.
+                ${this._copy("Das sichere FreshAirIQ-Panel konnte sein Frontend-Modul nicht initialisieren.", "The safe FreshAirIQ panel could not initialize its frontend module.")}
               </div>
             </div>
           </ha-card>`;

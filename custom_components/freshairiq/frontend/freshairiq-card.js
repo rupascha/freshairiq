@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.27";
+const FAIQ_VERSION = "0.25.1.28";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -30,6 +30,21 @@ const FAIQ_UI = Object.freeze({
   "editor.dashboard_style": { de: "Darstellung", en: "Dashboard style" },
   "editor.dashboard_style_help": { de: "Klassisch entspricht der informationsreichen Oberfläche aus v0.25.0.75. FreshAirIQ IQ priorisiert die aktuelle Entscheidung und blendet Details bei Bedarf ein.", en: "Classic preserves the information-rich v0.25.0.75 interface. FreshAirIQ IQ prioritizes the current decision and reveals details on demand." },
   "editor.classic": { de: "Klassisch", en: "Classic" },
+  "support.cooldown_button": { de: "Noch {mins} Min. gesperrt", en: "Locked for {mins} more min" },
+  "support.cooldown_hint": { de: "danach erneut möglich", en: "available again afterwards" },
+  "support.prompt": { de: "Beschreibe kurz dein Anliegen oder den beobachteten Fehler (optional). Die detaillierte FreshAirIQ-Diagnose wird nach deiner Bestätigung direkt an den FreshAirIQ-Support übertragen.", en: "Briefly describe your issue or the problem you observed (optional). After your confirmation, the detailed FreshAirIQ diagnostic report will be sent directly to FreshAirIQ Support." },
+  "support.message_too_long": { de: "Bitte verwende maximal 4.000 Zeichen.", en: "Please use no more than 4,000 characters." },
+  "support.confirm": { de: "Detaillierte Diagnose jetzt direkt an den FreshAirIQ-Support senden? Nach erfolgreichem Versand ist ein erneuter Diagnoseversand für 60 Minuten gesperrt.", en: "Send the detailed diagnostic report directly to FreshAirIQ Support now? After a successful upload, another diagnostic upload will be locked for 60 minutes." },
+  "support.sending": { de: "Diagnose wird gesendet", en: "Sending diagnostic report" },
+  "support.please_wait": { de: "bitte warten", en: "please wait" },
+  "support.sent": { de: "Erfolgreich gesendet", en: "Sent successfully" },
+  "support.cooldown_active": { de: "60 Min. Sperre aktiv", en: "60 min lock active" },
+  "support.success": { de: "Diagnose erfolgreich an den FreshAirIQ-Support gesendet.{caseLine}\nEin erneuter Versand ist in 60 Minuten möglich.", en: "Diagnostic report successfully sent to FreshAirIQ Support.{caseLine}\nAnother upload will be available in 60 minutes." },
+  "support.failed": { de: "Senden fehlgeschlagen", en: "Upload failed" },
+  "support.failure_alert": { de: "Die Diagnose konnte nicht an den FreshAirIQ-Support übertragen werden. Es wurde keine 60-Minuten-Sperre gestartet.\n\nAlternativ erreichst du uns unter support@freshairiq.com.", en: "The diagnostic report could not be sent to FreshAirIQ Support. No 60-minute lock was started.\n\nAlternatively, you can reach us at support@freshairiq.com." },
+  "settings.confirm_delete_room": { de: "Diesen Raum wirklich aus FreshAirIQ entfernen?", en: "Really remove this room from FreshAirIQ?" },
+  "settings.confirm_reset_learning": { de: "Alle gelernten FreshAirIQ-Daten wirklich löschen?", en: "Really delete all learned FreshAirIQ data?" },
+  "settings.confirm_reset_options": { de: "Alle FreshAirIQ-Optionen wirklich auf Standardwerte zurücksetzen? Räume und Sensoren bleiben erhalten.", en: "Really reset all FreshAirIQ options to their default values? Rooms and sensors will be kept." },
 });
 // Frontend locale bridge: the historical dashboard copy is authored in German.
 // Keep that rendering path untouched and translate the rendered UI for English
@@ -254,7 +269,7 @@ const normalizeDashboardConfig = input => {
         show_details_button: inherited("show_details_button", null, true),
         show_guests_button: inherited("show_guests_button", null, true),
         show_rooms_button: inherited("show_rooms_button", null, true),
-        dashboard_variant: ["classic", "iq"].includes(String(raw.dashboard_variant || "iq")) ? String(raw.dashboard_variant || "iq") : "iq",
+        dashboard_variant: ["classic", "iq"].includes(String(raw.dashboard_variant || "classic")) ? String(raw.dashboard_variant || "classic") : "classic",
     });
     ["show_moisture", "show_temperature", "show_time", "show_next5", "show_night", "show_mould", "show_energy", "show_pollen", "show_cross_ventilation"].forEach(key => delete out[key]);
     return out;
@@ -360,7 +375,7 @@ const FAIQ_AI_COMPACT_CSS = `
 
 `;
 class FreshAirIQCard extends HTMLElement {
-    static getStubConfig() { return {}; }
+    static getStubConfig() { return { dashboard_variant: "classic" }; }
     constructor() { super(); this.attachShadow({ mode: "open" }); this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; }
     _uiLanguage() {
         const raw = String((this._hass && (this._hass.language || this._hass.locale?.language)) || navigator.language || "en").toLowerCase();
@@ -1544,23 +1559,23 @@ class FreshAirIQCard extends HTMLElement {
         const knownUntil = this._supportCooldownUntil ? new Date(this._supportCooldownUntil) : null;
         if (knownUntil && knownUntil.getTime() > Date.now()) {
             const mins = Math.max(1, Math.ceil((knownUntil.getTime() - Date.now()) / 60000));
-            if (button) button.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon><b>Noch ${mins} Min. gesperrt</b><span>danach erneut möglich</span>`;
+            if (button) button.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon><b>${esc(this._t("support.cooldown_button", { mins }))}</b><span>${esc(this._t("support.cooldown_hint"))}</span>`;
             setTimeout(() => { if (button && original) button.innerHTML = original; }, 2500);
             return;
         }
-        const message = window.prompt("Beschreibe kurz dein Anliegen oder den beobachteten Fehler (optional). Die detaillierte FreshAirIQ-Diagnose wird nach deiner Bestätigung direkt an den FreshAirIQ-Support übertragen.", "");
+        const message = window.prompt(this._t("support.prompt"), "");
         if (message === null) return;
-        if (message.length > 4000) { window.alert("Bitte verwende maximal 4.000 Zeichen."); return; }
-        if (!window.confirm("Detaillierte Diagnose jetzt direkt an den FreshAirIQ-Support senden? Nach erfolgreichem Versand ist ein erneuter Diagnoseversand für 60 Minuten gesperrt.")) return;
+        if (message.length > 4000) { window.alert(this._t("support.message_too_long")); return; }
+        if (!window.confirm(this._t("support.confirm"))) return;
         try {
-            if (button) { button.disabled = true; button.innerHTML = '<ha-icon icon="mdi:progress-clock"></ha-icon><b>Diagnose wird gesendet</b><span>bitte warten</span>'; }
+            if (button) { button.disabled = true; button.innerHTML = `<ha-icon icon="mdi:progress-clock"></ha-icon><b>${esc(this._t("support.sending"))}</b><span>${esc(this._t("support.please_wait"))}</span>`; }
             await this._registerFieldTestClient(true);
             const result = await this._hass.callApi("POST", "freshairiq/support-diagnostics", { message });
             if (result?.accepted) {
                 this._supportCooldownUntil = result.cooldown_until;
                 const caseId = result.support_case_id || "";
-                if (button) button.innerHTML = `<ha-icon icon="mdi:check-circle-outline"></ha-icon><b>Erfolgreich gesendet</b><span>${caseId ? `Support-ID ${esc(caseId)}` : "60 Min. Sperre aktiv"}</span>`;
-                window.alert(`Diagnose erfolgreich an den FreshAirIQ-Support gesendet.${caseId ? `\nSupport-ID: ${caseId}` : ""}\nEin erneuter Versand ist in 60 Minuten möglich.`);
+                if (button) button.innerHTML = `<ha-icon icon="mdi:check-circle-outline"></ha-icon><b>${esc(this._t("support.sent"))}</b><span>${caseId ? `Support-ID ${esc(caseId)}` : esc(this._t("support.cooldown_active"))}</span>`;
+                window.alert(this._t("support.success", { caseLine: caseId ? `\nSupport-ID: ${caseId}` : "" }));
             }
         } catch (err) {
             const body = err?.body || err?.message || "";
@@ -1570,11 +1585,11 @@ class FreshAirIQCard extends HTMLElement {
                 const seconds = Number(parsed?.retry_after_seconds || 3600);
                 const mins = Math.max(1, Math.ceil(seconds / 60));
                 if (parsed?.cooldown_until) this._supportCooldownUntil = parsed.cooldown_until;
-                if (button) button.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon><b>Noch ${mins} Min. gesperrt</b><span>danach erneut möglich</span>`;
+                if (button) button.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon><b>${esc(this._t("support.cooldown_button", { mins }))}</b><span>${esc(this._t("support.cooldown_hint"))}</span>`;
             } else {
                 console.error("FreshAirIQ support diagnostics upload failed", err);
-                if (button) button.innerHTML = '<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>Senden fehlgeschlagen</b><span>support@freshairiq.com</span>';
-                window.alert("Die Diagnose konnte nicht an den FreshAirIQ-Support übertragen werden. Es wurde keine 60-Minuten-Sperre gestartet.\n\nAlternativ erreichst du uns unter support@freshairiq.com.");
+                if (button) button.innerHTML = `<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>${esc(this._t("support.failed"))}</b><span>support@freshairiq.com</span>`;
+                window.alert(this._t("support.failure_alert"));
             }
         } finally {
             setTimeout(() => { if (button && original) { button.disabled = false; button.innerHTML = original; } }, 3500);
@@ -2557,7 +2572,7 @@ class FreshAirIQCard extends HTMLElement {
             e.stopPropagation();
             const root = this.shadowRoot.querySelector(".room-form");
             const key = root && root.dataset.roomKey;
-            if (!key || !window.confirm("Diesen Raum wirklich aus FreshAirIQ entfernen?")) return;
+            if (!key || !window.confirm(this._t("settings.confirm_delete_room"))) return;
             const ok = await this._settingsPost({ action: "delete_room", room_key: key });
             if (ok) {
                 this._subdialogScrollTop = 0;
@@ -2569,7 +2584,7 @@ class FreshAirIQCard extends HTMLElement {
         this.shadowRoot.querySelectorAll("[data-settings-action]").forEach(el => el.addEventListener("click", async e => {
             e.stopPropagation();
             const action = el.dataset.settingsAction;
-            const text = action === "reset_learning" ? "Alle gelernten FreshAirIQ-Daten wirklich löschen?" : "Alle FreshAirIQ-Optionen wirklich auf Standardwerte zurücksetzen? Räume und Sensoren bleiben erhalten.";
+            const text = action === "reset_learning" ? this._t("settings.confirm_reset_learning") : this._t("settings.confirm_reset_options");
             if (!window.confirm(text)) return;
             await this._settingsPost({ action });
         }));

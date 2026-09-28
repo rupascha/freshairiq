@@ -1,3 +1,10 @@
+# FreshAirIQ v0.25.1.28 — i18n + Classic Default Hotfix
+
+## 0.25.1.28
+- Completed DE/EN localization for native support/confirmation dialogs and loader/panel fallback UI.
+- New cards now default to the mature Classic dashboard; FreshAirIQ IQ remains an explicit opt-in and existing saved selections are preserved.
+- Added regression coverage for both contracts.
+
 # FreshAirIQ v0.25.1.27 — Pytest Import Hotfix
 
 ## 0.25.1.27
