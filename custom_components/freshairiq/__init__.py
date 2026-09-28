@@ -49,7 +49,7 @@ from .const import (
 )
 from .coordinator import FreshAirIQCoordinator
 from .storage import LearningStore
-from .diagnostics import FreshAirIQDiagnosticsView
+from .diagnostics import FreshAirIQDiagnosticsView, FreshAirIQSupportDiagnosticsView
 from .settings_api import FreshAirIQSettingsView, FreshAirIQFeedbackView
 from .validation import RELATION_OPTION_KEYS, repair_option_relationships
 from .runtime import clear_runtime_coordinator, get_runtime_coordinator, iter_runtime_coordinators, set_runtime_coordinator
@@ -208,6 +208,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         add_extra_js_url(hass, _FRONTEND_MODULE)
     if not hass.data.get(f"{DOMAIN}_diagnostics_view_registered"):
         hass.http.register_view(FreshAirIQDiagnosticsView())
+        hass.http.register_view(FreshAirIQSupportDiagnosticsView())
         hass.data[f"{DOMAIN}_diagnostics_view_registered"] = True
     if not hass.data.get(f"{DOMAIN}_settings_view_registered"):
         hass.http.register_view(FreshAirIQSettingsView())

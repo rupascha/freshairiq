@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,4 +17,4 @@ def test_release_version_is_025049():
     manifest = json.loads((ROOT / "custom_components/freshairiq/manifest.json").read_text())
     package = json.loads((ROOT / "package.json").read_text())
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text())
-    assert manifest["version"] == package["version"] == policy["version"] == "0.25.1.22"
+    assert manifest["version"] == package["version"] == policy["version"] == CURRENT_RELEASE_VERSION

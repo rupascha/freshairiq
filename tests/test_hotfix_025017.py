@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -8,4 +9,4 @@ def test_legacy_learning_status_removed():
     assert "FRESHAIRIQ INTELLIGENCE 2.0" in CARD
 
 def test_runtime_version():
-    assert 'const FAIQ_VERSION = "0.25.1.22"' in CARD
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}"' in CARD

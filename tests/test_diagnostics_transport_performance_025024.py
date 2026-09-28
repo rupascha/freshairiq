@@ -1,5 +1,6 @@
 """Regression contracts for v0.25.1.19 diagnostics transport performance hotfix."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 from copy import deepcopy
 import json
@@ -47,8 +48,8 @@ def _large_export(count: int = 120) -> dict:
 def test_release_version_and_private_staging_endpoint_are_fixed():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.1.22"' in const
-    assert manifest["version"] == "0.25.1.22"
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in const
+    assert manifest["version"] == CURRENT_RELEASE_VERSION
     assert 'DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"' in const
 
 

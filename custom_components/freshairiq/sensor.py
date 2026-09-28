@@ -153,7 +153,7 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         if self.desc.key == "status":
-            return {
+            attributes = {
                 "status": self.coordinator.data.get("status"),
                 "status_text": self.coordinator.data["status_text"],
                 # Hotfix 0.18.2.3: keep the complete room payload as the authoritative
@@ -249,8 +249,13 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
                 "post_close_stabilization": self.coordinator.data.get("post_close_stabilization", {}),
                 "learning_components": self.coordinator.data.get("learning_components", {}),
                 "diagnostics": self.coordinator.data.get("diagnostics", {}),
+                "diagnostics_upload": self.coordinator.data.get("diagnostics_upload", {}),
                 "version": VERSION,
             }
+            self.coordinator.runtime_health.observe_attribute_payload(
+                "status", attributes, recorder_exposed=MATCH_ALL not in self._unrecorded_attributes
+            )
+            return attributes
         return None
 
 
@@ -301,13 +306,18 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
         if self.field == "action":
             room = self.coordinator.data.get("rooms", {}).get(self.room_key)
             if room:
-                return {
+                attributes = {
                     "freshairiq_room_payload": room,
                     "freshairiq_room_key": self.room_key,
                     "freshairiq_transport": "room_v2",
                     "freshairiq_entry_id": self._entry.entry_id,
                     "freshairiq_version": VERSION,
                 }
+                self.coordinator.runtime_health.observe_attribute_payload(
+                    "room_action", attributes,
+                    recorder_exposed="freshairiq_room_payload" not in self._unrecorded_attributes,
+                )
+                return attributes
         return None
 
     @property

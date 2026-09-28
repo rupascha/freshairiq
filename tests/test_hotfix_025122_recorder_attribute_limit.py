@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,5 +27,5 @@ def test_room_dashboard_payload_is_not_recorded_but_remains_live():
 def test_release_version_is_025122():
     const = (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
     manifest = (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.1.22"' in const
-    assert '"version": "0.25.1.22"' in manifest
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in const
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in manifest

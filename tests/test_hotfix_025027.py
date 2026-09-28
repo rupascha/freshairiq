@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 from custom_components.freshairiq.forecast_validation import build_validation_record
@@ -48,7 +49,7 @@ def test_release_version_025027_is_consistent():
     manifest = (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
     card = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     package = (ROOT / "package.json").read_text(encoding="utf-8")
-    assert 'VERSION = "0.25.1.22"' in const
-    assert '"version": "0.25.1.22"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in card
-    assert '"version": "0.25.1.22"' in package
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in const
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in manifest
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in card
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in package

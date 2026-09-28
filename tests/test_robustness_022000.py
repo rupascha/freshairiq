@@ -1,5 +1,6 @@
 """Behavioural regression tests for the v0.25.0.7 robustness foundation."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 from datetime import datetime, timedelta, timezone
 from math import inf, nan
@@ -95,7 +96,7 @@ def test_storage_hardening_guards_nonfinite_learning_state():
 
 
 def test_release_version_022000_is_consistent():
-    assert 'VERSION = "0.25.1.22"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.22"' in (COMP / "manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (COMP / "manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     assert (ROOT / "docs" / "releases" / "RELEASE_NOTES_0.25.0.0.md").exists()

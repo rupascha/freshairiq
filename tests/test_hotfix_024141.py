@@ -1,5 +1,6 @@
 """Regression contracts for FreshAirIQ 0.25.0.7 start-forecast/settings hotfix."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 import ast
 import json
@@ -224,8 +225,8 @@ def test_frontend_no_longer_uses_systematic_same_time_basis_error_text():
 
 
 def test_release_version_is_consistent():
-    assert 'VERSION = "0.25.1.22"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == "0.25.1.22"
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == CURRENT_RELEASE_VERSION
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.1.22";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
     assert (ROOT / "docs" / "releases" / "RELEASE_NOTES_0.25.0.0.md").exists()

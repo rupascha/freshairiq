@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
 
@@ -40,7 +41,7 @@ def test_active_resource_is_direct_card_not_proxy_loader():
 
 def test_release_version_is_consistent():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.1.22"
-    assert 'VERSION = "0.25.1.22"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == CURRENT_RELEASE_VERSION
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.1.22";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+        assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

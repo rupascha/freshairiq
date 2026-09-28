@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,4 +14,4 @@ def test_render_does_not_overwrite_parent_scroll_with_stale_child_dom():
 
 
 def test_current_version():
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in JS
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS

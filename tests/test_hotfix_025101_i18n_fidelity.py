@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json, re
 
@@ -10,7 +11,7 @@ def _native_pairs():
     return json.loads(match.group(1))
 
 def test_025101_release_version_and_ai_i18n_contract():
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in CARD
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in CARD
     for token in [
         '["FreshAirIQ übernimmt", "FreshAirIQ is handling it"]',
         'more rooms without urgent action needed',

@@ -1,4 +1,5 @@
 """Regression contracts for v0.25.1.19 partial forecast validation hotfix."""
+from tests.release_version import CURRENT_RELEASE_VERSION
 from datetime import datetime
 from pathlib import Path
 from custom_components.freshairiq.ventilation_result import finalise_ventilation_group
@@ -59,7 +60,7 @@ def test_room_with_mixed_aligned_sessions_is_restricted():
     assert statuses["bad"] == "restricted"
 
 def test_release_version_025036():
-    assert 'VERSION = "0.25.1.22"' in (COMP / "const.py").read_text()
-    assert '"version": "0.25.1.22"' in (COMP / "manifest.json").read_text()
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text()
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (COMP / "manifest.json").read_text()
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.1.22";' in (COMP / "frontend" / name).read_text()
+        assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (COMP / "frontend" / name).read_text()

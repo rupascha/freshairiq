@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,4 +22,4 @@ def test_android_has_scoped_touch_scroll_fallback_without_changing_ios_path():
 
 
 def test_current_version():
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in JS
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS

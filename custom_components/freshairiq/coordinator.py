@@ -42,6 +42,7 @@ from .decision_brain import build_unified_decision
 from .decision_trace import build_decision_trace, build_recommendation_quality
 from .diagnostics import FreshAirIQDiagnosticsRecorder
 from .telemetry import FreshAirIQDiagnosticsClient
+from .runtime_health import RuntimeHealthMonitor
 from .ventilation_result import append_completed_sessions, finalise_ventilation_group, include_ventilation_group_start, new_ventilation_group, update_session_cross_tracking
 from .forecast_validation import (
     append_validation_record,
@@ -512,6 +513,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._hourly_forecast_fetched_at: datetime | None = None
         self.diagnostics = FreshAirIQDiagnosticsRecorder(hass, entry.entry_id, VERSION)
         self.robustness = RobustnessMonitor()
+        self.runtime_health = RuntimeHealthMonitor()
         self.telemetry = FreshAirIQDiagnosticsClient(
             hass,
             entry,
@@ -519,6 +521,13 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             health_provider=lambda: {
                 "robustness": self.robustness.snapshot(),
                 "diagnostics": self.diagnostics.status,
+                "runtime_health": self.runtime_health.snapshot,
+            },
+            health_snapshot_provider=lambda now: {
+                "captured_at": now.isoformat(),
+                "robustness": self.robustness.snapshot(),
+                "diagnostics": self.diagnostics.status,
+                "runtime_health": self.runtime_health.health_snapshot(now),
             },
         )
         self._unavailable_required_sources: set[str] = set()
@@ -832,10 +841,17 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
         except Exception as exc:  # noqa: BLE001 - coordinator must fail closed, not crash HA
             self.robustness.failure(started, exc)
+            self.runtime_health.record_exception("coordinator", "update", exc, started)
             raise UpdateFailed(
                 f"FreshAirIQ update failed safely ({type(exc).__name__}); previous coordinator data is retained"
             ) from exc
         self.robustness.success(started)
+        finished = dt_util.now()
+        try:
+            duration_ms = max((finished - started).total_seconds() * 1000.0, 0.0)
+            self.runtime_health.observe_metric("coordinator_update_ms", duration_ms, finished, unit="ms")
+        except (TypeError, ValueError, OverflowError):
+            pass
         # Repair issues represent configuration that requires user action, not
         # transient sensor unavailability. The helper checks both HA state and
         # entity registry before creating an issue.
@@ -3379,6 +3395,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
         changed = changed or await process_notifications(self.hass, self.store, data, options, now, completed_sessions)
         if changed: await self.store.async_save()
+        data["runtime_health"] = self.runtime_health.snapshot
         self.diagnostics.update_configuration_snapshot(self.entry.data, options, data, now)
         await self.diagnostics.async_record(data, self.store.data, now, completed_sessions)
         data["diagnostics"] = self.diagnostics.status

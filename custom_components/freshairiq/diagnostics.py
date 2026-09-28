@@ -903,6 +903,7 @@ class FreshAirIQDiagnosticsRecorder:
             "window_events": _json_safe(window_events),
             "sensor_quality": sensor_quality,
             "support_incident": _json_safe(support_incident),
+            "runtime_health": _json_safe(data.get("runtime_health") or {}),
             "recommendation_tracking": {
                 "active_advice": _json_safe(store_data.get("iq_active_advice")),
                 "followed_session_count": sum(1 for item in completed_sessions if item.get("recommendation_followed")),
@@ -971,6 +972,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "confidence": _json_safe(recommendation.get("confidence")),
             },
             "sensor_quality": self._sensor_quality_summary(data),
+            "runtime_health": _json_safe(data.get("runtime_health") or {}),
         }
 
     @staticmethod
@@ -1519,3 +1521,33 @@ class FreshAirIQDiagnosticsView(HomeAssistantView):
         if not isinstance(payload, dict):
             return self.json({"registered": False, "reason": "invalid_payload"}, status_code=400)
         return self.json(await recorder.async_register_client(payload))
+
+
+class FreshAirIQSupportDiagnosticsView(HomeAssistantView):
+    """Authenticated endpoint for an explicit detailed support-diagnostic send."""
+
+    url = "/api/freshairiq/support-diagnostics"
+    name = "api:freshairiq:support-diagnostics"
+    requires_auth = True
+
+    async def post(self, request):
+        hass: HomeAssistant = request.app["hass"]
+        coordinators = iter_runtime_coordinators(hass)
+        if not coordinators:
+            return self.json({"error": "FreshAirIQ diagnostics are unavailable"}, status_code=503)
+        coordinator = coordinators[0]
+        try:
+            payload = await request.json()
+        except Exception:
+            return self.json({"error": "invalid_json"}, status_code=400)
+        if not isinstance(payload, dict):
+            return self.json({"error": "invalid_payload"}, status_code=400)
+        message = str(payload.get("message") or "").strip()
+        try:
+            result = await coordinator.telemetry.async_submit_support_diagnostics(message)
+        except ValueError as err:
+            return self.json({"error": str(err)}, status_code=400)
+        except Exception as err:  # Do not expose traceback or diagnostic contents to the browser.
+            return self.json({"error": "support_upload_failed", "detail": type(err).__name__}, status_code=502)
+        status = 429 if result.get("reason") == "cooldown" else 200
+        return self.json(result, status_code=status)

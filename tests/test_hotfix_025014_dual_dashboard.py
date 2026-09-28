@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,4 +30,4 @@ def test_dashboard_variant_is_selectable_and_bilingual():
 
 def test_version_is_025014():
     text = CARD.read_text(encoding='utf-8')
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in text
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in text

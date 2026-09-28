@@ -1,9 +1,10 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
 def test_english_dashboard_locale_bridge_exists():
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in CARD
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in CARD
     assert '_uiLanguage()' in CARD
     assert 'raw.startsWith("de") ? "de" : "en"' in CARD
     assert '_localizeLegacyFragment(template.content);' in CARD

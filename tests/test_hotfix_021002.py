@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,7 +41,7 @@ def test_resident_profile_is_prominently_exposed():
 
 
 def test_release_version_021002_everywhere():
-    assert 'VERSION = "0.25.1.22"' in (COMP / "const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.22"' in (COMP / "manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in JS
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (COMP / "manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS
     assert 'Current release:' not in (ROOT / "README.md").read_text(encoding="utf-8")

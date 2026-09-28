@@ -177,6 +177,7 @@ def problem_fingerprint(health: Mapping[str, Any] | None) -> str | None:
     health = health if isinstance(health, Mapping) else {}
     robust = health.get("robustness") if isinstance(health.get("robustness"), Mapping) else {}
     diagnostics = health.get("diagnostics") if isinstance(health.get("diagnostics"), Mapping) else {}
+    runtime_health = health.get("runtime_health") if isinstance(health.get("runtime_health"), Mapping) else {}
     try:
         consecutive = max(int(robust.get("consecutive_failures") or 0), 0)
     except (TypeError, ValueError, OverflowError):
@@ -187,13 +188,20 @@ def problem_fingerprint(health: Mapping[str, Any] | None) -> str | None:
     error_type = None
     if last_error:
         error_type = str(last_error).split(":", 1)[0][:80]
-    if consecutive <= 0 and not issues and not error_type:
+    runtime_incidents = runtime_health.get("incidents") if isinstance(runtime_health.get("incidents"), list) else []
+    runtime_fingerprints = sorted(
+        str(item.get("fingerprint"))[:80]
+        for item in runtime_incidents
+        if isinstance(item, Mapping) and item.get("fingerprint")
+    )[:32]
+    if consecutive <= 0 and not issues and not error_type and not runtime_fingerprints:
         return None
     payload = {
         "consecutive_failures": min(consecutive, 1000),
         "last_failure_type": str(robust.get("last_failure_type") or "")[:80],
         "runtime_config_issues": issues,
         "diagnostics_error_type": error_type,
+        "runtime_incident_fingerprints": runtime_fingerprints,
     }
     raw = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()

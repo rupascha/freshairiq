@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,6 +57,6 @@ def test_020307_settings_http_ack_does_not_wait_for_full_recalculation():
     assert "hass.async_create_task(_refresh_runtime())" in SETTINGS
 
 def test_020307_version_is_consistent():
-    assert 'VERSION = "0.25.1.22"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.22"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

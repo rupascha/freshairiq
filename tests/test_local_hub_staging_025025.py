@@ -1,5 +1,6 @@
 """Regression contracts for v0.25.1.19 local Hub staging connection."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
@@ -11,8 +12,8 @@ COMP = ROOT / "custom_components/freshairiq"
 def test_release_is_scoped_to_the_private_staging_hub_and_remains_opt_in():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.1.22"' in const
-    assert manifest["version"] == "0.25.1.22"
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in const
+    assert manifest["version"] == CURRENT_RELEASE_VERSION
     assert 'DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"' in const
     assert '"diagnostics_reporting_mode": "daily"' in const
 
@@ -66,6 +67,6 @@ def test_live_settings_change_requests_an_immediate_nonblocking_upload_check():
 
 def test_release_quality_gate_requires_the_staging_contract():
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert policy["version"] == "0.25.1.22"
+    assert policy["version"] == CURRENT_RELEASE_VERSION
     assert "tests/test_local_hub_staging_025025.py" in policy["robustness"]["required_test_files"]
     assert str(policy["release"]["artifact_suffix"]).strip()

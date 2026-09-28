@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 from custom_components.freshairiq.forecast_validation import prediction_duration_comparable
@@ -78,7 +79,7 @@ def test_coordinator_separates_physical_runtime_from_measurement_baseline():
 
 
 def test_release_version_020306():
-    assert 'VERSION = "0.25.1.22"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.22"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.1.22"' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     assert (ROOT / "docs" / "releases" / "RELEASE_NOTES_0.20.3.6.md").exists()

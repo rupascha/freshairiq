@@ -1,5 +1,6 @@
 """Release-gate contracts for the FreshAirIQ 0.25.0.7 hardening milestone."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
@@ -9,7 +10,7 @@ COMP = ROOT / "custom_components" / "freshairiq"
 
 
 def test_release_version_is_consistent_across_runtime_and_frontend():
-    version = "0.25.1.22"
+    version = CURRENT_RELEASE_VERSION
     assert f'VERSION = "{version}"' in (COMP / "const.py").read_text(encoding="utf-8")
     assert json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"] == version
     for filename in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):

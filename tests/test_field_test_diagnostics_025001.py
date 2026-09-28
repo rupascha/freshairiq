@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Reuse the established standalone Home Assistant stubs and test helpers.
-from test_diagnostics import FreshAirIQDiagnosticsRecorder, _Hass, _data, _store
+from tests.test_diagnostics import FreshAirIQDiagnosticsRecorder, _Hass, _data, _store
 
 
 def test_field_test_identity_is_stable_and_export_sequence_increments(tmp_path: Path):

@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.22";
+const FAIQ_VERSION = "0.25.1.27";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -1541,48 +1541,43 @@ class FreshAirIQCard extends HTMLElement {
     async _sendDiagnosticsToDeveloper() {
         const button = this.shadowRoot?.getElementById("diagnostics-send");
         const original = button?.innerHTML;
+        const knownUntil = this._supportCooldownUntil ? new Date(this._supportCooldownUntil) : null;
+        if (knownUntil && knownUntil.getTime() > Date.now()) {
+            const mins = Math.max(1, Math.ceil((knownUntil.getTime() - Date.now()) / 60000));
+            if (button) button.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon><b>Noch ${mins} Min. gesperrt</b><span>danach erneut möglich</span>`;
+            setTimeout(() => { if (button && original) button.innerHTML = original; }, 2500);
+            return;
+        }
+        const message = window.prompt("Beschreibe kurz dein Anliegen oder den beobachteten Fehler (optional). Die detaillierte FreshAirIQ-Diagnose wird nach deiner Bestätigung direkt an den FreshAirIQ-Support übertragen.", "");
+        if (message === null) return;
+        if (message.length > 4000) { window.alert("Bitte verwende maximal 4.000 Zeichen."); return; }
+        if (!window.confirm("Detaillierte Diagnose jetzt direkt an den FreshAirIQ-Support senden? Nach erfolgreichem Versand ist ein erneuter Diagnoseversand für 60 Minuten gesperrt.")) return;
         try {
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = '<ha-icon icon="mdi:progress-clock"></ha-icon><b>Diagnose wird erstellt</b><span>bitte warten</span>';
-            }
+            if (button) { button.disabled = true; button.innerHTML = '<ha-icon icon="mdi:progress-clock"></ha-icon><b>Diagnose wird gesendet</b><span>bitte warten</span>'; }
             await this._registerFieldTestClient(true);
-            const payload = await this._hass.callApi("GET", "freshairiq/diagnostics");
-            const stamp = new Date().toISOString().split(":").join("-").replace(/\.\d{3}Z$/, "Z");
-            const filename = `FreshAirIQ-diagnostics-${stamp}.json`;
-            const file = new File([JSON.stringify(payload, null, 2)], filename, { type: "application/json" });
-            const shareData = {
-                title: "FreshAirIQ Diagnosedatei",
-                text: "Bitte diese FreshAirIQ Diagnosedatei per E-Mail an support@freshairiq.com senden. Beschreibe im Text kurz, welches Problem aufgetreten ist.",
-                files: [file],
-            };
-            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-                await navigator.share(shareData);
-                if (button) button.innerHTML = '<ha-icon icon="mdi:check-circle-outline"></ha-icon><b>Teilen geöffnet</b><span>an support@freshairiq.com senden</span>';
-            } else {
-                const url = URL.createObjectURL(file);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = filename;
-                a.style.display = "none";
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 30000);
-                const subject = encodeURIComponent("FreshAirIQ Diagnosedatei");
-                const body = encodeURIComponent(`Hallo FreshAirIQ Support,\n\nbitte die gerade exportierte Datei ${filename} an diese E-Mail anhängen.\n\nFehlerbeschreibung:\n`);
-                window.location.href = `mailto:support@freshairiq.com?subject=${subject}&body=${body}`;
-                if (button) button.innerHTML = '<ha-icon icon="mdi:email-outline"></ha-icon><b>E-Mail geöffnet</b><span>Diagnosedatei bitte anhängen</span>';
+            const result = await this._hass.callApi("POST", "freshairiq/support-diagnostics", { message });
+            if (result?.accepted) {
+                this._supportCooldownUntil = result.cooldown_until;
+                const caseId = result.support_case_id || "";
+                if (button) button.innerHTML = `<ha-icon icon="mdi:check-circle-outline"></ha-icon><b>Erfolgreich gesendet</b><span>${caseId ? `Support-ID ${esc(caseId)}` : "60 Min. Sperre aktiv"}</span>`;
+                window.alert(`Diagnose erfolgreich an den FreshAirIQ-Support gesendet.${caseId ? `\nSupport-ID: ${caseId}` : ""}\nEin erneuter Versand ist in 60 Minuten möglich.`);
             }
-            setTimeout(() => { if (button && original) { button.disabled = false; button.innerHTML = original; } }, 3000);
         } catch (err) {
-            if (err?.name === "AbortError") {
-                if (button && original) { button.disabled = false; button.innerHTML = original; }
-                return;
+            const body = err?.body || err?.message || "";
+            let parsed = null;
+            try { parsed = typeof body === "string" ? JSON.parse(body) : body; } catch (_) { parsed = null; }
+            if (parsed?.reason === "cooldown" || err?.status_code === 429) {
+                const seconds = Number(parsed?.retry_after_seconds || 3600);
+                const mins = Math.max(1, Math.ceil(seconds / 60));
+                if (parsed?.cooldown_until) this._supportCooldownUntil = parsed.cooldown_until;
+                if (button) button.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon><b>Noch ${mins} Min. gesperrt</b><span>danach erneut möglich</span>`;
+            } else {
+                console.error("FreshAirIQ support diagnostics upload failed", err);
+                if (button) button.innerHTML = '<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>Senden fehlgeschlagen</b><span>support@freshairiq.com</span>';
+                window.alert("Die Diagnose konnte nicht an den FreshAirIQ-Support übertragen werden. Es wurde keine 60-Minuten-Sperre gestartet.\n\nAlternativ erreichst du uns unter support@freshairiq.com.");
             }
-            console.error("FreshAirIQ diagnostics sharing failed", err);
-            if (button) button.innerHTML = '<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>Teilen fehlgeschlagen</b><span>Diagnosedaten exportieren verwenden</span>';
-            setTimeout(() => { if (button && original) { button.disabled = false; button.innerHTML = original; } }, 3000);
+        } finally {
+            setTimeout(() => { if (button && original) { button.disabled = false; button.innerHTML = original; } }, 3500);
         }
     }
     _settingsEntryId() {
@@ -2230,7 +2225,12 @@ class FreshAirIQCard extends HTMLElement {
         const learningTitle = learningRooms.length && veryStableRooms === learningRooms.length ? "Sehr stabil" : learningRooms.length && stableRooms === learningRooms.length ? "Stabil" : learningSamples > 0 ? "Lernt noch" : "Grundschätzung";
         const last = st.last_ventilation || null;
         const lastCard = this._lastVentilationTile(last);
-        return `<div class="modal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><button id="details-back" class="dialog-back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button><div class="dialog-head-copy"><div class="tiny">FRESHAIRIQ DETAILS</div><div class="dialog-title">Hausklima & Lüftungsintelligenz</div></div><button id="settings-gear" class="settings-gear" aria-label="FreshAirIQ Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button><button id="close" class="close" aria-label="Schließen">✕</button></div><div class="dialog-scroll"><div class="overview"><div class="summary clickable" data-info="water"><div class="tiny">WASSER IN DER LUFT</div><strong>${Math.round(Number(st.total_water_ml || 0))} ml</strong><span>über berechnete Räume</span></div><div class="summary clickable" data-info="threshold"><div class="tiny">LÜFTUNGSSCHWELLE</div><strong>${Math.round(Number(st.ventilation_threshold_ml || 0))} ml</strong><span>${st.ventilation_threshold_mode === "adaptive_home_size" ? "adaptiv · Ziel ca. 3–5×/Tag" : `${fmt(st.ventilation_threshold_percent || 10, 1)} % der Wassermenge`}</span></div><div class="summary clickable" data-info="night"><div class="tiny">NACHTPROGNOSE</div><strong style="color:#ff9b7a">+${Math.round(Number(st.overnight_forecast_ml || 0))} ml</strong><span>${Number(st.night_model_samples || 0)} Lernproben</span></div><div class="summary clickable" data-info="pollen"><div class="tiny">POLLEN</div><strong style="color:${st.pollen_blocked ? "#ff7770" : "#67df92"}">${st.pollen_enabled ? fmt(st.pollen_index, 1) : "aus"}</strong><span>${st.pollen_enabled ? `Grenze ${fmt(st.pollen_limit, 1)}` : "nicht berücksichtigt"}</span></div></div><div class="history-grid"><div class="history"><div class="history-head"><div><div class="tiny">LETZTE ${days} TAGE</div><b>Wasser in der Hausluft · Tagesmittel</b></div><strong>${fmt(Number(((_a = lastItem((st.water_history_14d || []).filter(x => x.samples > 0))) === null || _a === void 0 ? void 0 : _a.water_ml) || 0) / 1000, 2)} l</strong></div><div class="chart">${this._svgBars(st.water_history_14d || [])}</div><div class="muted">Absolute Feuchte × Raumvolumen, über alle überwachten Räume aggregiert. Tageswert = Mittel aller gültigen Messungen; Trend: ${esc(((_b = lastItem((st.water_history_14d || []).filter(x => x.samples > 0))) === null || _b === void 0 ? void 0 : _b.trend) || "stabil")}.</div></div><div class="history"><div class="history-head"><div><div class="tiny">ANWESENHEIT</div><b>Anwesenheit & Bewohner</b></div><strong>${Number(st.presence_confidence || 0) >= 80 ? "sicher erkannt" : Number(st.presence_confidence || 0) >= 55 ? "wahrscheinlich" : "noch unsicher"}</strong></div><div class="muted">${fmt(st.effective_occupants || 0, 1)} Personen aktuell zuhause/erwartet · ${Number(st.adult_occupants || 0)} Erwachsene · ${Number(st.child_occupants || 0)} Kinder · Gäste ${Number(st.guest_adults || 0)}+${Number(st.guest_children || 0)}</div><div class="muted">FreshAirIQ nutzt die Anwesenheit für Nachtprognose und Belegungsmodell.${st.pets_in_household ? " Haustiermodus ist aktiv; reine Bewegung wird vorsichtiger bewertet." : ""}</div></div></div>${this._learningComponentsCard(st, rooms)}${lastCard}<div class="history" style="margin-top:8px"><div class="history-head"><div><div class="tiny">DIAGNOSE & TEST</div><b>FreshAirIQ Testaufzeichnung</b></div><strong style="color:${((_c = st.diagnostics) === null || _c === void 0 ? void 0 : _c.last_error) ? "#ff7770" : "#67df92"}">${((_d = st.diagnostics) === null || _d === void 0 ? void 0 : _d.last_error) ? "Fehler" : "Aktiv"}</strong></div><div class="muted">FreshAirIQ protokolliert anonymisierte Mess-, Prognose-, Entscheidungs- und Lerndaten rollierend für ${Number(((_e = st.diagnostics) === null || _e === void 0 ? void 0 : _e.retention_days) || 30)} Tage. Für Feldtests werden zusätzlich eine dauerhaft zufällige Installationskennung, Home-Assistant-/Systemversionen sowie anonymisierte Geräte-/Plattformdaten erfasst. Keine Home-Assistant Entity-IDs, Zugangsdaten, Koordinaten, Gerätenamen oder Seriennummern werden exportiert. Raumnamen bleiben für die Auswertung erhalten.</div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap"><span class="muted">${((_f = st.diagnostics) === null || _f === void 0 ? void 0 : _f.last_recorded_at) ? `Letzter Datensatz ${esc(whenDE(st.diagnostics.last_recorded_at))}` : "Aufzeichnung startet mit dem nächsten Datenzyklus"}</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="quick-forecast" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="quick-forecast" id="diagnostics-send"><ha-icon icon="mdi:send-outline"></ha-icon><b>Diagnosedatei</b><span>an Entwickler schicken</span></button></div></div>${((_g = st.diagnostics) === null || _g === void 0 ? void 0 : _g.last_error) ? `<div class="muted" style="color:#ff7770;margin-top:6px">${esc(st.diagnostics.last_error)}</div>` : ""}</div></div></div></div>`;
+        const supportUntilRaw = this._supportCooldownUntil || st.diagnostics_upload?.support_cooldown_until || null;
+        if (supportUntilRaw) this._supportCooldownUntil = supportUntilRaw;
+        const supportUntil = supportUntilRaw ? new Date(supportUntilRaw) : null;
+        const supportRemainingMinutes = supportUntil && supportUntil.getTime() > Date.now() ? Math.max(1, Math.ceil((supportUntil.getTime() - Date.now()) / 60000)) : 0;
+        const supportSendLabel = supportRemainingMinutes ? `<b>Noch ${supportRemainingMinutes} Min. gesperrt</b><span>danach erneut senden</span>` : '<b>Diagnosedatei</b><span>direkt an Support senden</span>';
+        return `<div class="modal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><button id="details-back" class="dialog-back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button><div class="dialog-head-copy"><div class="tiny">FRESHAIRIQ DETAILS</div><div class="dialog-title">Hausklima & Lüftungsintelligenz</div></div><button id="settings-gear" class="settings-gear" aria-label="FreshAirIQ Einstellungen"><ha-icon icon="mdi:cog-outline"></ha-icon></button><button id="close" class="close" aria-label="Schließen">✕</button></div><div class="dialog-scroll"><div class="overview"><div class="summary clickable" data-info="water"><div class="tiny">WASSER IN DER LUFT</div><strong>${Math.round(Number(st.total_water_ml || 0))} ml</strong><span>über berechnete Räume</span></div><div class="summary clickable" data-info="threshold"><div class="tiny">LÜFTUNGSSCHWELLE</div><strong>${Math.round(Number(st.ventilation_threshold_ml || 0))} ml</strong><span>${st.ventilation_threshold_mode === "adaptive_home_size" ? "adaptiv · Ziel ca. 3–5×/Tag" : `${fmt(st.ventilation_threshold_percent || 10, 1)} % der Wassermenge`}</span></div><div class="summary clickable" data-info="night"><div class="tiny">NACHTPROGNOSE</div><strong style="color:#ff9b7a">+${Math.round(Number(st.overnight_forecast_ml || 0))} ml</strong><span>${Number(st.night_model_samples || 0)} Lernproben</span></div><div class="summary clickable" data-info="pollen"><div class="tiny">POLLEN</div><strong style="color:${st.pollen_blocked ? "#ff7770" : "#67df92"}">${st.pollen_enabled ? fmt(st.pollen_index, 1) : "aus"}</strong><span>${st.pollen_enabled ? `Grenze ${fmt(st.pollen_limit, 1)}` : "nicht berücksichtigt"}</span></div></div><div class="history-grid"><div class="history"><div class="history-head"><div><div class="tiny">LETZTE ${days} TAGE</div><b>Wasser in der Hausluft · Tagesmittel</b></div><strong>${fmt(Number(((_a = lastItem((st.water_history_14d || []).filter(x => x.samples > 0))) === null || _a === void 0 ? void 0 : _a.water_ml) || 0) / 1000, 2)} l</strong></div><div class="chart">${this._svgBars(st.water_history_14d || [])}</div><div class="muted">Absolute Feuchte × Raumvolumen, über alle überwachten Räume aggregiert. Tageswert = Mittel aller gültigen Messungen; Trend: ${esc(((_b = lastItem((st.water_history_14d || []).filter(x => x.samples > 0))) === null || _b === void 0 ? void 0 : _b.trend) || "stabil")}.</div></div><div class="history"><div class="history-head"><div><div class="tiny">ANWESENHEIT</div><b>Anwesenheit & Bewohner</b></div><strong>${Number(st.presence_confidence || 0) >= 80 ? "sicher erkannt" : Number(st.presence_confidence || 0) >= 55 ? "wahrscheinlich" : "noch unsicher"}</strong></div><div class="muted">${fmt(st.effective_occupants || 0, 1)} Personen aktuell zuhause/erwartet · ${Number(st.adult_occupants || 0)} Erwachsene · ${Number(st.child_occupants || 0)} Kinder · Gäste ${Number(st.guest_adults || 0)}+${Number(st.guest_children || 0)}</div><div class="muted">FreshAirIQ nutzt die Anwesenheit für Nachtprognose und Belegungsmodell.${st.pets_in_household ? " Haustiermodus ist aktiv; reine Bewegung wird vorsichtiger bewertet." : ""}</div></div></div>${this._learningComponentsCard(st, rooms)}${lastCard}<div class="history" style="margin-top:8px"><div class="history-head"><div><div class="tiny">DIAGNOSE & TEST</div><b>FreshAirIQ Testaufzeichnung</b></div><strong style="color:${((_c = st.diagnostics) === null || _c === void 0 ? void 0 : _c.last_error) ? "#ff7770" : "#67df92"}">${((_d = st.diagnostics) === null || _d === void 0 ? void 0 : _d.last_error) ? "Fehler" : "Aktiv"}</strong></div><div class="muted">FreshAirIQ protokolliert anonymisierte Mess-, Prognose-, Entscheidungs- und Lerndaten rollierend für ${Number(((_e = st.diagnostics) === null || _e === void 0 ? void 0 : _e.retention_days) || 30)} Tage. Für Feldtests werden zusätzlich eine dauerhaft zufällige Installationskennung, Home-Assistant-/Systemversionen sowie anonymisierte Geräte-/Plattformdaten erfasst. Keine Home-Assistant Entity-IDs, Zugangsdaten, Koordinaten, Gerätenamen oder Seriennummern werden exportiert. Raumnamen bleiben für die Auswertung erhalten.</div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap"><span class="muted">${((_f = st.diagnostics) === null || _f === void 0 ? void 0 : _f.last_recorded_at) ? `Letzter Datensatz ${esc(whenDE(st.diagnostics.last_recorded_at))}` : "Aufzeichnung startet mit dem nächsten Datenzyklus"}</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="quick-forecast" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="quick-forecast" id="diagnostics-send" ${supportRemainingMinutes ? "disabled" : ""}><ha-icon icon="mdi:send-outline"></ha-icon>${supportSendLabel}</button></div></div><div class="muted" style="margin-top:8px">Support: support@freshairiq.com · Nach erfolgreichem Versand ist ein erneuter Diagnoseversand nach 60 Minuten möglich.</div>${((_g = st.diagnostics) === null || _g === void 0 ? void 0 : _g.last_error) ? `<div class="muted" style="color:#ff7770;margin-top:6px">${esc(st.diagnostics.last_error)}</div>` : ""}</div></div></div></div>`;
     }
     async _exportDiagnostics() {
         var _a;

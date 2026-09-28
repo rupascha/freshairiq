@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
 
@@ -43,4 +44,4 @@ def test_import_strings_exist_in_both_languages():
 
 
 def test_current_version():
-    assert '0.25.1.22' in (ROOT / 'custom_components/freshairiq/const.py').read_text(encoding='utf-8')
+    assert CURRENT_RELEASE_VERSION in (ROOT / 'custom_components/freshairiq/const.py').read_text(encoding='utf-8')

@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
 
@@ -15,5 +16,5 @@ def test_025068_versions_aligned():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality" / "quality_policy.json").read_text(encoding="utf-8"))
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == policy["version"] == package["version"] == "0.25.1.22"
-    assert 'VERSION = "0.25.1.22"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert manifest["version"] == policy["version"] == package["version"] == CURRENT_RELEASE_VERSION
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")

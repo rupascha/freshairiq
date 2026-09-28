@@ -31,9 +31,12 @@ from .const import (
     DIAGNOSTICS_SCHEMA_VERSION,
     DIAGNOSTICS_UPLOAD_MAX_BYTES,
     DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS,
+    SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS,
+    SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS,
     DOMAIN,
     VERSION,
 )
+from .runtime_health import HEALTH_CONTRACT_VERSION
 from .diagnostic_transport import (
     build_upload_chunks,
     normalise_reporting_mode,
@@ -102,6 +105,7 @@ class FreshAirIQDiagnosticsClient:
         *,
         endpoint: str = DIAGNOSTICS_HUB_ENDPOINT,
         health_provider: Callable[[], Mapping[str, Any]] | None = None,
+        health_snapshot_provider: Callable[[datetime], Mapping[str, Any]] | None = None,
         max_chunk_bytes: int = DIAGNOSTICS_UPLOAD_MAX_BYTES,
     ) -> None:
         self.hass = hass
@@ -111,6 +115,7 @@ class FreshAirIQDiagnosticsClient:
         self.enroll_endpoint = f"{self.endpoint}/v1/enroll" if self.endpoint else ""
         self.upload_endpoint = f"{self.endpoint}/v1/diagnostics/chunks" if self.endpoint else ""
         self.health_provider = health_provider or (lambda: {})
+        self.health_snapshot_provider = health_snapshot_provider
         self.max_chunk_bytes = max_chunk_bytes
         self._store = Store(hass, _STORE_VERSION, f"{DOMAIN}.diagnostics_upload.{entry.entry_id}")
         self._state: dict[str, Any] = {}
@@ -154,6 +159,9 @@ class FreshAirIQDiagnosticsClient:
             "last_batch_record_count": self._state.get("last_batch_record_count"),
             "last_batch_chunk_count": self._state.get("last_batch_chunk_count"),
             "client_context_enabled": bool(self.entry.options.get("diagnostics_include_client_context", True)),
+            "support_last_success_at": self._state.get("support_last_success_at"),
+            "support_cooldown_until": self._state.get("support_cooldown_until"),
+            "support_last_case_id": self._state.get("support_last_case_id"),
         }
 
     async def async_start(self) -> None:
@@ -204,6 +212,16 @@ class FreshAirIQDiagnosticsClient:
         except Exception:  # noqa: BLE001 - diagnostics must never affect FreshAirIQ runtime
             return {}
         return value if isinstance(value, Mapping) else {}
+
+    def _health_snapshot(self, now: datetime) -> Mapping[str, Any]:
+        """Return an explicit point-in-time health snapshot for support sends."""
+        if self.health_snapshot_provider is None:
+            return dict(self._health())
+        try:
+            value = self.health_snapshot_provider(now)
+        except Exception:  # noqa: BLE001 - diagnostics must never affect FreshAirIQ runtime
+            return dict(self._health())
+        return value if isinstance(value, Mapping) else dict(self._health())
 
     @staticmethod
     def _parse_dt(value: Any) -> datetime | None:
@@ -386,6 +404,83 @@ class FreshAirIQDiagnosticsClient:
             if response.status < 200 or response.status >= 300:
                 raise RuntimeError(f"feedback_http_{response.status}")
             return await response.json()
+
+    async def async_submit_support_diagnostics(self, message: str = "") -> dict[str, Any]:
+        """Send an explicit, user-requested detailed support diagnostic bundle.
+
+        This path is deliberately separate from automatic telemetry. A successful
+        Hub acknowledgement starts a persisted 60-minute cooldown. Failed sends
+        never consume the cooldown.
+        """
+        text = str(message or "").strip()
+        if len(text) > SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS:
+            raise ValueError("support_message_too_long")
+        if not self.endpoint:
+            raise RuntimeError("hub_unconfigured")
+        now = dt_util.now()
+        cooldown_until = self._parse_dt(self._state.get("support_cooldown_until"))
+        if cooldown_until is not None:
+            if now.tzinfo is not None and cooldown_until.tzinfo is None:
+                cooldown_until = cooldown_until.replace(tzinfo=now.tzinfo)
+            elif now.tzinfo is None and cooldown_until.tzinfo is not None:
+                cooldown_until = cooldown_until.replace(tzinfo=None)
+            if now < cooldown_until:
+                remaining = max(1, int((cooldown_until - now).total_seconds()))
+                return {"accepted": False, "reason": "cooldown", "retry_after_seconds": remaining,
+                        "cooldown_until": cooldown_until.isoformat()}
+
+        identity = await self.recorder.async_get_identity()
+        installation_id = str(identity.get("installation_id") or "")
+        if not installation_id:
+            raise RuntimeError("identity_unavailable")
+        session = async_get_clientsession(self.hass)
+        timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+        token = await self._async_ensure_enrolled(session, installation_id, timeout)
+        exported = await self.recorder.async_export()
+        case_id = f"support-{secrets.token_hex(12)}"
+        envelope = {
+            "support_schema_version": 2,
+            "health_contract_version": HEALTH_CONTRACT_VERSION,
+            "support_case_id": case_id,
+            "submitted_at": now.isoformat(),
+            "anonymous_installation_id": installation_id,
+            "freshairiq_version": VERSION,
+            "diagnostics_schema_version": DIAGNOSTICS_SCHEMA_VERSION,
+            "user_message": text,
+            "health_snapshot": dict(self._health_snapshot(now)),
+            "diagnostics": exported,
+        }
+        compressed = await self._async_cpu_job(_encode_chunk_for_upload, envelope)
+        headers = {
+            "Authorization": f"Bearer {token}", "Content-Type": "application/json",
+            "Content-Encoding": "gzip", "Accept": "application/json",
+            "User-Agent": f"FreshAirIQ/{VERSION}", "X-FreshAirIQ-Support-Schema": "2",
+            "X-FreshAirIQ-Health-Contract": str(HEALTH_CONTRACT_VERSION),
+            "X-FreshAirIQ-Support-Case-ID": case_id, "Idempotency-Key": case_id,
+        }
+        async with session.post(f"{self.endpoint}/v1/support/diagnostics", data=compressed,
+                                headers=headers, timeout=timeout) as response:
+            status = int(response.status)
+            if status == 401:
+                self._state["hub_enrolled"] = False
+                await self._save_state()
+                token = await self._async_ensure_enrolled(session, installation_id, timeout, force=True)
+                headers["Authorization"] = f"Bearer {token}"
+                async with session.post(f"{self.endpoint}/v1/support/diagnostics", data=compressed,
+                                        headers=headers, timeout=timeout) as retry:
+                    status = int(retry.status)
+                    if status < 200 or status >= 300:
+                        raise RuntimeError(f"support_diagnostics_http_{status}")
+            elif status < 200 or status >= 300:
+                raise RuntimeError(f"support_diagnostics_http_{status}")
+        cooldown = now + timedelta(seconds=SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS)
+        self._state.update({"support_last_success_at": now.isoformat(),
+                            "support_cooldown_until": cooldown.isoformat(),
+                            "support_last_case_id": case_id})
+        await self._save_state()
+        return {"accepted": True, "support_case_id": case_id,
+                "cooldown_until": cooldown.isoformat(),
+                "cooldown_seconds": SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS}
 
     async def async_maybe_upload(self, *, force: bool = False, manual: bool = False) -> bool:
         """Upload once if the opt-in cadence is due.

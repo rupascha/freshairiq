@@ -1,10 +1,11 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
 def test_ai_first_dashboard_contract():
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in JS
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS
     assert '_compactAIPanel(st, rooms = [])' in JS
     assert 'FreshAirIQ übernimmt' in JS
     assert 'class="ai-mascot"' in JS

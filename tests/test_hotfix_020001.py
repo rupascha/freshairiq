@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 import re
@@ -149,9 +150,9 @@ def test_readme_and_runtime_versions_are_current():
     manifest = (COMP / "manifest.json").read_text(encoding="utf-8")
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     assert "Current release:" not in readme
-    assert 'VERSION = "0.25.1.22"' in const
-    assert '"version": "0.25.1.22"' in manifest
-    assert 'const FAIQ_VERSION = "0.25.1.22"' in card
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in const
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in manifest
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}"' in card
 
 
 def test_house_strategy_learning_waits_for_complete_house_group():

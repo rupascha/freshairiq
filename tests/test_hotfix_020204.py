@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 from custom_components.freshairiq.passive_ventilation import evaluate_passive_ventilation
@@ -76,6 +77,6 @@ def test_passive_display_is_estimate_and_separate_from_house_balance():
 
 def test_release_version_020204_artifacts_preserved_and_current_release_advanced():
     assert (ROOT / "docs" / "releases" / "RELEASE_NOTES_0.20.2.4.md").exists()
-    assert 'VERSION = "0.25.1.22"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.22"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

@@ -1,5 +1,6 @@
 """Regression tests for FreshAirIQ 0.25.0.7 opening-level strategy."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 from copy import deepcopy
 from pathlib import Path
@@ -104,6 +105,6 @@ def test_coordinator_disables_outdoor_future_for_active_local_reference():
 
 
 def test_release_version():
-    assert 'VERSION = "0.25.1.22"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.22"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

@@ -1,3 +1,50 @@
+# FreshAirIQ v0.25.1.27 — Pytest Import Hotfix
+
+## 0.25.1.27
+
+- Fixed the field-test diagnostics test import so standard repository-root pytest collection can resolve the shared diagnostics helpers without a custom `PYTHONPATH`.
+- No runtime, ventilation, Health Intelligence, support diagnostics, UI, or contract behavior changed.
+
+# FreshAirIQ v0.25.1.26 — Health Snapshot Hotfix
+
+## 0.25.1.26
+
+### Health Snapshot Hotfix
+
+- Manual support diagnostics now use an explicit point-in-time Health Intelligence snapshot.
+- The support envelope records a top-level `captured_at` and a Runtime Health `captured_at` from the same send instant.
+- Automatic telemetry, ventilation logic, learning and recommendations are unchanged.
+
+## 0.25.1.25
+
+### Health Intelligence Contract
+
+- Adds a versioned health contract for the upcoming Diagnostics Hub integration.
+- Learns bounded local runtime baselines and detects large performance anomalies without retaining raw samples.
+- Captures a point-in-time health snapshot with each explicit support diagnostic submission.
+- Keeps automatic runtime health privacy-safe and locally aggregated.
+- Bumps diagnostics schema to 14 and support diagnostics schema to 2.
+
+### Support Diagnostics Client
+
+- Detailed diagnostics can now be submitted directly to the FreshAirIQ support Hub after explicit user confirmation.
+- Added an optional user problem-description field before submission.
+- Added a persisted 60-minute cooldown after successful support uploads; failed uploads do not consume the cooldown.
+- Added visible cooldown state in the dashboard and server-side enforcement in the Home Assistant integration.
+- Added `support@freshairiq.com` as the explicit fallback support contact.
+- The Hub receiver endpoint is intentionally implemented in the next Hub release; until then the client fails safely without starting the cooldown.
+
+## 0.25.1.23
+
+### Local Runtime Health & Early-Warning Diagnostics
+- Adds privacy-safe local runtime incident aggregation without uploading raw Home Assistant logs.
+- Measures FreshAirIQ state-attribute payload sizes locally and detects recorder-exposed payloads before they can exceed Home Assistant's 16 KiB recorder limit.
+- Keeps recorder-protected dashboard payloads measurable without falsely classifying them as active incidents.
+- Aggregates repeated incidents locally by fingerprint and occurrence count instead of sending duplicate events.
+- Adds a generic privacy-safe unknown-runtime-exception contract that stores only component, operation and exception type, never messages or trace text.
+- Includes runtime-health evidence in retained diagnostics and the existing pseudonymised diagnostics transport.
+- Runtime incidents participate in the existing errors-only upload trigger for fast beta detection.
+
 ## 0.25.1.22
 
 - Prevent Home Assistant Recorder warnings for the live FreshAirIQ dashboard transport by marking status dashboard attributes as unrecorded.

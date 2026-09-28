@@ -1,5 +1,6 @@
 """Contracts for the 0.25.1.19 Continuous Quality System."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
@@ -9,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_quality_policy_covers_all_five_quality_axes():
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert policy["version"] == "0.25.1.22"
+    assert policy["version"] == CURRENT_RELEASE_VERSION
     for key in ("correctness", "robustness", "stability", "performance", "compatibility", "release"):
         assert key in policy
     assert policy["correctness"]["pure_logic_coverage_percent"] == 100.0
@@ -19,7 +20,7 @@ def test_quality_policy_covers_all_five_quality_axes():
 
 def test_performance_baseline_tracks_all_representative_core_workloads():
     baseline = json.loads((ROOT / "quality/performance_baseline.json").read_text(encoding="utf-8"))
-    assert baseline["version"] == "0.25.1.22"
+    assert baseline["version"] == CURRENT_RELEASE_VERSION
     assert set(baseline["benchmarks"]) == {
         "evaluate_room",
         "recommendation_12_rooms",

@@ -1,5 +1,6 @@
 """Static contracts for v0.25.1.19 Diagnostics Client Hardening."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
@@ -11,8 +12,8 @@ COMP = ROOT / "custom_components/freshairiq"
 def test_version_and_hub_are_scoped_to_private_local_staging():
     const = (COMP / "const.py").read_text(encoding="utf-8")
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert 'VERSION = "0.25.1.22"' in const
-    assert manifest["version"] == "0.25.1.22"
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in const
+    assert manifest["version"] == CURRENT_RELEASE_VERSION
     assert 'DIAGNOSTICS_HUB_ENDPOINT = "https://diagnostics.freshairiq.com"' in const
 
 
@@ -50,6 +51,6 @@ def test_transport_v2_declares_analysis_equivalence_and_no_history_trimming():
 
 def test_quality_policy_requires_hardening_contract_and_release_suffix():
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
-    assert policy["version"] == "0.25.1.22"
+    assert policy["version"] == CURRENT_RELEASE_VERSION
     assert "tests/test_diagnostics_client_hardening_025023.py" in policy["robustness"]["required_test_files"]
     assert str(policy["release"]["artifact_suffix"]).strip()

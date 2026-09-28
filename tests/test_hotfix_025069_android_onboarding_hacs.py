@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
 
@@ -5,10 +6,10 @@ ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/"custom_components"/"freshairiq"
 
 def test_release_version_and_stable_hacs_description():
-    assert json.loads((COMP/"manifest.json").read_text())["version"] == "0.25.1.22"
+    assert json.loads((COMP/"manifest.json").read_text())["version"] == CURRENT_RELEASE_VERSION
     readme=(ROOT/"README.md").read_text()
     assert "FreshAirIQ · Public Beta" in readme
-    assert "0.25.1.22" not in readme and "0.25.1.22" not in readme
+    assert CURRENT_RELEASE_VERSION not in readme and CURRENT_RELEASE_VERSION not in readme
     assert json.loads((ROOT/"hacs.json").read_text())["render_readme"] is True
 
 def test_laundry_moisture_sources_are_part_of_contract():

@@ -1,3 +1,4 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
 
@@ -37,8 +38,8 @@ def test_panel_custom_no_longer_required():
 
 
 def test_version_is_current():
-    assert MANIFEST['version'] == '0.25.1.22'
-    assert 'const FAIQ_VERSION = "0.25.1.22";' in CARD
+    assert MANIFEST['version'] == CURRENT_RELEASE_VERSION
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in CARD
 
 
 def test_old_loader_resource_is_migrated_not_used():
