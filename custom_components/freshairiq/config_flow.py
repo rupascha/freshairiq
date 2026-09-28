@@ -1,6 +1,7 @@
 """Config and options flows for FreshAirIQ."""
 from __future__ import annotations
 
+import asyncio
 import re
 from copy import deepcopy
 from typing import Any
@@ -1024,29 +1025,52 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                 errors["base"] = "contact_reference_pair_required"
             else:
                 entry = self._get_entry()
-                rooms = self._entry_rooms()
-                rooms.append(room)
-                data = dict(entry.data)
-                data[CONF_ROOMS] = rooms
-                levels = list(data.get(CONF_LEVELS, []))
-                if room.get(CONF_ROOM_FLOOR) and room[CONF_ROOM_FLOOR] not in levels:
-                    levels.append(room[CONF_ROOM_FLOOR])
-                data[CONF_LEVELS] = levels
-                self.hass.config_entries.async_update_entry(entry, data=data)
-                # Do not reload the parent entry before Home Assistant has
-                # committed this CREATE_ENTRY result as a native room subentry.
-                # async_setup_entry() mirrors canonical parent rooms into
-                # subentries; an immediate reload can therefore create the same
-                # room first and race this flow's identical unique_id. Defer the
-                # structural reload to the next event-loop turn, after the flow
-                # manager has finalized the new subentry.
-                self.hass.loop.call_soon(
-                    self.hass.config_entries.async_schedule_reload, entry.entry_id
-                )
+                room_to_commit = dict(room)
+                unique_id = f"room:{room_to_commit['key']}"
+
+                async def _commit_parent_after_subentry() -> None:
+                    # The ConfigSubentryFlowManager owns the actual subentry commit.
+                    # Never publish the room into canonical parent data before that
+                    # commit has completed: async_setup_entry() mirrors parent rooms
+                    # back into subentries, so parent-first persistence can race or
+                    # leave a ghost room when the HA flow itself fails.
+                    await asyncio.sleep(0)
+                    committed = next(
+                        (
+                            subentry
+                            for subentry in entry.subentries.values()
+                            if subentry.subentry_type == "room"
+                            and subentry.unique_id == unique_id
+                        ),
+                        None,
+                    )
+                    if committed is None:
+                        # No successful HA subentry commit means no canonical room
+                        # mutation and no reload. This keeps a failed flow atomic.
+                        return
+
+                    rooms = [dict(existing) for existing in entry.data.get(CONF_ROOMS, [])]
+                    if not any(existing.get("key") == room_to_commit["key"] for existing in rooms):
+                        rooms.append(room_to_commit)
+                    data = dict(entry.data)
+                    data[CONF_ROOMS] = rooms
+                    levels = list(data.get(CONF_LEVELS, []))
+                    floor = room_to_commit.get(CONF_ROOM_FLOOR)
+                    if floor and floor not in levels:
+                        levels.append(floor)
+                    data[CONF_LEVELS] = levels
+                    self.hass.config_entries.async_update_entry(entry, data=data)
+                    self.hass.config_entries.async_schedule_reload(entry.entry_id)
+
+                # Start the post-commit synchronizer now. hass.async_create_task()
+                # runs eagerly until its first await; the explicit sleep above yields
+                # back to Home Assistant so ConfigSubentryFlowManager.async_finish_flow
+                # can commit the CREATE_ENTRY result first.
+                self.hass.async_create_task(_commit_parent_after_subentry())
                 return self.async_create_entry(
-                    title=room.get(CONF_ROOM_NAME, room["key"]),
-                    data=room,
-                    unique_id=f"room:{room['key']}",
+                    title=room_to_commit.get(CONF_ROOM_NAME, room_to_commit["key"]),
+                    data=room_to_commit,
+                    unique_id=unique_id,
                 )
         return self.async_show_form(
             step_id="add_references",

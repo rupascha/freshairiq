@@ -1,3 +1,11 @@
+# FreshAirIQ v0.25.1.36 — Atomic Room Creation Hotfix
+
+## 0.25.1.36
+- Fixed the remaining native Home Assistant room-creation failure by making room persistence atomic.
+- FreshAirIQ now waits until Home Assistant has committed the new room subentry before publishing the room into canonical parent configuration and scheduling the structural reload.
+- A failed subentry flow can no longer leave a prematurely persisted/ghost parent room.
+- No ventilation, forecast, learning, dashboard or recommendation logic changed.
+
 # FreshAirIQ v0.25.1.35 — Room Creation Race Hotfix
 
 ## 0.25.1.35

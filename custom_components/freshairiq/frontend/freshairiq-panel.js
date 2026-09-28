@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.35";
+const FAIQ_VERSION = "0.25.1.36";
 const FAIQ_IMPL = "freshairiq-card-impl";
 
 // FreshAirIQ safe panel.
