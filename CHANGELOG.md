@@ -1,3 +1,11 @@
+## 0.25.1.22
+
+- Prevent Home Assistant Recorder warnings for the live FreshAirIQ dashboard transport by marking status dashboard attributes as unrecorded.
+- Keep the complete `sensor.freshairiq_status` live attribute payload available to the FreshAirIQ dashboard; no dashboard data is removed or truncated.
+- Mark per-room `freshairiq_room_payload` transport data as unrecorded as well, preventing the same database-size issue as room learning/history grows.
+- Add regression coverage for the recorder exclusion contract and preserved live dashboard transport.
+- No changes to ventilation physics, recommendations, learning calculations, diagnostics export content or user configuration.
+
 ## 0.25.1.21
 
 - Fix Freshy state selection so primary night-ventilation recommendations use the dedicated night animation instead of the generic ventilation-recommendation animation.

@@ -62,7 +62,7 @@ def test_version_and_release_artifact_suffix_are_consistent():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text(encoding="utf-8"))
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.1.21"
-    assert policy["version"] == "0.25.1.21"
-    assert package["version"] == "0.25.1.21"
+    assert manifest["version"] == "0.25.1.22"
+    assert policy["version"] == "0.25.1.22"
+    assert package["version"] == "0.25.1.22"
     assert str(policy["release"]["artifact_suffix"]).strip()

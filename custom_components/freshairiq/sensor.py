@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import MATCH_ALL, PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -132,6 +132,12 @@ async def async_setup_entry(
 
 
 class HouseSensor(FreshAirIQEntity, SensorEntity):
+    # Dashboard transport attributes are intentionally live-only. They can contain
+    # room/history/learning payloads larger than Home Assistant recorder's 16 KiB
+    # state-attribute limit. MATCH_ALL keeps the complete live state available to
+    # the FreshAirIQ dashboard while preventing recorder writes and warning spam.
+    _unrecorded_attributes = frozenset({MATCH_ALL})
+
     def __init__(self, coordinator: FreshAirIQCoordinator, entry: FreshAirIQConfigEntry, desc: Description) -> None:
         super().__init__(coordinator, entry, desc.key, desc.name)
         self.desc = desc
@@ -249,6 +255,10 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
 
 
 class RoomSensor(FreshAirIQEntity, SensorEntity):
+    # The complete per-room payload is dashboard transport, not recorder history.
+    # Keep it live in the state machine, but exclude it from database attributes.
+    _unrecorded_attributes = frozenset({"freshairiq_room_payload"})
+
     def __init__(
         self, coordinator: FreshAirIQCoordinator, entry: FreshAirIQConfigEntry,
         room_key: str, room_name: str, field: str, label: str, unit: str | None,
