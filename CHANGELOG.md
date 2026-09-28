@@ -1,3 +1,11 @@
+# FreshAirIQ v0.25.1.34 — Persistent Classic Disclosure State Hotfix
+
+## 0.25.1.34
+- Persists the Classic dashboard decision and room disclosure state outside the rendered DOM.
+- Reapplies each user-selected open/closed state after a full Home Assistant card render, so live state updates no longer collapse opened sections.
+- Keeps the larger typography introduced in v0.25.1.33 unchanged.
+- No ventilation, forecast, learning, or recommendation logic changed.
+
 # FreshAirIQ v0.25.1.33 — Disclosure State & Readability Hotfix
 
 ## 0.25.1.33
