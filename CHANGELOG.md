@@ -1,3 +1,10 @@
+# FreshAirIQ v0.25.1.35 — Room Creation Race Hotfix
+
+## 0.25.1.35
+- Fixed a native Home Assistant room-subentry creation race where the parent entry could reload and mirror the room before the active subentry flow committed the same room unique ID.
+- Structural reload is deferred until the flow manager can finalize the new room subentry.
+- No ventilation, forecast, learning, dashboard or recommendation logic changed.
+
 # FreshAirIQ v0.25.1.34 — Persistent Classic Disclosure State Hotfix
 
 ## 0.25.1.34

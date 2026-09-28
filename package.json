@@ -1,7 +1,7 @@
 {
   "name": "freshairiq-quality",
   "private": true,
-  "version": "0.25.1.34",
+  "version": "0.25.1.35",
   "description": "FreshAirIQ frontend compatibility quality gates",
   "scripts": {
     "test:frontend": "playwright test",

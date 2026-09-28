@@ -1033,7 +1033,16 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                     levels.append(room[CONF_ROOM_FLOOR])
                 data[CONF_LEVELS] = levels
                 self.hass.config_entries.async_update_entry(entry, data=data)
-                self.hass.config_entries.async_schedule_reload(entry.entry_id)
+                # Do not reload the parent entry before Home Assistant has
+                # committed this CREATE_ENTRY result as a native room subentry.
+                # async_setup_entry() mirrors canonical parent rooms into
+                # subentries; an immediate reload can therefore create the same
+                # room first and race this flow's identical unique_id. Defer the
+                # structural reload to the next event-loop turn, after the flow
+                # manager has finalized the new subentry.
+                self.hass.loop.call_soon(
+                    self.hass.config_entries.async_schedule_reload, entry.entry_id
+                )
                 return self.async_create_entry(
                     title=room.get(CONF_ROOM_NAME, room["key"]),
                     data=room,
