@@ -1,3 +1,12 @@
+# FreshAirIQ v0.25.1.29 — HA Area Sensor Discovery
+
+## 0.25.1.29
+- Home Assistant area imports now reuse the HA floor/area structure and prefill unambiguous room-local temperature, humidity, CO₂, illuminance and climate entities.
+- Window/door/opening contacts assigned to the imported HA area are suggested automatically.
+- Explicit HA area temperature/humidity entities have priority.
+- Device area inheritance, including Home Assistant child devices, is resolved through the effective-area helper.
+- Existing FreshAirIQ rooms and manual sensor assignments are never overwritten.
+
 # FreshAirIQ v0.25.1.28 — i18n + Classic Default Hotfix
 
 ## 0.25.1.28

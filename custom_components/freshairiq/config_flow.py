@@ -9,7 +9,13 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult, section
-from homeassistant.helpers import area_registry as ar, floor_registry as fr, selector
+from homeassistant.helpers import (
+    area_registry as ar,
+    device_registry as dr,
+    entity_registry as er,
+    floor_registry as fr,
+    selector,
+)
 
 from .const import *
 from .settings_contract import native_option_key
@@ -1428,7 +1434,89 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         menu.append("back_to_home_setup")
         return self.async_show_menu(step_id="rooms", menu_options=menu)
 
-    def _ha_area_options(self) -> tuple[list[dict[str, str]], dict[str, dict[str, str]]]:
+    def _ha_area_entity_defaults(self, area_id: str) -> dict[str, Any]:
+        """Return safe FreshAirIQ sensor suggestions for one Home Assistant area.
+
+        Area assignment follows Home Assistant's registry semantics: an entity's
+        explicit area wins, otherwise the effective device area is used.  The
+        latter also handles child devices which inherit their parent's area.
+        Suggestions are only defaults for newly imported rooms; they never
+        overwrite an existing FreshAirIQ room or a later manual selection.
+        """
+        area_reg = ar.async_get(self.hass)
+        entity_reg = er.async_get(self.hass)
+        device_reg = dr.async_get(self.hass)
+        area = area_reg.async_get_area(area_id)
+        if area is None:
+            return {}
+
+        candidates: dict[str, list[str]] = {
+            CONF_ROOM_TEMPERATURE: [],
+            CONF_ROOM_HUMIDITY: [],
+            CONF_ROOM_CONTACTS: [],
+            CONF_ROOM_CO2: [],
+            CONF_ROOM_ILLUMINANCE: [],
+            CONF_ROOM_CLIMATE: [],
+        }
+
+        for entity_entry in entity_reg.entities.values():
+            if entity_entry.disabled_by is not None:
+                continue
+            entity_area_id = entity_entry.area_id
+            if entity_area_id is None and entity_entry.device_id:
+                device = device_reg.async_get(entity_entry.device_id)
+                if device is not None:
+                    entity_area_id = dr.async_get_effective_area_id(self.hass, device)
+            if entity_area_id != area_id:
+                continue
+
+            entity_id = entity_entry.entity_id
+            domain = entity_id.split(".", 1)[0]
+            state = self.hass.states.get(entity_id)
+            device_class = getattr(entity_entry, "device_class", None)
+            if state is not None:
+                device_class = state.attributes.get("device_class") or device_class
+            device_class = str(getattr(device_class, "value", device_class) or "")
+
+            if domain == "sensor":
+                if device_class == "temperature":
+                    candidates[CONF_ROOM_TEMPERATURE].append(entity_id)
+                elif device_class == "humidity":
+                    candidates[CONF_ROOM_HUMIDITY].append(entity_id)
+                elif device_class == "carbon_dioxide":
+                    candidates[CONF_ROOM_CO2].append(entity_id)
+                elif device_class == "illuminance":
+                    candidates[CONF_ROOM_ILLUMINANCE].append(entity_id)
+            elif domain == "binary_sensor" and device_class in {
+                "door", "garage_door", "opening", "window"
+            }:
+                candidates[CONF_ROOM_CONTACTS].append(entity_id)
+            elif domain == "climate":
+                candidates[CONF_ROOM_CLIMATE].append(entity_id)
+
+        defaults: dict[str, Any] = {}
+        # HA allows an area to designate its canonical temperature/humidity
+        # entity. Prefer those over heuristic candidates when they are valid.
+        preferred = {
+            CONF_ROOM_TEMPERATURE: getattr(area, "temperature_entity_id", None),
+            CONF_ROOM_HUMIDITY: getattr(area, "humidity_entity_id", None),
+        }
+        for key, entity_id in preferred.items():
+            if entity_id and self.hass.states.get(entity_id) is not None:
+                defaults[key] = entity_id
+
+        for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
+            values = sorted(dict.fromkeys(candidates[key]))
+            # Auto-fill only an unambiguous candidate. With several sensors the
+            # normal HA selector remains available so the user stays in control.
+            if key not in defaults and len(values) == 1:
+                defaults[key] = values[0]
+        contacts = sorted(dict.fromkeys(candidates[CONF_ROOM_CONTACTS]))
+        if contacts:
+            defaults[CONF_ROOM_CONTACTS] = contacts
+        return defaults
+
+    def _ha_area_options(self) -> tuple[list[dict[str, str]], dict[str, dict[str, Any]]]:
         """Return HA areas as import choices plus their FreshAirIQ defaults."""
         area_reg = ar.async_get(self.hass)
         floor_reg = fr.async_get(self.hass)
@@ -1445,7 +1533,11 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                     floor_name = floor.name
             label = f"{floor_name} · {area.name}" if floor_name != "Unzugeordnet" else area.name
             choices.append({"value": area.id, "label": label})
-            defaults[area.id] = {CONF_ROOM_NAME: area.name, CONF_ROOM_FLOOR: floor_name}
+            defaults[area.id] = {
+                CONF_ROOM_NAME: area.name,
+                CONF_ROOM_FLOOR: floor_name,
+                **self._ha_area_entity_defaults(area.id),
+            }
         return choices, defaults
 
     async def async_step_import_ha_rooms(self, user_input=None):
@@ -1501,6 +1593,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 self._persist_working_state()
                 return await self.async_step_import_ha_room_details()
         defaults = {
+            **imported,
             CONF_ROOM_NAME: imported[CONF_ROOM_NAME],
             CONF_ROOM_FLOOR: imported[CONF_ROOM_FLOOR],
             CONF_ROOM_INCLUDE_CALCULATIONS: False,

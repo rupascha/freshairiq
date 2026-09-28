@@ -30,7 +30,10 @@ class FreshAirIQEntity(CoordinatorEntity):
         self._entry = entry
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
-        self._attr_name = name
+        # Let Home Assistant resolve localized entity names from translation_key.
+        # Keep a fallback name only for entities that do not define a translation key.
+        if getattr(self, "_attr_translation_key", None) is None:
+            self._attr_name = name
 
         if room_key is None:
             # Central FreshAirIQ hub device.

@@ -22,7 +22,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry, a
 class FreshAirIQOperatingProfileSelect(FreshAirIQEntity, SelectEntity):
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_name = "Betriebsmodus"
     _attr_translation_key = "operating_profile"
     _attr_options = [PROFILE_DEHUMIDIFY, PROFILE_COMFORT, PROFILE_SUMMER_COOLING]
 
