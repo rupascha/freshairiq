@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from .config_flow import _normalise_legacy_entry_data, _normalise_room
 from .settings_contract import NATIVE_OPTION_KEYS
 from .runtime import get_runtime_coordinator
+from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
 from .typing import FreshAirIQConfigEntry
 from .validation import option_relationship_message_de
 from .const import (
@@ -490,6 +491,7 @@ class FreshAirIQSettingsView(HomeAssistantView):
                 await _apply_runtime_update(hass, entry)
             elif action == "upsert_room":
                 raw = payload.get("room")
+                trace_room_creation(hass, entry, source="dashboard", stage="attempt", room_key=(raw or {}).get("key") if isinstance(raw, dict) else None)
                 if not isinstance(raw, dict):
                     raise ValueError("Raumdaten fehlen.")
                 data = _normalise_legacy_entry_data(dict(entry.data))
@@ -498,6 +500,7 @@ class FreshAirIQSettingsView(HomeAssistantView):
                 if keep_key and not any(room.get("key") == keep_key for room in rooms):
                     raise ValueError("Der zu bearbeitende Raum wurde nicht gefunden.")
                 normalised = _normalise_dashboard_room(raw, rooms, keep_key=keep_key)
+                trace_room_creation(hass, entry, source="dashboard", stage="normalised", room_key=normalised.get("key"), outcome="ok")
                 if keep_key:
                     index = next(i for i, room in enumerate(rooms) if room.get("key") == keep_key)
                     normalised[CONF_ROOM_SORT_ORDER] = int(rooms[index].get(CONF_ROOM_SORT_ORDER, index))
@@ -514,6 +517,8 @@ class FreshAirIQSettingsView(HomeAssistantView):
                 hass.config_entries.async_update_entry(entry, data=data)
                 _sync_room_subentries(hass, entry, data[CONF_ROOMS])
                 hass.config_entries.async_schedule_reload(entry.entry_id)
+                trace_room_creation(hass, entry, source="dashboard", stage="parent_and_subentries_persisted", room_key=normalised.get("key"), outcome="ok", extra={"reload_scheduled": True})
+                trace_room_creation_after_reload(hass, entry.entry_id, source="dashboard", room_key=normalised.get("key"))
             elif action == "delete_room":
                 room_key = str(payload.get("room_key") or "")
                 data = _normalise_legacy_entry_data(dict(entry.data))
@@ -572,8 +577,14 @@ class FreshAirIQSettingsView(HomeAssistantView):
             else:
                 raise ValueError("Unbekannte Einstellungsaktion.")
         except ValueError as err:
+            if locals().get("action") == "upsert_room":
+                raw_room = locals().get("raw")
+                trace_room_creation(hass, entry, source="dashboard", stage="failed", room_key=(raw_room or {}).get("key") if isinstance(raw_room, dict) else None, outcome="rejected", error_type=type(err).__name__)
             return self.json({"error": str(err)}, status_code=400)
         except Exception as err:  # Keep frontend error reporting useful without leaking traceback.
+            if locals().get("action") == "upsert_room":
+                raw_room = locals().get("raw")
+                trace_room_creation(hass, entry, source="dashboard", stage="failed", room_key=(raw_room or {}).get("key") if isinstance(raw_room, dict) else None, outcome="exception", error_type=type(err).__name__)
             return self.json({"error": f"Einstellung konnte nicht gespeichert werden: {err}"}, status_code=500)
 
         # Return the canonical state after each write. The frontend can update its

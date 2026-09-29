@@ -1095,6 +1095,33 @@ class FreshAirIQDiagnosticsRecorder:
             self.last_error = f"{type(err).__name__}: {err}"
             return False
 
+    async def async_record_room_creation_trace(self, event: dict[str, Any]) -> bool:
+        """Persist one privacy-safe room-creation trace event immediately.
+
+        These sparse events exist solely to reconstruct configuration failures.
+        They never include room names, entity IDs, raw form payloads or exception
+        messages.  Room identity is represented only by a short one-way digest.
+        """
+        now = dt_util.now()
+        record = {
+            "schema_version": DIAGNOSTICS_SCHEMA_VERSION,
+            "freshairiq_version": self.version,
+            "timestamp": now.isoformat(),
+            "reason": "room_creation_trace",
+            "record_type": "room_creation_trace",
+            **_json_safe(event),
+        }
+        line = json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n"
+        path = self.directory / f"{now.date().isoformat()}.jsonl"
+        try:
+            await self.hass.async_add_executor_job(self._append_line, path, line)
+            self.record_count_session += 1
+            self.last_error = None
+            return True
+        except OSError as err:
+            self.last_error = f"{type(err).__name__}: {err}"
+            return False
+
     def _append_line(self, path: Path, line: str) -> None:
         self.directory.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as handle:

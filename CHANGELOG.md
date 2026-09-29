@@ -1,3 +1,9 @@
+# FreshAirIQ v0.25.1.38 — Room Creation Trace Hotfix
+
+## 0.25.1.38
+- Added privacy-safe end-to-end room-creation diagnostics for native HA, options-flow, dashboard, commit timeout and post-reload state.
+- No room persistence or FreshAirIQ calculation behaviour changed.
+
 # FreshAirIQ v0.25.1.37 — Delayed Room Commit Hotfix
 
 ## 0.25.1.37

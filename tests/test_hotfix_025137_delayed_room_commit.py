@@ -55,6 +55,8 @@ def test_delayed_commit_regression_model():
     assert committed.unique_id == "room:kinderzimmer"
 
 
-def test_room_creation_hotfix_version_025137():
+def test_room_creation_hotfix_release_025137_is_retained():
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.37.md").is_file()
-    assert 'VERSION = "0.25.1.37"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    const = (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    version = const.split('VERSION = "', 1)[1].split('"', 1)[0]
+    assert tuple(map(int, version.split("."))) >= (0, 25, 1, 37)

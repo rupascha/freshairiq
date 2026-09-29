@@ -20,6 +20,7 @@ from homeassistant.helpers import (
 
 from .const import *
 from .settings_contract import native_option_key
+from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
 from .validation import option_relationship_error
 
 
@@ -971,11 +972,14 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         levels = self._levels()
         errors = {}
         if user_input is not None:
+            trace_room_creation(self.hass, self._get_entry(), source="native_subentry", stage="attempt")
             room, errors = _normalise_room(user_input, rooms)
             if room and not errors:
                 self._working_room = room
                 self._room_key = room["key"]
+                trace_room_creation(self.hass, self._get_entry(), source="native_subentry", stage="normalised", room_key=room["key"], outcome="ok")
                 return await self.async_step_add_orientations()
+            trace_room_creation(self.hass, self._get_entry(), source="native_subentry", stage="validation_failed", outcome="rejected", extra={"validation_error_keys": sorted(map(str, errors))})
         return self.async_show_form(step_id="user", data_schema=_room_section_schema(levels=levels), errors=errors)
 
     async def async_step_add_orientations(self, user_input=None):
@@ -1059,8 +1063,10 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                     if committed is None:
                         # No successful HA subentry commit means no canonical room
                         # mutation and no reload. This keeps a failed flow atomic.
+                        trace_room_creation(self.hass, entry, source="native_subentry", stage="subentry_commit_timeout", room_key=room_to_commit["key"], outcome="missing", extra={"commit_wait_ms": 1000})
                         return
 
+                    trace_room_creation(self.hass, entry, source="native_subentry", stage="subentry_commit_observed", room_key=room_to_commit["key"], outcome="ok")
                     rooms = [dict(existing) for existing in entry.data.get(CONF_ROOMS, [])]
                     if not any(existing.get("key") == room_to_commit["key"] for existing in rooms):
                         rooms.append(room_to_commit)
@@ -1073,6 +1079,8 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                     data[CONF_LEVELS] = levels
                     self.hass.config_entries.async_update_entry(entry, data=data)
                     self.hass.config_entries.async_schedule_reload(entry.entry_id)
+                    trace_room_creation(self.hass, entry, source="native_subentry", stage="parent_persisted", room_key=room_to_commit["key"], outcome="ok", extra={"reload_scheduled": True})
+                    trace_room_creation_after_reload(self.hass, entry.entry_id, source="native_subentry", room_key=room_to_commit["key"])
 
                 # Start the post-commit synchronizer now. hass.async_create_task()
                 # runs eagerly until its first await; the explicit sleep above yields
@@ -1658,14 +1666,19 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_add_room(self, user_input=None):
         errors = {}
         if user_input is not None:
+            trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="attempt")
             room, errors = _normalise_room(user_input, self._rooms())
             if room and not errors:
                 self._rooms().append(room)
                 self._selected_room_key = room["key"]
+                trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="normalised", room_key=room["key"], outcome="ok")
                 # Save the valid base room immediately. Direction/delay forms
                 # enrich the same room on the next screens.
                 self._persist_working_state()
+                trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="parent_persisted", room_key=room["key"], outcome="ok", extra={"reload_scheduled": True})
+                trace_room_creation_after_reload(self.hass, self.config_entry.entry_id, source="options_flow", room_key=room["key"])
                 return await self.async_step_contact_orientations()
+            trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="validation_failed", outcome="rejected", extra={"validation_error_keys": sorted(map(str, errors))})
         return self.async_show_form(
             step_id="add_room",
             data_schema=_room_section_schema(
