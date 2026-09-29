@@ -3474,8 +3474,15 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._sensor_recovery_started_at = None
             self._sensor_recovery_valid_cycles = 0
             guardian["auto_healed"] = ["clear_completed_sensor_recovery"]
+            guardian["recovery_events"] = [{
+                "repair": "clear_completed_sensor_recovery",
+                "status": "success",
+                "postcondition": "sensor_recovery_runtime_cleared",
+                "postcondition_passed": self._sensor_recovery_started_at is None and self._sensor_recovery_valid_cycles == 0,
+            }]
         else:
             guardian["auto_healed"] = []
+            guardian["recovery_events"] = []
         data["guardian"] = guardian
         changed = changed or await process_notifications(self.hass, self.store, data, options, now, completed_sessions)
         if changed: await self.store.async_save()

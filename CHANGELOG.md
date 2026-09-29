@@ -1,3 +1,7 @@
+## 0.25.1.44
+
+- Guardian now emits privacy-safe, postcondition-verified recovery telemetry for allow-listed self-healing actions.
+
 ## 0.25.1.43
 - Guardian runtime invariants for sensor, recommendation, forecast, session and recovery consistency.
 - Privacy-safe Guardian incidents are included in diagnostics and correlated by the Diagnostics Hub.
