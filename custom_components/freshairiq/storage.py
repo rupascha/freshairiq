@@ -39,6 +39,12 @@ def _room_defaults() -> dict[str, Any]:
         "learning_rate": 0.03,
         "learning_samples": 0,
         "learning_sample_credit": 0.0,
+        # Indirect/passive airing is learned separately so evidence from a room
+        # without its own opening can never contaminate the direct opening model.
+        "passive_learning_rate": 0.03,
+        "passive_learning_samples": 0,
+        "passive_learning_last_group_id": None,
+        "passive_learning_last_at": None,
         "diagnosis": "No learning session evaluated yet",
         "session_active": False,
         "session_started": None,
@@ -468,7 +474,9 @@ class LearningStore:
 
         rate = finite(room.get("learning_rate"))
         room["learning_rate"] = 0.03 if rate is None else min(max(rate, 0.002), 0.25)
-        for key in ("learning_samples", "forecast_observation_samples", "thermal_rate_samples", "outcome_feedback_samples", "outcome_successes", "shadow_learning_samples", "shadow_learning_total_samples", "shadow_learning_promotions", "shadow_learning_rollbacks", "shadow_learning_cooldown", "shadow_rollback_samples", "shadow_rollback_previous_wins"):
+        passive_rate = finite(room.get("passive_learning_rate"))
+        room["passive_learning_rate"] = 0.03 if passive_rate is None else min(max(passive_rate, 0.002), 0.25)
+        for key in ("learning_samples", "passive_learning_samples", "forecast_observation_samples", "thermal_rate_samples", "outcome_feedback_samples", "outcome_successes", "shadow_learning_samples", "shadow_learning_total_samples", "shadow_learning_promotions", "shadow_learning_rollbacks", "shadow_learning_cooldown", "shadow_rollback_samples", "shadow_rollback_previous_wins"):
             value = finite(room.get(key))
             room[key] = 0 if value is None else min(max(int(value), 0), 1000)
         sample_credit = finite(room.get("learning_sample_credit"))

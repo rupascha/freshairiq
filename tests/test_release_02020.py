@@ -15,15 +15,15 @@ def _source(mem, now, ah, temp, sources):
     )
 
 
-def test_cooking_can_be_identified_from_heat_and_moisture_signature():
+def test_heat_and_moisture_spike_is_not_overclaimed_when_cooking_and_shower_both_fit():
     mem = {}
     t0 = datetime(2026, 9, 11, 16, 0, tzinfo=timezone.utc)
     _source(mem, t0, 10.0, 21.0, [MOISTURE_SOURCE_COOKING, "shower"])
     out = _source(mem, t0 + timedelta(minutes=5), 10.9, 21.7, [MOISTURE_SOURCE_COOKING, "shower"])
     assert out["active"] is True
-    assert out["identified_source"] == MOISTURE_SOURCE_COOKING
-    assert out["label"] == "Kochen"
-    assert "Guten Appetit" in out["message"]
+    assert out["identified_source"] is None
+    assert out["label"] == "Feuchtequelle"
+    assert out["ambiguous"] is True
 
 
 def test_multiple_wet_sources_remain_neutral_when_not_distinguishable():

@@ -173,3 +173,54 @@ def test_invalid_night_start_and_non_dict_payloads_do_not_crash():
     options = base_options(notification_scope="house", notify_ventilate=False, notify_night=True, night_start_hour="broken")
     data = {"rooms": [], "intelligent_recommendation": "broken", "night_strategy": "broken", "overnight_forecast_ml": "bad"}
     assert asyncio.run(process_notifications(hass, store, data, options, now, []))
+
+
+def test_night_suppression_blocks_all_pushes_but_consumes_action_transition():
+    hass, store = Hass(), Store()
+    night = datetime(2026, 9, 14, 23, 15, tzinfo=timezone.utc)
+    options = base_options(
+        notification_scope="both",
+        suppress_notifications_at_night=True,
+        night_forecast_enabled=True,
+        night_start_hour="22:00",
+        night_end_hour="07:00",
+        notify_night=True,
+    )
+    data = {
+        "rooms": {"v": {"key":"v","name":"Bad","action":"Ventilate","data_quality":"ok","mould_level":"Low","recommendation_reasons":["Feuchte"]}},
+        "intelligent_recommendation": {"kind":"ventilate","title":"Lüften","instruction":"Fenster öffnen.","summary":"Gute Außenluft.","room_keys":["v"]},
+        "night_strategy": {"action":"open_selected","forecast_without_action_ml":100,"forecast_with_strategy_ml":-20,"instruction":"Öffnen"},
+    }
+    assert asyncio.run(process_notifications(hass, store, data, options, night, []))
+    assert hass.services.calls == []
+    assert store.room("v")["last_action"] == "Ventilate"
+    assert store.data["last_house_recommendation_signature"].startswith("ventilate:")
+    assert "last_night_notification_date" not in store.data
+
+    # The already-consumed night transition must not create a catch-up storm after quiet hours.
+    morning = datetime(2026, 9, 15, 7, 1, tzinfo=timezone.utc)
+    asyncio.run(process_notifications(hass, store, data, options, morning, []))
+    assert hass.services.calls == []
+
+
+def test_night_suppression_respects_switch_night_feature_and_boundaries():
+    data = {"rooms": {"v": {"key":"v","name":"Bad","action":"Ventilate","data_quality":"ok","mould_level":"Low","recommendation_reasons":["Feuchte"]}}}
+    # Exactly at start is quiet.
+    hass, store = Hass(), Store()
+    opts = base_options(notification_scope="room", suppress_notifications_at_night=True, night_forecast_enabled=True)
+    asyncio.run(process_notifications(hass, store, data, opts, datetime(2026,9,14,22,0,tzinfo=timezone.utc), []))
+    assert hass.services.calls == []
+    # Exactly at end is no longer quiet.
+    hass, store = Hass(), Store()
+    asyncio.run(process_notifications(hass, store, data, opts, datetime(2026,9,15,7,0,tzinfo=timezone.utc), []))
+    assert len(hass.services.calls) == 1
+    # User can leave suppression disabled.
+    hass, store = Hass(), Store()
+    opts = base_options(notification_scope="room", suppress_notifications_at_night=False, night_forecast_enabled=True)
+    asyncio.run(process_notifications(hass, store, data, opts, datetime(2026,9,14,23,0,tzinfo=timezone.utc), []))
+    assert len(hass.services.calls) == 1
+    # Night feature off means the quiet-hours coupling is inactive.
+    hass, store = Hass(), Store()
+    opts = base_options(notification_scope="room", suppress_notifications_at_night=True, night_forecast_enabled=False)
+    asyncio.run(process_notifications(hass, store, data, opts, datetime(2026,9,14,23,0,tzinfo=timezone.utc), []))
+    assert len(hass.services.calls) == 1

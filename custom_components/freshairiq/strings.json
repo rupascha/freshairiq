@@ -133,7 +133,7 @@
     },
     "error": {
       "outdoor_source_required": "Select a local weather entity or both a temperature and humidity sensor.",
-      "ventilation_contact_required": "Select at least one contact that actually ventilates this room. It may also be a window or door located in another room.",
+      "ventilation_contact_required": "An opening contact is optional. Without one, the room remains climate-calculated and indirect ventilation can be detected and learned.",
       "room_volume_required": "Enter either room volume or complete length, width and height.",
       "room_volume_too_small": "Room volume must be at least 2 m³.",
       "room_name_required": "Enter a room name.",
@@ -418,7 +418,7 @@
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
           },
@@ -485,7 +485,7 @@
           "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
           "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
           "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-          "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+          "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
           "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
           "volume": "Enter the volume directly in m³ OR use length, width and height.",
           "length": "Only required when no direct room volume is entered.",
@@ -555,7 +555,7 @@
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
           },
@@ -705,7 +705,7 @@
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
           },
@@ -772,7 +772,7 @@
           "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
           "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
           "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-          "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+          "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
           "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
           "volume": "Enter the volume directly in m³ OR use length, width and height.",
           "length": "Only required when no direct room volume is entered.",
@@ -842,7 +842,7 @@
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
           },
@@ -1237,7 +1237,8 @@
           "notify_sensor": "Sensor faults (Default: on)",
           "notify_night": "Night forecast (Default: off)",
           "notify_learning": "Learning messages (Default: off)",
-          "notification_cooldown_min": "Cooldown minutes (Default: 90)"
+          "notification_cooldown_min": "Cooldown minutes (Default: 90)",
+          "suppress_notifications_at_night": "Suppress notifications at night (Default: off)"
         },
         "description": "Default: notifications off, no recipients, scope “House”, all rooms, ventilate/close/completion/cooling/mould/sensor-error notifications on, night/learning off, minimum interval 90 minutes.",
         "data_description": {
@@ -1253,7 +1254,8 @@
           "notify_mould": "Warns about relevant estimated surface/mould risk. Default: on.",
           "notify_night": "Sends night-strategy hints. Default: off, so FreshAirIQ does not notify unexpectedly at night.",
           "notify_sensor": "Warns when sensor data required for a reliable recommendation is missing or implausible. Default: on.",
-          "notify_ventilate": "Sends a notification when FreshAirIQ detects a useful time to start ventilation. Default: on."
+          "notify_ventilate": "Sends a notification when FreshAirIQ detects a useful time to start ventilation. Default: on.",
+          "suppress_notifications_at_night": "When enabled, FreshAirIQ sends no push notifications during the configured night window. Calculations, ventilation logic and learning continue unchanged."
         }
       },
       "statistics": {
@@ -1946,7 +1948,7 @@
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
           },
@@ -2013,7 +2015,7 @@
           "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
           "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
           "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-          "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+          "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
           "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
           "volume": "Enter the volume directly in m³ OR use length, width and height.",
           "length": "Only required when no direct room volume is entered.",
@@ -2083,7 +2085,7 @@
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
           },
@@ -2150,7 +2152,7 @@
     },
     "error": {
       "outdoor_source_required": "Select a local weather entity or both temperature and humidity sensors.",
-      "ventilation_contact_required": "Select at least one ventilation contact.",
+      "ventilation_contact_required": "An opening contact is optional. Without one, the room remains climate-calculated and indirect ventilation can be detected and learned.",
       "room_volume_required": "Enter either room volume or complete length, width and height.",
       "room_volume_too_small": "Room volume must be at least 2 m³.",
       "room_name_required": "Enter a room name.",
@@ -2480,7 +2482,7 @@
             "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
             "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
             "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-            "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+            "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
             "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
             "volume": "Enter the volume directly in m³ OR use length, width and height.",
             "length": "Only required when no direct room volume is entered.",
@@ -2575,7 +2577,7 @@
               "data_description": {
                 "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
                 "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-                "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+                "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
                 "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
               }
             },
@@ -2658,7 +2660,7 @@
             "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
             "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
             "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-            "contacts": "Select all windows/doors through which FreshAirIQ should detect ventilation for this room.",
+            "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
             "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
             "volume": "Enter the volume directly in m³ OR use length, width and height.",
             "length": "Only required when no direct room volume is entered.",
@@ -2717,7 +2719,7 @@
         }
       },
       "error": {
-        "ventilation_contact_required": "Calculated rooms need at least one window/door contact.",
+        "ventilation_contact_required": "An opening contact is optional. Without one, the room remains climate-calculated and indirect ventilation can be detected and learned.",
         "room_volume_required": "Enter either room volume or complete room dimensions.",
         "room_volume_too_small": "The calculated room volume is too small.",
         "room_name_required": "Please enter a room name.",

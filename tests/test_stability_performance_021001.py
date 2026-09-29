@@ -28,7 +28,8 @@ def test_native_room_flow_allows_structure_rooms_but_validates_active_rooms():
     assert 'include = False' in CONFIG_FLOW
     assert 'if include and not has_temperature:' in CONFIG_FLOW
     assert 'if include and not has_humidity:' in CONFIG_FLOW
-    assert 'if include and not contacts:' in CONFIG_FLOW
+    assert 'if include and not contacts:' not in CONFIG_FLOW
+    assert 'Opening contacts are optional for calculated indoor rooms.' in CONFIG_FLOW
 
 
 def test_weather_failure_preserves_cache_and_retries_soon():

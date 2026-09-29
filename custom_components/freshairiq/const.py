@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.1.39"
+VERSION = "0.25.1.40"
 DIAGNOSTICS_SCHEMA_VERSION = 14
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -272,6 +272,7 @@ DEFAULT_OPTIONS = {
     "notify_learning": False,
     "notify_cooling": True,
     "notification_cooldown_min": 90,
+    "suppress_notifications_at_night": False,
 
     # Statistics
     "statistics_days": 14,

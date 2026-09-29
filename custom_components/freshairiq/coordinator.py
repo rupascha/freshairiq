@@ -25,7 +25,7 @@ from .language_confidence import adapt_language_confidence
 from .live_coach import refine_live_recommendation
 from .anticipation import refine_with_anticipation
 from .planner import build_multi_hour_plan, refine_with_plan
-from .passive_ventilation import evaluate_passive_ventilation
+from .passive_ventilation import evaluate_passive_ventilation, learn_passive_exchange
 from .intelligence import (
     build_intelligence_state, clear_session_behaviour, ensure_behaviour_defaults,
     learn_completed_session, learn_outcome_feedback, mark_recommendation_followed, sync_active_recommendation,
@@ -1204,6 +1204,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 mem["forecast_recent_removed_ml_min"] = None
                 mem["forecast_recent_observed_at"] = None
                 mem["session_moisture_source_detected"] = False
+                mem["session_reference_moisture_reversal"] = False
                 mem["session_cross_active"] = bool(cross)
                 mem["session_cross_seconds"] = 0.0
                 mem["session_cross_last_update"] = now.isoformat()
@@ -1316,10 +1317,24 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_start_frame_learning_eligible"] = bool(measurement_frame.get("learning_eligible"))
                     mem["session_fresh_measurements"] = 0
                     mem["session_moisture_source_detected"] = False
+                    mem["session_reference_moisture_reversal"] = False
                     mem["session_cross_active"] = bool(cross)
                     mem["session_cross_seconds"] = 0.0
                     mem["session_cross_last_update"] = now.isoformat()
                     changed = True
+
+            if mem["session_active"] and measurements_valid:
+                # A session may start with dry reference air and later encounter
+                # a weather reversal. Once reference air is no longer drier than
+                # the room by the configured close margin, keep that fact sticky
+                # for the session: the measurements remain useful for the balance
+                # but must not teach the adaptive ventilation coefficient.
+                current_room_ah = absolute_humidity(t, rh)
+                current_reference_ah = absolute_humidity(ref_t, ref_rh)
+                if current_reference_ah >= current_room_ah - float(self.options.get("close_delta", 0.4)):
+                    if not mem.get("session_reference_moisture_reversal"):
+                        mem["session_reference_moisture_reversal"] = True
+                        changed = True
 
             if mem["session_active"] and measurements_valid:
                 # Keep the latest numeric climate state seen while this session is
@@ -1572,10 +1587,16 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 and str(_contact_ref_h.get(_cid)) == str(reference_humidity_entity)
                 for _cid in _contact_ids(cfg)
             )
+            # Rooms without an assigned opening remain full calculated indoor
+            # rooms. Their exchange model is learned from conservative passive
+            # observations instead of pretending they own another room's contact.
+            has_ventilation_contact = bool(_contact_ids(cfg))
+            effective_learning_rate = float(mem["learning_rate"] if has_ventilation_contact else mem.get("passive_learning_rate", 0.03))
+            effective_learning_samples = int(mem["learning_samples"] if has_ventilation_contact else mem.get("passive_learning_samples", 0))
             room_input = RoomInput(
                 key=key, name=cfg[CONF_ROOM_NAME], temperature=t, humidity=rh, reference_temperature=ref_t, reference_humidity=ref_rh,
                 volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
-                learning_rate=float(mem["learning_rate"]), learning_samples=int(mem["learning_samples"]), co2=co2,
+                learning_rate=effective_learning_rate, learning_samples=effective_learning_samples, co2=co2,
                 session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),
                 session_start_temp=mem.get("session_start_temp"), session_result_base_ml=float(mem.get("session_result_base_ml", 0.0)),
                 session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)),
@@ -1700,6 +1721,16 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             mem["last_measurement_at"] = now.isoformat()
             mem["last_measurement_valid"] = result.data_quality == "ok"
             action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed)
+            indirect_candidate = bool(not has_ventilation_contact and result.ventilation_candidate)
+            indirect_cooling_candidate = bool(not has_ventilation_contact and result.cooling_candidate)
+            if not has_ventilation_contact and action in {"Ventilate", "Ventilate for cooling"}:
+                # Keep the climate warning/potential, but do not invent an opening
+                # or make this room directly actionable at house level.
+                action = "Ventilate indirectly"
+                reason = "No opening is assigned to this room; ventilate it via a connected room"
+                reason_list.append("No opening is assigned; FreshAirIQ continues monitoring this room and can learn measurable passive ventilation")
+                result.ventilation_candidate = False
+                result.cooling_candidate = False
             result.action = action; result.reason = reason
             if mem["session_active"] and result.data_quality == "ok":
                 if abs(float(mem.get("session_result_ml", 0.0)) - float(result.result_ml)) >= 0.01:
@@ -2060,7 +2091,13 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "voc": voc, "voc_available": voc is not None, "voc_enabled": voc_sensor_enabled, "voc_configured": bool(voc_configured_entity),
                 "pm25": pm25, "pm25_available": pm25 is not None, "pm25_enabled": pm25_sensor_enabled, "pm25_configured": bool(pm25_configured_entity),
                 "illuminance": illuminance, "illuminance_available": illuminance is not None, "illuminance_enabled": illuminance_sensor_enabled, "illuminance_configured": bool(illuminance_configured_entity),
-                "learned_exchange_rate_per_min": round(float(mem.get("learning_rate", .03)), 3),
+                "learned_exchange_rate_per_min": round(effective_learning_rate, 3),
+                "direct_learning_samples": int(mem.get("learning_samples", 0)),
+                "passive_learning_samples": int(mem.get("passive_learning_samples", 0)),
+                "passive_learned_exchange_rate_per_min": round(float(mem.get("passive_learning_rate", .03)), 3),
+                "ventilation_path": ("assigned_opening" if has_ventilation_contact else "indirect_unassigned"),
+                "indirect_ventilation_candidate": indirect_candidate,
+                "indirect_cooling_candidate": indirect_cooling_candidate,
                 "behaviour_recommendation_opportunities": int(mem.get("recommendation_opportunities", 0)), "behaviour_recommendation_followed": int(mem.get("recommendation_followed", 0)), "behaviour_recommendation_follow_rate": mem.get("recommendation_follow_rate"),
                 "behaviour_preferred_duration_min": mem.get("preferred_duration_min"), "behaviour_duration_samples": int(mem.get("duration_samples", 0)), "behaviour_avg_follow_delay_min": mem.get("avg_follow_delay_min"), "behaviour_follow_delay_samples": int(mem.get("follow_delay_samples", 0)), "behaviour_avg_duration_deviation_min": mem.get("avg_duration_deviation_min"),
                 "forecast_observation_samples": int(mem.get("forecast_observation_samples", 0)), "forecast_source_ml_min": mem.get("forecast_source_ml_min"), "forecast_thermal_residual_c_min": mem.get("forecast_thermal_residual_c_min"),
@@ -2275,6 +2312,33 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _room["passive_ventilation_confidence"] = int(_passive.get("confidence", 0) or 0)
             _room["passive_ventilation_reason"] = _passive.get("reason")
             _room["passive_ventilation_elapsed_min"] = round(_elapsed_passive, 1)
+
+            # Learn indirect exchange once per house ventilation group. Keep this
+            # coefficient separate from direct-window learning: it describes how
+            # strongly this room participates through the building air path.
+            if (
+                bool(_passive.get("active"))
+                and int(_passive.get("confidence", 0) or 0) >= 60
+                and not _contact_ids(next((cfg for cfg in rooms_cfg if cfg.get("key") == _key), {}))
+                and _mem.get("passive_learning_last_group_id") != passive_group_id
+                and _elapsed_passive >= 5.0
+            ):
+                _learned_passive = learn_passive_exchange(
+                    old_rate=float(_mem.get("passive_learning_rate", 0.03) or 0.03),
+                    old_samples=int(_mem.get("passive_learning_samples", 0) or 0),
+                    start_ah=float(_mem.get("passive_start_ah") or _current_ah),
+                    current_ah=_current_ah,
+                    start_reference_ah=float(_mem.get("passive_start_reference_ah") or _reference_ah),
+                    elapsed_min=_elapsed_passive,
+                )
+                if _learned_passive["valid"]:
+                    _mem["passive_learning_rate"] = float(_learned_passive["rate"])
+                    _mem["passive_learning_samples"] = int(_learned_passive["samples"])
+                    _mem["passive_learning_last_group_id"] = passive_group_id
+                    _mem["passive_learning_last_at"] = now.isoformat()
+                    _room["passive_learning_samples"] = int(_mem["passive_learning_samples"])
+                    _room["passive_learned_exchange_rate_per_min"] = float(_mem["passive_learning_rate"])
+                    changed = True
         if completed_sessions:
             if not isinstance(ventilation_group, dict) or not ventilation_group.get("active"):
                 starts = []
@@ -3450,6 +3514,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "forecast_recent_removed_ml_min": None,
             "forecast_recent_observed_at": None,
             "session_moisture_source_detected": False,
+            "session_reference_moisture_reversal": False,
             "session_cross_active": False,
             "session_cross_seconds": 0.0,
             "session_cross_last_update": None,
@@ -3696,10 +3761,16 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         session_removed = result_base_ml + (live_start_ah - end_ah) * float(cfg[CONF_ROOM_VOLUME])
         mem["session_result_ml"] = session_removed
         source_contaminated = bool(mem.get("session_moisture_source_detected"))
+        reference_moisture_reversal = bool(mem.get("session_reference_moisture_reversal"))
+        learning_contaminated = source_contaminated or reference_moisture_reversal
         frame_learning_eligible = session_activity_eligible
-        if source_contaminated:
+        if learning_contaminated:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
-            diagnosis = "Lernmessung übersprungen: aktive interne Feuchtequelle während der Lüftung erkannt"
+            diagnosis = (
+                "Lernmessung übersprungen: Referenzluft wurde während der Lüftung zu feucht"
+                if reference_moisture_reversal
+                else "Lernmessung übersprungen: aktive interne Feuchtequelle während der Lüftung erkannt"
+            )
             valid = False
         elif not frame_learning_eligible:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
@@ -3848,7 +3919,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and validation_end_ah is not None
             and validation_end_temp is not None
         )
-        if source_contaminated or not snapshot_frame_valid or not end_frame_valid:
+        if learning_contaminated or not snapshot_frame_valid or not end_frame_valid:
             prediction_comparable = False
 
         # Objective validation and adaptive forecast learning share the same
@@ -3867,12 +3938,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         mem["session_prediction_snapshot_valid"] = bool(prediction_learning_eligible)
         activity_weight = float(session_quality.get("learning_weight", 0.0) or 0.0)
         mem["session_prediction_learning_weight"] = activity_weight if session_activity_eligible else 0.0
-        feedback_processed = False if source_contaminated else learn_outcome_feedback(mem, session_removed, temp_delta)
+        feedback_processed = False if learning_contaminated else learn_outcome_feedback(mem, session_removed, temp_delta)
         feedback_learned = bool(feedback_processed and mem.get("last_outcome_feedback_applied", False))
         mem["session_prediction_snapshot_valid"] = bool(original_snapshot_valid)
-        if source_contaminated:
+        if learning_contaminated:
             feedback_action = "skipped"
-            feedback_reason = "Lernanpassung übersprungen, weil während der Lüftung eine interne Feuchtequelle erkannt wurde."
+            feedback_reason = ("Lernanpassung übersprungen, weil die Referenzluft während der Lüftung feuchter wurde." if reference_moisture_reversal else "Lernanpassung übersprungen, weil während der Lüftung eine interne Feuchtequelle erkannt wurde.")
             feedback_accuracy = None
         elif feedback_processed:
             feedback_action = mem.get("last_outcome_feedback_action")
@@ -3942,6 +4013,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "end_measurement_frame_skew_s": validation_end_skew_s,
             "end_measurement_frame_max_age_s": validation_end_max_age_s,
             "moisture_source_contaminated": source_contaminated,
+            "reference_moisture_reversal": reference_moisture_reversal,
             "recommendation_followed": bool(mem.get("session_recommendation_followed")),
             "recommended_duration_min": mem.get("session_recommended_duration_min"),
             "outcome_feedback_learned": feedback_learned,

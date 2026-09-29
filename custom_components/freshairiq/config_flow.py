@@ -366,35 +366,21 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     if isinstance(contacts, str):
         contacts = [contacts]
     include = bool(user_input.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))
+    # A room may intentionally be created before any sensors are installed.
+    # Keep it as a configured/passive room and activate calculations later,
+    # once the required temperature, humidity and opening contacts exist.
     has_temperature = bool(user_input.get(CONF_ROOM_TEMPERATURE))
     has_humidity = bool(user_input.get(CONF_ROOM_HUMIDITY))
-    previous = next((r for r in existing_rooms if r.get("key") == keep_key), {}) if keep_key else {}
-    # Sensorless rooms are accepted as planning shells. Remember when FreshAirIQ
-    # itself disabled calculations for that reason so a later complete sensor
-    # assignment can activate the room again. An explicit user-disabled room is
-    # left untouched. For pre-v0.25.1.39 shells, infer the marker only when the
-    # previous room had no climate/opening assignment at all.
-    auto_passive = bool(previous.get("_auto_passive_no_sensors", False))
-    if previous and "_auto_passive_no_sensors" not in previous:
-        auto_passive = (
-            previous.get(CONF_ROOM_INCLUDE_CALCULATIONS) is False
-            and not previous.get(CONF_ROOM_TEMPERATURE)
-            and not previous.get(CONF_ROOM_HUMIDITY)
-            and not (previous.get(CONF_ROOM_CONTACTS) or [])
-        )
-    complete_active_setup = has_temperature and has_humidity and bool(contacts)
-    if not include and auto_passive and complete_active_setup:
-        include = True
-        auto_passive = False
     if include and not has_temperature and not has_humidity and not contacts:
         include = False
-        auto_passive = True
     if include and not has_temperature:
         errors[CONF_ROOM_TEMPERATURE] = "required"
     if include and not has_humidity:
         errors[CONF_ROOM_HUMIDITY] = "required"
-    if include and not contacts:
-        errors[CONF_ROOM_CONTACTS] = "ventilation_contact_required"
+    # Opening contacts are optional for calculated indoor rooms. A room with
+    # temperature + humidity remains part of the house model even when it has
+    # no own/assigned opening. Contacts describe *how* FreshAirIQ can observe a
+    # ventilation path; they are not a prerequisite for climate calculation.
 
     volume = _number_or_none(user_input.get(CONF_ROOM_VOLUME))
     length = _number_or_none(user_input.get(CONF_ROOM_LENGTH))
@@ -424,7 +410,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         while key in existing:
             key = f"{original}_{i}"; i += 1
 
-    previous = next((r for r in existing_rooms if r.get("key") == key), previous)
+    previous = next((r for r in existing_rooms if r.get("key") == key), {})
     raw_sources = user_input.get(CONF_ROOM_MOISTURE_SOURCES, previous.get(CONF_ROOM_MOISTURE_SOURCES, [])) or []
     if isinstance(raw_sources, str):
         raw_sources = [raw_sources]
@@ -438,7 +424,6 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_ROOM_FLOOR: str(room.get(CONF_ROOM_FLOOR, "")).strip() or "Unzugeordnet",
         CONF_ROOM_WINDOW_ORIENTATION: room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN),
         CONF_ROOM_INCLUDE_CALCULATIONS: include,
-        "_auto_passive_no_sensors": bool(auto_passive),
         CONF_ROOM_MOISTURE_SOURCES: list(moisture_sources),
         CONF_ROOM_THRESHOLD_MODE: _choice(room.get(CONF_ROOM_THRESHOLD_MODE), ROOM_THRESHOLD_AUTOMATIC, [ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED]),
         CONF_ROOM_THRESHOLD_PERCENT: _bounded(room.get(CONF_ROOM_THRESHOLD_PERCENT), 5, 1, 30),
@@ -805,6 +790,7 @@ def _notification_schema(hass, current: dict[str, Any], rooms: list[dict[str, An
         vol.Required(native_option_key("notify_night"), default=current["notify_night"]): bool,
         vol.Required(native_option_key("notify_learning"), default=current["notify_learning"]): bool,
         vol.Required(native_option_key("notification_cooldown_min"), default=current["notification_cooldown_min"]): _number(10, 1440, 5, "min"),
+        vol.Required(native_option_key("suppress_notifications_at_night"), default=bool(current.get("suppress_notifications_at_night", False))): bool,
     })
 
 

@@ -1,6 +1,3 @@
-# FreshAirIQ v0.25.1.39 — Room Sensor Activation & Dashboard Strategy Hotfix
+# FreshAirIQ v0.25.1.39 — Contactless Indoor Room & Passive Learning Hotfix
 
-- Sensorless planning rooms now retain an internal auto-passive marker and automatically enter calculations when a complete temperature, humidity and opening-contact setup is added later.
-- Rooms that were explicitly disabled after already having sensors remain disabled.
-- The automatically generated FreshAirIQ dashboard now exposes the Classic/FreshAirIQ IQ style selector and propagates the selected variant to the generated card.
-- Existing room-creation tracing and delayed/atomic commit safeguards remain unchanged.
+Calculated indoor rooms can now operate without an opening contact. Temperature and humidity remain required for active climate calculation. Assigned openings can still be located in another room. Contactless rooms are monitored as part of the house model, can participate in conservative passive-ventilation detection, and learn a separate indirect exchange coefficient without contaminating direct-opening learning. House-level actionable recommendations never invent an opening for these rooms. German and English guidance is included.

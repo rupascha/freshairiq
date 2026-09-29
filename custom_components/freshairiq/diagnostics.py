@@ -77,7 +77,7 @@ _SAFE_OPTION_KEYS = (
     "notification_scope", "notification_room_keys", "notify_ventilate",
     "notify_close", "notify_complete", "notify_mould", "notify_sensor",
     "notify_night", "notify_learning", "notify_cooling",
-    "notification_cooldown_min", "statistics_days", "dashboard_show_temperature",
+    "notification_cooldown_min", "suppress_notifications_at_night", "statistics_days", "dashboard_show_temperature",
     "dashboard_show_time", "dashboard_show_next5", "dashboard_show_night",
     "dashboard_show_mould", "dashboard_show_history",
     "diagnostics_reporting_mode", "diagnostics_include_client_context",

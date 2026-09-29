@@ -26,8 +26,6 @@ def test_025138_trace_privacy_contract_and_export_record_type():
     assert "raw form payloads" in diagnostics
 
 
-def test_025138_release_notes_are_retained_and_current_release_is_not_older():
-    import json
+def test_025138_release_notes_remain_as_historical_record():
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.38.md").is_file()
-    current = json.loads((ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8"))["version"]
-    assert tuple(map(int, current.split("."))) >= (0, 25, 1, 38)
+    assert (ROOT / "custom_components/freshairiq/room_creation_trace.py").is_file()

@@ -312,13 +312,12 @@ def test_model_running_early_future_close_sensor_close_and_closed_states():
 
 
 def test_moisture_source_identification_corrupt_history_and_hysteresis():
-    generic = moisture_source._identify_source(set(), temp_rise=0, source_rate=5, generated_ml=30)
+    generic = moisture_source._identify_source([])
     assert generic[1] is None
-    sauna = moisture_source._identify_source(
-        {MOISTURE_SOURCE_SAUNA, MOISTURE_SOURCE_COOKING},
-        temp_rise=1.0, source_rate=3.0, generated_ml=20,
-    )
+    sauna = moisture_source._identify_source([MOISTURE_SOURCE_SAUNA])
     assert sauna[1] == MOISTURE_SOURCE_SAUNA
+    ambiguous = moisture_source._identify_source([MOISTURE_SOURCE_SAUNA, MOISTURE_SOURCE_COOKING])
+    assert ambiguous[1] is None
 
     now = datetime(2026, 9, 15, 9, 0)
     base = {"at": (now - timedelta(minutes=5)).isoformat(), "ah": 10.0, "ref_ah": 7.0, "temp": 21.0, "open": False}

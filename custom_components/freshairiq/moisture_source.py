@@ -39,27 +39,84 @@ def source_label(configured: list[str] | tuple[str, ...] | None) -> str:
     return "Feuchtequelle"
 
 
-def _identify_source(configured: set[str], *, temp_rise: float, source_rate: float, generated_ml: float) -> tuple[str, str | None, str]:
-    """Return label, source key and user-facing text without overclaiming causality."""
-    if not configured:
-        return "Feuchtequelle", None, "Zusätzliche Feuchtigkeit erkannt. FreshAirIQ berücksichtigt den Anstieg bei der Lüftungsstrategie."
-    if len(configured) == 1:
-        key = next(iter(configured)); label = _LABELS[key]
-    elif MOISTURE_SOURCE_SAUNA in configured and temp_rise >= 0.8 and source_rate >= 2.2:
-        key, label = MOISTURE_SOURCE_SAUNA, _LABELS[MOISTURE_SOURCE_SAUNA]
-    elif MOISTURE_SOURCE_COOKING in configured and temp_rise >= 0.35 and source_rate >= 3.0 and generated_ml >= 18.0:
-        key, label = MOISTURE_SOURCE_COOKING, _LABELS[MOISTURE_SOURCE_COOKING]
-    else:
-        return "Feuchtequelle", None, "Zusätzliche Feuchtigkeit erkannt. Die genaue Quelle ist nicht eindeutig; FreshAirIQ berücksichtigt den Anstieg bei der Lüftungsstrategie."
+def _pattern_features(points: list[dict[str, Any]], *, now: datetime) -> dict[str, float]:
+    """Summarise the recent shape without pretending one sample identifies an activity."""
+    rows: list[tuple[datetime, float, float]] = []
+    for point in points:
+        at = _dt(point.get("at"))
+        if at is None or not 0 <= (now - at).total_seconds() <= 12 * 60:
+            continue
+        try:
+            rows.append((at, float(point.get("ah")), float(point.get("temp"))))
+        except (TypeError, ValueError):
+            continue
+    rows.sort(key=lambda row: row[0])
+    if len(rows) < 2:
+        return {"samples": float(len(rows)), "ah_monotonic": 0.0, "temp_monotonic": 0.0, "peak_ah_rate": 0.0}
+    ah_positive = temp_positive = intervals = 0
+    peak_ah_rate = 0.0
+    for left, right in zip(rows, rows[1:]):
+        dt_min = max((right[0] - left[0]).total_seconds() / 60.0, 1 / 60)
+        ah_delta = right[1] - left[1]
+        temp_delta = right[2] - left[2]
+        intervals += 1
+        ah_positive += ah_delta >= -0.015
+        temp_positive += temp_delta >= -0.08
+        peak_ah_rate = max(peak_ah_rate, ah_delta / dt_min)
+    return {
+        "samples": float(len(rows)),
+        "ah_monotonic": ah_positive / max(intervals, 1),
+        "temp_monotonic": temp_positive / max(intervals, 1),
+        "peak_ah_rate": peak_ah_rate,
+    }
+
+
+def _source_signatures(
+    configured: set[str], *, ah_rise: float, temp_rise: float, source_rate: float,
+    generated_ml: float, pattern: dict[str, float],
+) -> list[str]:
+    """Return only source types whose physical/time signature is sufficiently specific.
+
+    Configuration is context, never proof. Thresholds are deliberately conservative:
+    ordinary occupancy can raise indoor humidity and must not be labelled as cooking,
+    showering or sauna use merely because that is the only configured source.
+    """
+    samples = int(pattern.get("samples", 0))
+    monotonic = pattern.get("ah_monotonic", 0.0) >= 0.66 if samples >= 3 else True
+    strong_monotonic = pattern.get("ah_monotonic", 0.0) >= 0.80 if samples >= 3 else True
+    matches: list[str] = []
+    if MOISTURE_SOURCE_SHOWER in configured and monotonic and ah_rise >= 0.45 and source_rate >= 6.0 and generated_ml >= 30.0:
+        matches.append(MOISTURE_SOURCE_SHOWER)
+    if MOISTURE_SOURCE_BATH in configured and monotonic and ah_rise >= 0.32 and source_rate >= 4.5 and generated_ml >= 25.0 and temp_rise >= -0.15:
+        matches.append(MOISTURE_SOURCE_BATH)
+    if MOISTURE_SOURCE_SAUNA in configured and monotonic and temp_rise >= 0.80 and ah_rise >= 0.10 and source_rate >= 2.2 and generated_ml >= 12.0:
+        matches.append(MOISTURE_SOURCE_SAUNA)
+    if MOISTURE_SOURCE_COOKING in configured and strong_monotonic and temp_rise >= 0.40 and ah_rise >= 0.22 and source_rate >= 4.5 and generated_ml >= 24.0:
+        matches.append(MOISTURE_SOURCE_COOKING)
+    # A dryer has a useful combined heat+moisture signature. A washing machine
+    # alone is intentionally not named from room climate: that is not reliably
+    # distinguishable from people or another weak source without appliance data.
+    if MOISTURE_SOURCE_DRYER in configured and monotonic and temp_rise >= 0.50 and ah_rise >= 0.12 and source_rate >= 2.8 and generated_ml >= 16.0:
+        matches.append(MOISTURE_SOURCE_DRYER)
+    if MOISTURE_SOURCE_IRONING_STATION in configured and monotonic and temp_rise >= 0.15 and ah_rise >= 0.30 and source_rate >= 4.0 and generated_ml >= 22.0:
+        matches.append(MOISTURE_SOURCE_IRONING_STATION)
+    return matches
+
+
+def _identify_source(matches: list[str]) -> tuple[str, str | None, str]:
+    """Name an activity only when exactly one source-specific signature matches."""
+    if len(matches) != 1:
+        return "Feuchtequelle", None, "Zusätzliche interne Feuchtigkeit erkannt. Die genaue Quelle ist nicht eindeutig; FreshAirIQ berücksichtigt nur die gemessene Feuchtelast."
+    key = matches[0]
+    label = _LABELS[key]
     text = {
-        MOISTURE_SOURCE_COOKING: "Kochen erkannt. FreshAirIQ berücksichtigt zusätzliche Wärme und Feuchte. Guten Appetit! 🍽️",
-        MOISTURE_SOURCE_SHOWER: "Dusche erkannt. Genieß die warme Dusche – um die frische Luft kümmert sich FreshAirIQ danach. 🚿",
-        MOISTURE_SOURCE_BATH: "Bad erkannt. Zeit zum Entspannen – FreshAirIQ behält die Feuchteentwicklung im Blick. 🛁",
-        MOISTURE_SOURCE_SAUNA: "Sauna erkannt. FreshAirIQ berücksichtigt Wärme und Feuchte und plant die passende Nachlüftung.",
-        MOISTURE_SOURCE_WASHING_MACHINE: "Waschmaschine als Feuchtequelle erkannt. FreshAirIQ berücksichtigt die zusätzliche Raumfeuchte im Wäscheraum.",
-        MOISTURE_SOURCE_DRYER: "Trockner als Feuchtequelle erkannt. FreshAirIQ berücksichtigt die zusätzliche Wärme und Feuchte im Wäscheraum.",
-        MOISTURE_SOURCE_IRONING_STATION: "Bügelstation als Feuchtequelle erkannt. FreshAirIQ berücksichtigt den zusätzlichen Wasserdampf im Wäscheraum.",
-    }.get(key, "Zusätzliche Feuchtigkeit erkannt.")
+        MOISTURE_SOURCE_COOKING: "Kochen erkannt. Das Wärme- und Feuchtemuster passt zur konfigurierten Quelle; FreshAirIQ berücksichtigt die zusätzliche Feuchtelast.",
+        MOISTURE_SOURCE_SHOWER: "Dusche erkannt. Der schnelle Feuchteanstieg passt zur konfigurierten Quelle; FreshAirIQ plant die Nachlüftung entsprechend.",
+        MOISTURE_SOURCE_BATH: "Bad erkannt. Das Feuchtemuster passt zur konfigurierten Quelle; FreshAirIQ berücksichtigt die zusätzliche Feuchtelast.",
+        MOISTURE_SOURCE_SAUNA: "Sauna erkannt. Der kombinierte Wärme- und Feuchteanstieg passt zur konfigurierten Quelle.",
+        MOISTURE_SOURCE_DRYER: "Trockner erkannt. Der kombinierte Wärme- und Feuchteanstieg passt zur konfigurierten Quelle.",
+        MOISTURE_SOURCE_IRONING_STATION: "Bügelstation erkannt. Das Wärme- und Feuchtemuster passt zur konfigurierten Quelle.",
+    }.get(key, "Zusätzliche interne Feuchtigkeit erkannt.")
     return label, key, text
 
 
@@ -182,41 +239,40 @@ def update_moisture_source(
         source_rate = generated_ml / max(interval_min, 1.0)
 
         configured = {x for x in (configured_sources or []) if x in _LABELS}
-        wet_source_configured = bool(configured)
-        # Room context lowers the threshold, but never replaces physical evidence.
-        min_rate = 3.2 if wet_source_configured else 5.0
-        min_generated = 18.0 if wet_source_configured else 30.0
-        min_ah_rise = 0.20 if wet_source_configured else 0.32
+        pattern = _pattern_features(points, now=now)
+        matches = _source_signatures(
+            configured,
+            ah_rise=ah_rise,
+            temp_rise=temp_rise,
+            source_rate=source_rate,
+            generated_ml=generated_ml,
+            pattern=pattern,
+        )
 
-        # Sauna use can include a moderate moisture rise plus a simultaneous
-        # temperature rise (e.g. humid sauna / infusion). Dry heat alone is not
-        # called a moisture source because it adds no water to the air.
-        sauna_signature = (
-            MOISTURE_SOURCE_SAUNA in configured
-            and temp_rise >= 0.8
-            and source_rate >= 2.2
-            and generated_ml >= 12.0
-            and ah_rise >= 0.10
+        # Strong unconfigured loads may still be recognised as an unspecified
+        # internal moisture load. Configured activities, however, are activated
+        # only by their own signature: configuration is never evidence by itself.
+        generic_strong = (
+            not configured
+            and source_rate >= 7.0
+            and generated_ml >= 40.0
+            and ah_rise >= 0.45
+            and (pattern.get("ah_monotonic", 0.0) >= 0.66 or pattern.get("samples", 0.0) < 3)
         )
-        cooking_signature = (
-            MOISTURE_SOURCE_COOKING in configured
-            and temp_rise >= 0.25
-            and source_rate >= 3.0
-            and generated_ml >= 18.0
-            and ah_rise >= 0.16
-        )
-        wet_signature = source_rate >= min_rate and generated_ml >= min_generated and ah_rise >= min_ah_rise
-        detected = wet_signature or sauna_signature or cooking_signature
+        detected = bool(matches) or generic_strong
 
         if detected:
-            label, identified_source, source_message = _identify_source(
-                configured, temp_rise=temp_rise, source_rate=source_rate, generated_ml=generated_ml
-            )
+            label, identified_source, source_message = _identify_source(matches)
             reference_change = abs(float(reference_ah_g_m3) - old_ref)
-            confidence = 48
-            confidence += min(int(max(source_rate - min_rate, 0.0) * 3.0), 22)
-            confidence += min(int(max(ah_rise - min_ah_rise, 0.0) * 18.0), 15)
-            confidence += 8 if wet_source_configured else 0
+            # Confidence describes evidence for an internal load. Naming an
+            # activity additionally requires exactly one source signature above.
+            min_rate = 4.0 if matches else 7.0
+            min_ah_rise = 0.10 if matches == [MOISTURE_SOURCE_SAUNA] else (0.22 if matches else 0.45)
+            confidence = 52
+            confidence += min(int(max(source_rate - min_rate, 0.0) * 3.0), 20)
+            confidence += min(int(max(ah_rise - min_ah_rise, 0.0) * 16.0), 14)
+            confidence += 8 if len(matches) == 1 else 0
+            confidence += 4 if pattern.get("ah_monotonic", 0.0) >= 0.66 else 0
             confidence += 5 if reference_change <= max(0.15, abs(ah_rise) * 0.35) else 0
             confidence = int(_bounded(confidence, 55, 98))
             memory["moisture_source_last_positive_at"] = now.isoformat()

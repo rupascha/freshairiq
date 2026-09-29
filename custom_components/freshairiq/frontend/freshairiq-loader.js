@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.39";
+const FAIQ_VERSION = "0.25.1.40";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_EDITOR = "freshairiq-card-editor";
 const FAIQ_IMPL = "freshairiq-card-impl";
@@ -80,30 +80,14 @@ class FreshAirIQLoaderCard extends FreshAirIQLoaderProxy {
 class FreshAirIQLoaderEditor extends FreshAirIQLoaderProxy {
   _implementationTag() { return FAIQ_EDITOR_IMPL; }
 }
-class FreshAirIQLoaderStrategyEditor extends HTMLElement {
-  setConfig(config={}) { this._config = Object.assign({dashboard_variant:"classic"}, config || {}); this._render(); }
-  set hass(hass) { this._hass = hass; }
-  _render() {
-    if (!this.shadowRoot) this.attachShadow({mode:"open"});
-    const variant = this._config && this._config.dashboard_variant === "iq" ? "iq" : "classic";
-    this.shadowRoot.innerHTML = `<div style="padding:12px 0"><label style="display:block;margin-bottom:6px;font-weight:600">${faiqLoaderCopy("Dashboard-Stil", "Dashboard style")}</label><select id="variant" style="width:100%;padding:8px"><option value="classic" ${variant === "classic" ? "selected" : ""}>Classic</option><option value="iq" ${variant === "iq" ? "selected" : ""}>FreshAirIQ IQ</option></select></div>`;
-    this.shadowRoot.getElementById("variant")?.addEventListener("change", e => {
-      this._config = Object.assign({}, this._config, {dashboard_variant:e.target.value === "iq" ? "iq" : "classic"});
-      this.dispatchEvent(new CustomEvent("config-changed", {detail:{config:this._config}, bubbles:true, composed:true}));
-    });
-  }
-}
 class FreshAirIQLoaderStrategy extends HTMLElement {
   static getCreateSuggestions() { return {title:"FreshAirIQ",icon:"mdi:home-air-filter"}; }
-  static getConfigElement() { const editor = document.createElement("freshairiq-strategy-editor"); editor.setConfig({dashboard_variant:"classic"}); return editor; }
   static async generate(config={}) {
-    const dashboardVariant = config.dashboard_variant === "iq" ? "iq" : "classic";
-    return {title:config.title||"FreshAirIQ",views:[{title:"FreshAirIQ",path:"freshairiq",icon:"mdi:home-air-filter",cards:[{type:"custom:freshairiq-card",dashboard_variant:dashboardVariant}]}]};
+    return {title:config.title||"FreshAirIQ",views:[{title:"FreshAirIQ",path:"freshairiq",icon:"mdi:home-air-filter",cards:[{type:"tile",entity:"sensor.freshairiq_status",name:"FreshAirIQ",icon:"mdi:home-air-filter",tap_action:{action:"navigate",navigation_path:"/freshairiq-safe"},hold_action:{action:"more-info"}}]}]};
   }
 }
 
 // These registrations intentionally happen before the heavy dynamic import.
-if (!customElements.get("freshairiq-strategy-editor")) customElements.define("freshairiq-strategy-editor", FreshAirIQLoaderStrategyEditor);
 if (!customElements.get(FAIQ_EDITOR)) customElements.define(FAIQ_EDITOR, FreshAirIQLoaderEditor);
 if (!customElements.get(FAIQ_CARD)) customElements.define(FAIQ_CARD, FreshAirIQLoaderCard);
 if (!customElements.get(FAIQ_STRATEGY_ELEMENT)) customElements.define(FAIQ_STRATEGY_ELEMENT, FreshAirIQLoaderStrategy);

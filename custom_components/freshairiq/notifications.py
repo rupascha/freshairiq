@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .const import NOTIFY_SCOPE_BOTH, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_ROOM
-from .forecast import night_window_hours
+from .forecast import in_night_window, night_window_hours
 
 def _finite_float(value: Any, default: float = 0.0) -> float:
     """Return a finite float; corrupted/runtime values degrade to a safe default."""
@@ -207,6 +207,11 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
     scope = options.get("notification_scope", NOTIFY_SCOPE_HOUSE)
     rooms_raw = data.get("rooms", {})
     rooms = rooms_raw if isinstance(rooms_raw, dict) else {}
+    suppress_at_night = bool(
+        options.get("suppress_notifications_at_night")
+        and options.get("night_forecast_enabled", True)
+        and in_night_window(now, options.get("night_start_hour"), options.get("night_end_hour"))
+    )
 
     # Per-room action transitions. The action state is persisted, so restart does not spam.
     room_events: dict[str, list[dict[str, Any]]] = {"Ventilate": [], "Ventilate for cooling": [], "Close": [], "sensor": [], "mould": []}
@@ -228,6 +233,8 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
 
     async def emit(event: str, title: str, message: str, room_key: str | None = None) -> bool:
         nonlocal changed
+        if suppress_at_night:
+            return True
         if room_key and not _allowed_room(room_key, options):
             return True
         key = f"{event}:{room_key or 'house'}"
@@ -283,7 +290,7 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
             enabled = ((kind in {"ventilate", "continue", "pollen_wait"} and options.get("notify_ventilate")) or (kind == "close" and options.get("notify_close")) or (kind == "sensor" and options.get("notify_sensor")))
             handled = True
             event_key = f"iq_{kind}:house"
-            if enabled and _due(store, event_key, now, cooldown):
+            if enabled and not suppress_at_night and _due(store, event_key, now, cooldown):
                 handled = await _send_personalised(hass, options, title, message, iq)
                 if handled:
                     _mark_sent(store, event_key, now)
@@ -360,7 +367,7 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
                 message = f"Bis morgen früh werden voraussichtlich etwa {round(_finite_float(data.get('overnight_forecast_ml', 0), 0.0))} ml Feuchtigkeit hinzukommen. {instruction}"
             if detail and detail not in message:
                 message += f" {detail}"
-            if await _send(hass, options, "FreshAirIQ · Nachtstrategie", message):
+            if not suppress_at_night and await _send(hass, options, "FreshAirIQ · Nachtstrategie", message):
                 store.data["last_night_notification_date"] = today
                 changed=True
 

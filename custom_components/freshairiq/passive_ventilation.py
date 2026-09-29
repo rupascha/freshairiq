@@ -88,3 +88,37 @@ def evaluate_passive_ventilation(
         "confidence": int(confidence),
         "reason": "stable_sensor_trend_toward_start_reference",
     }
+
+
+def learn_passive_exchange(
+    *,
+    old_rate: float,
+    old_samples: int,
+    start_ah: float,
+    current_ah: float,
+    start_reference_ah: float,
+    elapsed_min: float,
+) -> dict[str, Any]:
+    """Learn one conservative indirect-air-exchange observation.
+
+    This model is deliberately independent from direct opening learning.  It
+    uses only the fraction of the original room/reference AH gradient that was
+    measurably traversed during a validated passive observation.
+    """
+    elapsed = max(float(elapsed_min), 0.0)
+    gradient = abs(float(start_ah) - float(start_reference_ah))
+    progress = abs(float(current_ah) - float(start_ah))
+    rate = min(max(float(old_rate), 0.002), 0.25)
+    samples = min(max(int(old_samples), 0), 1000)
+    if elapsed < 5.0 or gradient < 0.25 or progress <= 0.0:
+        return {"valid": False, "rate": rate, "samples": samples, "observed_rate": None}
+    fraction = min(max(progress / gradient, 0.0), 0.85)
+    observed = min(max(fraction / elapsed, 0.002), 0.25)
+    alpha = 0.20 if samples < 5 else 0.10
+    learned = rate * (1.0 - alpha) + observed * alpha
+    return {
+        "valid": True,
+        "rate": round(min(max(learned, 0.002), 0.25), 6),
+        "samples": min(samples + 1, 1000),
+        "observed_rate": round(observed, 6),
+    }

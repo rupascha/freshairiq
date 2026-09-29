@@ -1,10 +1,19 @@
-# FreshAirIQ v0.25.1.39 — Room Sensor Activation & Dashboard Strategy Hotfix
+# FreshAirIQ v0.25.1.40 — Contactless Indoor Model Parity Hardening
+
+## 0.25.1.40
+- Added physics-parity regression matrix across ventilation-path configurations.
+- Preserved the v0.25.1.39 contactless indoor/passive-learning architecture.
+
+# FreshAirIQ v0.25.1.39 — Contactless Indoor Room & Passive Learning Hotfix
 
 ## 0.25.1.39
-- Sensorless planning rooms now retain an internal auto-passive marker and automatically enter calculations when a complete temperature, humidity and opening-contact setup is added later.
-- Rooms that were explicitly disabled after already having sensors remain disabled.
-- The automatically generated FreshAirIQ dashboard now exposes the Classic/FreshAirIQ IQ style selector and propagates the selected variant to the generated card.
-- Existing room-creation tracing and delayed/atomic commit safeguards remain unchanged.
+
+- Calculated indoor rooms now require temperature and humidity, but no opening contact.
+- Existing assigned contacts may still belong to another room and remain the explicit ventilation path.
+- Rooms without an assigned opening stay in humidity, mould, CO₂, potential and house-water calculations without inventing a window session.
+- Directly actionable house ventilation excludes rooms with no assigned opening; their need remains visible as indirect ventilation.
+- Conservative passive-ventilation observations now learn a separate indirect exchange coefficient, isolated from direct-window learning.
+- German and English configuration guidance updated; existing configurations remain compatible.
 
 # FreshAirIQ v0.25.1.38 — Room Creation Trace Hotfix
 

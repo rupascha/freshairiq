@@ -135,7 +135,7 @@
     },
     "error": {
       "outdoor_source_required": "Wähle eine lokale Wetter-Entität oder sowohl Temperatur- als auch Feuchtesensor.",
-      "ventilation_contact_required": "Wähle mindestens einen Kontakt, der diesen Raum tatsächlich belüftet. Das darf auch ein Fenster oder eine Tür in einem anderen Raum sein.",
+      "ventilation_contact_required": "Ein Öffnungskontakt ist optional. Ohne Kontakt wird der Raum klimatisch berechnet und indirekte Lüftung kann erkannt und gelernt werden.",
       "room_volume_required": "Gib entweder das Raumvolumen in m³ oder vollständig Länge, Breite und Höhe an.",
       "room_volume_too_small": "Das Raumvolumen muss mindestens 2 m³ betragen.",
       "room_name_required": "Gib einen Raumnamen an.",
@@ -383,7 +383,7 @@
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
           "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
           "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-          "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+          "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
           "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
           "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
           "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -453,7 +453,7 @@
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-              "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+              "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
           },
@@ -559,7 +559,7 @@
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-              "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+              "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
           },
@@ -670,7 +670,7 @@
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
           "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
           "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-          "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+          "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
           "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
           "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
           "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -740,7 +740,7 @@
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-              "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+              "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
           },
@@ -846,7 +846,7 @@
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-              "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+              "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
           },
@@ -1242,7 +1242,8 @@
           "notify_sensor": "Sensorfehler melden (Standard: an)",
           "notify_night": "Nachtprognose senden (Standard: aus)",
           "notify_learning": "Lernmeldungen senden (Standard: aus)",
-          "notification_cooldown_min": "Mindestabstand gleicher Meldungen (Standard: 90 min)"
+          "notification_cooldown_min": "Mindestabstand gleicher Meldungen (Standard: 90 min)",
+          "suppress_notifications_at_night": "Nachts keine Benachrichtigungen (Standard: aus)"
         },
         "data_description": {
           "notifications_enabled": "Hauptschalter für alle FreshAirIQ-Pushmeldungen.",
@@ -1257,7 +1258,8 @@
           "notify_mould": "Warnt bei relevantem geschätztem Oberflächen-/Schimmelrisiko.",
           "notify_sensor": "Warnt, wenn für eine belastbare Empfehlung erforderliche Sensordaten fehlen oder unplausibel sind.",
           "notify_night": "Sendet Hinweise zur Nachtstrategie.",
-          "notify_learning": "Informiert über relevante Lernfortschritte."
+          "notify_learning": "Informiert über relevante Lernfortschritte.",
+          "suppress_notifications_at_night": "Wenn aktiviert, sendet FreshAirIQ während des unter Nacht eingestellten Zeitraums keine Pushmeldungen. Berechnungen, Lüftungslogik und Learning laufen unverändert weiter."
         }
       },
       "statistics": {
@@ -1922,7 +1924,7 @@
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
           "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
           "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-          "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+          "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
           "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
           "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
           "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -1992,7 +1994,7 @@
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-              "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+              "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
           },
@@ -2098,7 +2100,7 @@
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-              "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+              "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
           },
@@ -2165,7 +2167,7 @@
     },
     "error": {
       "outdoor_source_required": "Wähle eine lokale Wetter-Entität oder sowohl Temperatur- als auch Feuchtesensor.",
-      "ventilation_contact_required": "Wähle mindestens einen Lüftungskontakt.",
+      "ventilation_contact_required": "Ein Öffnungskontakt ist optional. Ohne Kontakt wird der Raum klimatisch berechnet und indirekte Lüftung kann erkannt und gelernt werden.",
       "room_volume_required": "Gib entweder das Raumvolumen oder Länge, Breite und Höhe vollständig an.",
       "room_volume_too_small": "Das Raumvolumen muss mindestens 2 m³ betragen.",
       "room_name_required": "Gib einen Raumnamen an.",
@@ -2495,7 +2497,7 @@
             "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
             "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
             "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-            "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+            "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
             "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
             "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
             "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -2606,7 +2608,7 @@
               "data_description": {
                 "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
                 "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-                "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+                "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
                 "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
               }
             },
@@ -2673,7 +2675,7 @@
             "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
             "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
             "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
-            "contacts": "Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.",
+            "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
             "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
             "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
             "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -2732,7 +2734,7 @@
         }
       },
       "error": {
-        "ventilation_contact_required": "Für berechnete Räume ist mindestens ein Fenster-/Türkontakt erforderlich.",
+        "ventilation_contact_required": "Ein Öffnungskontakt ist optional. Ohne Kontakt wird der Raum klimatisch berechnet und indirekte Lüftung kann erkannt und gelernt werden.",
         "room_volume_required": "Gib entweder das Raumvolumen oder vollständige Raummaße an.",
         "room_volume_too_small": "Das berechnete Raumvolumen ist zu klein.",
         "room_name_required": "Bitte gib einen Raumnamen an.",
