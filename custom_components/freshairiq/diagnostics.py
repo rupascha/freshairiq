@@ -925,6 +925,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "forecast_backtest_samples": _collection_size(data.get("forecast_backtest")),
             },
             "learning_effectiveness": _json_safe(data.get("learning_effectiveness") or {}),
+            "learning_v2": _json_safe(data.get("learning_v2") or {}),
             "learning_components": _json_safe(_compact_learning_components(data.get("learning_components"))),
             "learning": {
                 "last_diagnosis": _json_safe(store_data.get("last_diagnosis")),

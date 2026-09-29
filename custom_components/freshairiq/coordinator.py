@@ -64,6 +64,7 @@ from .learning_effectiveness import (
 from .measurement_frame import build_measurement_frame, last_valid_session_measurement, report_timestamp_after_boundary, session_measurement_quality, trusted_session_end_baseline
 from .post_stabilization import start_post_close_observation, update_post_close_observation, prune_history as prune_stabilization_history, stabilization_summary
 from .learning_components import build_learning_components_status
+from .learning_v2 import build_learning_v2_status
 from .robustness import RobustnessMonitor, finite_float, prepare_runtime_rooms, safe_options
 from .intervention import build_interventions
 from .repairs import async_sync_missing_entity_issue
@@ -965,6 +966,13 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         daily_generation_prior = float(estimated_daily_moisture_ml(options, effective_adults, effective_children))
         forecast_horizon = int(round(min(max(float(options.get("forecast_horizon_min", 5)), 1.0), 120.0)))
+        # Learning Engine V2 safety authority: objective paired field evidence
+        # may temporarily revoke learned forecast terms. Physics remains the
+        # deterministic fallback until evidence stops showing regression.
+        _learning_effectiveness_pre = learning_effectiveness_summary(
+            self.store.data.get("forecast_validation_history") or [], days=30
+        )
+        _learning_v2_force_physics = str(_learning_effectiveness_pre.get("status") or "") == "regressing"
         voc_sensor_enabled = bool(options.get("voc_sensor_enabled", True))
         pm25_sensor_enabled = bool(options.get("pm25_sensor_enabled", True))
         illuminance_sensor_enabled = bool(options.get("illuminance_sensor_enabled", True))
@@ -1776,12 +1784,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 source_ah=float(result.reference_humidity or 0.0),
                 current_temp_c=t, source_temp_c=ref_t,
                 volume_m3=float(cfg[CONF_ROOM_VOLUME]),
-                rate_per_min=float(mem.get("learning_rate", .03)),
+                rate_per_min=(0.03 if _learning_v2_force_physics else float(mem.get("learning_rate", .03))),
                 airflow_bonus=(1.25 if cross else 1.0) * airflow,
                 prior_source_ml_min=room_prior_ml_min,
-                learned_source_ml_min=learned_source_for_forecast,
-                learned_thermal_residual_c_min=mem.get("forecast_thermal_residual_c_min"),
-                observation_samples=int(mem.get("forecast_observation_samples", 0)),
+                learned_source_ml_min=(None if _learning_v2_force_physics else learned_source_for_forecast),
+                learned_thermal_residual_c_min=(None if _learning_v2_force_physics else mem.get("forecast_thermal_residual_c_min")),
+                observation_samples=(0 if _learning_v2_force_physics else int(mem.get("forecast_observation_samples", 0))),
                 model_maturity_pct=forecast_model_maturity,
                 measurement_frame_quality=str(measurement_frame.get("quality") or "stale"),
                 running=bool(mem.get("session_active") and is_open),
@@ -3375,15 +3383,18 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
         forecast_validation_status = _decision_validation
         forecast_backtest_status = backtest_summary(self.store.data.get("forecast_validation_history") or [], days=30)
-        learning_effectiveness_status = learning_effectiveness_summary(
-            self.store.data.get("forecast_validation_history") or [], days=30
-        )
+        learning_effectiveness_status = _learning_effectiveness_pre
         post_close_status = stabilization_summary(self.store.data.get("post_close_stabilization_history") or [])
         learning_components_status = build_learning_components_status(
             results,
             self.store.data,
             forecast_backtest=forecast_backtest_status,
             post_close_stabilization=post_close_status,
+        )
+        learning_v2_status = build_learning_v2_status(
+            results, forecast_backtest=forecast_backtest_status,
+            learning_effectiveness=learning_effectiveness_status,
+            post_close=post_close_status, components=learning_components_status,
         )
 
         pending_final_rooms = [r for r in results.values() if r.get("session_finalization_pending")]
@@ -3444,7 +3455,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "forecast_backtest": forecast_backtest_status,
             "learning_effectiveness": learning_effectiveness_status,
             "post_close_stabilization": post_close_status,
-            "learning_components": learning_components_status,
+            "learning_components": learning_components_status, "learning_v2": learning_v2_status,
             "post_close_stabilization_history": list(self.store.data.get("post_close_stabilization_history") or [])[-100:],
             "intelligent_recommendation": intelligent_recommendation, "recommendation_engine": "v3", "house_ventilation_mode": house_ventilation_mode, "house_ventilation_active_ratio": round(active_ratio, 3), "floor_ventilation_mode": floor_ventilation_mode, "floor_ventilation_floor": floor_display_name if floor_ventilation_mode else None, "room_sort_order": [str(r.get("key")) for r in rooms_cfg], "system_check": system_check,
             "iq_state": iq_state, "intelligence_engine": "v13", "decision_engine": "v6", "live_coach_engine": "v1", "anticipation_engine": "v1", "planner_engine": "v1", "seasonal_engine": "v1", "house_strategy_engine": "v1", "consolidation_engine": "v1", "decision_brain_engine": "v1", "decision_trace_engine": "v1",

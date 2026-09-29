@@ -1,3 +1,9 @@
+## 0.25.2 - Learning Engine V2
+- Adds calibrated model maturity, uncertainty and objective forecast accuracy tracking.
+- Adds automatic physics fallback when paired field evidence proves learned-model regression.
+- Adds Guardian learning-drift invariants and privacy-safe Learning V2 diagnostics telemetry.
+- Preserves Learning 3.0 shadow promotion/rollback, seasonality, rebound observation and existing forecast contracts.
+
 ## 0.25.1.44
 
 - Guardian now emits privacy-safe, postcondition-verified recovery telemetry for allow-listed self-healing actions.

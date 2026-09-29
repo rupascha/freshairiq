@@ -403,6 +403,7 @@ def build_cloud_payload(
         },
         "latest_forecast_validation": _sanitize_tree(deepcopy(dossier.get("forecast_validation") or {}), room_map),
         "latest_forecast_backtest": _sanitize_tree(deepcopy(dossier.get("forecast_backtest") or {}), room_map),
+        "learning_v2": _sanitize_tree(deepcopy(dossier.get("learning_v2") or {}), room_map),
         "records": _sanitize_tree(selected_records, room_map),
         "privacy": {
             "room_labels_removed": True,

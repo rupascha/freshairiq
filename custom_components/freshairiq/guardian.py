@@ -94,6 +94,14 @@ def evaluate_guardian(data: Mapping[str, Any] | None) -> dict[str, Any]:
         findings.append(GuardianFinding("FAIQ-GUARDIAN-RECOVERY-001", "low", "completed_recovery_must_clear", "sensor_recovery", {"valid_cycles": valid_cycles, "required_valid_cycles": required_cycles}, True))
         repairs.append({"repair": "clear_completed_sensor_recovery", "safe": True, "reversible": True})
 
+    learning_v2 = state.get("learning_v2") if isinstance(state.get("learning_v2"), Mapping) else {}
+    if bool(learning_v2.get("drift_detected")):
+        findings.append(GuardianFinding("FAIQ-GUARDIAN-LEARNING-001", "high", "learned_model_must_not_override_regressing_evidence", "learning_v2", {"physics_fallback_rooms": int(learning_v2.get("physics_fallback_rooms") or 0)}))
+    lv2_confidence = _num(learning_v2.get("confidence_percent"))
+    lv2_maturity = _num(learning_v2.get("maturity_percent"))
+    if lv2_confidence is not None and lv2_maturity is not None and lv2_maturity >= 85 and lv2_confidence < 40:
+        findings.append(GuardianFinding("FAIQ-GUARDIAN-LEARNING-002", "medium", "high_maturity_requires_calibrated_confidence", "learning_v2", {"maturity_percent": round(lv2_maturity, 1), "confidence_percent": round(lv2_confidence, 1)}))
+
     finalizing = state.get("finalizing_measurements")
     if isinstance(finalizing, Mapping):
         pending = int(finalizing.get("pending_rooms") or finalizing.get("pending_count") or 0)
