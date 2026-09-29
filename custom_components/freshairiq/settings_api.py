@@ -617,4 +617,11 @@ class FreshAirIQFeedbackView(HomeAssistantView):
         except ValueError as err:
             return self.json({"error":str(err)}, status_code=400)
         except Exception as err:
-            return self.json({"error":f"Feedback konnte nicht an den Diagnose-Hub übertragen werden: {err}"}, status_code=502)
+            code = "FAIQ-HUB-FEEDBACK-001"
+            coordinator = getattr(entry, "runtime_data", None)
+            if coordinator is not None:
+                try:
+                    await coordinator.telemetry.async_report_client_error(code=code, component="feedback", operation="submit_feedback", message=f"{type(err).__name__}: {err}")
+                except Exception:
+                    pass  # Never recurse when the Hub itself is unreachable.
+            return self.json({"error":"Feedback konnte nicht an den Diagnose-Hub übertragen werden.", "error_code":code, "technical_detail":str(err)}, status_code=502)

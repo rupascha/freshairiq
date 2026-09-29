@@ -405,6 +405,51 @@ class FreshAirIQDiagnosticsClient:
                 raise RuntimeError(f"feedback_http_{response.status}")
             return await response.json()
 
+    async def async_report_client_error(self, *, code: str, component: str, operation: str, message: str) -> dict[str, Any]:
+        """Report a privacy-safe error and persist a bounded retry queue on transport failure."""
+        import hashlib
+        normalized = f"{code}|{component}|{operation}|{str(message)[:500]}"
+        fingerprint = hashlib.sha256(normalized.encode("utf-8", "replace")).hexdigest()
+        payload={"code":str(code)[:80],"component":str(component)[:80],"operation":str(operation)[:120],"message":str(message)[:2000],"fingerprint":fingerprint,"freshairiq_version":VERSION}
+        if not self.endpoint:
+            await self._async_queue_client_error(payload); raise RuntimeError("hub_unconfigured")
+        identity = await self.recorder.async_get_identity(); installation_id = str(identity.get("installation_id") or "")
+        if not installation_id:
+            await self._async_queue_client_error(payload); raise RuntimeError("identity_unavailable")
+        session = async_get_clientsession(self.hass); timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+        try:
+            from homeassistant.const import __version__ as ha_version
+        except (ImportError, AttributeError):
+            ha_version = None
+        payload["home_assistant_version"] = ha_version
+        try:
+            token = await self._async_ensure_enrolled(session, installation_id, timeout)
+            headers={"Authorization":f"Bearer {token}","Content-Type":"application/json","Accept":"application/json","User-Agent":f"FreshAirIQ/{VERSION}"}
+            async with session.post(f"{self.endpoint}/v1/client-errors",json=payload,headers=headers,timeout=timeout) as response:
+                if not 200 <= response.status < 300: raise RuntimeError(f"client_error_http_{response.status}")
+                result=await response.json()
+            # A successful path may opportunistically flush queued errors; failure to
+            # flush never changes the successful current report.
+            queued=list(self._state.get("client_error_queue") or [])
+            self._state["client_error_queue"]=[]; await self._save_state()
+            for old in queued[:50]:
+                try:
+                    async with session.post(f"{self.endpoint}/v1/client-errors",json=old,headers=headers,timeout=timeout) as retry:
+                        if not 200 <= retry.status < 300: raise RuntimeError("retry_failed")
+                except Exception:
+                    await self._async_queue_client_error(old)
+            return result
+        except Exception:
+            await self._async_queue_client_error(payload)
+            raise
+
+    async def _async_queue_client_error(self, payload: Mapping[str, Any]) -> None:
+        queue=[item for item in list(self._state.get("client_error_queue") or []) if isinstance(item, dict)]
+        fingerprint=str(payload.get("fingerprint") or "")
+        if fingerprint and any(str(item.get("fingerprint") or "") == fingerprint for item in queue):
+            return
+        queue.append(dict(payload)); self._state["client_error_queue"]=queue[-50:]; await self._save_state()
+
     async def async_submit_support_diagnostics(self, message: str = "") -> dict[str, Any]:
         """Send an explicit, user-requested detailed support diagnostic bundle.
 

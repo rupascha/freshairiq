@@ -43,6 +43,7 @@ from .decision_trace import build_decision_trace, build_recommendation_quality
 from .diagnostics import FreshAirIQDiagnosticsRecorder
 from .telemetry import FreshAirIQDiagnosticsClient
 from .runtime_health import RuntimeHealthMonitor
+from .guardian import evaluate_guardian
 from .ventilation_result import append_completed_sessions, finalise_ventilation_group, include_ventilation_group_start, new_ventilation_group, update_session_cross_tracking
 from .forecast_validation import (
     append_validation_record,
@@ -3462,6 +3463,20 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "grace_seconds": self._sensor_recovery_grace_seconds,
             },
         }
+        guardian = evaluate_guardian(data)
+        # Guardian is observation-first. Only explicitly allow-listed, reversible
+        # runtime repairs may mutate coordinator state. Never touch user config,
+        # entity assignments or learned preferences here.
+        for finding in guardian.get("findings", []):
+            if isinstance(finding, dict):
+                self.runtime_health.record_guardian_finding(finding, now)
+        if any(item.get("repair") == "clear_completed_sensor_recovery" for item in guardian.get("safe_repairs", []) if isinstance(item, dict)):
+            self._sensor_recovery_started_at = None
+            self._sensor_recovery_valid_cycles = 0
+            guardian["auto_healed"] = ["clear_completed_sensor_recovery"]
+        else:
+            guardian["auto_healed"] = []
+        data["guardian"] = guardian
         changed = changed or await process_notifications(self.hass, self.store, data, options, now, completed_sessions)
         if changed: await self.store.async_save()
         data["runtime_health"] = self.runtime_health.snapshot

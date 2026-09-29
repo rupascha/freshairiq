@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.41";
+const FAIQ_VERSION = "0.25.1.43";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -556,6 +556,18 @@ class FreshAirIQCard extends HTMLElement {
             return { id: this._fieldTestSessionClientId, persistence: "session" };
         }
     }
+    _formatApiError(err, fallback = "Unbekannter Fehler") {
+        const candidates = [err?.body, err?.message, err?.error, err];
+        for (const value of candidates) {
+            if (typeof value === "string" && value.trim() && value.trim() !== "[object Object]") return value.trim();
+            if (value && typeof value === "object") {
+                const code = value.error_code || value.code; const msg = value.error || value.message || value.detail;
+                if (typeof msg === "string" && msg.trim()) return `${msg.trim()}${code ? ` (${code})` : ""}`;
+            }
+        }
+        return fallback;
+    }
+
     _fieldTestClientContext() {
         const nav = window.navigator || {};
         const ua = String(nav.userAgent || "");
@@ -2433,7 +2445,7 @@ class FreshAirIQCard extends HTMLElement {
             e.stopPropagation(); const entryId=this._settingsEntryId(); const type=this.shadowRoot.getElementById("feedback-type")?.value||"bug"; const message=(this.shadowRoot.getElementById("feedback-message")?.value||"").trim(); const result=this.shadowRoot.getElementById("feedback-result");
             if (!entryId || message.length < 3) { if(result) result.textContent="Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben."; return; }
             feedbackSend.disabled=true; if(result) result.textContent="Wird sicher an den Diagnose-Hub übertragen …";
-            try { const response=await this._hass.callApi("POST", `freshairiq/feedback/${entryId}`, {type,message,client_context:this._fieldTestClientContext()}); if(response?.error) throw new Error(response.error); if(result) result.textContent=`Gesendet · Feedback-ID ${response.feedback_id||"erstellt"}`; const box=this.shadowRoot.getElementById("feedback-message"); if(box) box.value=""; } catch(err) { if(result) result.textContent=`Senden fehlgeschlagen: ${err?.message||err}`; } finally { feedbackSend.disabled=false; }
+            try { const response=await this._hass.callApi("POST", `freshairiq/feedback/${entryId}`, {type,message,client_context:this._fieldTestClientContext()}); if(response?.error) throw new Error(response.error); if(result) result.textContent=`Gesendet · Feedback-ID ${response.feedback_id||"erstellt"}`; const box=this.shadowRoot.getElementById("feedback-message"); if(box) box.value=""; } catch(err) { if(result) result.textContent=`Senden fehlgeschlagen: ${this._formatApiError(err, "Bitte Verbindung zum Diagnose-Hub prüfen.")}`; } finally { feedbackSend.disabled=false; }
         });
         const settingsRetry = this.shadowRoot.getElementById("settings-retry");
         if (settingsRetry) settingsRetry.addEventListener("click", async (e) => { e.stopPropagation(); await this._loadSettings(true); });

@@ -904,6 +904,7 @@ class FreshAirIQDiagnosticsRecorder:
             "sensor_quality": sensor_quality,
             "support_incident": _json_safe(support_incident),
             "runtime_health": _json_safe(data.get("runtime_health") or {}),
+            "guardian": _json_safe(data.get("guardian") or {}),
             "recommendation_tracking": {
                 "active_advice": _json_safe(store_data.get("iq_active_advice")),
                 "followed_session_count": sum(1 for item in completed_sessions if item.get("recommendation_followed")),
@@ -973,6 +974,7 @@ class FreshAirIQDiagnosticsRecorder:
             },
             "sensor_quality": self._sensor_quality_summary(data),
             "runtime_health": _json_safe(data.get("runtime_health") or {}),
+            "guardian": _json_safe(data.get("guardian") or {}),
         }
 
     @staticmethod

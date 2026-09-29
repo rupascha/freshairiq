@@ -1,3 +1,16 @@
+## 0.25.1.43
+- Guardian runtime invariants for sensor, recommendation, forecast, session and recovery consistency.
+- Privacy-safe Guardian incidents are included in diagnostics and correlated by the Diagnostics Hub.
+- Adds the first allow-listed reversible auto-heal for completed sensor-recovery state.
+
+# FreshAirIQ v0.25.1.42 — Error Telemetry & Feedback Observability Hotfix
+
+## 0.25.1.42
+- Replaced opaque `[object Object]` feedback failures with structured, user-readable error handling and a stable support error code.
+- Added privacy-safe automatic reporting for feedback transport failures without recursive Hub-reporting loops.
+- Added the client-error transport contract used by Diagnostics Hub v0.3.3.30.
+- Preserved all v0.25.1.41 ventilation, learning and presentation behavior.
+
 # FreshAirIQ v0.25.1.41 — Passive-Open Presentation Consistency Hotfix
 
 ## 0.25.1.41

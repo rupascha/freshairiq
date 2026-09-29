@@ -109,6 +109,21 @@ class RuntimeHealthMonitor:
         }, now)
         return size
 
+    def record_guardian_finding(self, finding: Mapping[str, Any], now: datetime | str | None = None) -> None:
+        """Aggregate one privacy-safe Guardian invariant violation."""
+        code = str(finding.get("code") or "FAIQ-GUARDIAN-UNKNOWN")[:80]
+        classification = {
+            "support_code": code,
+            "category": "guardian_invariant",
+            "component": str(finding.get("component") or "guardian")[:64],
+            "invariant": str(finding.get("invariant") or "unknown")[:96],
+            "severity": str(finding.get("severity") or "medium")[:16],
+        }
+        evidence = finding.get("evidence") if isinstance(finding.get("evidence"), Mapping) else {}
+        safe_evidence = {str(k)[:64]: v for k, v in evidence.items() if isinstance(v, (bool, int, float, type(None)))}
+        safe_evidence["auto_healable"] = bool(finding.get("auto_healable"))
+        self._record(classification, safe_evidence, now)
+
     def record_exception(self, component: str, operation: str, error: BaseException, now: datetime | str | None = None) -> None:
         """Aggregate an unknown FreshAirIQ exception without its message/trace."""
         classification = {
