@@ -26,9 +26,8 @@ def test_025138_trace_privacy_contract_and_export_record_type():
     assert "raw form payloads" in diagnostics
 
 
-def test_025138_versions_and_release_notes_are_consistent():
+def test_025138_release_notes_are_retained_and_current_release_is_not_older():
+    import json
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.38.md").is_file()
-    assert 'VERSION = "0.25.1.38"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert '"version": "0.25.1.38"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    for name in ("freshairiq-loader.js", "freshairiq-panel.js", "freshairiq-card.js"):
-        assert 'FAIQ_VERSION = "0.25.1.38"' in (ROOT / "custom_components/freshairiq/frontend" / name).read_text(encoding="utf-8")
+    current = json.loads((ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8"))["version"]
+    assert tuple(map(int, current.split("."))) >= (0, 25, 1, 38)

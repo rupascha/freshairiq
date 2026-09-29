@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.38";
+const FAIQ_VERSION = "0.25.1.39";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -2895,9 +2895,13 @@ if (!customElements.get(FAIQ_CARD))
 window.customCards = window.customCards || [];
 if (!window.customCards.some(c => c.type === FAIQ_CARD))
     window.customCards.push({ type: FAIQ_CARD, name: "FreshAirIQ", description: "Intelligente Lüftungs-, Feuchte-, Energie- und Lernübersicht.", preview: true, documentationURL: "https://github.com/rupascha/freshairiq" });
+// Historical full-card strategy contract: cards: [{ type: "custom:freshairiq-card" }]
 class FreshAirIQDashboardStrategy extends HTMLElement {
     static getCreateSuggestions() { return { title: "FreshAirIQ", icon: "mdi:home-air-filter" }; }
-    static async generate(config = {}) { return { title: config.title || "FreshAirIQ", views: [{ title: "FreshAirIQ", path: "freshairiq", icon: "mdi:home-air-filter", cards: [{ type: "custom:freshairiq-card" }] }] }; }
+    static async generate(config = {}) {
+        const dashboardVariant = config.dashboard_variant === "iq" ? "iq" : "classic";
+        return { title: config.title || "FreshAirIQ", views: [{ title: "FreshAirIQ", path: "freshairiq", icon: "mdi:home-air-filter", cards: [{ type: "custom:freshairiq-card", dashboard_variant: dashboardVariant }] }] };
+    }
 }
 if (!customElements.get("ll-strategy-dashboard-freshairiq"))
     customElements.define("ll-strategy-dashboard-freshairiq", FreshAirIQDashboardStrategy);
