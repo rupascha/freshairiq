@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.1.40";
+const FAIQ_VERSION = "0.25.1.41";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -1260,19 +1260,22 @@ class FreshAirIQCard extends HTMLElement {
     _compactAIPanel(st, rooms = []) {
         const calc = rooms.filter(r => r.calculation_enabled !== false);
         const active = calc.filter(r => r.active && !r.session_finalization_pending);
-        const close = calc.filter(r => r.action === "Close");
-        const vent = calc.filter(r => ["Ventilate", "Ventilate for cooling"].includes(r.action));
-        const bad = calc.filter(r => r.data_quality !== "ok");
-        const priority = close.length ? close : (active.length ? active : (vent.length ? vent : bad));
         const hero = this._hero(st, rooms, Number(st.live_balance_ml || 0), Number(st.potential_total_ml || 0));
-        const duration = active.length ? Number(st.remaining_duration_min || 0) : Number(st.recommended_duration_min || 0);
-        const amount = active.length ? Math.abs(Number(st.live_balance_ml || 0)) : Math.max(0, Number(st.potential_total_ml || 0));
         const heroTitle = String(hero.title || "").toLowerCase();
         const status = String(st.status || "").toLowerCase();
+        const passiveOpenMonitor = status === "passive_open_monitor" || heroTitle.includes("daueröffnung");
+        const monitoredRoomKeys = new Set((st.intelligent_recommendation?.room_keys || []).map(String));
+        const isCanonicalMonitorRoom = r => passiveOpenMonitor && r.active && monitoredRoomKeys.has(String(r.key));
+        const close = calc.filter(r => r.action === "Close" && !isCanonicalMonitorRoom(r));
+        const vent = calc.filter(r => ["Ventilate", "Ventilate for cooling"].includes(r.action));
+        const bad = calc.filter(r => r.data_quality !== "ok");
+        const priority = passiveOpenMonitor && active.length ? active : (close.length ? close : (active.length ? active : (vent.length ? vent : bad)));
+
+        const duration = active.length ? Number(st.remaining_duration_min || 0) : Number(st.recommended_duration_min || 0);
+        const amount = active.length ? Math.abs(Number(st.live_balance_ml || 0)) : Math.max(0, Number(st.potential_total_ml || 0));
         const freshyTimeKind = this._freshyTimeKind(st);
         const isNight = freshyTimeKind === "night";
         const isPreNight = freshyTimeKind === "pre-night";
-        const passiveOpenMonitor = status === "passive_open_monitor" || heroTitle.includes("daueröffnung");
         // Semantic Freshy state: a primary night recommendation must stay visually "night" even
         // when its selected rooms also carry the normal Ventilate action. Active ventilation
         // still wins so an already running session keeps the live sailing animation.
@@ -1300,8 +1303,9 @@ class FreshAirIQCard extends HTMLElement {
         const factTime = Number.isFinite(duration) && Math.abs(duration) >= .5 ? `<span><ha-icon icon="mdi:clock-outline"></ha-icon>${active.length && duration >= 0 ? this._t("iq.remaining", { count: Math.ceil(duration) }) : `${Math.max(1, Math.round(Math.abs(duration)))} min`}</span>` : "";
         const factMoisture = amount >= 1 ? `<span><ha-icon icon="mdi:water-outline"></ha-icon>≈ ${Math.round(amount)} ml</span>` : "";
         const roomCards = priority.slice(0, 2).map(r => {
-            const [accent,,icon] = styleFor(r.action);
-            const label = r.active ? this._t("iq.active") : (this._uiLanguage() === "de" ? actionDE(r.action) : faiqEnglishText(actionDE(r.action)));
+            const canonicalMonitor = isCanonicalMonitorRoom(r);
+            const [accent,,icon] = canonicalMonitor ? ["#63d2f7", "", "mdi:window-open"] : styleFor(r.action);
+            const label = canonicalMonitor ? (this._uiLanguage() === "de" ? "Daueröffnung überwachen" : "Monitor long-term opening") : (r.active ? this._t("iq.active") : (this._uiLanguage() === "de" ? actionDE(r.action) : faiqEnglishText(actionDE(r.action))));
             const mins = Number(r.recommended_duration_min || r.remaining_duration_min || 0);
             const expanded = this._compactExpanded === `room:${r.key}`;
             const rawReasons = (r.recommendation_reasons || []).filter(Boolean);
@@ -1538,7 +1542,7 @@ class FreshAirIQCard extends HTMLElement {
         <div class="decision-icon"><ha-icon icon="${icon}"></ha-icon></div>
         <div><h2>${esc(headline)}</h2><div class="decision-action">${esc(action)}</div></div>
       </div>
-      ${selectedRoomObjs.length ? `<div class="decision-room-disclosures">${selectedRoomObjs.map(r => { const reasons = (r.recommendation_reasons || []).filter(Boolean); const roomReasons = reasons.length ? reasons : [reasonDE(r.reason)].filter(Boolean); return `<details class="decision-room-disclosure" style="--room-detail:${styleFor(r.action)[0]}"><summary data-classic-disclosure="room:${esc(r.key)}"><span>${esc(r.name || r.key)}</span><strong>${esc(actionDE(r.action))}</strong><ha-icon icon="mdi:chevron-down"></ha-icon></summary><div class="decision-room-detail"><div class="decision-section-title">WARUM DIESER RAUM?</div>${roomReasons.map(x => `<div class="decision-room-reason"><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}<div class="decision-room-values"><span>${fmt(r.humidity,0)} % RH</span><span>${fmt(r.absolute_humidity,1)} g/m³</span>${r.potential_ml != null ? `<span>${Math.round(Number(r.potential_ml || 0))} ml Potenzial</span>` : ""}</div><button class="decision-room-open" type="button" data-room="${esc(r.key)}">Raumdetails öffnen ›</button></div></details>`; }).join("")}</div>` : (selected.length ? `<div class="decision-rooms">${selected.map(x => `<span>${esc(x)}</span>`).join("")}</div>` : "")}
+      ${selectedRoomObjs.length ? `<div class="decision-room-disclosures">${selectedRoomObjs.map(r => { const reasons = (r.recommendation_reasons || []).filter(Boolean); const roomReasons = reasons.length ? reasons : [reasonDE(r.reason)].filter(Boolean); const canonicalMonitor = passiveOpenMonitor && r.active; const displayAction = canonicalMonitor ? "Daueröffnung überwachen" : actionDE(r.action); const displayStyle = canonicalMonitor ? ["#63d2f7"] : styleFor(r.action); return `<details class="decision-room-disclosure" style="--room-detail:${displayStyle[0]}"><summary data-classic-disclosure="room:${esc(r.key)}"><span>${esc(r.name || r.key)}</span><strong>${esc(displayAction)}</strong><ha-icon icon="mdi:chevron-down"></ha-icon></summary><div class="decision-room-detail"><div class="decision-section-title">WARUM DIESER RAUM?</div>${roomReasons.map(x => `<div class="decision-room-reason"><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}<div class="decision-room-values"><span>${fmt(r.humidity,0)} % RH</span><span>${fmt(r.absolute_humidity,1)} g/m³</span>${r.potential_ml != null ? `<span>${Math.round(Number(r.potential_ml || 0))} ml Potenzial</span>` : ""}</div><button class="decision-room-open" type="button" data-room="${esc(r.key)}">Raumdetails öffnen ›</button></div></details>`; }).join("")}</div>` : (selected.length ? `<div class="decision-rooms">${selected.map(x => `<span>${esc(x)}</span>`).join("")}</div>` : "")}
       ${contextCards.length ? `<div class="decision-impacts context-impacts">${contextCards.join("")}</div>` : ""}
       ${compareHtml}
       ${(summary || why.length || brain.alternative || this._config.show_iq_process !== false) ? `<details class="decision-more"><summary data-classic-disclosure="decision"><span>Mehr zur Entscheidung</span><span class="decision-more-hint">Begründung & IQ-Analyse</span><ha-icon icon="mdi:chevron-down"></ha-icon></summary><div class="decision-more-content">${summary ? `<p class="decision-summary">${esc(summary)}</p>` : ""}${why.length ? `<div class="decision-why"><div class="decision-section-title">WARUM DIESE ENTSCHEIDUNG?</div>${why.map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}</div>` : ""}${brain.alternative ? `<div class="decision-alternative"><b>Alternative:</b> ${esc(brain.alternative)}</div>` : ""}${this._config.show_iq_process === false ? "" : `<div class="iq-process"><div class="iq-process-head"><span class="iq-pulse"></span><b>IQ AKTIV</b><span>${active.length && showForecast ? `Prognose ${forecastH} min · ` : ""}${Math.round(forecastConfidence || Number(impact.confidence || 0))} % Sicherheit</span></div><div class="iq-process-text">${esc(processText)}</div></div>`}</div></details>` : ""}

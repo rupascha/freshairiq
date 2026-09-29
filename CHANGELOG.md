@@ -1,3 +1,10 @@
+# FreshAirIQ v0.25.1.41 — Passive-Open Presentation Consistency Hotfix
+
+## 0.25.1.41
+- Fixed contradictory UI output where the canonical long-term-opening recommendation said an opening could remain open while a selected room row still displayed “Close”.
+- Canonical `passive_open_monitor` now controls the user-facing action consistently in Classic and compact FreshAirIQ views; raw room-level close state remains available internally for physics and diagnostics.
+- No ventilation physics, forecast or learning calculations changed.
+
 # FreshAirIQ v0.25.1.40 — Contactless Indoor Model Parity Hardening
 
 ## 0.25.1.40
