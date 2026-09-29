@@ -1034,16 +1034,28 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                     # commit has completed: async_setup_entry() mirrors parent rooms
                     # back into subentries, so parent-first persistence can race or
                     # leave a ghost room when the HA flow itself fails.
+                    # Home Assistant commits CREATE_ENTRY in
+                    # ConfigSubentryFlowManager.async_finish_flow(), after this flow
+                    # step has returned.  A single sleep(0) is not a commit barrier:
+                    # on a busy installation our task may resume before HA has added
+                    # the subentry.  Wait for the observable HA commit for a short,
+                    # bounded period instead of treating the first scheduler turn as
+                    # definitive.
+                    committed = None
                     await asyncio.sleep(0)
-                    committed = next(
-                        (
-                            subentry
-                            for subentry in entry.subentries.values()
-                            if subentry.subentry_type == "room"
-                            and subentry.unique_id == unique_id
-                        ),
-                        None,
-                    )
+                    for _attempt in range(20):
+                        await asyncio.sleep(0.05)
+                        committed = next(
+                            (
+                                subentry
+                                for subentry in entry.subentries.values()
+                                if subentry.subentry_type == "room"
+                                and subentry.unique_id == unique_id
+                            ),
+                            None,
+                        )
+                        if committed is not None:
+                            break
                     if committed is None:
                         # No successful HA subentry commit means no canonical room
                         # mutation and no reload. This keeps a failed flow atomic.

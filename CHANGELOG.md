@@ -1,3 +1,11 @@
+# FreshAirIQ v0.25.1.37 — Delayed Room Commit Hotfix
+
+## 0.25.1.37
+- Fixed native Home Assistant room creation when the subentry commit becomes visible later than the first event-loop turn.
+- FreshAirIQ now waits for the actual committed room subentry for a short bounded period before synchronizing canonical parent room data and reloading.
+- Failed subentry flows remain atomic and do not create ghost parent rooms.
+- No ventilation, forecast, learning, dashboard or recommendation logic changed.
+
 # FreshAirIQ v0.25.1.36 — Atomic Room Creation Hotfix
 
 ## 0.25.1.36

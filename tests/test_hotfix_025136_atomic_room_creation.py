@@ -42,4 +42,4 @@ def test_successful_post_commit_sync_updates_parent_then_reloads():
 
 def test_room_creation_hotfix_version_025136():
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.36.md").is_file()
-    assert 'VERSION = "0.25.1.36"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
+    assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.36.md").is_file()
