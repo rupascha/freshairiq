@@ -1,3 +1,9 @@
+## 0.25.2.1 - Support Diagnostics Deferred Error Telemetry Hotfix
+
+- Persists privacy-safe support-diagnostic upload failures locally when the Hub cannot be reached.
+- Replays retained upload failures automatically after the next successful Hub contact.
+- Keeps the existing support cooldown semantics: failed sends never consume the cooldown.
+
 ## 0.25.2 - Learning Engine V2
 - Adds calibrated model maturity, uncertainty and objective forecast accuracy tracking.
 - Adds automatic physics fallback when paired field evidence proves learned-model regression.

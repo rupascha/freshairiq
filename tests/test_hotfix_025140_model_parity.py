@@ -86,7 +86,7 @@ def test_release_version_025140_everywhere():
     package = json.loads((ROOT / "package.json").read_text())
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text())
     baseline = json.loads((ROOT / "quality/performance_baseline.json").read_text())
-    assert manifest["version"] == package["version"] == policy["version"] == baseline["version"] == "0.25.2"
+    assert manifest["version"] == package["version"] == policy["version"] == baseline["version"] == "0.25.2.1"
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.40.md").is_file()
     for frontend in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.2";' in (ROOT / "custom_components/freshairiq/frontend" / frontend).read_text(encoding="utf-8")
+        assert 'const FAIQ_VERSION = "0.25.2.1";' in (ROOT / "custom_components/freshairiq/frontend" / frontend).read_text(encoding="utf-8")

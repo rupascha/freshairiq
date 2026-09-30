@@ -405,12 +405,29 @@ class FreshAirIQDiagnosticsClient:
                 raise RuntimeError(f"feedback_http_{response.status}")
             return await response.json()
 
-    async def async_report_client_error(self, *, code: str, component: str, operation: str, message: str) -> dict[str, Any]:
-        """Report a privacy-safe error and persist a bounded retry queue on transport failure."""
+    def _client_error_payload(self, *, code: str, component: str, operation: str, message: str) -> dict[str, Any]:
+        """Build the bounded privacy-safe payload used by live and deferred error reports."""
         import hashlib
         normalized = f"{code}|{component}|{operation}|{str(message)[:500]}"
         fingerprint = hashlib.sha256(normalized.encode("utf-8", "replace")).hexdigest()
-        payload={"code":str(code)[:80],"component":str(component)[:80],"operation":str(operation)[:120],"message":str(message)[:2000],"fingerprint":fingerprint,"freshairiq_version":VERSION}
+        return {"code":str(code)[:80],"component":str(component)[:80],"operation":str(operation)[:120],"message":str(message)[:2000],"fingerprint":fingerprint,"freshairiq_version":VERSION}
+
+    async def _async_flush_client_error_queue(self, session, headers: Mapping[str, str], timeout: ClientTimeout) -> None:
+        """Best-effort delivery of locally retained errors after Hub connectivity recovers."""
+        queued=[item for item in list(self._state.get("client_error_queue") or []) if isinstance(item, dict)]
+        if not queued:
+            return
+        self._state["client_error_queue"]=[]; await self._save_state()
+        for old in queued[:50]:
+            try:
+                async with session.post(f"{self.endpoint}/v1/client-errors",json=old,headers=headers,timeout=timeout) as retry:
+                    if not 200 <= retry.status < 300: raise RuntimeError("retry_failed")
+            except Exception:
+                await self._async_queue_client_error(old)
+
+    async def async_report_client_error(self, *, code: str, component: str, operation: str, message: str) -> dict[str, Any]:
+        """Report a privacy-safe error and persist a bounded retry queue on transport failure."""
+        payload=self._client_error_payload(code=code, component=component, operation=operation, message=message)
         if not self.endpoint:
             await self._async_queue_client_error(payload); raise RuntimeError("hub_unconfigured")
         identity = await self.recorder.async_get_identity(); installation_id = str(identity.get("installation_id") or "")
@@ -430,14 +447,7 @@ class FreshAirIQDiagnosticsClient:
                 result=await response.json()
             # A successful path may opportunistically flush queued errors; failure to
             # flush never changes the successful current report.
-            queued=list(self._state.get("client_error_queue") or [])
-            self._state["client_error_queue"]=[]; await self._save_state()
-            for old in queued[:50]:
-                try:
-                    async with session.post(f"{self.endpoint}/v1/client-errors",json=old,headers=headers,timeout=timeout) as retry:
-                        if not 200 <= retry.status < 300: raise RuntimeError("retry_failed")
-                except Exception:
-                    await self._async_queue_client_error(old)
+            await self._async_flush_client_error_queue(session, headers, timeout)
             return result
         except Exception:
             await self._async_queue_client_error(payload)
@@ -461,6 +471,8 @@ class FreshAirIQDiagnosticsClient:
         if len(text) > SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS:
             raise ValueError("support_message_too_long")
         if not self.endpoint:
+            payload=self._client_error_payload(code="FAIQ-SUPPORT-UPLOAD-001", component="support_diagnostics", operation="submit_support_diagnostics", message="RuntimeError: hub_unconfigured")
+            await self._async_queue_client_error(payload)
             raise RuntimeError("hub_unconfigured")
         now = dt_util.now()
         cooldown_until = self._parse_dt(self._state.get("support_cooldown_until"))
@@ -474,15 +486,21 @@ class FreshAirIQDiagnosticsClient:
                 return {"accepted": False, "reason": "cooldown", "retry_after_seconds": remaining,
                         "cooldown_until": cooldown_until.isoformat()}
 
-        identity = await self.recorder.async_get_identity()
-        installation_id = str(identity.get("installation_id") or "")
-        if not installation_id:
-            raise RuntimeError("identity_unavailable")
-        session = async_get_clientsession(self.hass)
-        timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
-        token = await self._async_ensure_enrolled(session, installation_id, timeout)
-        exported = await self.recorder.async_export()
-        case_id = f"support-{secrets.token_hex(12)}"
+        try:
+            identity = await self.recorder.async_get_identity()
+            installation_id = str(identity.get("installation_id") or "")
+            if not installation_id:
+                raise RuntimeError("identity_unavailable")
+            session = async_get_clientsession(self.hass)
+            timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+            token = await self._async_ensure_enrolled(session, installation_id, timeout)
+            exported = await self.recorder.async_export()
+            case_id = f"support-{secrets.token_hex(12)}"
+        except Exception as err:
+            detail = str(err) if isinstance(err, RuntimeError) and str(err) in {"identity_unavailable", "hub_unconfigured"} else type(err).__name__
+            payload=self._client_error_payload(code="FAIQ-SUPPORT-UPLOAD-001", component="support_diagnostics", operation="submit_support_diagnostics", message=f"{type(err).__name__}: {detail}")
+            await self._async_queue_client_error(payload)
+            raise
         envelope = {
             "support_schema_version": 2,
             "health_contract_version": HEALTH_CONTRACT_VERSION,
@@ -495,7 +513,6 @@ class FreshAirIQDiagnosticsClient:
             "health_snapshot": dict(self._health_snapshot(now)),
             "diagnostics": exported,
         }
-        compressed = await self._async_cpu_job(_encode_chunk_for_upload, envelope)
         headers = {
             "Authorization": f"Bearer {token}", "Content-Type": "application/json",
             "Content-Encoding": "gzip", "Accept": "application/json",
@@ -503,21 +520,29 @@ class FreshAirIQDiagnosticsClient:
             "X-FreshAirIQ-Health-Contract": str(HEALTH_CONTRACT_VERSION),
             "X-FreshAirIQ-Support-Case-ID": case_id, "Idempotency-Key": case_id,
         }
-        async with session.post(f"{self.endpoint}/v1/support/diagnostics", data=compressed,
-                                headers=headers, timeout=timeout) as response:
-            status = int(response.status)
-            if status == 401:
-                self._state["hub_enrolled"] = False
-                await self._save_state()
-                token = await self._async_ensure_enrolled(session, installation_id, timeout, force=True)
-                headers["Authorization"] = f"Bearer {token}"
-                async with session.post(f"{self.endpoint}/v1/support/diagnostics", data=compressed,
-                                        headers=headers, timeout=timeout) as retry:
-                    status = int(retry.status)
-                    if status < 200 or status >= 300:
-                        raise RuntimeError(f"support_diagnostics_http_{status}")
-            elif status < 200 or status >= 300:
-                raise RuntimeError(f"support_diagnostics_http_{status}")
+        try:
+            compressed = await self._async_cpu_job(_encode_chunk_for_upload, envelope)
+            async with session.post(f"{self.endpoint}/v1/support/diagnostics", data=compressed,
+                                    headers=headers, timeout=timeout) as response:
+                status = int(response.status)
+                if status == 401:
+                    self._state["hub_enrolled"] = False
+                    await self._save_state()
+                    token = await self._async_ensure_enrolled(session, installation_id, timeout, force=True)
+                    headers["Authorization"] = f"Bearer {token}"
+                    async with session.post(f"{self.endpoint}/v1/support/diagnostics", data=compressed,
+                                            headers=headers, timeout=timeout) as retry:
+                        status = int(retry.status)
+                        if status < 200 or status >= 300:
+                            raise RuntimeError(f"support_diagnostics_http_{status}")
+                elif status < 200 or status >= 300:
+                    raise RuntimeError(f"support_diagnostics_http_{status}")
+        except Exception as err:
+            detail = str(err) if isinstance(err, RuntimeError) and str(err).startswith("support_diagnostics_http_") else type(err).__name__
+            payload=self._client_error_payload(code="FAIQ-SUPPORT-UPLOAD-001", component="support_diagnostics", operation="submit_support_diagnostics", message=f"{type(err).__name__}: {detail}")
+            await self._async_queue_client_error(payload)
+            raise
+        await self._async_flush_client_error_queue(session, headers, timeout)
         cooldown = now + timedelta(seconds=SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS)
         self._state.update({"support_last_success_at": now.isoformat(),
                             "support_cooldown_until": cooldown.isoformat(),
@@ -646,6 +671,9 @@ class FreshAirIQDiagnosticsClient:
                     "last_payload_sha256": chunk.get("content_sha256"),
                 })
                 await self._save_state()
+
+            error_headers={"Authorization":f"Bearer {token}","Content-Type":"application/json","Accept":"application/json","User-Agent":f"FreshAirIQ/{VERSION}"}
+            await self._async_flush_client_error_queue(session, error_headers, timeout)
 
             self._state.update({
                 "last_success_at": now.isoformat(),

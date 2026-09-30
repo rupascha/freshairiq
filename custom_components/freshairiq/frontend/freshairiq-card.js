@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2";
+const FAIQ_VERSION = "0.25.2.1";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
