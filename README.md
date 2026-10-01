@@ -24,6 +24,9 @@ FreshAirIQ is a Home Assistant integration for intelligent, explainable ventilat
 
 The FreshAirIQ Community Dashboard card includes **two dashboard views**. In the dashboard configuration you can switch at any time between **Classic** and **FreshAirIQ IQ**. You can keep the familiar classic presentation or use the more visual FreshAirIQ interface – both views remain available.
 
+> [!NOTE]
+> **Experimental FreshAirIQ IQ / Freshy dashboard:** This dashboard is still in an experimental phase. Its graphics, animations, layout, and visual presentation may change from version to version while the design is being refined. The **Classic** dashboard remains available as the more established view.
+
 FreshAirIQ also has its own mascot: **Freshy**. Freshy keeps an eye on your home's climate and makes the current situation easier to understand at a glance. During ventilation Freshy rides the wind, shortly before night Freshy gets ready for bed with a sleeping cap, and at night Freshy sleeps. Other states react to the current situation in your home as well.
 
 <p align="center">

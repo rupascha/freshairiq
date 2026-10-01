@@ -14,7 +14,7 @@ from typing import Any, Mapping
 
 RECORDER_ATTRIBUTE_LIMIT_BYTES = 16_384
 ATTRIBUTE_WARNING_BYTES = 12_288
-RUNTIME_HEALTH_SCHEMA_VERSION = 2
+RUNTIME_HEALTH_SCHEMA_VERSION = 3
 HEALTH_CONTRACT_VERSION = 1
 _MAX_INCIDENTS = 32
 _MAX_METRICS = 24
@@ -64,10 +64,16 @@ class RuntimeHealthMonitor:
                 "first_seen_at": timestamp,
                 "last_seen_at": timestamp,
                 "evidence": {},
+                "status": "active",
+                "healthy_confirmations": 0,
+                "resolved_at": None,
             }
             self._incidents[fingerprint] = row
         row["occurrences"] = min(int(row.get("occurrences") or 0) + 1, 2_147_483_647)
         row["last_seen_at"] = timestamp
+        row["status"] = "active"
+        row["healthy_confirmations"] = 0
+        row["resolved_at"] = None
         merged = dict(row.get("evidence") or {})
         merged.update(dict(evidence))
         row["evidence"] = merged
@@ -123,6 +129,43 @@ class RuntimeHealthMonitor:
         safe_evidence = {str(k)[:64]: v for k, v in evidence.items() if isinstance(v, (bool, int, float, type(None)))}
         safe_evidence["auto_healable"] = bool(finding.get("auto_healable"))
         self._record(classification, safe_evidence, now)
+
+    def reconcile_guardian_findings(
+        self, findings: list[Mapping[str, Any]] | None, now: datetime | str | None = None, *, required_healthy_confirmations: int = 2,
+    ) -> None:
+        """Record current Guardian findings and resolve absent ones after confirmed health.
+
+        Historical incidents are retained. Only Guardian incidents participate in
+        this point-in-time reconciliation; unrelated runtime incidents keep their
+        existing lifecycle. A recurrence reactivates the same fingerprint.
+        """
+        rows = [item for item in (findings or []) if isinstance(item, Mapping)]
+        active_fingerprints: set[str] = set()
+        for finding in rows:
+            code = str(finding.get("code") or "FAIQ-GUARDIAN-UNKNOWN")[:80]
+            classification = {
+                "support_code": code,
+                "category": "guardian_invariant",
+                "component": str(finding.get("component") or "guardian")[:64],
+                "invariant": str(finding.get("invariant") or "unknown")[:96],
+                "severity": str(finding.get("severity") or "medium")[:16],
+            }
+            active_fingerprints.add(_fingerprint(classification))
+            self.record_guardian_finding(finding, now)
+
+        required = max(int(required_healthy_confirmations), 1)
+        timestamp = _stamp(now)
+        for fingerprint, row in self._incidents.items():
+            classification = row.get("classification") if isinstance(row.get("classification"), Mapping) else {}
+            if classification.get("category") != "guardian_invariant" or fingerprint in active_fingerprints:
+                continue
+            if str(row.get("status") or "active") == "resolved":
+                continue
+            confirmations = min(int(row.get("healthy_confirmations") or 0) + 1, required)
+            row["healthy_confirmations"] = confirmations
+            if confirmations >= required:
+                row["status"] = "resolved"
+                row["resolved_at"] = timestamp
 
     def record_exception(self, component: str, operation: str, error: BaseException, now: datetime | str | None = None) -> None:
         """Aggregate an unknown FreshAirIQ exception without its message/trace."""
@@ -231,11 +274,14 @@ class RuntimeHealthMonitor:
                 "anomalies": int(row.get("anomalies") or 0),
                 "last_seen_at": row.get("last_seen_at"),
             })
+        active_incidents = [row for row in incidents if str(row.get("status") or "active") != "resolved"]
         return {
             "schema_version": RUNTIME_HEALTH_SCHEMA_VERSION,
             "health_contract_version": HEALTH_CONTRACT_VERSION,
             "incident_count": len(incidents),
-            "active_problem": bool(incidents),
+            "active_incident_count": len(active_incidents),
+            "resolved_incident_count": len(incidents) - len(active_incidents),
+            "active_problem": bool(active_incidents),
             "incidents": incidents,
             "attribute_payloads": [dict(self._attribute_payloads[key]) for key in sorted(self._attribute_payloads)],
             "metric_baselines": metrics,

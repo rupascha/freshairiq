@@ -3478,9 +3478,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Guardian is observation-first. Only explicitly allow-listed, reversible
         # runtime repairs may mutate coordinator state. Never touch user config,
         # entity assignments or learned preferences here.
-        for finding in guardian.get("findings", []):
-            if isinstance(finding, dict):
-                self.runtime_health.record_guardian_finding(finding, now)
+        self.runtime_health.reconcile_guardian_findings(
+            guardian.get("findings") if isinstance(guardian.get("findings"), list) else [], now
+        )
         if any(item.get("repair") == "clear_completed_sensor_recovery" for item in guardian.get("safe_repairs", []) if isinstance(item, dict)):
             self._sensor_recovery_started_at = None
             self._sensor_recovery_valid_cycles = 0

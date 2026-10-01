@@ -1,3 +1,17 @@
+## 0.25.2.3 - Experimental FreshAirIQ IQ Dashboard Notice Hotfix
+
+- Adds a clear HACS/README notice that the FreshAirIQ IQ / Freshy dashboard is still experimental.
+- Clarifies that graphics, animations, layout and visual presentation may change between versions while the design is refined.
+- Keeps the Classic dashboard available as the more established view.
+- Documentation-only hotfix; no ventilation, recommendation, learning, sensor-recovery or dashboard runtime logic changed.
+
+## 0.25.2.2 - Guardian Incident Lifecycle Hotfix
+
+- Resolves historical Guardian incidents only after two consecutive healthy Guardian evaluations while preserving occurrence history.
+- Reopens the same incident immediately if its invariant fails again.
+- Prevents resolved Guardian history from keeping runtime health and error-upload fingerprints active.
+- Does not change ventilation physics, sensor-recovery decisions, recommendation decisions, learning, or user configuration.
+
 ## 0.25.2.1 - Support Diagnostics Deferred Error Telemetry Hotfix
 
 - Persists privacy-safe support-diagnostic upload failures locally when the Hub cannot be reached.

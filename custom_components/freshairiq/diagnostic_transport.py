@@ -192,7 +192,7 @@ def problem_fingerprint(health: Mapping[str, Any] | None) -> str | None:
     runtime_fingerprints = sorted(
         str(item.get("fingerprint"))[:80]
         for item in runtime_incidents
-        if isinstance(item, Mapping) and item.get("fingerprint")
+        if isinstance(item, Mapping) and item.get("fingerprint") and str(item.get("status") or "active") != "resolved"
     )[:32]
     if consecutive <= 0 and not issues and not error_type and not runtime_fingerprints:
         return None
