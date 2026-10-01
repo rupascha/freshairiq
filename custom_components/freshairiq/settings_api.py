@@ -25,6 +25,7 @@ from .validation import option_relationship_message_de
 from .const import (
     CONF_CONTACT_DELAYS,
     CONF_CONTACT_COVERS,
+    CONF_CONTACT_PASSAGE_DOORS,
     CONF_CONTACT_MODE,
     CONF_CONTACT_ORIENTATIONS,
     CONF_CONTACT_REFERENCE_TEMPERATURES,
@@ -287,6 +288,7 @@ def _normalise_dashboard_room(raw: dict[str, Any], rooms: list[dict[str, Any]], 
     requested_ref_temperatures = raw.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     requested_ref_humidities = raw.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
     requested_contact_covers = raw.get(CONF_CONTACT_COVERS) or {}
+    requested_passage_doors = raw.get(CONF_CONTACT_PASSAGE_DOORS) or {}
     room, errors = _normalise_room(raw, rooms, keep_key=keep_key)
     if errors or room is None:
         first = next(iter(errors.values()), "Raumdaten sind unvollständig")
@@ -326,6 +328,7 @@ def _normalise_dashboard_room(raw: dict[str, Any], rooms: list[dict[str, Any]], 
         ))
         for contact in contacts if requested_contact_covers.get(contact)
     }
+    room[CONF_CONTACT_PASSAGE_DOORS] = {contact: bool(requested_passage_doors.get(contact, False)) for contact in contacts}
     for contact in contacts:
         has_temp = contact in room[CONF_CONTACT_REFERENCE_TEMPERATURES]
         has_humidity = contact in room[CONF_CONTACT_REFERENCE_HUMIDITIES]

@@ -1,3 +1,14 @@
+## 0.25.2.4 - Three-State Opening & Battery Confidence Reliability Hotfix
+
+- Adds explicit closed/open/tilted contact intelligence while preserving classic binary-contact behaviour.
+- Debounces proven three-state transitions for three seconds and keeps stable state/timestamp paired across transient raw states.
+- Routes session lifecycle, cross ventilation, orientation and contact-specific reference-air decisions through the same stable three-state truth.
+- Separates full-open, tilted and cross-ventilation specialist learning with strict contact provenance and mixed-source protection.
+- Treats `unknown`/`unavailable` on proven battery-powered three-state contacts as missing evidence, not physical movement: the last confirmed physical state remains authoritative.
+- Uses 30 seconds as a confidence boundary; stale gaps quarantine specialist learning with `FAIQ-OPENING-3STATE-006` without inventing a close.
+- A session that starts while the contact is already stale inherits uncertainty and learning quarantine immediately from its first coordinator cycle.
+- Preserves legacy binary-contact behaviour and adds regression coverage for debounce, timestamps, stale confidence, session start and specialist-learning provenance.
+
 ## 0.25.2.3 - Experimental FreshAirIQ IQ Dashboard Notice Hotfix
 
 - Adds a clear HACS/README notice that the FreshAirIQ IQ / Freshy dashboard is still experimental.

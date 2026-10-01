@@ -20,6 +20,7 @@ from .notifications import process_notifications
 from .presence import resolve_occupancy
 from .recommendation import build_recommendation
 from .opening_strategy import enrich_opening_recommendation, synchronize_room_presentation_actions
+from .opening_state import normalize_opening_state, opening_contact_profile, aggregate_opening_mode, specialist_opening_provenance, stabilise_explicit_mode, update_passage_pattern, stable_state_seconds
 from .personal_context import build_resident_context, personalise_recommendation
 from .language_confidence import adapt_language_confidence
 from .live_coach import refine_live_recommendation
@@ -130,6 +131,7 @@ def _contact_specific_reference(
     hass: HomeAssistant, room: dict[str, Any], *,
     default_temp_entity: str | None, default_humidity_entity: str | None,
     default_temp: float | None, default_humidity: float | None,
+    contact_modes: dict[str, str] | None = None,
 ) -> tuple[str | None, str | None, float | None, float | None]:
     """Return the conservative reference-air pair for the currently open contacts.
 
@@ -142,7 +144,13 @@ def _contact_specific_reference(
     """
     temp_map = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidity_map = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
-    open_ids = [cid for cid in _contact_ids(room) if _open_seconds(hass, cid, dt_util.utcnow()) is not None]
+    open_ids = [
+        cid for cid in _contact_ids(room)
+        if ((contact_modes or {}).get(cid) in {"open", "tilted"})
+        if cid in (contact_modes or {})
+    ] if contact_modes is not None else [
+        cid for cid in _contact_ids(room) if _open_seconds(hass, cid, dt_util.utcnow()) is not None
+    ]
     if not open_ids:
         return default_temp_entity, default_humidity_entity, default_temp, default_humidity
     candidates = []
@@ -178,6 +186,7 @@ def _opening_assessments(
     default_temp: float | None, default_humidity: float | None,
     learning_rate: float, learning_samples: int, co2: float | None, pollen: float,
     options: dict[str, Any], wind_bearing: float | None, wind_speed: float | None,
+    contact_modes: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     """Evaluate every configured opening against its own incoming air.
 
@@ -224,7 +233,7 @@ def _opening_assessments(
         row: dict[str, Any] = {
             "entity_id": contact,
             "name": friendly,
-            "is_open": _open_seconds(hass, contact, dt_util.utcnow()) is not None,
+            "is_open": ((contact_modes or {}).get(contact) in {"open", "tilted"}) if contact_modes is not None else (_open_seconds(hass, contact, dt_util.utcnow()) is not None),
             "orientation": orientation,
             "airflow_factor": airflow,
             "source_kind": "local_reference" if pair_complete else "default_reference",
@@ -269,7 +278,7 @@ def _opening_assessments(
 
 def _open_seconds(hass: HomeAssistant, entity_id: str, now: datetime) -> float | None:
     state = hass.states.get(entity_id)
-    if state is None or state.state not in {"on", "open", "opening"}: return None
+    if state is None or normalize_opening_state(state.state) not in {"open", "tilted"}: return None
     return max(0.0, (now - state.last_changed).total_seconds())
 
 
@@ -280,24 +289,37 @@ def _room_contacts_known(hass: HomeAssistant, room: dict[str, Any]) -> bool:
         return True
     return all(
         (state := hass.states.get(entity_id)) is not None
-        and state.state not in {"unknown", "unavailable", "none", ""}
+        and normalize_opening_state(state.state) != "unknown"
         for entity_id in ids
     )
 
 
-def _room_physical_opened_at(hass: HomeAssistant, room: dict[str, Any]) -> datetime | None:
-    """Return the earliest current physical opening timestamp for a room."""
+def _room_physical_opened_at(
+    hass: HomeAssistant,
+    room: dict[str, Any],
+    *,
+    contact_modes: dict[str, str] | None = None,
+    contact_since: dict[str, datetime] | None = None,
+) -> datetime | None:
+    """Return the earliest *confirmed* physical opening timestamp for a room.
+
+    Proven three-state contacts must use the same debounced mode/timestamp pair
+    as the session lifecycle.  Binary contacts retain their HA raw timestamp.
+    """
     opened: list[datetime] = []
     for entity_id in _contact_ids(room):
         state = hass.states.get(entity_id)
-        if state is not None and state.state in {"on", "open", "opening"}:
-            changed = getattr(state, "last_changed", None)
-            if isinstance(changed, datetime):
-                opened.append(changed)
+        override = (contact_modes or {}).get(entity_id)
+        mode = override if override is not None else (normalize_opening_state(state.state) if state is not None else "unknown")
+        if mode not in {"open", "tilted"}:
+            continue
+        changed = (contact_since or {}).get(entity_id) if override is not None else getattr(state, "last_changed", None)
+        if isinstance(changed, datetime):
+            opened.append(changed)
     return min(opened) if opened else None
 
 
-def _room_closed_for_seconds(hass: HomeAssistant, room: dict[str, Any], now: datetime) -> float | None:
+def _room_closed_for_seconds(hass: HomeAssistant, room: dict[str, Any], now: datetime, *, contact_modes: dict[str, str] | None = None) -> float | None:
     """Return how long the room has continuously been in its logical closed state.
 
     The contact mode matters: with ``any`` ventilation ends only when *all*
@@ -309,17 +331,21 @@ def _room_closed_for_seconds(hass: HomeAssistant, room: dict[str, Any], now: dat
     ids = _contact_ids(room)
     if not ids:
         return None
-    open_states = {"on", "open", "opening"}
-    unknown_states = {"unknown", "unavailable", "none", ""}
     closed_seconds: list[float] = []
     open_count = 0
     for entity_id in ids:
         state = hass.states.get(entity_id)
-        if state is None or state.state in unknown_states:
+        if state is None:
             return None
-        if state.state in open_states:
+        normalized = normalize_opening_state(state.state)
+        normalized = (contact_modes or {}).get(entity_id, normalized)
+        if normalized == "unknown":
+            return None
+        if normalized in {"open", "tilted"}:
             open_count += 1
             continue
+        if normalized != "closed":
+            return None
         closed_seconds.append(max(0.0, (now - state.last_changed).total_seconds()))
 
     mode = room.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY)
@@ -332,14 +358,33 @@ def _room_closed_for_seconds(hass: HomeAssistant, room: dict[str, Any], now: dat
     return min(closed_seconds) if closed_seconds else 0.0
 
 
-def _room_ventilation_state(hass: HomeAssistant, room: dict[str, Any], now: datetime, *, honour_delays: bool = False) -> tuple[bool, float]:
+def _room_ventilation_state(hass: HomeAssistant, room: dict[str, Any], now: datetime, *, honour_delays: bool = False, contact_modes: dict[str, str] | None = None, contact_since: dict[str, datetime] | None = None) -> tuple[bool, float]:
     ids = _contact_ids(room)
     if not ids: return False, 0.0
     delays = room.get(CONF_CONTACT_DELAYS) or {}
     fallback = int(room.get(CONF_CONTACT_DELAY, 0))
     opened: list[tuple[str, float]] = []
     for entity_id in ids:
-        sec = _open_seconds(hass, entity_id, now)
+        # Explicit three-state contacts are allowed to drive the session only
+        # through their debounced/stable mode. Binary contacts have no override
+        # and therefore retain the historical immediate start behaviour.
+        mode_override = (contact_modes or {}).get(entity_id)
+        if mode_override is not None:
+            if mode_override not in {"open", "tilted"}:
+                continue
+            state = hass.states.get(entity_id)
+            if state is None:
+                continue
+            # A debounced mode and its age must come from the same stable
+            # transition. During raw open<->tilted movement, HA last_changed
+            # already belongs to the candidate state and must not reset the
+            # age of the still-active stable state.
+            stable_since = (contact_since or {}).get(entity_id)
+            if not isinstance(stable_since, datetime):
+                stable_since = state.last_changed
+            sec = stable_state_seconds(now, stable_since)
+        else:
+            sec = _open_seconds(hass, entity_id, now)
         if sec is not None:
             opened.append((entity_id, sec))
     mode = room.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY)
@@ -371,12 +416,16 @@ def _orientation_factor(orientation: str, wind_bearing: float | None, wind_speed
     return round(min(max(1.0 + 0.30 * alignment * speed_weight, 0.70), 1.30), 3)
 
 
-def _room_orientation_factor(hass: HomeAssistant, room: dict[str, Any], now: datetime, wind_bearing: float | None, wind_speed: float | None, enabled: bool) -> float:
+def _room_orientation_factor(hass: HomeAssistant, room: dict[str, Any], now: datetime, wind_bearing: float | None, wind_speed: float | None, enabled: bool, *, contact_modes: dict[str, str] | None = None) -> float:
     """Combine per-contact orientations; while ventilating, only open contacts count."""
     contacts = _contact_ids(room)
     mapping = room.get(CONF_CONTACT_ORIENTATIONS) or {}
     fallback = str(room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN))
-    open_contacts = [c for c in contacts if _open_seconds(hass, c, now) is not None]
+    open_contacts = [
+        c for c in contacts
+        if ((contact_modes or {}).get(c) in {"open", "tilted"})
+        if c in (contact_modes or {})
+    ] if contact_modes is not None else [c for c in contacts if _open_seconds(hass, c, now) is not None]
     relevant = open_contacts or contacts
     if not relevant:
         return _orientation_factor(fallback, wind_bearing, wind_speed, enabled)
@@ -807,17 +856,22 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if previous:
                 previous()
             new_state = (event.data or {}).get("new_state")
-            if (
-                new_state is not None
-                and new_state.state not in {"on", "open", "opening", "unknown", "unavailable", "none", ""}
-            ):
+            # Always schedule a second evaluation after the fixed three-state
+            # stability window. Binary contacts still react immediately because
+            # they never enter explicit-three-state stabilisation; this callback
+            # is only a harmless confirmation refresh for them. For an explicit
+            # three-state contact it is what confirms closed/open/tilted even if
+            # a sleeping battery device sends no further telegram. A newer state
+            # event cancels and replaces this timer, so the newest candidate must
+            # itself remain stable for the full window.
+            if new_state is not None and normalize_opening_state(new_state.state) in {"closed", "open", "tilted"}:
                 @callback
-                def _confirm_close(_now: Any, *, _entity_id: str = entity_id) -> None:
+                def _confirm_contact_state(_now: Any, *, _entity_id: str = entity_id) -> None:
                     self._contact_confirm_unsubs.pop(_entity_id, None)
                     self.hass.async_create_task(self.async_request_refresh())
 
                 self._contact_confirm_unsubs[entity_id] = async_call_later(
-                    self.hass, SESSION_CLOSE_CONFIRM_SECONDS, _confirm_close
+                    self.hass, SESSION_CLOSE_CONFIRM_SECONDS, _confirm_contact_state
                 )
         # Coalesce bursts where a device reports temperature/humidity/contact
         # states a few milliseconds apart. The coordinator always reads the newest
@@ -947,7 +1001,20 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for _cfg in rooms_cfg:
                 _mem = self.store.room(_cfg["key"])
                 if _mem.get("session_active") and _mem.get("session_started"):
-                    physical_start = _room_physical_opened_at(self.hass, _cfg)
+                    _contacts = _contact_ids(_cfg)
+                    _proven = set(str(x) for x in (_mem.get("three_state_contacts") or [])) & set(_contacts)
+                    _stable_raw = _mem.get("stable_opening_modes") if isinstance(_mem.get("stable_opening_modes"), dict) else {}
+                    _stable_modes = {c: str(_stable_raw.get(c, "unknown")) for c in _proven}
+                    _since_raw = _mem.get("stable_opening_since") if isinstance(_mem.get("stable_opening_since"), dict) else {}
+                    _stable_since: dict[str, datetime] = {}
+                    for _contact in _proven:
+                        try:
+                            _stable_since[_contact] = datetime.fromisoformat(str(_since_raw.get(_contact)))
+                        except (TypeError, ValueError):
+                            pass
+                    physical_start = _room_physical_opened_at(
+                        self.hass, _cfg, contact_modes=_stable_modes, contact_since=_stable_since
+                    )
                     if physical_start is not None:
                         persisted_starts.append(physical_start)
                     try:
@@ -1089,14 +1156,162 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             illuminance_entity = illuminance_configured_entity if illuminance_sensor_enabled else None
             illuminance = _float_state(self.hass, illuminance_entity) if illuminance_entity else None
             contacts_known = _room_contacts_known(self.hass, cfg)
+            configured_contact_ids = _contact_ids(cfg)
+            configured_contacts = set(configured_contact_ids)
+            remembered_all = set(str(x) for x in (mem.get("three_state_contacts") or []))
+            # Capability memory belongs to the configured contact, never to the
+            # room forever.  A replaced/removed three-state sensor must not make
+            # a later binary-only configuration explicit-three-state.
+            remembered_three_state = remembered_all & configured_contacts
+            contact_modes, proven_three_state = opening_contact_profile(self.hass, configured_contact_ids, remembered_three_state)
+            if proven_three_state != remembered_all:
+                mem["three_state_contacts"] = sorted(proven_three_state)
+                changed = True
+            explicit_three_state = bool(proven_three_state)
+            stable_contacts_raw = mem.get("stable_opening_modes") if isinstance(mem.get("stable_opening_modes"), dict) else {}
+            stable_contacts = {str(k): v for k, v in stable_contacts_raw.items() if str(k) in configured_contacts}
+            if stable_contacts != stable_contacts_raw:
+                changed = True
+            stable_since_raw = mem.get("stable_opening_since") if isinstance(mem.get("stable_opening_since"), dict) else {}
+            stable_since_text = {str(k): str(v) for k, v in stable_since_raw.items() if str(k) in configured_contacts}
+            if stable_since_text != stable_since_raw:
+                changed = True
+            stable_since: dict[str, datetime] = {}
+            for _contact, _stamp in stable_since_text.items():
+                try:
+                    stable_since[_contact] = datetime.fromisoformat(_stamp)
+                except (TypeError, ValueError):
+                    changed = True
+            passage_behavior_raw = mem.get("passage_behavior") if isinstance(mem.get("passage_behavior"), dict) else {}
+            passage_behavior = {str(k): v for k, v in passage_behavior_raw.items() if str(k) in configured_contacts}
+            if passage_behavior != passage_behavior_raw:
+                mem["passage_behavior"] = passage_behavior
+                changed = True
+            session_passage_raw = mem.get("session_passage_contacts") if isinstance(mem.get("session_passage_contacts"), list) else []
+            session_passage_contacts = [str(x) for x in session_passage_raw if str(x) in configured_contacts]
+            if session_passage_contacts != session_passage_raw:
+                mem["session_passage_contacts"] = session_passage_contacts
+                # A contact disappearing during an active session makes the
+                # specialised opening classification unauditable. Keep the
+                # general session, but never teach an opening sub-model from it.
+                if mem.get("session_active"):
+                    mem["session_opening_mode_mixed"] = True
+                    mem["session_learning_quarantined"] = True
+                    mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-004"
+                changed = True
+            transition_suppressed = False
+            three_state_unknown_contacts: list[str] = []
+            three_state_stale_contacts: list[str] = []
+            for entity_id in proven_three_state:
+                current_mode = contact_modes.get(entity_id, "unknown")
+                state_obj = self.hass.states.get(entity_id)
+                changed_at = getattr(state_obj, "last_changed", None) if state_obj is not None else None
+                # unknown/unavailable is absence of evidence. Hold the last
+                # confirmed physical truth only for a short recovery window;
+                # after that it is stale/uncertain, never silently "closed".
+                if current_mode == "unknown" and stable_contacts.get(entity_id) in {"closed", "open", "tilted"}:
+                    unknown_age = None
+                    if isinstance(changed_at, datetime):
+                        try:
+                            unknown_age = max((now - changed_at).total_seconds(), 0.0)
+                        except (TypeError, ValueError):
+                            pass
+                    # Battery-powered contacts are event-driven: an unavailable
+                    # interval is not evidence that the physical opening moved.
+                    # Keep the last confirmed physical state indefinitely, while
+                    # degrading *confidence* after the bounded recovery window.
+                    contact_modes[entity_id] = str(stable_contacts[entity_id])
+                    three_state_unknown_contacts.append(entity_id)
+                    if unknown_age is None or unknown_age > THREE_STATE_UNKNOWN_HOLD_SECONDS:
+                        three_state_stale_contacts.append(entity_id)
+                        if mem.get("session_active"):
+                            mem["session_three_state_unknown_observed"] = True
+                            mem["session_learning_quarantined"] = True
+                            mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006"
+                    continue
+                age = None
+                if changed_at is not None:
+                    try: age = max((now - changed_at).total_seconds(), 0.0)
+                    except (TypeError, ValueError): pass
+                stable_mode, suppressed = stabilise_explicit_mode(current_mode, stable_contacts.get(entity_id), age, threshold_seconds=THREE_STATE_TRANSITION_STABLE_SECONDS)
+                if suppressed:
+                    contact_modes[entity_id] = stable_mode
+                    # Keep the timestamp paired with the previous stable mode.
+                    # On migration from a release that did not persist it, use
+                    # now conservatively rather than borrowing the candidate's
+                    # raw last_changed timestamp.
+                    if entity_id not in stable_since:
+                        stable_since[entity_id] = now
+                    transition_suppressed = True
+                    mem["three_state_transients_suppressed"] = int(mem.get("three_state_transients_suppressed", 0) or 0) + 1
+                    changed = True
+                elif current_mode in {"closed", "open", "tilted"}:
+                    previous_stable = stable_contacts.get(entity_id)
+                    stable_contacts[entity_id] = current_mode
+                    if previous_stable != current_mode or entity_id not in stable_since:
+                        # Once confirmed, the physical transition began at the
+                        # HA state change; confirmation itself happens later.
+                        stable_since[entity_id] = changed_at if isinstance(changed_at, datetime) else now
+            mem["stable_opening_modes"] = stable_contacts
+            mem["stable_opening_since"] = {c: stamp.isoformat() for c, stamp in stable_since.items() if c in configured_contacts}
+            previous_unknown_contacts = list(mem.get("three_state_unknown_contacts") or [])
+            mem["three_state_unknown_contacts"] = sorted(three_state_unknown_contacts)
+            mem["three_state_stale_contacts"] = sorted(three_state_stale_contacts)
+            if previous_unknown_contacts != mem["three_state_unknown_contacts"]:
+                changed = True
+            if three_state_unknown_contacts and mem.get("session_active"):
+                mem["session_three_state_unknown_observed"] = True
+            opening_mode = aggregate_opening_mode(contact_modes)
+            specialist_opening_mode, specialist_opening_signature = specialist_opening_provenance(contact_modes, proven_three_state)
+            explicit_tilted = any(contact_modes.get(c) == "tilted" for c in proven_three_state)
+            passage_contacts = cfg.get(CONF_CONTACT_PASSAGE_DOORS) if isinstance(cfg.get(CONF_CONTACT_PASSAGE_DOORS), dict) else {}
+            active_passage_contacts = sorted(c for c in proven_three_state if bool(passage_contacts.get(c)) and contact_modes.get(c) == "open")
+            passage_door_active = bool(active_passage_contacts)
             confirmed_close_seconds: float | None = None
-            is_open, raw_open_seconds = _room_ventilation_state(self.hass, cfg, now, honour_delays=False)
+            # Session lifecycle must consume the same stable truth as specialist
+            # classification. Only proven three-state contacts are overridden;
+            # classic binary contacts preserve their established behaviour.
+            stable_session_modes = {c: contact_modes.get(c, "unknown") for c in proven_three_state}
+            # All physical consumers must use the same debounced truth for proven
+            # three-state contacts. Re-resolve the incoming-air source after the
+            # stable modes are known so transient handle states cannot switch
+            # reference air before confirmation. Binary contacts retain raw truth.
+            physical_contact_modes = {
+                c: (stable_session_modes[c] if c in stable_session_modes else ("open" if _open_seconds(self.hass, c, now) is not None else "closed"))
+                for c in configured_contact_ids
+            }
+            reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _contact_specific_reference(
+                self.hass, cfg,
+                default_temp_entity=default_reference_temperature_entity,
+                default_humidity_entity=default_reference_humidity_entity,
+                default_temp=default_ref_t, default_humidity=default_ref_rh,
+                contact_modes=physical_contact_modes,
+            )
+            reference_temperature_state = self.hass.states.get(reference_temperature_entity) if reference_temperature_entity else outdoor_temp_state
+            reference_humidity_state = self.hass.states.get(reference_humidity_entity) if reference_humidity_entity else outdoor_humidity_state
+            measurement_frame = build_measurement_frame(
+                now, temperature_state=temperature_state, humidity_state=humidity_state,
+                reference_temperature_state=reference_temperature_state, reference_humidity_state=reference_humidity_state,
+            )
+            is_open, raw_open_seconds = _room_ventilation_state(
+                self.hass, cfg, now, honour_delays=False, contact_modes=stable_session_modes, contact_since=stable_since
+            )
             raw_contact_open = bool(is_open)
-            session_should, _ = _room_ventilation_state(self.hass, cfg, now, honour_delays=True)
+            session_should, _ = _room_ventilation_state(
+                self.hass, cfg, now, honour_delays=True, contact_modes=stable_session_modes, contact_since=stable_since
+            )
+            # A proven three-state battery contact with a persisted stable state
+            # remains physically evaluable while raw HA state is unavailable. Do
+            # not route that case through the legacy startup-only keep-open guard.
+            lifecycle_contacts_known = all(
+                ((state := self.hass.states.get(contact_id)) is not None
+                 and normalize_opening_state(state.state) != "unknown")
+                or (contact_id in proven_three_state and stable_session_modes.get(contact_id) in {"closed", "open", "tilted"})
+                for contact_id in configured_contact_ids
+            ) if configured_contact_ids else True
             # During HA startup a contact can temporarily be unavailable. Never
-            # interpret that transient restore state as a real window-close event;
-            # otherwise a persisted session is destroyed and restarts at 0 ml.
-            if mem.get("session_active") and not contacts_known:
+            # interpret an unresolved legacy/binary restore state as a real close.
+            if mem.get("session_active") and not lifecycle_contacts_known:
                 is_open = True
                 session_should = True
             elif mem.get("session_active"):
@@ -1106,7 +1321,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if is_open:
                     session_should = True
                 else:
-                    closed_for = _room_closed_for_seconds(self.hass, cfg, now)
+                    closed_for = _room_closed_for_seconds(self.hass, cfg, now, contact_modes=stable_session_modes)
                     confirmed_close_seconds = closed_for
                     if closed_for is not None:
                         physical_close_candidate = now - timedelta(seconds=max(closed_for, 0.0))
@@ -1134,13 +1349,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # ventilation session starts with a fresh zero baseline; completed
             # session values are never carried into the next live balance.
             if session_should and not mem["session_active"] and measurements_valid:
-                physical_started = _room_physical_opened_at(self.hass, cfg) or now
+                physical_started = _room_physical_opened_at(self.hass, cfg, contact_modes=stable_session_modes, contact_since=stable_since) or now
                 if not isinstance(ventilation_group, dict) or not ventilation_group.get("active"):
                     ventilation_group = new_ventilation_group(physical_started)
                     self.store.data["ventilation_group"] = ventilation_group
                 elif include_ventilation_group_start(ventilation_group, physical_started):
                     changed = True
                 mem["session_active"] = True
+                mem["session_three_state_unknown_observed"] = bool(three_state_unknown_contacts)
                 # Keep both clocks deliberately: session_started marks the first
                 # trustworthy climate baseline used for moisture/temperature
                 # forecast comparison and learning, while session_physical_started
@@ -1217,6 +1433,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 mem["session_cross_active"] = bool(cross)
                 mem["session_cross_seconds"] = 0.0
                 mem["session_cross_last_update"] = now.isoformat()
+                mem["session_opening_mode"] = ("cross" if cross and opening_mode == "open" else opening_mode)
+                mem["session_specialist_opening_mode"] = ("cross" if cross and opening_mode == "open" else specialist_opening_mode)
+                mem["session_specialist_opening_signature"] = list(specialist_opening_signature) if specialist_opening_mode else []
+                mem["session_opening_mode_mixed"] = False
+                mem["session_passage_door"] = bool(passage_door_active and opening_mode == "open")
+                mem["session_passage_contacts"] = list(active_passage_contacts) if opening_mode == "open" else []
+                mem["session_learning_quarantined"] = bool(three_state_stale_contacts)
+                mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006" if three_state_stale_contacts else None
                 # Hotfix 0.20.2.6: a session prediction is frozen from the first
                 # forecast calculated after the physical opening. Never carry a
                 # previous recommendation/live forecast into a new session.
@@ -1293,7 +1517,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     # A repaired legacy/corrupt session has no trustworthy
                     # historical baseline. Preserve a known physical opening
                     # timestamp when available; otherwise use the repair time.
-                    physical_started = _room_physical_opened_at(self.hass, cfg) or now
+                    physical_started = _room_physical_opened_at(self.hass, cfg, contact_modes=stable_session_modes, contact_since=stable_since) or now
                     mem["session_physical_started"] = physical_started.isoformat()
                     mem["session_start_temp"] = t
                     mem["session_start_ah"] = absolute_humidity(t, rh)
@@ -1330,6 +1554,18 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_cross_active"] = bool(cross)
                     mem["session_cross_seconds"] = 0.0
                     mem["session_cross_last_update"] = now.isoformat()
+                    mem["session_opening_mode"] = ("cross" if cross and opening_mode == "open" else opening_mode)
+                    mem["session_specialist_opening_mode"] = ("cross" if cross and opening_mode == "open" else specialist_opening_mode)
+                    mem["session_specialist_opening_signature"] = list(specialist_opening_signature) if specialist_opening_mode else []
+                    mem["session_opening_mode_mixed"] = False
+                    mem["session_passage_door"] = bool(passage_door_active and opening_mode == "open")
+                    mem["session_passage_contacts"] = list(active_passage_contacts) if opening_mode == "open" else []
+                    # A repaired/legacy session must inherit current three-state
+                    # confidence. Never clear an already-known stale-contact quarantine.
+                    mem["session_learning_quarantined"] = bool(three_state_stale_contacts)
+                    mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006" if three_state_stale_contacts else None
+                    if three_state_stale_contacts:
+                        mem["session_three_state_unknown_observed"] = True
                     changed = True
 
             if mem["session_active"] and measurements_valid:
@@ -1364,7 +1600,25 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_last_valid_at"] = now.isoformat()
                     changed = True
 
-            if mem["session_active"] and update_session_cross_tracking(mem, now, cross):
+            if mem["session_active"]:
+                current_session_mode = "cross" if cross and opening_mode == "open" else opening_mode
+                started_mode = str(mem.get("session_opening_mode") or current_session_mode)
+                if current_session_mode not in {"unknown", "closed"} and started_mode != current_session_mode:
+                    if not mem.get("session_opening_mode_mixed"):
+                        mem["session_opening_mode_mixed"] = True
+                        changed = True
+                # Specialist learning is provenance-strict: the same room-level
+                # mode is not enough if a binary contact joins/leaves or another
+                # proven contact becomes the physical source.
+                current_specialist = "cross" if cross and opening_mode == "open" else specialist_opening_mode
+                started_specialist = mem.get("session_specialist_opening_mode")
+                started_signature = tuple(str(x) for x in (mem.get("session_specialist_opening_signature") or []))
+                current_signature = tuple(specialist_opening_signature) if current_specialist not in {None, "cross"} else ()
+                if started_specialist and not three_state_stale_contacts and (current_specialist != started_specialist or (started_specialist != "cross" and current_signature != started_signature)):
+                    if not mem.get("session_opening_mode_mixed"):
+                        mem["session_opening_mode_mixed"] = True
+                        changed = True
+            if mem["session_active"] and update_session_cross_tracking(mem, now, cross and opening_mode == "open"):
                 changed = True
 
             # Count real room-climate reports after the physical opening.
@@ -1547,7 +1801,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 except (ValueError, TypeError):
                     elapsed = 0.0
 
-            airflow = _room_orientation_factor(self.hass, cfg, now, wind_bearing, wind_speed, bool(options.get("wind_orientation_enabled", True)))
+            airflow = _room_orientation_factor(self.hass, cfg, now, wind_bearing, wind_speed, bool(options.get("wind_orientation_enabled", True)), contact_modes=physical_contact_modes)
             moisture_source = {"active": False, "recovery": False, "label": "Feuchtequelle", "configured_sources": [], "confidence": 0, "source_rate_ml_min": 0.0, "generated_ml_window": 0.0, "observed_change_ml_window": 0.0, "ventilation_change_ml_window": 0.0, "absolute_humidity_rise_g_m3": 0.0, "temperature_rise_c": 0.0, "window_min": 0.0, "started_at": None, "last_ended_at": None, "changed": False}
             if measurements_valid:
                 moisture_source = update_moisture_source(
@@ -1589,7 +1843,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _contact_ref_t = cfg.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
             _contact_ref_h = cfg.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
             active_contact_reference = any(
-                _open_seconds(self.hass, _cid, now) is not None
+                physical_contact_modes.get(_cid) in {"open", "tilted"}
                 and str(_contact_ref_t.get(_cid) or "").strip()
                 and str(_contact_ref_h.get(_cid) or "").strip()
                 and str(_contact_ref_t.get(_cid)) == str(reference_temperature_entity)
@@ -1602,6 +1856,16 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             has_ventilation_contact = bool(_contact_ids(cfg))
             effective_learning_rate = float(mem["learning_rate"] if has_ventilation_contact else mem.get("passive_learning_rate", 0.03))
             effective_learning_samples = int(mem["learning_samples"] if has_ventilation_contact else mem.get("passive_learning_samples", 0))
+            opening_learning = mem.get("opening_learning") if isinstance(mem.get("opening_learning"), dict) else {}
+            opening_model_key = "cross" if cross and opening_mode == "open" else specialist_opening_mode
+            opening_model = opening_learning.get(opening_model_key) if opening_model_key and isinstance(opening_learning.get(opening_model_key), dict) else None
+            # Open/tilt specialist models require provenance from the currently
+            # active proven three-state contacts. Binary/mixed-source ventilation
+            # always falls back to the established general model. Cross keeps its
+            # independent room-level model.
+            if opening_model and int(opening_model.get("samples", 0) or 0) > 0:
+                effective_learning_rate = float(opening_model.get("rate", effective_learning_rate))
+                effective_learning_samples = int(opening_model.get("samples", effective_learning_samples))
             room_input = RoomInput(
                 key=key, name=cfg[CONF_ROOM_NAME], temperature=t, humidity=rh, reference_temperature=ref_t, reference_humidity=ref_rh,
                 volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
@@ -1730,6 +1994,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             mem["last_measurement_at"] = now.isoformat()
             mem["last_measurement_valid"] = result.data_quality == "ok"
             action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed)
+            if explicit_tilted and action in {"Ventilate", "Ventilate for cooling"}:
+                action = "Open fully"
+                reason = "Fenster ist gekippt; vollständig öffnen erhöht den Luftwechsel für die aktuelle Empfehlung"
+                reason_list.append("Drei-Zustands-Sensor meldet Kipplüftung; FreshAirIQ empfiehlt für den aktuellen Bedarf vollständiges Öffnen")
+            elif explicit_tilted and action not in {"Close", "Check sensor"}:
+                reason_list.append("Drei-Zustands-Sensor meldet Kipplüftung; der reduzierte Luftwechsel wird separat gelernt")
             indirect_candidate = bool(not has_ventilation_contact and result.ventilation_candidate)
             indirect_cooling_candidate = bool(not has_ventilation_contact and result.cooling_candidate)
             if not has_ventilation_contact and action in {"Ventilate", "Ventilate for cooling"}:
@@ -1746,7 +2016,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_result_ml"] = float(result.result_ml); changed = True
             if not include and result.data_quality == "ok":
                 result.action = "Monitor only"; result.reason = "Room is visible but excluded from FreshAirIQ calculations"; result.close_recommended = False
-            fraction = exchanged_air_fraction(float(mem["learning_rate"]), 5, (1.25 if cross else 1.0) * airflow)
+            fraction = exchanged_air_fraction(float(effective_learning_rate), 5, (1.25 if cross and opening_mode == "open" else 1.0) * airflow)
             delivered, purchased, cost = ventilation_cost(float(cfg[CONF_ROOM_VOLUME]), t, ref_t, fraction, options) if -30 < ref_t < 60 and -10 < t < 50 else (0, 0, 0)
             # Reheating cost is only meaningful when the next ventilation step
             # is expected to cool the room. Warming by outdoor air is not billed
@@ -2084,7 +2354,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 default_temp=default_ref_t, default_humidity=default_ref_rh,
                 learning_rate=float(mem.get("learning_rate", .03)),
                 learning_samples=int(mem.get("learning_samples", 0)), co2=co2, pollen=pollen,
-                options=options, wind_bearing=wind_bearing, wind_speed=wind_speed,
+                options=options, wind_bearing=wind_bearing, wind_speed=wind_speed, contact_modes=physical_contact_modes,
             )
             room_threshold_mode = str(cfg.get(CONF_ROOM_THRESHOLD_MODE, ROOM_THRESHOLD_AUTOMATIC) or ROOM_THRESHOLD_AUTOMATIC)
             if room_threshold_mode == ROOM_THRESHOLD_PERCENT:
@@ -2101,6 +2371,21 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "pm25": pm25, "pm25_available": pm25 is not None, "pm25_enabled": pm25_sensor_enabled, "pm25_configured": bool(pm25_configured_entity),
                 "illuminance": illuminance, "illuminance_available": illuminance is not None, "illuminance_enabled": illuminance_sensor_enabled, "illuminance_configured": bool(illuminance_configured_entity),
                 "learned_exchange_rate_per_min": round(effective_learning_rate, 3),
+                "opening_state": opening_mode,
+                "opening_state_explicit": bool(explicit_three_state),
+                "three_state_contacts": sorted(proven_three_state),
+                "three_state_transition_suppressed": bool(transition_suppressed),
+                "three_state_transients_suppressed": int(mem.get("three_state_transients_suppressed", 0) or 0),
+                "three_state_unknown_contacts": list(mem.get("three_state_unknown_contacts") or []),
+                "three_state_stale_contacts": list(mem.get("three_state_stale_contacts") or []),
+                "session_three_state_unknown_observed": bool(mem.get("session_three_state_unknown_observed")),
+                "passage_door_configured": bool(any(bool(v) for v in passage_contacts.values())),
+                "passage_behavior": mem.get("passage_behavior", {}),
+                "passage_pattern_learned": bool(any(isinstance(v, dict) and v.get("learned") for v in (mem.get("passage_behavior") or {}).values())),
+                "learning_quarantined": bool(mem.get("session_learning_quarantined")),
+                "learning_quarantine_code": mem.get("session_learning_quarantine_code"),
+                "opening_diagnostic_codes": (["FAIQ-OPENING-3STATE-001"] if explicit_three_state and opening_mode == "unknown" else []) + (["FAIQ-OPENING-3STATE-002"] if transition_suppressed else []) + (["FAIQ-OPENING-3STATE-005"] if three_state_unknown_contacts else []) + (["FAIQ-OPENING-3STATE-006"] if three_state_stale_contacts else []) + ([str(mem.get("session_learning_quarantine_code"))] if mem.get("session_learning_quarantine_code") else []),
+                "opening_learning": mem.get("opening_learning", {}),
                 "direct_learning_samples": int(mem.get("learning_samples", 0)),
                 "passive_learning_samples": int(mem.get("passive_learning_samples", 0)),
                 "passive_learned_exchange_rate_per_min": round(float(mem.get("passive_learning_rate", .03)), 3),
@@ -3549,6 +3834,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "session_moisture_source_detected": False,
             "session_reference_moisture_reversal": False,
             "session_cross_active": False,
+            "session_three_state_unknown_observed": False,
             "session_cross_seconds": 0.0,
             "session_cross_last_update": None,
             "session_forecast_timeline": [],
@@ -3852,6 +4138,51 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if day not in dates:
                     dates.append(day)
                 mem["learning_observation_dates"] = dates[-730:]
+        # Learn explicit opening strategies independently while preserving the
+        # established general coefficient as the compatibility/fallback model.
+        session_mode = str(mem.get("session_specialist_opening_mode") or "")
+        if valid and not mem.get("session_opening_mode_mixed") and not mem.get("session_learning_quarantined") and session_mode in {"open", "tilted", "cross"}:
+            opening_learning = mem.get("opening_learning") if isinstance(mem.get("opening_learning"), dict) else {}
+            defaults = {"open": 0.03, "tilted": 0.015, "cross": 0.04}
+            row = opening_learning.get(session_mode) if isinstance(opening_learning.get(session_mode), dict) else {}
+            old_mode_rate = float(row.get("rate", defaults[session_mode]) or defaults[session_mode])
+            old_mode_samples = int(row.get("samples", 0) or 0)
+            candidate_rate, _candidate_samples, _mode_diag, mode_valid = update_learning(
+                old_rate=old_mode_rate, old_samples=old_mode_samples, elapsed_min=measurement_elapsed,
+                start_ah=learning_start_ah, end_ah=end_ah, source_ah=source_ah,
+                learning_enabled=bool(self.options["learning_enabled"]),
+                max_duration_min=float(self.options.get("learning_max_duration_min", 120)),
+            )
+            passage_candidate = bool(mode_valid and session_mode == "open" and mem.get("session_passage_door"))
+            learned_passage = any(isinstance((mem.get("passage_behavior") or {}).get(c), dict) and (mem.get("passage_behavior") or {}).get(c, {}).get("learned") for c in (mem.get("session_passage_contacts") or []))
+            passage_threshold = max(defaults["open"] * (0.40 if learned_passage else 0.25), 0.006)
+            passage_weak = bool(passage_candidate and float(candidate_rate) < passage_threshold)
+            if passage_candidate:
+                behaviour = mem.get("passage_behavior") if isinstance(mem.get("passage_behavior"), dict) else {}
+                for contact_id in (mem.get("session_passage_contacts") or []):
+                    row_stats = behaviour.get(contact_id) if isinstance(behaviour.get(contact_id), dict) else {}
+                    behaviour[contact_id] = update_passage_pattern(row_stats, pulled_shut_evidence=passage_weak)
+                mem["passage_behavior"] = behaviour
+                learned_rows = [r for r in behaviour.values() if isinstance(r, dict) and r.get("learned")]
+                if learned_rows:
+                    diagnosis = f"{diagnosis} · wiederkehrendes Durchgangstür-Muster gelernt; Sensorzustand wird nicht überschrieben"
+            if passage_weak:
+                mem["session_learning_quarantined"] = True
+                mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-003"
+                diagnosis = f"{diagnosis} · Durchgangstür: Open-Speziallernen wegen unplausibel geringer Lüftungswirkung verworfen"
+                mode_valid = False
+            if mode_valid:
+                weight = max(min(float(session_quality.get("learning_weight", 0.0) or 0.0), 1.0), 0.0)
+                new_mode_rate = old_mode_rate + (float(candidate_rate) - old_mode_rate) * weight
+                credit = max(min(float(row.get("credit", 0.0) or 0.0), 0.999999), 0.0) + weight
+                increment = int(credit)
+                opening_learning[session_mode] = {
+                    "rate": round(min(max(new_mode_rate, 0.002), 0.25), 6),
+                    "samples": min(old_mode_samples + increment, 1000),
+                    "credit": 0.0 if old_mode_samples + increment >= 1000 else round(credit - increment, 6),
+                }
+                mem["opening_learning"] = opening_learning
+                diagnosis = f"{diagnosis} · {session_mode}-Modell separat gelernt"
         mem["learning_rate"] = rate; mem["learning_samples"] = samples; mem["diagnosis"] = diagnosis; mem["last_learning_at"] = now.isoformat(); mem["last_learning_valid"] = bool(valid); self.store.data["last_diagnosis"] = f"{cfg['name']}: {diagnosis}"
         temp_start = finite_float(mem.get("session_start_temp"), t)
         if temp_start is None:
@@ -4015,6 +4346,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "cross_ventilation": cross_seconds > 0.0,
             "cross_ventilation_minutes": round(cross_seconds / 60.0, 2),
             "cross_ventilation_percent": round(cross_ratio * 100.0, 1),
+            "opening_learning_mode": mem.get("session_specialist_opening_mode") or mem.get("session_opening_mode"),
+            "opening_learning_quarantined": bool(mem.get("session_learning_quarantined")),
+            "opening_learning_quarantine_code": mem.get("session_learning_quarantine_code"),
             "learning_valid": valid,
             "measurement_frame_learning_eligible": bool(frame_learning_eligible),
             "session_measurement_quality": session_quality.get("quality"),
@@ -4148,9 +4482,21 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     pair_open = True
                     for key in keys:
                         active_session = bool((self.store.data.get("rooms", {}).get(key) or {}).get("session_active"))
+                        room_mem = self.store.data.get("rooms", {}).get(key) or {}
+                        room_contacts = _contact_ids(room_by_key[key])
+                        proven = set(str(x) for x in (room_mem.get("three_state_contacts") or [])) & set(room_contacts)
+                        stable = room_mem.get("stable_opening_modes") if isinstance(room_mem.get("stable_opening_modes"), dict) else {}
+                        stable_modes = {c: str(stable.get(c, "unknown")) for c in proven}
+                        stable_since_raw = room_mem.get("stable_opening_since") if isinstance(room_mem.get("stable_opening_since"), dict) else {}
+                        stable_since = {}
+                        for c in proven:
+                            try:
+                                stable_since[c] = datetime.fromisoformat(str(stable_since_raw.get(c)))
+                            except (TypeError, ValueError):
+                                pass
                         room_open = _room_ventilation_state(
                             self.hass, room_by_key[key], now,
-                            honour_delays=not active_session,
+                            honour_delays=not active_session, contact_modes=stable_modes, contact_since=stable_since,
                         )[0]
                         if not room_open:
                             pair_open = False

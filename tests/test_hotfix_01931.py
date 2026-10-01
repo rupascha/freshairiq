@@ -19,7 +19,7 @@ def test_close_confirmation_is_fixed_three_seconds_and_reopen_keeps_active_sessi
     assert "SESSION_CLOSE_CONFIRM_SECONDS = 3.0" in const
     assert "if is_open:\n                    session_should = True" in coordinator
     assert "closed_for < SESSION_CLOSE_CONFIRM_SECONDS" in coordinator
-    assert "async_call_later(\n                    self.hass, SESSION_CLOSE_CONFIRM_SECONDS, _confirm_close" in coordinator
+    assert "async_call_later(\n                    self.hass, SESSION_CLOSE_CONFIRM_SECONDS, _confirm_contact_state" in coordinator
 
 
 def test_close_confirmation_helper_respects_any_and_all_contact_modes():
@@ -38,6 +38,7 @@ def test_close_confirmation_helper_respects_any_and_all_contact_modes():
         "CONTACT_MODE_ANY": "any",
         "CONTACT_MODE_ALL": "all",
         "_contact_ids": lambda room: room["contacts"],
+        "normalize_opening_state": __import__("custom_components.freshairiq.opening_state", fromlist=["normalize_opening_state"]).normalize_opening_state,
     }
     exec(compile(mini, "<helper>", "exec"), ns)
     fn = ns["_room_closed_for_seconds"]

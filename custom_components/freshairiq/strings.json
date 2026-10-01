@@ -112,7 +112,12 @@
       "room_references": {
         "title": "Reference air per window/door · {room_name}",
         "description": "Optional: Assign a local temperature and humidity reference to openings that do not lead to normal outdoor air. Example: conservatory door → select both conservatory sensors. Outdoor windows → leave empty. Temperature and humidity must always be selected as a pair from the same air zone.",
-        "data": {}
+        "data": {
+          "contact_passage_doors": "Door is used as a passage and pulled shut from outside"
+        },
+        "data_description": {
+          "contact_passage_doors": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
+        }
       },
       "reconfigure": {
         "title": "Reconfigure outdoor-air reference",
@@ -2710,12 +2715,22 @@
         "add_references": {
           "title": "{room_name} · Reference air per opening",
           "description": "Optional: Windows/doors into another air zone can use their own sensor pair. For a conservatory, select both its temperature and humidity sensors. Leave outdoor openings empty.",
-          "data": {}
+          "data": {
+            "contact_passage_doors": "Door is used as a passage and pulled shut from outside"
+          },
+          "data_description": {
+            "contact_passage_doors": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
+          }
         },
         "room_references": {
           "title": "{room_name} · Reference air per opening",
           "description": "Assign a temperature/humidity pair to individual window/door contacts when needed. Both sensors must measure the same air zone. Confirmed changes are saved immediately.",
-          "data": {}
+          "data": {
+            "contact_passage_doors": "Door is used as a passage and pulled shut from outside"
+          },
+          "data_description": {
+            "contact_passage_doors": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
+          }
         }
       },
       "error": {

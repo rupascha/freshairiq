@@ -325,7 +325,7 @@ _ROOM_KEYS = (
     "voc", "voc_available", "voc_enabled", "voc_configured",
     "pm25", "pm25_available", "pm25_enabled", "pm25_configured",
     "illuminance", "illuminance_available", "illuminance_enabled", "illuminance_configured",
-    "active", "open_seconds",
+    "active", "open_seconds", "opening_state", "opening_state_explicit", "three_state_transition_suppressed", "three_state_transients_suppressed", "passage_door_configured", "learning_quarantined", "learning_quarantine_code", "opening_diagnostic_codes",
     "airflow_factor", "window_orientation", "action", "reason",
     "recommendation_reasons", "potential_ml", "realistic_potential_ml", "result_ml",
     "forecast_horizon_min", "forecast_moisture_effect_ml",
@@ -355,7 +355,7 @@ _LEARNING_ROOM_KEYS = (
     "last_learning_at", "outcome_feedback_samples", "outcome_successes", "outcome_guarded_direction", "outcome_guarded_streak", "outcome_guarded_last_ratio", "last_outcome_feedback_applied",
     "outcome_removed_factor", "strategy_samples", "strategy_outcome_samples",
     "shadow_learning_samples", "shadow_learning_total_samples", "shadow_learning_status", "shadow_learning_last_action", "shadow_learning_promotions", "shadow_learning_rollbacks", "shadow_rollback_active",
-    "session_active", "session_started", "session_physical_started", "session_result_ml", "session_start_ah",
+    "session_active", "session_started", "three_state_transients_suppressed", "session_passage_door", "session_learning_quarantined", "session_learning_quarantine_code", "session_physical_started", "session_result_ml", "session_start_ah",
     "session_start_source_ah", "session_start_temp", "session_fresh_measurements", "session_temperature_reports", "session_humidity_reports", "session_open_temperature_reported_at", "session_open_humidity_reported_at",
     "session_last_valid_temperature", "session_last_valid_humidity", "session_last_valid_reference_temperature", "session_last_valid_reference_humidity", "session_last_valid_at",
     "session_predicted_removed_ml", "session_predicted_temperature_change_c",
@@ -394,7 +394,7 @@ _TREND_ROOM_KEYS = (
     "voc", "voc_available", "voc_enabled", "voc_configured",
     "pm25", "pm25_available", "pm25_enabled", "pm25_configured",
     "illuminance", "illuminance_available", "illuminance_enabled", "illuminance_configured",
-    "active", "open_seconds", "action",
+    "active", "open_seconds", "opening_state", "opening_state_explicit", "three_state_transition_suppressed", "three_state_transients_suppressed", "passage_door_configured", "learning_quarantined", "learning_quarantine_code", "opening_diagnostic_codes", "action",
     "potential_ml", "result_ml",
     "forecast_moisture_effect_ml", "forecast_temperature_change_c",
 )
@@ -612,6 +612,7 @@ class FreshAirIQDiagnosticsRecorder:
             contact_ref_t = raw.get("contact_reference_temperatures") if isinstance(raw.get("contact_reference_temperatures"), dict) else {}
             contact_ref_h = raw.get("contact_reference_humidities") if isinstance(raw.get("contact_reference_humidities"), dict) else {}
             contact_covers = raw.get("contact_covers") if isinstance(raw.get("contact_covers"), dict) else {}
+            passage_doors = raw.get("contact_passage_doors") if isinstance(raw.get("contact_passage_doors"), dict) else {}
             openings = []
             for index, contact in enumerate(contacts, 1):
                 covers = contact_covers.get(contact) or []
@@ -624,6 +625,7 @@ class FreshAirIQDiagnosticsRecorder:
                     "reference_temperature_configured": bool(contact_ref_t.get(contact)),
                     "reference_humidity_configured": bool(contact_ref_h.get(contact)),
                     "cover_count": len([item for item in covers if item]),
+                    "passage_door": bool(passage_doors.get(contact, False)),
                 })
             room_rows.append({
                 "key": key,
@@ -688,6 +690,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "illuminance_room_count": sum(1 for room in raw_rooms if isinstance(room, dict) and room.get("illuminance")),
                 "reference_climate_room_count": sum(1 for room in raw_rooms if isinstance(room, dict) and (room.get("reference_temperature") or room.get("reference_humidity"))),
                 "contact_count": sum(int(row["contact_count"]) for row in room_rows),
+                "passage_door_count": sum(sum(1 for opening in row.get("openings", []) if opening.get("passage_door")) for row in room_rows),
                 "physical_heating_state_sensor_configured": False,
                 "resident_profile_count": len(normalise_resident_names(options.get("adult_resident_names"))) + len(normalise_resident_names(options.get("child_resident_names"))),
                 "resident_room_profile_count": len(options.get("resident_room_profiles") or {}) if isinstance(options.get("resident_room_profiles"), dict) else 0,

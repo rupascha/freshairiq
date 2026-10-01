@@ -160,7 +160,7 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
             selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
         ),
         vol.Optional(CONF_ROOM_CONTACTS, default=room.get(CONF_ROOM_CONTACTS, [])): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+            selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "input_select", "select"], multiple=True)
         ),
         vol.Required(CONF_CONTACT_MODE, default=room.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY)): selector.SelectSelector(
             selector.SelectSelectorConfig(options=[CONTACT_MODE_ANY, CONTACT_MODE_ALL], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="contact_mode")
@@ -253,7 +253,7 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
                 selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
             ),
             vol.Optional(CONF_ROOM_CONTACTS, default=room.get(CONF_ROOM_CONTACTS, [])): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+                selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "input_select", "select"], multiple=True)
             ),
             vol.Required(CONF_CONTACT_MODE, default=room.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY)): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=[CONTACT_MODE_ANY, CONTACT_MODE_ALL], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="contact_mode")
@@ -315,6 +315,7 @@ def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
     temperatures = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidities = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
     covers = room.get(CONF_CONTACT_COVERS) or {}
+    passage_doors = room.get(CONF_CONTACT_PASSAGE_DOORS) or {}
     for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
         state = hass.states.get(contact) if hass is not None else None
         label = str((state.attributes or {}).get("friendly_name") or contact) if state else str(contact)
@@ -330,6 +331,16 @@ def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
         fields[temp_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
         fields[humidity_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
         fields[cover_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="cover", multiple=True))
+    contacts = list(room.get(CONF_ROOM_CONTACTS, []) or [])
+    if contacts:
+        options = []
+        for contact in contacts:
+            state = hass.states.get(contact) if hass is not None else None
+            label = str((state.attributes or {}).get("friendly_name") or contact) if state else str(contact)
+            options.append({"value": str(contact), "label": label})
+        fields[vol.Optional(CONF_CONTACT_PASSAGE_DOORS, default=[c for c in contacts if passage_doors.get(c)])] = selector.SelectSelector(
+            selector.SelectSelectorConfig(options=options, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)
+        )
     return vol.Schema(fields)
 
 
@@ -338,6 +349,7 @@ def _apply_contact_references(room: dict[str, Any], user_input: dict[str, Any]) 
     temperatures: dict[str, str] = {}
     humidities: dict[str, str] = {}
     contact_covers: dict[str, list[str]] = {}
+    passage_doors: dict[str, bool] = {}
     for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
         contact = str(contact)
         temp = str(user_input.get(_contact_reference_field(contact, "temperature")) or "").strip()
@@ -356,6 +368,10 @@ def _apply_contact_references(room: dict[str, Any], user_input: dict[str, Any]) 
     room[CONF_CONTACT_REFERENCE_TEMPERATURES] = temperatures
     room[CONF_CONTACT_REFERENCE_HUMIDITIES] = humidities
     room[CONF_CONTACT_COVERS] = contact_covers
+    selected_passage = user_input.get(CONF_CONTACT_PASSAGE_DOORS) or []
+    if isinstance(selected_passage, str):
+        selected_passage = [selected_passage]
+    room[CONF_CONTACT_PASSAGE_DOORS] = {str(c): True for c in selected_passage if str(c) in {str(x) for x in room.get(CONF_ROOM_CONTACTS, []) or []}}
     return True
 
 
@@ -434,6 +450,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_CONTACT_REFERENCE_TEMPERATURES: dict(previous.get(CONF_CONTACT_REFERENCE_TEMPERATURES, {})),
         CONF_CONTACT_REFERENCE_HUMIDITIES: dict(previous.get(CONF_CONTACT_REFERENCE_HUMIDITIES, {})),
         CONF_CONTACT_COVERS: deepcopy(previous.get(CONF_CONTACT_COVERS, {})),
+        CONF_CONTACT_PASSAGE_DOORS: deepcopy(previous.get(CONF_CONTACT_PASSAGE_DOORS, {})),
     })
     # If all dimensions are present they are the source of truth; otherwise use
     # the direct m³ value. This keeps dimension-based rooms editable without a
@@ -459,6 +476,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         c: list(dict.fromkeys(str(entity_id) for entity_id in (room[CONF_CONTACT_COVERS].get(c) or []) if str(entity_id).startswith("cover.")))
         for c in contacts if room[CONF_CONTACT_COVERS].get(c)
     }
+    room[CONF_CONTACT_PASSAGE_DOORS] = {c: bool(room.get(CONF_CONTACT_PASSAGE_DOORS, {}).get(c, False)) for c in contacts}
     return room, {}
 
 

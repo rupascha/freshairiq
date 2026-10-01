@@ -103,6 +103,7 @@ def stabilise_recommendation(
     tolerated_long_open = [
         r for r in active
         if not r.get("moisture_source_active")
+        and not bool(r.get("opening_state_explicit"))
         and _f(r.get("session_elapsed_min")) >= max_duration + 10.0
         and _f(r.get("temperature_change_c")) > -1.5
         and _f(r.get("delta_g_m3")) >= -0.2

@@ -39,6 +39,26 @@ def _room_defaults() -> dict[str, Any]:
         "learning_rate": 0.03,
         "learning_samples": 0,
         "learning_sample_credit": 0.0,
+        # Explicit three-state openings learn independently. The established
+        # binary/general model remains the fallback and is never reset.
+        "opening_learning": {
+            "open": {"rate": 0.03, "samples": 0, "credit": 0.0},
+            "tilted": {"rate": 0.015, "samples": 0, "credit": 0.0},
+            "cross": {"rate": 0.04, "samples": 0, "credit": 0.0},
+        },
+        "three_state_contacts": [],
+        "three_state_unknown_contacts": [],
+        "three_state_stale_contacts": [],
+        "session_three_state_unknown_observed": False,
+        "session_opening_mode": None,
+        "session_opening_mode_mixed": False,
+        "stable_opening_mode": None,
+        "three_state_transients_suppressed": 0,
+        "session_passage_door": False,
+        "session_learning_quarantined": False,
+        "session_learning_quarantine_code": None,
+        "passage_behavior": {},
+        "session_passage_contacts": [],
         # Indirect/passive airing is learned separately so evidence from a room
         # without its own opening can never contaminate the direct opening model.
         "passive_learning_rate": 0.03,
@@ -481,6 +501,26 @@ class LearningStore:
             room[key] = 0 if value is None else min(max(int(value), 0), 1000)
         sample_credit = finite(room.get("learning_sample_credit"))
         room["learning_sample_credit"] = 0.0 if sample_credit is None else min(max(sample_credit, 0.0), 0.999999)
+        opening_learning = room.get("opening_learning") if isinstance(room.get("opening_learning"), dict) else {}
+        defaults = {"open": 0.03, "tilted": 0.015, "cross": 0.04}
+        clean_opening_learning = {}
+        for mode, default_rate in defaults.items():
+            row = opening_learning.get(mode) if isinstance(opening_learning.get(mode), dict) else {}
+            mode_rate = finite(row.get("rate"))
+            mode_samples = finite(row.get("samples"))
+            mode_credit = finite(row.get("credit"))
+            clean_opening_learning[mode] = {
+                "rate": default_rate if mode_rate is None else min(max(mode_rate, 0.002), 0.25),
+                "samples": 0 if mode_samples is None else min(max(int(mode_samples), 0), 1000),
+                "credit": 0.0 if mode_credit is None else min(max(mode_credit, 0.0), 0.999999),
+            }
+        room["opening_learning"] = clean_opening_learning
+        if not isinstance(room.get("three_state_contacts"), list):
+            room["three_state_contacts"] = []
+        if not isinstance(room.get("passage_behavior"), dict):
+            room["passage_behavior"] = {}
+        if not isinstance(room.get("session_passage_contacts"), list):
+            room["session_passage_contacts"] = []
         removed_factor = finite(room.get("outcome_removed_factor"))
         room["outcome_removed_factor"] = 1.0 if removed_factor is None else min(max(removed_factor, 0.40), 1.70)
         temp_factor = finite(room.get("outcome_temperature_factor"))

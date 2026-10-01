@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.2.3"
-DIAGNOSTICS_SCHEMA_VERSION = 14
+VERSION = "0.25.2.4"
+DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}.learning"
@@ -56,6 +56,9 @@ CONF_ROOM_ILLUMINANCE = "illuminance"
 # interventions by default; explicit service calls are required for actuation.
 CONF_ROOM_COVERS = "covers"  # legacy room-wide fallback; new UI assigns covers per opening
 CONF_CONTACT_COVERS = "contact_covers"
+CONF_CONTACT_PASSAGE_DOORS = "contact_passage_doors"
+THREE_STATE_TRANSITION_STABLE_SECONDS = 3.0
+THREE_STATE_UNKNOWN_HOLD_SECONDS = 30.0
 CONF_ROOM_CLIMATE = "climate"
 CONF_ROOM_EXHAUST_FAN = "exhaust_fan"
 CONF_ROOM_SUPPLY_FAN = "supply_fan"
