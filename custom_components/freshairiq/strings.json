@@ -134,6 +134,16 @@
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
           "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
         }
+      },
+      "room_passage_door": {
+        "title": "{opening_name} · Passage door",
+        "description": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples.",
+        "data": {
+          "passage_door": "Passage door that can be pulled shut from outside (Default: off)"
+        },
+        "data_description": {
+          "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
+        }
       }
     },
     "error": {
@@ -2153,6 +2163,16 @@
             }
           }
         }
+      },
+      "contact_passage_door": {
+        "title": "{opening_name} · Passage door",
+        "description": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples.",
+        "data": {
+          "passage_door": "Passage door that can be pulled shut from outside (Default: off)"
+        },
+        "data_description": {
+          "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
+        }
       }
     },
     "error": {
@@ -2730,6 +2750,16 @@
           },
           "data_description": {
             "contact_passage_doors": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
+          }
+        },
+        "room_passage_door": {
+          "title": "{opening_name} · Passage door",
+          "description": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples.",
+          "data": {
+            "passage_door": "Passage door that can be pulled shut from outside (Default: off)"
+          },
+          "data_description": {
+            "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
           }
         }
       },

@@ -1,3 +1,10 @@
+## 0.25.2.6 - Localized Passage Door UI Hotfix
+
+- Replaces raw dynamic passage-door field identifiers with a dedicated per-opening translated step.
+- German Home Assistant now shows the complete German label and explanation; English shows the complete English copy.
+- Keeps the setting contact-specific and preserves existing passage-door mappings.
+- Explicitly explains that the option is only for a genuine three-state contact sensor in the door fitting/hardware and not for helper-based three-state sensors.
+
 ## 0.25.2.5 - Per-Opening Passage Door UI Hotfix
 
 - Replaces the room-wide passage-door multi-select with one simple switch on each configured opening.

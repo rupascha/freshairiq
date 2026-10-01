@@ -135,6 +135,16 @@
           "outdoor_humidity": "Optional. Nur zusammen mit einem Außen-Temperatursensor verwenden.",
           "pollen_entity": "Optional. Wird später nur bei aktivierter Pollenberücksichtigung ausgewertet."
         }
+      },
+      "room_passage_door": {
+        "title": "{opening_name} · Durchgangstür",
+        "description": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben.",
+        "data": {
+          "passage_door": "Durchgangstür, die von außen zugezogen wird (Standard: aus)"
+        },
+        "data_description": {
+          "passage_door": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben."
+        }
       }
     },
     "error": {
@@ -2167,6 +2177,16 @@
             }
           }
         }
+      },
+      "contact_passage_door": {
+        "title": "{opening_name} · Durchgangstür",
+        "description": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben.",
+        "data": {
+          "passage_door": "Durchgangstür, die von außen zugezogen wird (Standard: aus)"
+        },
+        "data_description": {
+          "passage_door": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben."
+        }
       }
     },
     "error": {
@@ -2744,6 +2764,16 @@
           },
           "data_description": {
             "contact_passage_doors": "Nur aktivieren, wenn ein echter Drei-Zustands-Sensor am Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Diese Option ist für Türen gedacht, die als Durchgang genutzt und anschließend von außen nur zugezogen werden, während der Sensor weiterhin „offen“ meldet. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden. FreshAirIQ schützt dadurch das Lernmodell vor einer falschen Open-Lernprobe."
+          }
+        },
+        "room_passage_door": {
+          "title": "{opening_name} · Durchgangstür",
+          "description": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben.",
+          "data": {
+            "passage_door": "Durchgangstür, die von außen zugezogen wird (Standard: aus)"
+          },
+          "data_description": {
+            "passage_door": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben."
           }
         }
       },

@@ -303,10 +303,6 @@ def _contact_reference_field(contact: str, kind: str) -> str:
     return f"{contact}__freshairiq_reference_{kind}"
 
 
-def _contact_passage_field(contact: str) -> str:
-    """Return the contact-local passage-door field used by the room editor."""
-    return f"{contact}__freshairiq_passage_door"
-
 
 def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
     """Build one temperature/humidity reference pair per configured opening.
@@ -320,7 +316,6 @@ def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
     temperatures = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidities = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
     covers = room.get(CONF_CONTACT_COVERS) or {}
-    passage_doors = room.get(CONF_CONTACT_PASSAGE_DOORS) or {}
     for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
         state = hass.states.get(contact) if hass is not None else None
         label = str((state.attributes or {}).get("friendly_name") or contact) if state else str(contact)
@@ -336,32 +331,6 @@ def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
         fields[temp_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
         fields[humidity_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
         fields[cover_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="cover", multiple=True))
-    # Passage-door behaviour belongs to one concrete opening.  Keep the
-    # persisted mapping for backwards compatibility, but present one simple
-    # switch directly on every configured opening instead of a room-wide
-    # multi-select.  The label intentionally carries the hardware warning so
-    # users do not have to infer which kind of contact is supported.
-    language = str(getattr(getattr(hass, "config", None), "language", "en") or "en").lower()
-    for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
-        contact = str(contact)
-        state = hass.states.get(contact) if hass is not None else None
-        label = str((state.attributes or {}).get("friendly_name") or contact) if state else contact
-        passage_key = _contact_passage_field(contact)
-        if language.startswith("de"):
-            passage_label = (
-                f"{label} · Durchgangstür, die von außen zugezogen wird "
-                "(nur bei echtem Drei-Zustands-Kontaktsensor im Türbeschlag aktivieren)"
-            )
-        else:
-            passage_label = (
-                f"{label} · Passage door that is pulled shut from outside "
-                "(enable only with a genuine three-state contact sensor in the door hardware)"
-            )
-        fields[vol.Optional(
-            passage_key,
-            default=bool(passage_doors.get(contact, False)),
-            description=passage_label,
-        )] = selector.BooleanSelector()
     return vol.Schema(fields)
 
 
@@ -392,17 +361,30 @@ def _apply_contact_references(room: dict[str, Any], user_input: dict[str, Any]) 
     configured_contacts = [str(x) for x in room.get(CONF_ROOM_CONTACTS, []) or []]
     # New UI: one boolean per opening.  Accept the former room-wide
     # multi-select as a compatibility fallback for in-flight/legacy forms.
-    if any(_contact_passage_field(c) in user_input for c in configured_contacts):
-        room[CONF_CONTACT_PASSAGE_DOORS] = {
-            c: True for c in configured_contacts
-            if bool(user_input.get(_contact_passage_field(c), False))
-        }
-    else:
+    if CONF_CONTACT_PASSAGE_DOORS in user_input:
         selected_passage = user_input.get(CONF_CONTACT_PASSAGE_DOORS) or []
         if isinstance(selected_passage, str):
             selected_passage = [selected_passage]
         room[CONF_CONTACT_PASSAGE_DOORS] = {c: True for c in selected_passage if c in set(configured_contacts)}
+    else:
+        room[CONF_CONTACT_PASSAGE_DOORS] = {
+            c: True for c in configured_contacts
+            if bool((room.get(CONF_CONTACT_PASSAGE_DOORS) or {}).get(c, False))
+        }
     return True
+
+
+def _passage_door_schema(room: dict[str, Any], contact: str) -> vol.Schema:
+    current = bool((room.get(CONF_CONTACT_PASSAGE_DOORS) or {}).get(contact, False))
+    return vol.Schema({vol.Optional("passage_door", default=current): selector.BooleanSelector()})
+
+def _apply_passage_door(room: dict[str, Any], contact: str, enabled: bool) -> None:
+    mapping = dict(room.get(CONF_CONTACT_PASSAGE_DOORS) or {})
+    if enabled:
+        mapping[contact] = True
+    else:
+        mapping.pop(contact, None)
+    room[CONF_CONTACT_PASSAGE_DOORS] = mapping
 
 
 def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, Any]], *, keep_key: str | None = None) -> tuple[dict[str, Any] | None, dict[str, str]]:
@@ -951,7 +933,8 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             if _apply_contact_references(room, user_input):
-                return await self.async_step_more_rooms()
+                self._passage_contact_index = 0
+                return await self.async_step_room_passage_door()
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="room_references",
@@ -959,6 +942,22 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
             description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum"))},
         )
+
+
+    async def async_step_room_passage_door(self, user_input=None) -> FlowResult:
+        room = next((r for r in self._rooms if r.get("key") == getattr(self, "_pending_room_key", None)), None)
+        contacts = [str(c) for c in (room or {}).get(CONF_ROOM_CONTACTS, []) or []]
+        idx = int(getattr(self, "_passage_contact_index", 0))
+        if room is None or idx >= len(contacts):
+            return await self.async_step_more_rooms()
+        contact = contacts[idx]
+        if user_input is not None:
+            _apply_passage_door(room, contact, bool(user_input.get("passage_door", False)))
+            self._passage_contact_index = idx + 1
+            return await self.async_step_room_passage_door()
+        state = self.hass.states.get(contact) if self.hass is not None else None
+        label = str((state.attributes or {}).get("friendly_name") or contact) if state else contact
+        return self.async_show_form(step_id="room_passage_door", data_schema=_passage_door_schema(room, contact), description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Room")), "opening_name": label})
 
     async def async_step_more_rooms(self, user_input=None) -> FlowResult:
         if user_input is not None:
@@ -1265,8 +1264,8 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         errors = {}
         if user_input is not None:
             if _apply_contact_references(room, user_input):
-                self._persist_room_update()
-                return await self.async_step_reconfigure()
+                self._passage_contact_index = 0
+                return await self.async_step_room_passage_door()
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="room_references",
@@ -1274,6 +1273,23 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
             errors=errors,
             description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum")},
         )
+
+
+    async def async_step_room_passage_door(self, user_input=None):
+        room = self._current_room()
+        contacts = [str(c) for c in room.get(CONF_ROOM_CONTACTS, []) or []]
+        idx = int(getattr(self, "_passage_contact_index", 0))
+        if idx >= len(contacts):
+            self._persist_room_update()
+            return await self.async_step_reconfigure()
+        contact = contacts[idx]
+        if user_input is not None:
+            _apply_passage_door(room, contact, bool(user_input.get("passage_door", False)))
+            self._passage_contact_index = idx + 1
+            return await self.async_step_room_passage_door()
+        state = self.hass.states.get(contact) if self.hass is not None else None
+        label = str((state.attributes or {}).get("friendly_name") or contact) if state else contact
+        return self.async_show_form(step_id="room_passage_door", data_schema=_passage_door_schema(room, contact), description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Room"), "opening_name": label})
 
     async def async_step_save_room(self, user_input=None):
         entry = self._get_entry()
@@ -1911,8 +1927,8 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         errors = {}
         if user_input is not None:
             if _apply_contact_references(room, user_input):
-                self._persist_working_state()
-                return await self.async_step_rooms()
+                self._passage_contact_index = 0
+                return await self.async_step_contact_passage_door()
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="contact_references",
@@ -1920,6 +1936,23 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             errors=errors,
             description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum"))},
         )
+
+
+    async def async_step_contact_passage_door(self, user_input=None):
+        room = next((r for r in self._rooms() if r["key"] == self._selected_room_key), None)
+        contacts = [str(c) for c in (room or {}).get(CONF_ROOM_CONTACTS, []) or []]
+        idx = int(getattr(self, "_passage_contact_index", 0))
+        if room is None or idx >= len(contacts):
+            self._persist_working_state()
+            return await self.async_step_rooms()
+        contact = contacts[idx]
+        if user_input is not None:
+            _apply_passage_door(room, contact, bool(user_input.get("passage_door", False)))
+            self._passage_contact_index = idx + 1
+            return await self.async_step_contact_passage_door()
+        state = self.hass.states.get(contact) if self.hass is not None else None
+        label = str((state.attributes or {}).get("friendly_name") or contact) if state else contact
+        return self.async_show_form(step_id="contact_passage_door", data_schema=_passage_door_schema(room, contact), description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Room")), "opening_name": label})
 
     async def async_step_remove_room(self, user_input=None):
         if user_input is not None:
