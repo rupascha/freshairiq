@@ -303,6 +303,11 @@ def _contact_reference_field(contact: str, kind: str) -> str:
     return f"{contact}__freshairiq_reference_{kind}"
 
 
+def _contact_passage_field(contact: str) -> str:
+    """Return the contact-local passage-door field used by the room editor."""
+    return f"{contact}__freshairiq_passage_door"
+
+
 def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
     """Build one temperature/humidity reference pair per configured opening.
 
@@ -331,16 +336,32 @@ def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
         fields[temp_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
         fields[humidity_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
         fields[cover_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="cover", multiple=True))
-    contacts = list(room.get(CONF_ROOM_CONTACTS, []) or [])
-    if contacts:
-        options = []
-        for contact in contacts:
-            state = hass.states.get(contact) if hass is not None else None
-            label = str((state.attributes or {}).get("friendly_name") or contact) if state else str(contact)
-            options.append({"value": str(contact), "label": label})
-        fields[vol.Optional(CONF_CONTACT_PASSAGE_DOORS, default=[c for c in contacts if passage_doors.get(c)])] = selector.SelectSelector(
-            selector.SelectSelectorConfig(options=options, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN)
-        )
+    # Passage-door behaviour belongs to one concrete opening.  Keep the
+    # persisted mapping for backwards compatibility, but present one simple
+    # switch directly on every configured opening instead of a room-wide
+    # multi-select.  The label intentionally carries the hardware warning so
+    # users do not have to infer which kind of contact is supported.
+    language = str(getattr(getattr(hass, "config", None), "language", "en") or "en").lower()
+    for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
+        contact = str(contact)
+        state = hass.states.get(contact) if hass is not None else None
+        label = str((state.attributes or {}).get("friendly_name") or contact) if state else contact
+        passage_key = _contact_passage_field(contact)
+        if language.startswith("de"):
+            passage_label = (
+                f"{label} · Durchgangstür, die von außen zugezogen wird "
+                "(nur bei echtem Drei-Zustands-Kontaktsensor im Türbeschlag aktivieren)"
+            )
+        else:
+            passage_label = (
+                f"{label} · Passage door that is pulled shut from outside "
+                "(enable only with a genuine three-state contact sensor in the door hardware)"
+            )
+        fields[vol.Optional(
+            passage_key,
+            default=bool(passage_doors.get(contact, False)),
+            description=passage_label,
+        )] = selector.BooleanSelector()
     return vol.Schema(fields)
 
 
@@ -368,10 +389,19 @@ def _apply_contact_references(room: dict[str, Any], user_input: dict[str, Any]) 
     room[CONF_CONTACT_REFERENCE_TEMPERATURES] = temperatures
     room[CONF_CONTACT_REFERENCE_HUMIDITIES] = humidities
     room[CONF_CONTACT_COVERS] = contact_covers
-    selected_passage = user_input.get(CONF_CONTACT_PASSAGE_DOORS) or []
-    if isinstance(selected_passage, str):
-        selected_passage = [selected_passage]
-    room[CONF_CONTACT_PASSAGE_DOORS] = {str(c): True for c in selected_passage if str(c) in {str(x) for x in room.get(CONF_ROOM_CONTACTS, []) or []}}
+    configured_contacts = [str(x) for x in room.get(CONF_ROOM_CONTACTS, []) or []]
+    # New UI: one boolean per opening.  Accept the former room-wide
+    # multi-select as a compatibility fallback for in-flight/legacy forms.
+    if any(_contact_passage_field(c) in user_input for c in configured_contacts):
+        room[CONF_CONTACT_PASSAGE_DOORS] = {
+            c: True for c in configured_contacts
+            if bool(user_input.get(_contact_passage_field(c), False))
+        }
+    else:
+        selected_passage = user_input.get(CONF_CONTACT_PASSAGE_DOORS) or []
+        if isinstance(selected_passage, str):
+            selected_passage = [selected_passage]
+        room[CONF_CONTACT_PASSAGE_DOORS] = {c: True for c in selected_passage if c in set(configured_contacts)}
     return True
 
 

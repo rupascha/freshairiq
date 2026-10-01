@@ -110,8 +110,8 @@
         "data": {}
       },
       "room_references": {
-        "title": "Reference air per window/door · {room_name}",
-        "description": "Optional: Assign a local temperature and humidity reference to openings that do not lead to normal outdoor air. Example: conservatory door → select both conservatory sensors. Outdoor windows → leave empty. Temperature and humidity must always be selected as a pair from the same air zone.",
+        "title": "Openings · {room_name}",
+        "description": "Settings always apply to the individual door or window. Enable “Passage door that is pulled shut from outside” only for a genuine three-state contact sensor in the door hardware. Do not use it for three-state helpers built from multiple standard contact sensors.",
         "data": {
           "contact_passage_doors": "Door is used as a passage and pulled shut from outside"
         },
@@ -1610,8 +1610,8 @@
         }
       },
       "contact_references": {
-        "title": "Reference air per window/door · {room_name}",
-        "description": "Optional: For each opening into another air zone, select a complete temperature/humidity sensor pair. Outdoor windows stay empty and use the normal outdoor or room reference.",
+        "title": "Openings · {room_name}",
+        "description": "Settings always apply to the individual door or window. Enable “Passage door that is pulled shut from outside” only for a genuine three-state contact sensor in the door hardware. Do not use it for three-state helpers built from multiple standard contact sensors.",
         "data": {}
       },
       "building": {

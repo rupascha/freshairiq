@@ -111,8 +111,8 @@
         "data_description": {}
       },
       "room_references": {
-        "title": "Referenzluft & Rollo/Jalousie je Fenster/Tür · {room_name}",
-        "description": "Optional je Öffnung: Ordne Temperatur-/Feuchtereferenz und bei Bedarf das zugehörige Rollo bzw. die Jalousie direkt diesem Fenster oder dieser Tür zu. Beispiel: Tür zum Wintergarten → beide Wintergarten-Sensoren; normales Außenfenster → Referenz leer lassen. Rollos/Jalousien werden immer kontaktbezogen zugeordnet. Die Zusatzzuordnung verändert die bestehende Feuchte-/Lüftungsphysik nicht eigenmächtig.",
+        "title": "Öffnungen · {room_name}",
+        "description": "Einstellungen gelten immer für die jeweilige Tür bzw. das jeweilige Fenster. „Durchgangstür, die von außen zugezogen wird“ nur bei einem echten Drei-Zustands-Kontaktsensor im Türbeschlag aktivieren. Nicht für aus mehreren einfachen Kontaktsensoren erstellte Drei-Zustands-Helfer verwenden.",
         "data": {
           "contact_passage_doors": "Tür wird als Durchgang genutzt und von außen zugezogen"
         },
@@ -1623,8 +1623,8 @@
         }
       },
       "contact_references": {
-        "title": "Referenzluft & Rollo/Jalousie je Fenster/Tür · {room_name}",
-        "description": "Optional: Für jede Öffnung in einen anderen Luftbereich ein vollständiges Temperatur-/Feuchte-Sensorpaar auswählen. Normale Außenfenster bleiben leer und verwenden die Außen- bzw. Raumreferenz.",
+        "title": "Öffnungen · {room_name}",
+        "description": "Einstellungen gelten immer für die jeweilige Tür bzw. das jeweilige Fenster. „Durchgangstür, die von außen zugezogen wird“ nur bei einem echten Drei-Zustands-Kontaktsensor im Türbeschlag aktivieren. Nicht für aus mehreren einfachen Kontaktsensoren erstellte Drei-Zustands-Helfer verwenden.",
         "data": {},
         "data_description": {}
       },

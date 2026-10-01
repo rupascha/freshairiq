@@ -1,3 +1,10 @@
+## 0.25.2.5 - Per-Opening Passage Door UI Hotfix
+
+- Replaces the room-wide passage-door multi-select with one simple switch on each configured opening.
+- Keeps the explicit wording that the door is used as a passage and pulled shut from outside.
+- Makes the genuine three-state contact sensor in the door hardware requirement visible directly on the option.
+- Preserves the existing per-contact storage contract and existing installations without migration.
+
 ## 0.25.2.4 - Three-State Opening & Battery Confidence Reliability Hotfix
 
 - Adds explicit closed/open/tilted contact intelligence while preserving classic binary-contact behaviour.
