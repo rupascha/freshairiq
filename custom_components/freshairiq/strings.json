@@ -4,18 +4,12 @@
     "step": {
       "user": {
         "title": "Add FreshAirIQ",
-        "description": "FreshAirIQ can be added immediately without configuring any rooms. The outdoor-air source, rooms and all other settings are optional here and can be configured later under Devices & services or via the dashboard settings button. Until the required climate sources are available, FreshAirIQ does not perform ventilation calculations, but the dashboard remains available.",
+        "description": "FreshAirIQ can still be installed without configuring any rooms, so the dashboard remains available immediately. For a quick start you can add a first room with an estimated size, or choose detailed setup. Everything can be changed later under Settings and Devices & services.",
         "data": {
-          "outdoor_weather": "Local weather entity (recommended)",
-          "outdoor_temperature": "Outdoor temperature sensor (optional)",
-          "outdoor_humidity": "Outdoor humidity sensor (optional)",
-          "pollen_entity": "Pollen index sensor (optional)"
+          "setup_mode": "Setup path (Default: Quick setup)"
         },
         "data_description": {
-          "outdoor_weather": "Optional. Recommended source for outdoor air and weather forecasts. It can be added at any time after installation.",
-          "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
-          "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
-          "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
+          "setup_mode": "Default: Quick setup. Example: choose “Install now, configure later” if you only want to explore FreshAirIQ first."
         }
       },
       "room": {
@@ -143,6 +137,40 @@
         },
         "data_description": {
           "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
+        }
+      },
+      "exact_outdoor": {
+        "title": "Detailed setup · Outdoor air",
+        "description": "Choose the outdoor-air reference first. You can then configure rooms with full details.",
+        "data": {
+          "outdoor_weather": "Local weather entity (recommended)",
+          "outdoor_temperature": "Outdoor temperature sensor (optional)",
+          "outdoor_humidity": "Outdoor humidity sensor (optional)",
+          "pollen_entity": "Pollen index sensor (optional)"
+        },
+        "data_description": {
+          "outdoor_weather": "Default: empty. Example: weather.home. Recommended when the weather entity provides current outdoor values.",
+          "outdoor_temperature": "Default: empty. Example: sensor.outdoor_temperature. Use only together with outdoor humidity.",
+          "outdoor_humidity": "Default: empty. Example: sensor.outdoor_humidity. Use only together with outdoor temperature.",
+          "pollen_entity": "Default: empty. Example: sensor.pollen_index. Optional for pollen evaluation."
+        }
+      },
+      "quick_room": {
+        "title": "Quick setup · First room",
+        "description": "Select the sensors you already have and estimate the room floor area. For quick setup FreshAirIQ automatically assumes a room height of 2.40 m. You can replace this estimate with exact dimensions later under Settings → Rooms.",
+        "data": {
+          "name": "Room name",
+          "temperature": "Temperature sensor (optional)",
+          "humidity": "Humidity sensor (optional)",
+          "contacts": "Window/door contact (optional)",
+          "estimated_area_m2": "Estimated floor area (Default: empty)"
+        },
+        "data_description": {
+          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+          "name": "Custom display name for the first room.",
+          "temperature": "Optional for first start. Use together with a humidity sensor for active climate calculations.",
+          "humidity": "Optional for first start. Use together with a temperature sensor for active climate calculations.",
+          "contacts": "Optional. Window and door contacts can be added now or later."
         }
       }
     },
@@ -287,6 +315,13 @@
         "percent_room_water": "Percentage of room water content",
         "fixed_ml": "Fixed mL value"
       }
+    },
+    "setup_mode": {
+      "options": {
+        "quick": "Quick setup (recommended)",
+        "exact": "Detailed setup",
+        "later": "Install now, configure later"
+      }
     }
   },
   "options": {
@@ -388,7 +423,9 @@
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
           "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
+          "estimated_area_m2": "Estimated floor area (Default: empty)",
+          "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
         },
         "sections": {
           "identity": {
@@ -525,7 +562,9 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+          "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
         },
         "section": {
           "identity": {
@@ -675,7 +714,9 @@
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
           "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
+          "estimated_area_m2": "Estimated floor area (Default: empty)",
+          "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
         },
         "sections": {
           "identity": {
@@ -812,7 +853,9 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+          "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
         },
         "section": {
           "identity": {
@@ -1918,7 +1961,9 @@
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
           "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
+          "estimated_area_m2": "Estimated floor area (Default: empty)",
+          "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
         },
         "sections": {
           "identity": {
@@ -2055,7 +2100,9 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+          "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
         },
         "section": {
           "identity": {
@@ -2479,7 +2526,9 @@
             "moisture_sources": "Moisture sources in the room (Default: none)",
             "ventilation_threshold_mode": "Individual ventilation threshold",
             "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-            "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+            "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
+            "estimated_area_m2": "Estimated floor area (Default: empty)",
+            "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
           },
           "sections": {
             "identity": {
@@ -2521,7 +2570,9 @@
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-            "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+            "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+            "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+            "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
           }
         },
         "reconfigure": {
@@ -2573,7 +2624,9 @@
             "ventilation_device": "Ventilation/HRV device (optional)",
             "dehumidifier": "Dehumidifier (optional)",
             "humidifier": "Humidifier (optional)",
-            "air_purifier": "Air purifier (optional)"
+            "air_purifier": "Air purifier (optional)",
+            "estimated_area_m2": "Estimated floor area (Default: empty)",
+            "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
           },
           "sections": {
             "identity": {
@@ -2709,7 +2762,9 @@
             "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
             "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
             "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
-            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
+            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
+            "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+            "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
           }
         },
         "add_orientations": {

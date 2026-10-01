@@ -260,7 +260,9 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             ),
         }), {"collapsed": False}),
         vol.Required("geometry"): section(vol.Schema({
-            _optional(CONF_ROOM_VOLUME, room.get(CONF_ROOM_VOLUME)): _number(2, 1000, 0.1, "m³"),
+            _optional(QUICK_SETUP_AREA_KEY, room.get(QUICK_SETUP_AREA_KEY)): _number(2, 300, 0.5, "m²"),
+            _optional("estimated_height_m", (QUICK_SETUP_HEIGHT_M if room.get(QUICK_SETUP_AREA_KEY) and room.get(QUICK_SETUP_HEIGHT_ASSUMED_KEY) else None)): _number(1, 20, 0.01, "m"),
+            _optional(CONF_ROOM_VOLUME, (None if room.get(QUICK_SETUP_AREA_KEY) else room.get(CONF_ROOM_VOLUME))): _number(2, 1000, 0.1, "m³"),
             _optional(CONF_ROOM_LENGTH, room.get(CONF_ROOM_LENGTH)): _number(0.5, 100, 0.01, "m"),
             _optional(CONF_ROOM_WIDTH, room.get(CONF_ROOM_WIDTH)): _number(0.5, 100, 0.01, "m"),
             _optional(CONF_ROOM_HEIGHT, room.get(CONF_ROOM_HEIGHT)): _number(1, 20, 0.01, "m"),
@@ -410,7 +412,14 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     # no own/assigned opening. Contacts describe *how* FreshAirIQ can observe a
     # ventilation path; they are not a prerequisite for climate calculation.
 
+    estimated_area = _number_or_none(user_input.get(QUICK_SETUP_AREA_KEY))
+    estimated_height = _number_or_none(user_input.get("estimated_height_m"))
     volume = _number_or_none(user_input.get(CONF_ROOM_VOLUME))
+    if volume is None and estimated_area is not None and estimated_height is not None:
+        volume = estimated_area * estimated_height
+        user_input[QUICK_SETUP_AREA_KEY] = round(estimated_area, 2)
+        user_input[QUICK_SETUP_HEIGHT_ASSUMED_KEY] = abs(estimated_height - QUICK_SETUP_HEIGHT_M) < 0.001
+        user_input.pop("estimated_height_m", None)
     length = _number_or_none(user_input.get(CONF_ROOM_LENGTH))
     width = _number_or_none(user_input.get(CONF_ROOM_WIDTH))
     height = _number_or_none(user_input.get(CONF_ROOM_HEIGHT))
@@ -824,6 +833,38 @@ def _notification_schema(hass, current: dict[str, Any], rooms: list[dict[str, An
     })
 
 
+QUICK_SETUP_HEIGHT_M = 2.40
+QUICK_SETUP_AREA_KEY = "estimated_area_m2"
+QUICK_SETUP_HEIGHT_ASSUMED_KEY = "height_assumed"
+
+
+def _quick_room_schema() -> vol.Schema:
+    """Minimal first-room setup: sensors first, geometry may be estimated."""
+    return vol.Schema({
+        vol.Required(CONF_ROOM_NAME): selector.TextSelector(),
+        vol.Optional(CONF_ROOM_TEMPERATURE): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", device_class="temperature")
+        ),
+        vol.Optional(CONF_ROOM_HUMIDITY): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
+        ),
+        vol.Optional(CONF_ROOM_CONTACTS, default=[]): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "input_select", "select"], multiple=True)
+        ),
+        vol.Required(QUICK_SETUP_AREA_KEY, default=15.0): _number(2, 300, 0.5, "m²"),
+    })
+
+
+def _quick_room_input(user_input: dict[str, Any]) -> dict[str, Any]:
+    """Convert an estimated floor area into the canonical room-volume contract."""
+    area = float(user_input.get(QUICK_SETUP_AREA_KEY) or 0)
+    data = {k: v for k, v in dict(user_input).items() if k != QUICK_SETUP_AREA_KEY}
+    data[CONF_ROOM_VOLUME] = round(area * QUICK_SETUP_HEIGHT_M, 3)
+    data[QUICK_SETUP_AREA_KEY] = round(area, 2)
+    data[QUICK_SETUP_HEIGHT_ASSUMED_KEY] = True
+    return data
+
+
 class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 8
 
@@ -836,20 +877,24 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         legacy_entries = self.hass.config_entries.async_entries(LEGACY_DOMAIN)
         if legacy_entries and user_input is None:
             return await self.async_step_legacy_import()
-        errors = {}
         if user_input is not None:
-            error = _outdoor_configuration_error(dict(user_input))
-            if error:
-                errors["base"] = error
-            else:
-                self._base = {k: v for k, v in dict(user_input).items() if v not in (None, "")}
-                # v0.24.14.0: installation is intentionally frictionless. Rooms,
-                # outdoor sources and every advanced setting can be completed later
-                # from Devices & Services or the dashboard gear.
+            mode = str(user_input.get("setup_mode") or "quick")
+            if mode == "later":
+                self._base = {}
                 self._base.setdefault(CONF_ROOMS, [])
                 self._base.setdefault(CONF_LEVELS, [])
                 return self.async_create_entry(title="FreshAirIQ", data=self._base)
-        return self.async_show_form(step_id="user", data_schema=_outdoor_schema(), errors=errors)
+            if mode == "exact":
+                return await self.async_step_exact_outdoor()
+            return await self.async_step_quick_room()
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema({
+                vol.Required("setup_mode", default="quick"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=["quick", "exact", "later"], mode=selector.SelectSelectorMode.LIST, translation_key="setup_mode")
+                )
+            }),
+        )
 
     async def async_step_reconfigure(self, user_input=None) -> FlowResult:
         """Reconfigure the mandatory outdoor data source.
@@ -885,6 +930,33 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="reconfigure",
             data_schema=_outdoor_schema(current),
             errors=errors,
+        )
+
+    async def async_step_exact_outdoor(self, user_input=None) -> FlowResult:
+        errors = {}
+        if user_input is not None:
+            error = _outdoor_configuration_error(dict(user_input))
+            if error:
+                errors["base"] = error
+            else:
+                self._base = {k: v for k, v in dict(user_input).items() if v not in (None, "")}
+                self._base.setdefault(CONF_ROOMS, [])
+                self._base.setdefault(CONF_LEVELS, [])
+                return await self.async_step_room()
+        return self.async_show_form(step_id="exact_outdoor", data_schema=_outdoor_schema(), errors=errors)
+
+    async def async_step_quick_room(self, user_input=None) -> FlowResult:
+        errors = {}
+        if user_input is not None:
+            room, errors = _normalise_room(_quick_room_input(user_input), self._rooms)
+            if room and not errors:
+                self._rooms.append(room)
+                self._base = {CONF_ROOMS: self._rooms, CONF_LEVELS: [room.get(CONF_ROOM_FLOOR, "Unzugeordnet")]}
+                subentries = [{"subentry_type": "room", "data": dict(room), "title": room.get(CONF_ROOM_NAME, room["key"]), "unique_id": f"room:{room['key']}"}]
+                return self.async_create_entry(title="FreshAirIQ", data=self._base, subentries=subentries)
+        return self.async_show_form(
+            step_id="quick_room", data_schema=_quick_room_schema(), errors=errors,
+            description_placeholders={"assumed_height": f"{QUICK_SETUP_HEIGHT_M:.2f}"},
         )
 
     async def async_step_legacy_import(self, user_input=None) -> FlowResult:
@@ -1499,7 +1571,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_data_learning_settings(self, user_input=None):
         return self.async_show_menu(
             step_id="data_learning_settings",
-            menu_options=["statistics", "diagnostics_sharing", "back_to_main"],
+            menu_options=["statistics", "back_to_main"],
         )
 
     # Compatibility aliases for flows started with v0.19.0.0 or older.

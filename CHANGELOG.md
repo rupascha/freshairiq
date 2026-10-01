@@ -1,3 +1,18 @@
+## 0.25.2.8 - Settings UX i18n & Quick Setup Provenance Hotfix
+
+- Completes English fallbacks for the new room-size and Support settings introduced in v0.25.2.7.
+- Tracks whether the 2.40 m Quick Setup height is still an automatic assumption or has been explicitly confirmed by the user.
+- Removes the estimated-size notice after the room height is confirmed, including when the measured height is exactly 2.40 m.
+- Adds regression guards for localization and the Quick Setup assumption provenance.
+
+## 0.25.2.7 - Settings UX & Quick Setup Hotfix
+
+- Adds a first-run Quick Setup path with an explicit 2.40 m assumed room height for estimated floor areas.
+- Keeps the estimate visible/editable later instead of blocking first use on exact measurements.
+- Separates Dashboard Settings from Support; diagnostics, feedback and improvement reports now live under Support.
+- Aligns the dashboard settings hierarchy around home, occupants, rooms, ventilation, notifications, learning, energy and maintenance.
+- Adds complete German/English strings for the new native onboarding path; non-German Home Assistant locales fall back to English.
+
 ## 0.25.2.6 - Localized Passage Door UI Hotfix
 
 - Replaces raw dynamic passage-door field identifiers with a dedicated per-opening translated step.

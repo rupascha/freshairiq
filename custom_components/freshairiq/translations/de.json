@@ -4,18 +4,12 @@
     "step": {
       "user": {
         "title": "FreshAirIQ hinzufügen",
-        "description": "FreshAirIQ kann sofort ohne Raumkonfiguration hinzugefügt werden. Außenluftquelle, Räume und alle weiteren Einstellungen sind hier optional und können anschließend über Geräte & Dienste oder das Dashboard-Zahnrad eingerichtet werden. Solange notwendige Klimaquellen fehlen, erstellt FreshAirIQ keine Lüftungsberechnungen – das Dashboard bleibt trotzdem verfügbar.",
+        "description": "FreshAirIQ kann sofort ohne Räume installiert werden. Für einen schnellen Start kannst du direkt einen ersten Raum mit geschätzter Größe anlegen; alternativ ist eine genaue Einrichtung möglich. Alles bleibt später unter Einstellungen änderbar.",
         "data": {
-          "outdoor_weather": "Wetter-Entität (optional – später konfigurierbar)",
-          "outdoor_temperature": "Außentemperatur (optional – später konfigurierbar)",
-          "outdoor_humidity": "Außenluftfeuchtigkeit (optional – später konfigurierbar)",
-          "pollen_entity": "Pollenindex (optional – später konfigurierbar)"
+          "setup_mode": "Startart (Standard: Schnell einrichten)"
         },
         "data_description": {
-          "outdoor_weather": "Optional. Empfohlene Quelle für Außenluft und Wetterprognose. Kann jederzeit nach der Installation ergänzt werden.",
-          "outdoor_temperature": "Optional. Ohne Wetter-Entität nur gemeinsam mit Außenluftfeuchtigkeit verwenden.",
-          "outdoor_humidity": "Optional. Ohne Wetter-Entität nur gemeinsam mit Außentemperatur verwenden.",
-          "pollen_entity": "Optional. Wird nur bei aktivierter Pollenberücksichtigung ausgewertet."
+          "setup_mode": "Schnell einrichten ist für den ersten Start empfohlen. Du kannst stattdessen genau einrichten oder FreshAirIQ zunächst ohne Räume installieren."
         }
       },
       "room": {
@@ -144,6 +138,40 @@
         },
         "data_description": {
           "passage_door": "Nur aktivieren, wenn diese Öffnung eine Durchgangstür ist, die von außen zugezogen werden kann, und ein echter Drei-Zustands-Kontaktsensor im Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren normalen Kontaktsensoren erstellt wurden. FreshAirIQ verhindert damit falsche Open-Lernproben."
+        }
+      },
+      "exact_outdoor": {
+        "title": "Genau einrichten · Außenluft",
+        "description": "Wähle zuerst die Außenluft-Referenz. Danach richtest du Räume mit den vollständigen Angaben ein.",
+        "data": {
+          "outdoor_weather": "Lokale Wetter-Entität (empfohlen)",
+          "outdoor_temperature": "Außentemperatur-Sensor (optional)",
+          "outdoor_humidity": "Außenluftfeuchte-Sensor (optional)",
+          "pollen_entity": "Pollenindex-Sensor (optional)"
+        },
+        "data_description": {
+          "outdoor_weather": "weather.home. Empfohlen, wenn deine Wetter-Entität aktuelle Außenwerte bereitstellt.",
+          "outdoor_temperature": "sensor.aussentemperatur. Nur zusammen mit Außenluftfeuchte verwenden.",
+          "outdoor_humidity": "sensor.aussenluftfeuchte. Nur zusammen mit Außentemperatur verwenden.",
+          "pollen_entity": "sensor.pollenindex. Optional für die Pollenbewertung."
+        }
+      },
+      "quick_room": {
+        "title": "Schnell einrichten · Erster Raum",
+        "description": "Wähle die vorhandenen Sensoren und schätze die Raumfläche. Für die Schnellkonfiguration nimmt FreshAirIQ automatisch eine Raumhöhe von 2,40 m an. Die Schätzung kannst du später unter Einstellungen → Räume jederzeit durch exakte Maße ersetzen.",
+        "data": {
+          "name": "Raumname",
+          "temperature": "Temperatursensor (optional)",
+          "humidity": "Luftfeuchtigkeitssensor (optional)",
+          "contacts": "Fenster-/Türkontakt (optional)",
+          "estimated_area_m2": "Geschätzte Raumfläche (Standard: leer)"
+        },
+        "data_description": {
+          "estimated_area_m2": "Für die Schnellkonfiguration reicht zunächst eine Schätzung; die Angabe kann später exakt ersetzt werden.",
+          "name": "Frei wählbarer Anzeigename des ersten Raums.",
+          "temperature": "Optional für den ersten Start. Für aktive Klimaberechnungen zusammen mit einem Feuchtesensor verwenden.",
+          "humidity": "Optional für den ersten Start. Für aktive Klimaberechnungen zusammen mit einem Temperatursensor verwenden.",
+          "contacts": "Optional. Fenster- und Türkontakte können sofort oder später ergänzt werden."
         }
       }
     },
@@ -288,6 +316,13 @@
         "percent_room_water": "Prozent der Raum-Wassermenge",
         "fixed_ml": "Fester ml-Wert"
       }
+    },
+    "setup_mode": {
+      "options": {
+        "quick": "Schnell einrichten (empfohlen)",
+        "exact": "Genau einrichten",
+        "later": "Erst einmal nur installieren"
+      }
     }
   },
   "options": {
@@ -391,7 +426,9 @@
           "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)",
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze (Standard: Automatisch)",
           "ventilation_threshold_percent": "Raumgrenze in Prozent (Standard: 5 %)",
-          "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)"
+          "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)",
+          "estimated_area_m2": "Geschätzte Raumfläche (Standard: leer)",
+          "estimated_height_m": "Raumhöhe zur Flächenschätzung (Standard: 2,40 m bei Schnellkonfiguration)"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -422,7 +459,9 @@
           "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "estimated_area_m2": "Für die Schnellkonfiguration reicht zunächst eine Schätzung; die Angabe kann später exakt ersetzt werden.",
+          "estimated_height_m": "Die Schnellkonfiguration verwendet zunächst 2,40 m; die tatsächliche Raumhöhe kann später eingetragen werden."
         },
         "sections": {
           "identity": {
@@ -678,7 +717,9 @@
           "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)",
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze (Standard: Automatisch)",
           "ventilation_threshold_percent": "Raumgrenze in Prozent (Standard: 5 %)",
-          "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)"
+          "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)",
+          "estimated_area_m2": "Geschätzte Raumfläche (Standard: leer)",
+          "estimated_height_m": "Raumhöhe zur Flächenschätzung (Standard: 2,40 m bei Schnellkonfiguration)"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -709,7 +750,9 @@
           "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "estimated_area_m2": "Für die Schnellkonfiguration reicht zunächst eine Schätzung; die Angabe kann später exakt ersetzt werden.",
+          "estimated_height_m": "Die Schnellkonfiguration verwendet zunächst 2,40 m; die tatsächliche Raumhöhe kann später eingetragen werden."
         },
         "sections": {
           "identity": {
@@ -1932,7 +1975,9 @@
           "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)",
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze (Standard: Automatisch)",
           "ventilation_threshold_percent": "Raumgrenze in Prozent (Standard: 5 %)",
-          "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)"
+          "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)",
+          "estimated_area_m2": "Geschätzte Raumfläche (Standard: leer)",
+          "estimated_height_m": "Raumhöhe zur Flächenschätzung (Standard: 2,40 m bei Schnellkonfiguration)"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -1963,7 +2008,9 @@
           "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "estimated_area_m2": "Für die Schnellkonfiguration reicht zunächst eine Schätzung; die Angabe kann später exakt ersetzt werden.",
+          "estimated_height_m": "Die Schnellkonfiguration verwendet zunächst 2,40 m; die tatsächliche Raumhöhe kann später eingetragen werden."
         },
         "sections": {
           "identity": {
@@ -2493,7 +2540,9 @@
             "moisture_sources": "Feuchtequellen im Raum (Standard: keine)",
             "ventilation_threshold_mode": "Individuelle Lüftungsgrenze (Standard: Automatisch)",
             "ventilation_threshold_percent": "Raumgrenze in Prozent (Standard: 5 %)",
-            "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)"
+            "ventilation_threshold_ml": "Feste Raumgrenze (Standard: 100 ml)",
+            "estimated_area_m2": "Geschätzte Raumfläche (Standard: leer)",
+            "estimated_height_m": "Raumhöhe zur Flächenschätzung (Standard: 2,40 m bei Schnellkonfiguration)"
           },
           "sections": {
             "identity": {
@@ -2535,7 +2584,9 @@
             "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner und/oder Bügelstation. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
             "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
             "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-            "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+            "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+            "estimated_area_m2": "Für die Schnellkonfiguration reicht zunächst eine Schätzung; die Angabe kann später exakt ersetzt werden.",
+            "estimated_height_m": "Die Schnellkonfiguration verwendet zunächst 2,40 m; die tatsächliche Raumhöhe kann später eingetragen werden."
           }
         },
         "reconfigure": {
@@ -2587,7 +2638,9 @@
             "ventilation_device": "Lüftungs-/WRG-Gerät (optional) (Standard: nicht gesetzt)",
             "dehumidifier": "Entfeuchter (optional) (Standard: nicht gesetzt)",
             "humidifier": "Luftbefeuchter (optional) (Standard: nicht gesetzt)",
-            "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)"
+            "air_purifier": "Luftreiniger (optional) (Standard: nicht gesetzt)",
+            "estimated_area_m2": "Geschätzte Raumfläche (Standard: leer)",
+            "estimated_height_m": "Raumhöhe zur Flächenschätzung (Standard: 2,40 m bei Schnellkonfiguration)"
           },
           "sections": {
             "identity": {
@@ -2723,7 +2776,9 @@
             "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
             "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
             "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
-            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch."
+            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "estimated_area_m2": "Für die Schnellkonfiguration reicht zunächst eine Schätzung; die Angabe kann später exakt ersetzt werden.",
+            "estimated_height_m": "Die Schnellkonfiguration verwendet zunächst 2,40 m; die tatsächliche Raumhöhe kann später eingetragen werden."
           }
         },
         "add_orientations": {
