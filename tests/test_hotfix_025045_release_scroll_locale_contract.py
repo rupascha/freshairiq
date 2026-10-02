@@ -53,8 +53,8 @@ def test_native_and_dashboard_settings_are_contract_checked_on_both_surfaces():
 def test_config_flow_labels_match_real_defaults_and_ranges():
     de = json.loads((COMP / "translations/de.json").read_text(encoding="utf-8"))
     en = json.loads((COMP / "translations/en.json").read_text(encoding="utf-8"))
-    assert de["config"]["step"]["more_rooms"]["data"]["add_another"].endswith("Standard: an)")
-    assert en["config"]["step"]["more_rooms"]["data"]["add_another"].endswith("default: on)")
+    assert "Standard:" not in de["config"]["step"]["more_rooms"]["data"]["add_another"]
+    assert "Default:" not in en["config"]["step"]["more_rooms"]["data"]["add_another"]
     assert "1 und 365" in de["options"]["step"]["data_learning_settings"]["menu_option_descriptions"]["statistics"]
     assert "1 and 365" in en["options"]["step"]["data_learning_settings"]["menu_option_descriptions"]["statistics"]
 

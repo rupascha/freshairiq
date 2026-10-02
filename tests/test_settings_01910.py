@@ -37,7 +37,7 @@ def test_cross_ventilation_has_its_own_explained_page():
     assert "wohnzimmer+schlafzimmer" in step["data_description"]["cross_ventilation_pairs"]
     assert "wohnzimmer+fitnessraum" in step["data_description"]["cross_zone_connections"]
     assert "{room_keys}" in step["description"]
-    assert "Standard: leer" in step["data"]["cross_ventilation_pairs"]
+    assert "Standard:" not in step["data"]["cross_ventilation_pairs"]
 
 
 def test_moisture_sources_are_visible_in_german_room_settings():
@@ -45,21 +45,17 @@ def test_moisture_sources_are_visible_in_german_room_settings():
     for step_name in ("add_room", "edit_room"):
         step = data["options"]["step"][step_name]
         assert "moisture_sources" in step["data"]
-        assert "Standard: keine" in step["data"]["moisture_sources"]
+        assert "Standard:" not in step["data"]["moisture_sources"]
         assert "properties" in step["sections"]
     sub = data["config_subentries"]["room"]["step"]["room_basics"]
     assert "moisture_sources" in sub["data"]
 
 
-def test_every_static_options_field_mentions_a_default():
+def test_static_options_field_labels_do_not_repeat_defaults():
     data = json.loads(DE.read_text(encoding="utf-8"))["options"]["step"]
-    dynamic_steps = {"contact_orientations", "contact_delays", "sort_rooms", "level_reorder"}
-    for step_name, step in data.items():
-        if step_name in dynamic_steps:
-            continue
-        for key, label in step.get("data", {}).items():
-            assert "Standard" in str(label), f"{step_name}.{key} has no documented default"
-
+    for step in data.values():
+        for label in step.get("data", {}).values():
+            assert "Standard:" not in str(label)
 
 def test_default_cross_zone_connections_exists():
     text = CONST.read_text(encoding="utf-8")

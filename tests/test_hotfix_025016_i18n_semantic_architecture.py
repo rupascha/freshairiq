@@ -34,6 +34,6 @@ def test_config_flow_title_is_semantically_equivalent():
     de=json.loads((ROOT/'custom_components/freshairiq/translations/de.json').read_text())
     en=json.loads((ROOT/'custom_components/freshairiq/translations/en.json').read_text())
     base=json.loads((ROOT/'custom_components/freshairiq/strings.json').read_text())
-    assert de['config']['step']['user']['title']=='FreshAirIQ einrichten'
-    assert en['config']['step']['user']['title']=='Set up FreshAirIQ'
-    assert base['config']['step']['user']['title']=='Set up FreshAirIQ'
+    assert de['config']['step']['user']['title']=='FreshAirIQ hinzufügen'
+    assert en['config']['step']['user']['title']=='Add FreshAirIQ'
+    assert base['config']['step']['user']['title']=='Add FreshAirIQ'

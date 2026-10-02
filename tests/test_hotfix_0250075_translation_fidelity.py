@@ -21,7 +21,7 @@ def test_key_parity_and_strings_sync():
 def test_critical_english_help_preserves_semantics():
     e=leaves(EN)
     checks={
-      'config.step.user.description':['Quick setup','easiest way','add or refine every detail later'],
+      'config.step.user.description':['without configuring any rooms','Devices & services','dashboard remains available'],
       'options.step.init.description':['default value','example','take effect immediately'],
       'options.step.contact_delays.description':['Default: 0 s','120 s','two minutes'],
       'config_subentries.room.step.room_delays.description':['Default: 0 s','120 s','two minutes','saved immediately'],

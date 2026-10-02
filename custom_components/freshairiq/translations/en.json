@@ -3,11 +3,19 @@
   "config": {
     "step": {
       "user": {
-        "title": "Set up FreshAirIQ",
-        "description": "Choose how you want to start. For most homes, Quick setup is the easiest way in. You can add or refine every detail later.",
-        "menu_options": {
-          "quick_start": "Quick setup · recommended",
-          "exact_outdoor": "Precise setup"
+        "title": "Add FreshAirIQ",
+        "description": "FreshAirIQ can be added immediately without configuring any rooms. The outdoor-air source, rooms and all other settings are optional here and can be configured later under Devices & services or via the dashboard settings button. Until the required climate sources are available, FreshAirIQ does not perform ventilation calculations, but the dashboard remains available.",
+        "data": {
+          "outdoor_weather": "Local weather entity (recommended)",
+          "outdoor_temperature": "Outdoor temperature sensor (optional)",
+          "outdoor_humidity": "Outdoor humidity sensor (optional)",
+          "pollen_entity": "Pollen index sensor (optional)"
+        },
+        "data_description": {
+          "outdoor_weather": "Optional. Recommended source for outdoor air and weather forecasts. It can be added at any time after installation.",
+          "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
+          "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
+          "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
         }
       },
       "room": {
@@ -23,12 +31,12 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+          "reference_temperature": "Reference temperature",
+          "reference_humidity": "Reference humidity",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
-          "moisture_sources": "Moisture sources in the room (Default: none)",
+          "moisture_sources": "Moisture sources in the room",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -41,8 +49,8 @@
           "humidifier": "Humidifier (optional)",
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
-          "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+          "ventilation_threshold_percent": "Room threshold percentage",
+          "ventilation_threshold_ml": "Fixed room threshold"
         },
         "data_description": {
           "contacts": "Select all contacts through which FreshAirIQ should detect ventilation.",
@@ -74,119 +82,13 @@
           "humidity": "Humidity sensor for the room. Required for calculated rooms; default: no preselection.",
           "name": "Custom display name, for example “Living room”. FreshAirIQ derives a stable internal room key from it.",
           "temperature": "Temperature sensor for the room. Required for calculated rooms; default: no preselection."
-        },
-        "sections": {
-          "identity": {
-            "name": "Room",
-            "description": "Name, level and whether the room participates in calculations.",
-            "data": {
-              "name": "Room name",
-              "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
-            },
-            "data_description": {
-              "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
-              "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
-            }
-          },
-          "sensors": {
-            "name": "Sensors & windows",
-            "description": "Sensors and contacts FreshAirIQ uses for this room.",
-            "data": {
-              "temperature": "Temperature sensor",
-              "humidity": "Humidity sensor",
-              "contacts": "Ventilation contacts",
-              "contact_mode": "Contact logic"
-            },
-            "data_description": {
-              "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
-              "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
-              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
-            }
-          },
-          "geometry": {
-            "name": "Room size",
-            "description": "Enter either the volume directly or length, width and height.",
-            "data": {
-              "volume": "Room volume",
-              "length": "Room length",
-              "width": "Room width",
-              "height": "Room height"
-            },
-            "data_description": {
-              "volume": "Enter the volume directly in m³ OR use length, width and height.",
-              "length": "Only required when no direct room volume is entered.",
-              "width": "Only required when no direct room volume is entered.",
-              "height": "Only required when no direct room volume is entered."
-            }
-          },
-          "optional_sensors": {
-            "name": "Optional additional sensors & references",
-            "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
-            "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
-              "co2": "CO₂ sensor (optional)",
-              "voc": "VOC/TVOC sensor (optional)",
-              "pm25": "PM2.5 sensor (optional)",
-              "illuminance": "Illuminance sensor (optional)"
-            },
-            "data_description": {
-              "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
-              "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
-              "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
-              "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
-              "illuminance": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance."
-            }
-          },
-          "properties": {
-            "name": "Room properties",
-            "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
-            "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
-              "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
-            },
-            "data_description": {
-              "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
-              "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
-              "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-              "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
-            }
-          },
-          "optional_actuators": {
-            "name": "Optional devices – data collection",
-            "description": "These devices are currently logged for future FreshAirIQ features. They do not change the current ventilation/moisture recommendation and are not controlled automatically.",
-            "data": {
-              "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
-              "supply_fan": "Supply-air device (optional)",
-              "ventilation_device": "Ventilation/HRV device (optional)",
-              "dehumidifier": "Dehumidifier (optional)",
-              "humidifier": "Humidifier (optional)",
-              "air_purifier": "Air purifier (optional)"
-            },
-            "data_description": {
-              "climate": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: climate.living_room.",
-              "exhaust_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.bath_exhaust.",
-              "supply_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.supply.",
-              "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
-              "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
-              "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
-              "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
-            }
-          }
         }
       },
       "more_rooms": {
         "title": "Room saved",
         "description": "{room_count} room(s) configured.",
         "data": {
-          "add_another": "Add another room (default: on)"
+          "add_another": "Add another room"
         },
         "data_description": {
           "add_another": "Default: on. Enabled = add another room; disabled = finish setup."
@@ -208,8 +110,8 @@
         "data": {}
       },
       "room_references": {
-        "title": "Openings · {room_name}",
-        "description": "Settings always apply to the individual door or window. Enable “Passage door that is pulled shut from outside” only for a genuine three-state contact sensor in the door hardware. Do not use it for three-state helpers built from multiple standard contact sensors.",
+        "title": "Reference air per window/door · {room_name}",
+        "description": "Optional: Assign a local temperature and humidity reference to openings that do not lead to normal outdoor air. Example: conservatory door → select both conservatory sensors. Outdoor windows → leave empty. Temperature and humidity must always be selected as a pair from the same air zone.",
         "data": {
           "contact_passage_doors": "Door is used as a passage and pulled shut from outside"
         },
@@ -232,78 +134,10 @@
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
           "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
         }
-      },
-      "room_passage_door": {
-        "title": "{opening_name} · Passage door",
-        "description": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples.",
-        "data": {
-          "passage_door": "Passage door that can be pulled shut from outside (Default: off)"
-        },
-        "data_description": {
-          "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
-        }
-      },
-      "exact_outdoor": {
-        "title": "Detailed setup · Outdoor air",
-        "description": "Choose the outdoor-air reference first. You can then configure rooms with full details.",
-        "data": {
-          "outdoor_weather": "Local weather entity (recommended)",
-          "outdoor_temperature": "Outdoor temperature sensor (optional)",
-          "outdoor_humidity": "Outdoor humidity sensor (optional)",
-          "pollen_entity": "Pollen index sensor (optional)"
-        },
-        "data_description": {
-          "outdoor_weather": "Default: empty. Example: weather.home. Recommended when the weather entity provides current outdoor values.",
-          "outdoor_temperature": "Default: empty. Example: sensor.outdoor_temperature. Use only together with outdoor humidity.",
-          "outdoor_humidity": "Default: empty. Example: sensor.outdoor_humidity. Use only together with outdoor temperature.",
-          "pollen_entity": "Default: empty. Example: sensor.pollen_index. Optional for pollen evaluation."
-        }
-      },
-      "quick_room": {
-        "title": "Quick setup · Room",
-        "description": "Only the essentials FreshAirIQ needs for a usable room: name, temperature, humidity and an approximate floor area. A window/door contact is useful but not required. FreshAirIQ temporarily assumes a 2.40 m room height; exact dimensions can be added later.",
-        "data": {
-          "name": "Room name",
-          "temperature": "Temperature sensor",
-          "humidity": "Humidity sensor",
-          "contacts": "Window/door contact (optional)",
-          "estimated_area_m2": "Approximate floor area (m²)"
-        },
-        "data_description": {
-          "estimated_area_m2": "A rough estimate is enough. No artificial default value is inserted.",
-          "name": "Custom display name for the first room.",
-          "temperature": "Required so FreshAirIQ can actually calculate the room climate.",
-          "humidity": "Required so FreshAirIQ can actually calculate the room climate.",
-          "contacts": "Optional. Window and door contacts can be added now or later."
-        }
-      },
-      "quick_success": {
-        "title": "Your first room is ready",
-        "description": "FreshAirIQ can now evaluate {room_name}. For quick setup it temporarily uses {area} m² × {height} m = {volume} m³. The {height} m height is only an estimate. You can enter exact dimensions later under Settings → Rooms.",
-        "menu_options": {
-          "quick_add_room": "Add another room",
-          "quick_finish": "Start FreshAirIQ"
-        }
-      },
-      "quick_start": {
-        "title": "Quick setup · Outdoor air",
-        "description": "FreshAirIQ compares your room air with the outdoor air. Choose either your weather entity or a matching pair of outdoor temperature and humidity sensors. Nothing else is required here.",
-        "data": {
-          "outdoor_weather": "Weather entity",
-          "outdoor_temperature": "Outdoor temperature",
-          "outdoor_humidity": "Outdoor humidity",
-          "pollen_entity": "Pollen sensor (optional)"
-        },
-        "data_description": {
-          "outdoor_weather": "Easiest option: select your existing Home Assistant weather entity.",
-          "outdoor_temperature": "Only needed if you do not want to use a weather entity.",
-          "outdoor_humidity": "Select together with outdoor temperature when no weather entity is used.",
-          "pollen_entity": "Can also be added later."
-        }
       }
     },
     "error": {
-      "outdoor_source_required": "Select a weather entity or both outdoor temperature and outdoor humidity.",
+      "outdoor_source_required": "Select a local weather entity or both a temperature and humidity sensor.",
       "ventilation_contact_required": "An opening contact is optional. Without one, the room remains climate-calculated and indirect ventilation can be detected and learned.",
       "room_volume_required": "Enter either room volume or complete length, width and height.",
       "room_volume_too_small": "Room volume must be at least 2 m³.",
@@ -443,49 +277,34 @@
         "percent_room_water": "Percentage of room water content",
         "fixed_ml": "Fixed mL value"
       }
-    },
-    "setup_mode": {
-      "options": {
-        "quick": "Quick setup (recommended)",
-        "exact": "Detailed setup",
-        "later": "Install now, configure later"
-      }
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "FreshAirIQ – Settings",
-        "description": "All settings use the same clear sections as the FreshAirIQ dashboard. Each page still explains its purpose, default value and, where useful, an example. Saved changes take effect immediately.",
+        "title": "Settings",
+        "description": "Step-by-step FreshAirIQ configuration directly in Home Assistant. As in a well-structured native config flow, basic data and advanced settings are separated; each page explains the purpose, default value and, where useful, an example. Saved changes take effect immediately and are used identically by the dashboard settings.",
         "menu_options": {
-          "home_setup": "Set up home",
-          "comfort_health": "Comfort & health",
+          "home_setup": "Home & rooms",
+          "comfort_health": "Comfort & air quality",
           "automation_costs": "Notifications & energy",
           "expert_data": "Insights & expert settings",
-          "maintenance": "Maintenance",
-          "finish": "Done",
-          "ventilation_settings": "Ventilation strategy",
+          "maintenance": "Maintenance & reset",
+          "finish": "Save changes",
+          "ventilation_settings": "Ventilation & recommendations",
           "notification_energy_settings": "Notifications & energy",
-          "data_learning_settings": "Learning & analytics",
-          "residents": "Residents & presence",
-          "rooms": "Rooms",
-          "notifications": "Notifications",
-          "energy": "Energy & costs"
+          "data_learning_settings": "Data & learning"
         },
         "menu_option_descriptions": {
-          "home_setup": "Outdoor air, building and floors",
-          "comfort_health": "Comfort, air quality, pollen and wind",
+          "home_setup": "Outdoor air, building, occupants, levels and rooms",
+          "comfort_health": "Operating profile, pollen and wind",
           "automation_costs": "Notifications and heating costs",
           "expert_data": "Statistics and technical fine-tuning",
-          "maintenance": "Reset learning data or settings",
-          "finish": "Close settings",
-          "ventilation_settings": "Ventilation rules, forecasts and cross-ventilation",
+          "maintenance": "Reset learning data or defaults",
+          "finish": "Apply all changes and reload FreshAirIQ",
+          "ventilation_settings": "Operating profile, forecasts, pollen/wind, cross ventilation and model limits",
           "notification_energy_settings": "Notifications and heating-system cost model",
-          "data_learning_settings": "Learning progress, statistics and analytics",
-          "residents": "People, presence and personal preferences",
-          "rooms": "Room sizes, sensors, windows, doors and airflow paths",
-          "notifications": "Alerts, quiet hours and targets",
-          "energy": "Heating system and cost model"
+          "data_learning_settings": "Statistics period and stored analysis"
         }
       },
       "outdoor": {
@@ -540,12 +359,12 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+          "reference_temperature": "Reference temperature",
+          "reference_humidity": "Reference humidity",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
-          "moisture_sources": "Moisture sources in the room (Default: none)",
+          "moisture_sources": "Moisture sources in the room",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -558,10 +377,8 @@
           "humidifier": "Humidifier (optional)",
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
-          "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
-          "estimated_area_m2": "Estimated floor area (Default: empty)",
-          "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
+          "ventilation_threshold_percent": "Room threshold percentage",
+          "ventilation_threshold_ml": "Fixed room threshold"
         },
         "sections": {
           "identity": {
@@ -582,10 +399,10 @@
             "name": "Room properties",
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "moisture_sources": "Moisture sources in the room",
               "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+              "ventilation_threshold_percent": "Room threshold percentage",
+              "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -630,8 +447,8 @@
             "name": "Optional additional sensors & references",
             "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
             "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "reference_temperature": "Reference temperature",
+              "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
@@ -698,9 +515,7 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
-          "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
         },
         "section": {
           "identity": {
@@ -721,10 +536,10 @@
             "name": "Room properties",
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "moisture_sources": "Moisture sources in the room",
               "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+              "ventilation_threshold_percent": "Room threshold percentage",
+              "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -769,8 +584,8 @@
             "name": "Optional sensors",
             "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them.",
             "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "reference_temperature": "Reference temperature",
+              "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
@@ -831,12 +646,12 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+          "reference_temperature": "Reference temperature",
+          "reference_humidity": "Reference humidity",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
-          "moisture_sources": "Moisture sources in the room (Default: none)",
+          "moisture_sources": "Moisture sources in the room",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -849,10 +664,8 @@
           "humidifier": "Humidifier (optional)",
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
-          "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
-          "estimated_area_m2": "Estimated floor area (Default: empty)",
-          "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
+          "ventilation_threshold_percent": "Room threshold percentage",
+          "ventilation_threshold_ml": "Fixed room threshold"
         },
         "sections": {
           "identity": {
@@ -873,10 +686,10 @@
             "name": "Room properties",
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "moisture_sources": "Moisture sources in the room",
               "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+              "ventilation_threshold_percent": "Room threshold percentage",
+              "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -921,8 +734,8 @@
             "name": "Optional additional sensors & references",
             "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
             "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "reference_temperature": "Reference temperature",
+              "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
@@ -989,9 +802,7 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
-          "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
         },
         "section": {
           "identity": {
@@ -1012,10 +823,10 @@
             "name": "Room properties",
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "moisture_sources": "Moisture sources in the room",
               "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+              "ventilation_threshold_percent": "Room threshold percentage",
+              "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -1060,8 +871,8 @@
             "name": "Optional sensors",
             "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them.",
             "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "reference_temperature": "Reference temperature",
+              "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
@@ -1116,32 +927,32 @@
         "title": "Ventilation model settings",
         "description": "Adaptive ventilation logic. By default the threshold scales with dwelling size and moisture generation, targeting roughly 3–5 meaningful ventilation cycles per day.",
         "data": {
-          "start_rh": "Ventilation start RH (%) (Default: 62.0)",
-          "high_rh": "High RH (%) (Default: 68.0)",
-          "target_rh": "Target RH (%) (Default: 58.0)",
-          "min_delta": "Minimum humidity difference (g/m³) (Default: 2.5)",
-          "min_delta_high_rh": "Minimum difference at high RH (g/m³) (Default: 1.5)",
-          "close_delta": "Close difference (g/m³) (Default: 0.4)",
-          "min_potential_total_ml": "Minimum total potential (mL) (Default: 500.0)",
-          "min_potential_room_ml": "Minimum critical-room potential (mL) (Default: 100.0)",
-          "min_duration_min": "Minimum ventilation duration (min) (Default: 3.0)",
-          "max_duration_min": "Maximum ventilation duration (min) (Default: 20.0)",
-          "min_return_next_5_min_ml": "Minimum next-5-minute return (mL) (Default: 25.0)",
-          "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C) (Default: 0.6)",
-          "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C) (Default: 8.0)",
-          "surface_factor": "Estimated surface factor (Default: 0.25)",
-          "mould_warn_surface_rh": "Mould warning surface RH (%) (Default: 80.0)",
-          "mould_critical_surface_rh": "Critical mould surface RH (%) (Default: 90.0)",
-          "co2_warn": "CO₂ warning threshold (ppm) (Default: 1000.0)",
-          "co2_critical": "Critical CO₂ threshold (ppm) (Default: 1400.0)",
-          "learning_enabled": "Learning model enabled (Default: on)",
-          "cross_ventilation_pairs": "Cross-ventilation pairs (room_key+room_key,...) (Default: empty)",
-          "threshold_mode": "Ventilation threshold mode (Default: adaptive_home_size)",
-          "min_potential_percent_total_water": "Share of total water (Default: 10.0)",
-          "learning_max_duration_min": "Maximum learning sample duration (Default: 120.0)",
-          "post_ventilation_stabilization_min": "Stabilization time after ventilation (Default: 4 min)",
-          "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation (Default: 20 min)",
-          "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation (Default: 80 ml)"
+          "start_rh": "Ventilation start RH (%)",
+          "high_rh": "High RH (%)",
+          "target_rh": "Target RH (%)",
+          "min_delta": "Minimum humidity difference (g/m³)",
+          "min_delta_high_rh": "Minimum difference at high RH (g/m³)",
+          "close_delta": "Close difference (g/m³)",
+          "min_potential_total_ml": "Minimum total potential (mL)",
+          "min_potential_room_ml": "Minimum critical-room potential (mL)",
+          "min_duration_min": "Minimum ventilation duration (min)",
+          "max_duration_min": "Maximum ventilation duration (min)",
+          "min_return_next_5_min_ml": "Minimum next-5-minute return (mL)",
+          "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C)",
+          "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C)",
+          "surface_factor": "Estimated surface factor",
+          "mould_warn_surface_rh": "Mould warning surface RH (%)",
+          "mould_critical_surface_rh": "Critical mould surface RH (%)",
+          "co2_warn": "CO₂ warning threshold (ppm)",
+          "co2_critical": "Critical CO₂ threshold (ppm)",
+          "learning_enabled": "Learning model enabled",
+          "cross_ventilation_pairs": "Cross-ventilation pairs (room_key+room_key,...)",
+          "threshold_mode": "Ventilation threshold mode",
+          "min_potential_percent_total_water": "Share of total water",
+          "learning_max_duration_min": "Maximum learning sample duration",
+          "post_ventilation_stabilization_min": "Stabilization time after ventilation",
+          "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation",
+          "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation"
         },
         "data_description": {
           "threshold_mode": "Recommended: adaptive to dwelling size. FreshAirIQ targets about four meaningful ventilation cycles per day and uses cool morning/evening opportunities earlier on warm days.",
@@ -1176,12 +987,12 @@
             "name": "Humidity thresholds",
             "description": "Core limits for relative and absolute humidity. Default: 62/68/58% and 2.5/1.5/0.4 g/m³.",
             "data": {
-              "start_rh": "Ventilation start RH (%) (Default: 62.0)",
-              "high_rh": "High RH (%) (Default: 68.0)",
-              "target_rh": "Target RH (%) (Default: 58.0)",
-              "min_delta": "Minimum humidity difference (g/m³) (Default: 2.5)",
-              "min_delta_high_rh": "Minimum difference at high RH (g/m³) (Default: 1.5)",
-              "close_delta": "Close difference (g/m³) (Default: 0.4)"
+              "start_rh": "Ventilation start RH (%)",
+              "high_rh": "High RH (%)",
+              "target_rh": "Target RH (%)",
+              "min_delta": "Minimum humidity difference (g/m³)",
+              "min_delta_high_rh": "Minimum difference at high RH (g/m³)",
+              "close_delta": "Close difference (g/m³)"
             },
             "data_description": {
               "start_rh": "Above this normal humidity level, a room is more likely to become a ventilation candidate. The absolute-humidity difference and potential must still be suitable.",
@@ -1196,7 +1007,7 @@
             "name": "Recommendation thresholds",
             "description": "Defines when enough removable water is available for a recommendation. Default: automatic home-size threshold.",
             "data": {
-              "min_potential_room_ml": "Minimum critical-room potential (mL) (Default: 100.0)"
+              "min_potential_room_ml": "Minimum critical-room potential (mL)"
             },
             "data_description": {
               "min_potential_room_ml": "A single problematic room can be prioritized from this removable potential onward, independently of the house total."
@@ -1206,11 +1017,11 @@
             "name": "Ventilation duration & repetition",
             "description": "Time limits, stabilization and protection against overly frequent repeated recommendations.",
             "data": {
-              "min_duration_min": "Minimum ventilation duration (min) (Default: 3.0)",
-              "max_duration_min": "Maximum ventilation duration (min) (Default: 20.0)",
-              "post_ventilation_stabilization_min": "Stabilization time after ventilation (Default: 4 min)",
-              "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation (Default: 20 min)",
-              "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation (Default: 80 ml)"
+              "min_duration_min": "Minimum ventilation duration (min)",
+              "max_duration_min": "Maximum ventilation duration (min)",
+              "post_ventilation_stabilization_min": "Stabilization time after ventilation",
+              "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation",
+              "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation"
             },
             "data_description": {
               "min_duration_min": "Before this point, FreshAirIQ normally does not recommend closing solely because additional benefit is declining.",
@@ -1224,9 +1035,9 @@
             "name": "Benefit & temperature loss",
             "description": "Balances additional moisture removal against heat loss.",
             "data": {
-              "min_return_next_5_min_ml": "Minimum next-5-minute return (mL) (Default: 25.0)",
-              "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C) (Default: 0.6)",
-              "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C) (Default: 8.0)"
+              "min_return_next_5_min_ml": "Minimum next-5-minute return (mL)",
+              "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C)",
+              "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C)"
             },
             "data_description": {
               "min_return_next_5_min_ml": "Another five minutes should remove at least this additional amount of water; otherwise the benefit is considered too low.",
@@ -1238,11 +1049,11 @@
             "name": "Mould & CO₂",
             "description": "Limits for estimated surface humidity and CO₂ air quality.",
             "data": {
-              "surface_factor": "Estimated surface factor (Default: 0.25)",
-              "mould_warn_surface_rh": "Mould warning surface RH (%) (Default: 80.0)",
-              "mould_critical_surface_rh": "Critical mould surface RH (%) (Default: 90.0)",
-              "co2_warn": "CO₂ warning threshold (ppm) (Default: 1000.0)",
-              "co2_critical": "Critical CO₂ threshold (ppm) (Default: 1400.0)"
+              "surface_factor": "Estimated surface factor",
+              "mould_warn_surface_rh": "Mould warning surface RH (%)",
+              "mould_critical_surface_rh": "Critical mould surface RH (%)",
+              "co2_warn": "CO₂ warning threshold (ppm)",
+              "co2_critical": "Critical CO₂ threshold (ppm)"
             },
             "data_description": {
               "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
@@ -1256,8 +1067,8 @@
             "name": "Learning model",
             "description": "Controls whether and for how long FreshAirIQ uses valid ventilation sessions as learning samples.",
             "data": {
-              "learning_enabled": "Learning model enabled (Default: on)",
-              "learning_max_duration_min": "Maximum learning sample duration (Default: 120.0)"
+              "learning_enabled": "Learning model enabled",
+              "learning_max_duration_min": "Maximum learning sample duration"
             },
             "data_description": {
               "learning_enabled": "Enables persistent learning of air exchange, routines and forecast corrections. Default: on.",
@@ -1270,12 +1081,12 @@
             "name": "Humidity thresholds",
             "description": "Core limits for relative and absolute humidity. Default: 62/68/58% and 2.5/1.5/0.4 g/m³.",
             "data": {
-              "start_rh": "Ventilation start RH (%) (Default: 62.0)",
-              "high_rh": "High RH (%) (Default: 68.0)",
-              "target_rh": "Target RH (%) (Default: 58.0)",
-              "min_delta": "Minimum humidity difference (g/m³) (Default: 2.5)",
-              "min_delta_high_rh": "Minimum difference at high RH (g/m³) (Default: 1.5)",
-              "close_delta": "Close difference (g/m³) (Default: 0.4)"
+              "start_rh": "Ventilation start RH (%)",
+              "high_rh": "High RH (%)",
+              "target_rh": "Target RH (%)",
+              "min_delta": "Minimum humidity difference (g/m³)",
+              "min_delta_high_rh": "Minimum difference at high RH (g/m³)",
+              "close_delta": "Close difference (g/m³)"
             },
             "data_description": {
               "start_rh": "Above this normal humidity level, a room is more likely to become a ventilation candidate. The absolute-humidity difference and potential must still be suitable.",
@@ -1290,7 +1101,7 @@
             "name": "Recommendation thresholds",
             "description": "Defines when enough removable water is available for a recommendation. Default: automatic home-size threshold.",
             "data": {
-              "min_potential_room_ml": "Minimum critical-room potential (mL) (Default: 100.0)"
+              "min_potential_room_ml": "Minimum critical-room potential (mL)"
             },
             "data_description": {
               "min_potential_room_ml": "A single problematic room can be prioritized from this removable potential onward, independently of the house total."
@@ -1300,11 +1111,11 @@
             "name": "Ventilation duration & repetition",
             "description": "Time limits, stabilization and protection against overly frequent repeated recommendations.",
             "data": {
-              "min_duration_min": "Minimum ventilation duration (min) (Default: 3.0)",
-              "max_duration_min": "Maximum ventilation duration (min) (Default: 20.0)",
-              "post_ventilation_stabilization_min": "Stabilization time after ventilation (Default: 4 min)",
-              "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation (Default: 20 min)",
-              "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation (Default: 80 ml)"
+              "min_duration_min": "Minimum ventilation duration (min)",
+              "max_duration_min": "Maximum ventilation duration (min)",
+              "post_ventilation_stabilization_min": "Stabilization time after ventilation",
+              "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation",
+              "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation"
             },
             "data_description": {
               "min_duration_min": "Before this point, FreshAirIQ normally does not recommend closing solely because additional benefit is declining.",
@@ -1318,9 +1129,9 @@
             "name": "Benefit & temperature loss",
             "description": "Balances additional moisture removal against heat loss.",
             "data": {
-              "min_return_next_5_min_ml": "Minimum next-5-minute return (mL) (Default: 25.0)",
-              "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C) (Default: 0.6)",
-              "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C) (Default: 8.0)"
+              "min_return_next_5_min_ml": "Minimum next-5-minute return (mL)",
+              "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C)",
+              "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C)"
             },
             "data_description": {
               "min_return_next_5_min_ml": "Another five minutes should remove at least this additional amount of water; otherwise the benefit is considered too low.",
@@ -1332,11 +1143,11 @@
             "name": "Mould & CO₂",
             "description": "Limits for estimated surface humidity and CO₂ air quality.",
             "data": {
-              "surface_factor": "Estimated surface factor (Default: 0.25)",
-              "mould_warn_surface_rh": "Mould warning surface RH (%) (Default: 80.0)",
-              "mould_critical_surface_rh": "Critical mould surface RH (%) (Default: 90.0)",
-              "co2_warn": "CO₂ warning threshold (ppm) (Default: 1000.0)",
-              "co2_critical": "Critical CO₂ threshold (ppm) (Default: 1400.0)"
+              "surface_factor": "Estimated surface factor",
+              "mould_warn_surface_rh": "Mould warning surface RH (%)",
+              "mould_critical_surface_rh": "Critical mould surface RH (%)",
+              "co2_warn": "CO₂ warning threshold (ppm)",
+              "co2_critical": "Critical CO₂ threshold (ppm)"
             },
             "data_description": {
               "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
@@ -1350,8 +1161,8 @@
             "name": "Learning model",
             "description": "Controls whether and for how long FreshAirIQ uses valid ventilation sessions as learning samples.",
             "data": {
-              "learning_enabled": "Learning model enabled (Default: on)",
-              "learning_max_duration_min": "Maximum learning sample duration (Default: 120.0)"
+              "learning_enabled": "Learning model enabled",
+              "learning_max_duration_min": "Maximum learning sample duration"
             },
             "data_description": {
               "learning_enabled": "Enables persistent learning of air exchange, routines and forecast corrections. Default: on.",
@@ -1363,7 +1174,7 @@
       "profile": {
         "title": "Operating profile",
         "data": {
-          "operating_profile": "Operating profile (Default: comfort)"
+          "operating_profile": "Operating profile"
         },
         "description": "Choose the priority. FreshAirIQ then shows only the fine-tuning inputs relevant to that profile.",
         "data_description": {
@@ -1375,19 +1186,19 @@
         "description": "Household, presence and night model. Residents with a phone can be assigned through person/device_tracker entities; residents without phones remain supported.",
         "data": {
           "property_type": "Building type",
-          "adult_occupants": "Adults (Default: 2)",
-          "child_occupants": "Children (Default: 0)",
-          "night_start_hour": "Night start (Default: 22:00)",
-          "night_end_hour": "Night end (Default: 07:00)",
-          "night_forecast_enabled": "Night forecast enabled (Default: on)",
+          "adult_occupants": "Adults",
+          "child_occupants": "Children",
+          "night_start_hour": "Night start",
+          "night_end_hour": "Night end",
+          "night_forecast_enabled": "Night forecast enabled",
           "adult_presence_entities": "Adult phone/person entities (optional)",
           "child_presence_entities": "Child phone/person entities (optional)",
           "untracked_follow_household": "Residents without trackers follow household presence",
-          "presence_sensor_entities": "Presence/motion sensors (Default: empty)",
-          "pet_safe_presence_entities": "Pet-safe presence sensors (Default: empty)",
-          "pets_in_household": "Pets in household (Default: off)",
-          "adult_resident_names": "Adult resident names (Default: empty)",
-          "child_resident_names": "Child resident names (Default: empty)"
+          "presence_sensor_entities": "Presence/motion sensors",
+          "pet_safe_presence_entities": "Pet-safe presence sensors",
+          "pets_in_household": "Pets in household",
+          "adult_resident_names": "Adult resident names",
+          "child_resident_names": "Child resident names"
         },
         "data_description": {
           "property_type": "Distinguishes detached house, semi-detached house, mid/end-terrace house, apartment, maisonette and multi-family building, among others.",
@@ -1410,7 +1221,7 @@
         "title": "Heating system",
         "description": "Select the heating system used to estimate reheating costs. Default: heat pump. The next step shows only the applicable cost parameters.",
         "data": {
-          "heating_system": "Heating system (Default: heat_pump)"
+          "heating_system": "Heating system"
         },
         "data_description": {
           "heating_system": "Used only for reheating-cost calculations. Example: for a heat pump, electricity price and COP/SCOP are used. Default: heat pump."
@@ -1419,20 +1230,20 @@
       "notifications": {
         "title": "Notifications",
         "data": {
-          "notifications_enabled": "Enable notifications (Default: off)",
-          "notification_targets": "Recipients (Default: leer)",
-          "notification_scope": "Scope (Default: house)",
-          "notification_room_keys": "Only these rooms (Default: leer)",
-          "notify_ventilate": "Ventilate recommendations (Default: on)",
-          "notify_close": "Close recommendations (Default: on)",
-          "notify_complete": "Completed sessions (Default: on)",
-          "notify_cooling": "Summer cooling (Default: on)",
-          "notify_mould": "Mould risk (Default: on)",
-          "notify_sensor": "Sensor faults (Default: on)",
-          "notify_night": "Night forecast (Default: off)",
-          "notify_learning": "Learning messages (Default: off)",
-          "notification_cooldown_min": "Cooldown minutes (Default: 90)",
-          "suppress_notifications_at_night": "Suppress notifications at night (Default: off)"
+          "notifications_enabled": "Enable notifications",
+          "notification_targets": "Recipients",
+          "notification_scope": "Scope",
+          "notification_room_keys": "Only these rooms",
+          "notify_ventilate": "Ventilate recommendations",
+          "notify_close": "Close recommendations",
+          "notify_complete": "Completed sessions",
+          "notify_cooling": "Summer cooling",
+          "notify_mould": "Mould risk",
+          "notify_sensor": "Sensor faults",
+          "notify_night": "Night forecast",
+          "notify_learning": "Learning messages",
+          "notification_cooldown_min": "Cooldown minutes",
+          "suppress_notifications_at_night": "Suppress notifications at night"
         },
         "description": "Default: notifications off, no recipients, scope “House”, all rooms, ventilate/close/completion/cooling/mould/sensor-error notifications on, night/learning off, minimum interval 90 minutes.",
         "data_description": {
@@ -1455,7 +1266,7 @@
       "statistics": {
         "title": "Statistics",
         "data": {
-          "statistics_days": "Days (Default: 14)"
+          "statistics_days": "Days"
         },
         "description": "FreshAirIQ can show 1–365 days of compact daily ventilation and climate aggregates. High-resolution temperature points remain limited to 30 days for performance.",
         "data_description": {
@@ -1501,20 +1312,20 @@
         "title": "Optional sensors & outdoor air",
         "description": "VOC/TVOC, PM2.5 and illuminance are fully optional. They do not change humidity/ventilation physics, the ml forecast or the learning model. When enabled, they may produce supplemental recommendations and are included in the local 30-day diagnostics for future feature development. Pollen and wind remain separate outdoor-air influences.",
         "data": {
-          "pollen_enabled": "Consider pollen (Default: off)",
-          "pollen_max": "Maximum pollen index (Default: 4.0)",
-          "pollen_strict_veto": "Block normal ventilation above limit (Default: on)",
-          "wind_orientation_enabled": "Use window orientation with wind data (Default: on)",
-          "voc_warn": "VOC warning threshold (Default: 600)",
-          "voc_critical": "Critical VOC threshold (Default: 1200)",
-          "pm25_warn": "PM2.5 warning threshold (Default: 15 µg/m³)",
-          "pm25_critical": "Critical PM2.5 threshold (Default: 35 µg/m³)",
-          "humidify_below_rh": "Recommend humidification below (Default: 35% RH)",
-          "shade_above_temp_c": "Consider shading above room temperature (Default: 24 °C)",
-          "shade_min_illuminance_lx": "Minimum illuminance for shading (Default: 10000 lx)",
-          "voc_sensor_enabled": "Use VOC / TVOC (Default: on)",
-          "pm25_sensor_enabled": "Use PM2.5 (Default: on)",
-          "illuminance_sensor_enabled": "Use illuminance (Default: on)"
+          "pollen_enabled": "Consider pollen",
+          "pollen_max": "Maximum pollen index",
+          "pollen_strict_veto": "Block normal ventilation above limit",
+          "wind_orientation_enabled": "Use window orientation with wind data",
+          "voc_warn": "VOC warning threshold",
+          "voc_critical": "Critical VOC threshold",
+          "pm25_warn": "PM2.5 warning threshold",
+          "pm25_critical": "Critical PM2.5 threshold",
+          "humidify_below_rh": "Recommend humidification below",
+          "shade_above_temp_c": "Consider shading above room temperature",
+          "shade_min_illuminance_lx": "Minimum illuminance for shading",
+          "voc_sensor_enabled": "Use VOC / TVOC",
+          "pm25_sensor_enabled": "Use PM2.5",
+          "illuminance_sensor_enabled": "Use illuminance"
         },
         "data_description": {
           "pollen_enabled": "Requires a pollen-index sensor under the outdoor-air source.",
@@ -1537,15 +1348,15 @@
         "title": "Heating costs · {heating_system}",
         "description": "These values are used only to estimate the cost of reheating the heat lost through ventilation. The default values are approximations and can be adjusted to your tariff or heating system.",
         "data": {
-          "electricity_price_per_kwh": "Electricity price (Default: 0.3)",
-          "heat_pump_cop": "COP / seasonal performance (Default: 3.5)",
-          "gas_price_per_kwh": "Gas price (Default: 0.11)",
-          "gas_efficiency": "Gas boiler efficiency (Default: 0.92)",
-          "district_price_per_kwh": "District heat price (Default: 0.15)",
-          "district_efficiency": "System efficiency (Default: 0.98)",
-          "oil_price_per_liter": "Heating oil price (Default: 1.0)",
-          "oil_kwh_per_liter": "Heating oil energy content (Default: 10.0)",
-          "oil_efficiency": "Oil boiler efficiency (Default: 0.88)"
+          "electricity_price_per_kwh": "Electricity price",
+          "heat_pump_cop": "COP / seasonal performance",
+          "gas_price_per_kwh": "Gas price",
+          "gas_efficiency": "Gas boiler efficiency",
+          "district_price_per_kwh": "District heat price",
+          "district_efficiency": "System efficiency",
+          "oil_price_per_liter": "Heating oil price",
+          "oil_kwh_per_liter": "Heating oil energy content",
+          "oil_efficiency": "Oil boiler efficiency"
         },
         "data_description": {
           "heat_pump_cop": "The higher the COP/seasonal performance factor, the less electricity is required for reheating.",
@@ -1563,13 +1374,13 @@
         "title": "Operating profile · {profile}",
         "description": "Dehumidify tolerates somewhat more temperature loss for effective moisture removal. Comfort balances moisture and energy. Summer cooling uses cooling-specific parameters only.",
         "data": {
-          "min_return_next_5_min_ml": "Minimum yield next 5 min (Default: 25.0)",
-          "max_temp_loss_next_5_min_c": "Maximum temperature loss next 5 min (Default: 0.6)",
-          "min_efficiency_ml_per_01c": "Minimum moisture/temperature efficiency (Default: 8.0)",
-          "cooling_start_temp_c": "Summer cooling from room temperature (Default: 24.0)",
-          "cooling_min_outdoor_delta_c": "Outdoor air at least this much cooler (Default: 2.0)",
-          "cooling_max_indoor_rh": "Maximum indoor RH for cooling (Default: 70.0)",
-          "cooling_max_moisture_gain_5min_ml": "Maximum tolerated moisture gain in 5 min (Default: 60.0)"
+          "min_return_next_5_min_ml": "Minimum yield next 5 min",
+          "max_temp_loss_next_5_min_c": "Maximum temperature loss next 5 min",
+          "min_efficiency_ml_per_01c": "Minimum moisture/temperature efficiency",
+          "cooling_start_temp_c": "Summer cooling from room temperature",
+          "cooling_min_outdoor_delta_c": "Outdoor air at least this much cooler",
+          "cooling_max_indoor_rh": "Maximum indoor RH for cooling",
+          "cooling_max_moisture_gain_5min_ml": "Maximum tolerated moisture gain in 5 min"
         },
         "data_description": {
           "cooling_max_indoor_rh": "Above this indoor humidity, cooling is not prioritised at the cost of additional moisture. Default: 70%.",
@@ -1668,11 +1479,13 @@
         }
       },
       "comfort_health": {
-        "title": "Comfort & health",
-        "description": "Optional air-quality and environmental data FreshAirIQ can use for comfort and health context.",
+        "title": "Comfort & air quality",
+        "description": "Control how FreshAirIQ prioritizes comfort, humidity, pollen and wind.",
         "menu_options": {
-          "air_quality": "Air quality, pollen & wind",
-          "back_to_main": "Back to settings"
+          "profile": "Operating profile",
+          "forecast": "Forecast horizon",
+          "air_quality": "Pollen & wind",
+          "back": "Back"
         }
       },
       "automation_costs": {
@@ -1772,8 +1585,8 @@
         "title": "Cross ventilation",
         "description": "Define only real airflow paths where two rooms opened at the same time can create effective cross ventilation. Default: empty, so no additional cross-ventilation bonus. Available room keys: {room_keys}",
         "data": {
-          "cross_ventilation_pairs": "Cross-ventilation pairs (Default: empty)",
-          "cross_zone_connections": "Connections between areas/floors (Default: empty)"
+          "cross_ventilation_pairs": "Cross-ventilation pairs",
+          "cross_zone_connections": "Connections between areas/floors"
         },
         "data_description": {
           "cross_ventilation_pairs": "Format: room_a+room_b. Separate multiple pairs with commas. Example: living_room+bedroom,office+child_room. A bonus applies only when both associated ventilation contacts are active.",
@@ -1784,10 +1597,10 @@
         "title": "Personal recommendations",
         "description": "Adapts wording and comfort context to your household. Physical forecasts and health, mould and CO₂ safety limits remain unchanged. Defaults: enabled, balanced, automatic night handling.",
         "data": {
-          "personalisation_enabled": "Personal recommendations (Default: on)",
-          "thermal_preference": "Thermal preference (Default: balanced)",
-          "personal_priority": "Personal priority (Default: balanced)",
-          "night_window_preference": "Windows at night (Default: automatic)"
+          "personalisation_enabled": "Personal recommendations",
+          "thermal_preference": "Thermal preference",
+          "personal_priority": "Personal priority",
+          "night_window_preference": "Windows at night"
         },
         "data_description": {
           "personalisation_enabled": "Uses household context and learned behaviour only for more suitable recommendations.",
@@ -1797,15 +1610,15 @@
         }
       },
       "contact_references": {
-        "title": "Openings · {room_name}",
-        "description": "Settings always apply to the individual door or window. Enable “Passage door that is pulled shut from outside” only for a genuine three-state contact sensor in the door hardware. Do not use it for three-state helpers built from multiple standard contact sensors.",
+        "title": "Reference air per window/door · {room_name}",
+        "description": "Optional: For each opening into another air zone, select a complete temperature/humidity sensor pair. Outdoor windows stay empty and use the normal outdoor or room reference.",
         "data": {}
       },
       "building": {
         "title": "Building",
         "description": "Describes the building only. Residents and presence are maintained separately in the resident profile so the same values are not entered twice.",
         "data": {
-          "property_type": "Building type (Default: house)"
+          "property_type": "Building type"
         },
         "data_description": {
           "property_type": "Base profile for the building envelope and air exchange. This is the same setting used by the dashboard settings."
@@ -1819,13 +1632,13 @@
             "name": "Residents",
             "description": "Counts, names and associated person/device trackers.",
             "data": {
-              "adult_occupants": "Adults (Default: 2)",
-              "adult_resident_names": "Adult names (Default: empty)",
-              "adult_presence_entities": "Adult trackers (Default: empty)",
-              "child_occupants": "Children (Default: 0)",
-              "child_resident_names": "Child names (Default: empty)",
-              "child_presence_entities": "Child trackers (Default: empty)",
-              "pets_in_household": "Pets in household (Default: off)"
+              "adult_occupants": "Adults",
+              "adult_resident_names": "Adult names",
+              "adult_presence_entities": "Adult trackers",
+              "child_occupants": "Children",
+              "child_resident_names": "Child names",
+              "child_presence_entities": "Child trackers",
+              "pets_in_household": "Pets in household"
             },
             "data_description": {
               "adult_occupants": "Adults who regularly live in the household.",
@@ -1841,9 +1654,9 @@
             "name": "Presence",
             "description": "Additional presence signals and handling of residents without their own tracker.",
             "data": {
-              "presence_sensor_entities": "Presence/motion sensors (Default: empty)",
-              "pet_safe_presence_entities": "Pet-safe presence sensors (Default: empty)",
-              "untracked_follow_household": "Residents without trackers follow household status (Default: on)"
+              "presence_sensor_entities": "Presence/motion sensors",
+              "pet_safe_presence_entities": "Pet-safe presence sensors",
+              "untracked_follow_household": "Residents without trackers follow household status"
             },
             "data_description": {
               "presence_sensor_entities": "Soft supporting signals for presence.",
@@ -1855,10 +1668,10 @@
             "name": "Comfort & personal recommendations",
             "description": "Adjusts comfort wording and non-safety-critical weighting only. The physical forecast remains unchanged.",
             "data": {
-              "personalisation_enabled": "Personal recommendations (Default: on)",
-              "thermal_preference": "Default thermal preference (Default: balanced)",
-              "personal_priority": "Personal priority (Default: balanced)",
-              "night_window_preference": "Windows at night (Default: automatic)"
+              "personalisation_enabled": "Personal recommendations",
+              "thermal_preference": "Default thermal preference",
+              "personal_priority": "Personal priority",
+              "night_window_preference": "Windows at night"
             },
             "data_description": {
               "personalisation_enabled": "Uses household context for more suitable recommendations; health and safety limits remain unchanged.",
@@ -1871,9 +1684,9 @@
             "name": "Night",
             "description": "Time window and activation of the overnight forecast.",
             "data": {
-              "night_start_hour": "Night starts (Default: 22:00)",
-              "night_end_hour": "Night ends (Default: 07:00)",
-              "night_forecast_enabled": "Overnight forecast enabled (Default: on)"
+              "night_start_hour": "Night starts",
+              "night_end_hour": "Night ends",
+              "night_forecast_enabled": "Overnight forecast enabled"
             },
             "data_description": {
               "night_start_hour": "Start of the overnight evaluation period.",
@@ -1885,7 +1698,7 @@
             "name": "Personal IQ profiles & devices",
             "description": "This is the same profile structure used by the dashboard settings. The dashboard is recommended for convenient room and device assignment; full native editability remains available here.",
             "data": {
-              "resident_room_profiles": "Personal profile assignments (Default: {})"
+              "resident_room_profiles": "Personal profile assignments"
             },
             "data_description": {
               "resident_room_profiles": "Native technical representation of the same personal profiles used by the dashboard. The data stays local; graphical editing in the FreshAirIQ dashboard settings is easier."
@@ -1893,24 +1706,24 @@
           }
         },
         "data": {
-          "adult_occupants": "Adults (Default: 2)",
-          "adult_resident_names": "Adult names (Default: empty)",
-          "adult_presence_entities": "Adult trackers (Default: empty)",
-          "child_occupants": "Children (Default: 0)",
-          "child_resident_names": "Child names (Default: empty)",
-          "child_presence_entities": "Child trackers (Default: empty)",
-          "pets_in_household": "Pets in household (Default: off)",
-          "presence_sensor_entities": "Presence/motion sensors (Default: empty)",
-          "pet_safe_presence_entities": "Pet-safe presence sensors (Default: empty)",
-          "untracked_follow_household": "Residents without trackers follow household status (Default: on)",
-          "personalisation_enabled": "Personal recommendations (Default: on)",
-          "thermal_preference": "Default thermal preference (Default: balanced)",
-          "personal_priority": "Personal priority (Default: balanced)",
-          "night_window_preference": "Windows at night (Default: automatic)",
-          "night_start_hour": "Night starts (Default: 22:00)",
-          "night_end_hour": "Night ends (Default: 07:00)",
-          "night_forecast_enabled": "Overnight forecast enabled (Default: on)",
-          "resident_room_profiles": "Personal profile assignments (Default: {})"
+          "adult_occupants": "Adults",
+          "adult_resident_names": "Adult names",
+          "adult_presence_entities": "Adult trackers",
+          "child_occupants": "Children",
+          "child_resident_names": "Child names",
+          "child_presence_entities": "Child trackers",
+          "pets_in_household": "Pets in household",
+          "presence_sensor_entities": "Presence/motion sensors",
+          "pet_safe_presence_entities": "Pet-safe presence sensors",
+          "untracked_follow_household": "Residents without trackers follow household status",
+          "personalisation_enabled": "Personal recommendations",
+          "thermal_preference": "Default thermal preference",
+          "personal_priority": "Personal priority",
+          "night_window_preference": "Windows at night",
+          "night_start_hour": "Night starts",
+          "night_end_hour": "Night ends",
+          "night_forecast_enabled": "Overnight forecast enabled",
+          "resident_room_profiles": "Personal profile assignments"
         },
         "data_description": {
           "adult_occupants": "Adults who regularly live in the household.",
@@ -1937,13 +1750,13 @@
             "name": "Residents",
             "description": "Counts, names and associated person/device trackers.",
             "data": {
-              "adult_occupants": "Adults (Default: 2)",
-              "adult_resident_names": "Adult names (Default: empty)",
-              "adult_presence_entities": "Adult trackers (Default: empty)",
-              "child_occupants": "Children (Default: 0)",
-              "child_resident_names": "Child names (Default: empty)",
-              "child_presence_entities": "Child trackers (Default: empty)",
-              "pets_in_household": "Pets in household (Default: off)"
+              "adult_occupants": "Adults",
+              "adult_resident_names": "Adult names",
+              "adult_presence_entities": "Adult trackers",
+              "child_occupants": "Children",
+              "child_resident_names": "Child names",
+              "child_presence_entities": "Child trackers",
+              "pets_in_household": "Pets in household"
             },
             "data_description": {
               "adult_occupants": "Adults who regularly live in the household.",
@@ -1959,9 +1772,9 @@
             "name": "Presence",
             "description": "Additional presence signals and handling of residents without their own tracker.",
             "data": {
-              "presence_sensor_entities": "Presence/motion sensors (Default: empty)",
-              "pet_safe_presence_entities": "Pet-safe presence sensors (Default: empty)",
-              "untracked_follow_household": "Residents without trackers follow household status (Default: on)"
+              "presence_sensor_entities": "Presence/motion sensors",
+              "pet_safe_presence_entities": "Pet-safe presence sensors",
+              "untracked_follow_household": "Residents without trackers follow household status"
             },
             "data_description": {
               "presence_sensor_entities": "Soft supporting signals for presence.",
@@ -1973,10 +1786,10 @@
             "name": "Comfort & personal recommendations",
             "description": "Adjusts comfort wording and non-safety-critical weighting only. The physical forecast remains unchanged.",
             "data": {
-              "personalisation_enabled": "Personal recommendations (Default: on)",
-              "thermal_preference": "Default thermal preference (Default: balanced)",
-              "personal_priority": "Personal priority (Default: balanced)",
-              "night_window_preference": "Windows at night (Default: automatic)"
+              "personalisation_enabled": "Personal recommendations",
+              "thermal_preference": "Default thermal preference",
+              "personal_priority": "Personal priority",
+              "night_window_preference": "Windows at night"
             },
             "data_description": {
               "personalisation_enabled": "Uses household context for more suitable recommendations; health and safety limits remain unchanged.",
@@ -1989,9 +1802,9 @@
             "name": "Night",
             "description": "Time window and activation of the overnight forecast.",
             "data": {
-              "night_start_hour": "Night starts (Default: 22:00)",
-              "night_end_hour": "Night ends (Default: 07:00)",
-              "night_forecast_enabled": "Overnight forecast enabled (Default: on)"
+              "night_start_hour": "Night starts",
+              "night_end_hour": "Night ends",
+              "night_forecast_enabled": "Overnight forecast enabled"
             },
             "data_description": {
               "night_start_hour": "Start of the overnight evaluation period.",
@@ -2003,7 +1816,7 @@
             "name": "Personal IQ profiles & devices",
             "description": "This is the same profile structure used by the dashboard settings. The dashboard is recommended for convenient room and device assignment; full native editability remains available here.",
             "data": {
-              "resident_room_profiles": "Personal profile assignments (Default: {})"
+              "resident_room_profiles": "Personal profile assignments"
             },
             "data_description": {
               "resident_room_profiles": "Native technical representation of the same personal profiles used by the dashboard. The data stays local; graphical editing in the FreshAirIQ dashboard settings is easier."
@@ -2015,7 +1828,7 @@
         "title": "Intelligent ventilation threshold",
         "description": "Choose how FreshAirIQ determines the house ventilation threshold. Automatic (recommended): expected daily moisture generation is divided by four and constrained to 6–12% of currently monitored water. From May through September the threshold is reduced by 25% before 09:00 and from 19:00 when outside air is at least 2°C cooler than average indoor temperature. Health, mould and critical CO₂ rules take priority.",
         "data": {
-          "threshold_mode": "Mode (Default: Automatic)"
+          "threshold_mode": "Mode"
         },
         "data_description": {
           "threshold_mode": "Automatic needs no additional value. Percentage and fixed mL open only the relevant input on the next step."
@@ -2025,7 +1838,7 @@
         "title": "Ventilation threshold · Percentage",
         "description": "Set only the share of currently monitored total water that must be removable before normal whole-house ventilation is recommended.",
         "data": {
-          "min_potential_percent_total_water": "Percentage (Default: 10%)"
+          "min_potential_percent_total_water": "Percentage"
         },
         "data_description": {
           "min_potential_percent_total_water": "Example: 10% of 6,000 mL currently monitored water gives a 600 mL ventilation threshold."
@@ -2035,7 +1848,7 @@
         "title": "Ventilation threshold · Fixed mL",
         "description": "Set only the removable moisture potential in mL from which FreshAirIQ considers normal whole-house ventilation worthwhile.",
         "data": {
-          "min_potential_total_ml": "Fixed value (Default: 500 mL)"
+          "min_potential_total_ml": "Fixed value"
         },
         "data_description": {
           "min_potential_total_ml": "Example: 500 mL means combined removable potential must reach at least 500 mL. Health, mould and critical CO₂ rules may intervene earlier."
@@ -2045,8 +1858,8 @@
         "title": "Diagnostics sharing",
         "description": "During the public beta, nightly sharing is enabled by default and can be disabled at any time. FreshAirIQ prepares the technically complete retained diagnostics history locally for analysis, removes or pseudonymises direct identifiers, and transfers large histories in chunks. After the first acknowledged full sync, only new diagnostic records are transferred. This staging configuration connects only to the local Diagnostics Hub on the private LAN. The beta preset is Nightly; any later public deployment will require HTTPS.",
         "data": {
-          "diagnostics_reporting_mode": "Automatic diagnostics sharing (beta default: Nightly)",
-          "diagnostics_include_client_context": "Include coarse device/browser context (beta default: On)"
+          "diagnostics_reporting_mode": "Automatic diagnostics sharing",
+          "diagnostics_include_client_context": "Include coarse device/browser context"
         },
         "data_description": {
           "diagnostics_reporting_mode": "Off, only for detected problems, nightly, or weekly. A future nightly upload is deterministically distributed between 02:00 and 03:59 local time.",
@@ -2076,12 +1889,12 @@
           "length": "Room length",
           "width": "Room width",
           "height": "Room height",
-          "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-          "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+          "reference_temperature": "Reference temperature",
+          "reference_humidity": "Reference humidity",
           "co2": "CO₂ sensor (optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
-          "moisture_sources": "Moisture sources in the room (Default: none)",
+          "moisture_sources": "Moisture sources in the room",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -2094,10 +1907,8 @@
           "humidifier": "Humidifier (optional)",
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
-          "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-          "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
-          "estimated_area_m2": "Estimated floor area (Default: empty)",
-          "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
+          "ventilation_threshold_percent": "Room threshold percentage",
+          "ventilation_threshold_ml": "Fixed room threshold"
         },
         "sections": {
           "identity": {
@@ -2118,10 +1929,10 @@
             "name": "Room properties",
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "moisture_sources": "Moisture sources in the room",
               "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+              "ventilation_threshold_percent": "Room threshold percentage",
+              "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -2166,8 +1977,8 @@
             "name": "Optional additional sensors & references",
             "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
             "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "reference_temperature": "Reference temperature",
+              "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
@@ -2234,9 +2045,7 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
-          "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
         },
         "section": {
           "identity": {
@@ -2257,10 +2066,10 @@
             "name": "Room properties",
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
-              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "moisture_sources": "Moisture sources in the room",
               "ventilation_threshold_mode": "Individual ventilation threshold",
-              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+              "ventilation_threshold_percent": "Room threshold percentage",
+              "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -2305,8 +2114,8 @@
             "name": "Optional sensors",
             "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them.",
             "data": {
-              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "reference_temperature": "Reference temperature",
+              "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
@@ -2343,16 +2152,6 @@
               "air_purifier": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."
             }
           }
-        }
-      },
-      "contact_passage_door": {
-        "title": "{opening_name} · Passage door",
-        "description": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples.",
-        "data": {
-          "passage_door": "Passage door that can be pulled shut from outside (Default: off)"
-        },
-        "data_description": {
-          "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
         }
       }
     },
@@ -2652,17 +2451,15 @@
             "length": "Length",
             "width": "Width",
             "height": "Height",
-            "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-            "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+            "reference_temperature": "Reference temperature",
+            "reference_humidity": "Reference humidity",
             "co2": "CO₂ sensor",
             "floor": "Floor / zone",
             "include_in_calculations": "Include in calculations",
-            "moisture_sources": "Moisture sources in the room (Default: none)",
+            "moisture_sources": "Moisture sources in the room",
             "ventilation_threshold_mode": "Individual ventilation threshold",
-            "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-            "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
-            "estimated_area_m2": "Estimated floor area (Default: empty)",
-            "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
+            "ventilation_threshold_percent": "Room threshold percentage",
+            "ventilation_threshold_ml": "Fixed room threshold"
           },
           "sections": {
             "identity": {
@@ -2704,9 +2501,7 @@
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-            "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-            "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
-            "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
+            "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
           }
         },
         "reconfigure": {
@@ -2740,15 +2535,15 @@
             "length": "Room length",
             "width": "Room width",
             "height": "Room height",
-            "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-            "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+            "reference_temperature": "Reference temperature",
+            "reference_humidity": "Reference humidity",
             "co2": "CO₂ sensor (optional)",
             "floor": "Floor",
             "include_in_calculations": "Include in FreshAirIQ calculations",
-            "moisture_sources": "Moisture sources in the room (Default: none)",
+            "moisture_sources": "Moisture sources in the room",
             "ventilation_threshold_mode": "Individual ventilation threshold",
-            "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-            "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)",
+            "ventilation_threshold_percent": "Room threshold percentage",
+            "ventilation_threshold_ml": "Fixed room threshold",
             "voc": "VOC/TVOC sensor (optional)",
             "pm25": "PM2.5 sensor (optional)",
             "illuminance": "Illuminance sensor (optional)",
@@ -2758,9 +2553,7 @@
             "ventilation_device": "Ventilation/HRV device (optional)",
             "dehumidifier": "Dehumidifier (optional)",
             "humidifier": "Humidifier (optional)",
-            "air_purifier": "Air purifier (optional)",
-            "estimated_area_m2": "Estimated floor area (Default: empty)",
-            "estimated_height_m": "Room height for area estimate (Default: 2.40 m in quick setup)"
+            "air_purifier": "Air purifier (optional)"
           },
           "sections": {
             "identity": {
@@ -2813,8 +2606,8 @@
               "name": "Optional additional sensors & references",
               "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
               "data": {
-                "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
-                "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+                "reference_temperature": "Reference temperature",
+                "reference_humidity": "Reference humidity",
                 "co2": "CO₂ sensor (optional)",
                 "voc": "VOC/TVOC sensor (optional)",
                 "pm25": "PM2.5 sensor (optional)",
@@ -2833,10 +2626,10 @@
               "name": "Room properties",
               "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
               "data": {
-                "moisture_sources": "Moisture sources in the room (Default: none)",
+                "moisture_sources": "Moisture sources in the room",
                 "ventilation_threshold_mode": "Individual ventilation threshold",
-                "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
-                "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+                "ventilation_threshold_percent": "Room threshold percentage",
+                "ventilation_threshold_ml": "Fixed room threshold"
               },
               "data_description": {
                 "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -2896,9 +2689,7 @@
             "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
             "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
             "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
-            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
-            "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
-            "estimated_height_m": "Quick setup initially uses 2.40 m; enter the actual room height later."
+            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
           }
         },
         "add_orientations": {
@@ -2939,16 +2730,6 @@
           },
           "data_description": {
             "contact_passage_doors": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
-          }
-        },
-        "room_passage_door": {
-          "title": "{opening_name} · Passage door",
-          "description": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples.",
-          "data": {
-            "passage_door": "Passage door that can be pulled shut from outside (Default: off)"
-          },
-          "data_description": {
-            "passage_door": "Enable this only if this opening is a passage door that can be pulled shut from outside and uses a genuine three-state contact sensor in the door hardware/fitting that detects the handle or fitting position. Do not enable it for three-state helpers built from multiple standard contact sensors. FreshAirIQ uses this distinction to avoid false Open learning samples."
           }
         }
       },

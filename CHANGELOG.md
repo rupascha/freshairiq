@@ -1,47 +1,25 @@
-## 0.25.2.10 – Guided Setup & Settings Architecture Hotfix
+## 0.25.2.13 — Settings Surface Parity Contract Hotfix
 
-- Rebuilt first-run navigation around two explicit setup paths.
-- Quick setup now produces a genuinely usable first room with an outdoor reference.
-- Precise setup remains precise for subsequent rooms and uses grouped mobile sections.
-- Removed overlapping category ownership between Rooms, Ventilation strategy and Comfort & health.
+- Verified Devices & Services and Dashboard settings against one canonical ConfigEntry contract.
+- Added regression coverage ensuring every native global option is also exposed by the dashboard.
+- Added room-field and per-contact parity checks, including passage-door ownership.
+- Locked both directions to the same parent room data and Home Assistant room subentries.
+- Added a fresh-load contract so reopening Dashboard settings reflects changes made through Devices & Services.
 
-## 0.25.2.9 – Onboarding & Settings Information Architecture Hotfix
+## 0.25.2.12 – Settings Language & Contact Ownership Hotfix
 
-- Reworks Quick Setup into a real first-success journey instead of ending after the first room.
-- Shows the provisional room calculation and the assumed 2.40 m height before setup finishes.
-- Lets users add more rooms with the same minimal Quick Setup flow.
-- Aligns native Home Assistant options and dashboard settings around the same canonical sections.
-- Keeps diagnostics and feedback in the separate Support area.
-- Preserves existing configuration data and detailed expert settings.
+- Audited the complete DE/EN configuration surface for key parity and non-empty field labels.
+- Removed repetitive inline “Standard/Default” text from field labels while preserving actual defaults and useful descriptions.
+- Fixed English settings residues that still contained the German word “leer”.
+- Shortened room reference field labels; detailed guidance remains in the field descriptions.
+- Moved the “passage door / pulled shut from outside” option to each individual window/door contact in the native Home Assistant contact settings.
+- Preserved the existing contact-keyed storage format for backwards compatibility.
+- Dynamic per-contact labels now follow Home Assistant language: German for `de`, English fallback otherwise.
+- Kept the Dashboard passage-door option directly inside the corresponding contact card.
 
-## 0.25.2.8 - Settings UX i18n & Quick Setup Provenance Hotfix
+## 0.25.2.11 - Version Bump
 
-- Completes English fallbacks for the new room-size and Support settings introduced in v0.25.2.7.
-- Tracks whether the 2.40 m Quick Setup height is still an automatic assumption or has been explicitly confirmed by the user.
-- Removes the estimated-size notice after the room height is confirmed, including when the measured height is exactly 2.40 m.
-- Adds regression guards for localization and the Quick Setup assumption provenance.
-
-## 0.25.2.7 - Settings UX & Quick Setup Hotfix
-
-- Adds a first-run Quick Setup path with an explicit 2.40 m assumed room height for estimated floor areas.
-- Keeps the estimate visible/editable later instead of blocking first use on exact measurements.
-- Separates Dashboard Settings from Support; diagnostics, feedback and improvement reports now live under Support.
-- Aligns the dashboard settings hierarchy around home, occupants, rooms, ventilation, notifications, learning, energy and maintenance.
-- Adds complete German/English strings for the new native onboarding path; non-German Home Assistant locales fall back to English.
-
-## 0.25.2.6 - Localized Passage Door UI Hotfix
-
-- Replaces raw dynamic passage-door field identifiers with a dedicated per-opening translated step.
-- German Home Assistant now shows the complete German label and explanation; English shows the complete English copy.
-- Keeps the setting contact-specific and preserves existing passage-door mappings.
-- Explicitly explains that the option is only for a genuine three-state contact sensor in the door fitting/hardware and not for helper-based three-state sensors.
-
-## 0.25.2.5 - Per-Opening Passage Door UI Hotfix
-
-- Replaces the room-wide passage-door multi-select with one simple switch on each configured opening.
-- Keeps the explicit wording that the door is used as a passage and pulled shut from outside.
-- Makes the genuine three-state contact sensor in the door hardware requirement visible directly on the option.
-- Preserves the existing per-contact storage contract and existing installations without migration.
+- Re-released the supplied v0.25.2.4 codebase as v0.25.2.11 without functional changes.
 
 ## 0.25.2.4 - Three-State Opening & Battery Confidence Reliability Hotfix
 
