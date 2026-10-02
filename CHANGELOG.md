@@ -1,3 +1,9 @@
+## 0.25.2.21
+
+- Hotfix: Raum-Erstellungsdialog löst keinen Config-Entry-Reload mehr mitten im Kontakt-Workflow aus.
+- Fenster-/Türkontakte bleiben optional; Räume ohne Kontakt werden direkt gültig abgeschlossen.
+- Regression: Reload-Timing und kontaktloser Raum abgesichert.
+
 ## 0.25.2.20
 
 - Hotfix: Recommendation opportunities are counted when a new recommendation episode is issued, not only when it later ends.

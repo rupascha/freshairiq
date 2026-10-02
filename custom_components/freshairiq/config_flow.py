@@ -1727,8 +1727,12 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="normalised", room_key=room["key"], outcome="ok")
                 # Save the valid base room immediately. Direction/delay forms
                 # enrich the same room on the next screens.
-                self._persist_working_state()
-                trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="parent_persisted", room_key=room["key"], outcome="ok", extra={"reload_scheduled": True})
+                # Keep the multi-step room wizard alive while orientation/delay/reference
+                # metadata is collected. Scheduling a config-entry reload here can tear
+                # down the options flow before the next form is submitted, which HA
+                # surfaces as the generic "Unknown error occurred" dialog error.
+                self._persist_working_state(reload_entry=False)
+                trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="parent_persisted", room_key=room["key"], outcome="ok", extra={"reload_scheduled": False})
                 trace_room_creation_after_reload(self.hass, self.config_entry.entry_id, source="options_flow", room_key=room["key"])
                 return await self.async_step_contact_orientations()
             trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="validation_failed", outcome="rejected", extra={"validation_error_keys": sorted(map(str, errors))})
@@ -1775,7 +1779,10 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 }
                 self._rooms()[self._rooms().index(room)] = updated
                 self._selected_room_key = updated["key"]
-                self._persist_working_state()
+                # Do not reload Home Assistant in the middle of the room wizard.
+                # The final contact step (or the no-contact fast path) performs the
+                # single structural reload after all room metadata is committed.
+                self._persist_working_state(reload_entry=False)
                 return await self.async_step_contact_orientations()
         return self.async_show_form(
             step_id="edit_room",
@@ -1832,12 +1839,16 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             return await self.async_step_rooms()
         contacts = room.get(CONF_ROOM_CONTACTS, [])
         if not contacts:
+            # Contactless rooms are valid. This is the end of their room wizard,
+            # so persist once with the structural reload that was deliberately
+            # deferred while the wizard was active.
+            self._persist_working_state(reload_entry=True)
             return await self.async_step_rooms()
         if user_input is not None:
             room[CONF_CONTACT_ORIENTATIONS] = {
                 c: str(user_input.get(c, ORIENTATION_UNKNOWN)) for c in contacts
             }
-            self._persist_working_state()
+            self._persist_working_state(reload_entry=False)
             return await self.async_step_contact_delays()
         current = room.get(CONF_CONTACT_ORIENTATIONS, {})
         fallback = room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)
@@ -1880,7 +1891,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             room[CONF_CONTACT_DELAYS] = {
                 c: _safe_int(user_input.get(c, 0), 0, minimum=0, maximum=600) for c in contacts
             }
-            self._persist_working_state()
+            self._persist_working_state(reload_entry=False)
             return await self.async_step_contact_references()
         current = room.get(CONF_CONTACT_DELAYS, {})
         return self.async_show_form(
@@ -1913,12 +1924,13 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         index = int(getattr(self, "_contact_reference_index", 0) or 0)
         if index >= len(contacts):
             self._contact_reference_index = 0
+            self._persist_working_state(reload_entry=True)
             return await self.async_step_rooms()
         contact = str(contacts[index])
         errors = {}
         if user_input is not None:
             if _apply_single_contact_reference(room, contact, user_input):
-                self._persist_working_state()
+                self._persist_working_state(reload_entry=False)
                 self._contact_reference_index = index + 1
                 return await self.async_step_contact_references()
             errors["base"] = "contact_reference_pair_required"
