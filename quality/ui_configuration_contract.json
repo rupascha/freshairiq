@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "approved_from_version": "0.25.2.14",
+  "approved_from_version": "0.25.2.15",
   "purpose": "User-approved Dashboard settings and Home Assistant Ger\u00e4te & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change.",
   "dashboard_settings_methods_sha256": "da05220dbff5bb2f42cb8e6e47b071a4b09140ebf2166b08950277813e787e57",
   "dashboard_settings_events_sha256": "fe80db5cc3bd3608a1b959ffa57372abab804eb93ddf3b6b319ce86aa3348c7d",
-  "config_flow_sha256": "9792039d628db2f0a8dea24d3cbe106aa1f581d6fbd183be5f243f7c95fef66e",
-  "de_configuration_sha256": "d3bb3f7c3303ae0c960c728cfac62f6f9d89a2c69bc958c9640086df72ba452b",
-  "en_configuration_sha256": "f6bab5cc4e7fe639b770d0146ce10d48d23c858e4f8314580d78a9df1d3e4b2a",
-  "strings_configuration_sha256": "f6bab5cc4e7fe639b770d0146ce10d48d23c858e4f8314580d78a9df1d3e4b2a"
+  "config_flow_sha256": "511698f89278db30087619950f91ba5dd4f4e581768d51e1e5a35bbaaa264e86",
+  "de_configuration_sha256": "1535dca1561999b0cea5c6031be77f4561113531e08aa2088f211c0cbb68270d",
+  "en_configuration_sha256": "6c1d12af0d265de3542a8cab0f6f1b5f9b21c987f59ce1b11a88aaca01fd055a",
+  "strings_configuration_sha256": "6c1d12af0d265de3542a8cab0f6f1b5f9b21c987f59ce1b11a88aaca01fd055a"
 }

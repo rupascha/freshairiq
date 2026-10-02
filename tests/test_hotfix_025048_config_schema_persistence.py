@@ -53,7 +53,7 @@ def test_every_german_setting_keeps_description_default_and_example():
     for path, (_label, description) in records.items():
         assert description.strip(), path
         assert "Standard:" not in description, (path, description)
-        assert ("Beispiel:" not in description) or path[-1] in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles"}, (path, description)
+        assert ("Beispiel:" not in description) or path[-1] in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles", "passage_door"}, (path, description)
 
 
 def test_translation_field_shapes_stay_in_lockstep():

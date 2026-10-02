@@ -39,23 +39,23 @@ def test_english_settings_have_no_known_german_empty_residue():
     assert "Recipients (Default: leer)" not in en
     assert "Default: leer" not in CARD
 
-def test_passage_door_is_owned_by_each_contact_not_room_multiselect():
-    schema=FLOW[FLOW.index("def _contact_reference_schema"):FLOW.index("def _apply_contact_references")]
-    assert '_contact_reference_slot(index, "passage")' in schema
+def test_passage_door_is_owned_by_one_real_contact_per_native_page():
+    schema=FLOW[FLOW.index("def _single_contact_reference_schema"):FLOW.index("def _apply_single_contact_reference")]
+    assert 'vol.Optional("passage_door"' in schema
     assert "selector.BooleanSelector()" in schema
     assert "SelectSelectorConfig(options=options, multiple=True" not in schema
 
 def test_passage_door_roundtrip_remains_contact_keyed_and_backwards_compatible():
-    apply=FLOW[FLOW.index("def _apply_contact_references"):FLOW.index("def _normalise_room")]
-    assert '_value("passage", False)' in apply
+    apply=FLOW[FLOW.index("def _apply_single_contact_reference"):FLOW.index("def _normalise_room")]
+    assert 'passage_doors[contact] = bool(user_input.get("passage_door", False))' in apply
     assert "room[CONF_CONTACT_PASSAGE_DOORS] = passage_doors" in apply
     normalise=FLOW[FLOW.index("def _normalise_room"):FLOW.index("def _normalise_legacy_entry_data")]
     assert "CONF_CONTACT_PASSAGE_DOORS: deepcopy(previous.get(CONF_CONTACT_PASSAGE_DOORS, {}))" in normalise
 
-def test_dynamic_contact_labels_use_translated_stable_slots():
-    schema=FLOW[FLOW.index("def _contact_reference_schema"):FLOW.index("def _apply_contact_references")]
-    assert '_contact_reference_slot(index, "passage")' in schema
-    assert "__freshairiq_reference_passage" not in schema
+def test_native_contact_labels_use_static_translation_keys():
+    schema=FLOW[FLOW.index("def _single_contact_reference_schema"):FLOW.index("def _apply_single_contact_reference")]
+    assert '"passage_door"' in schema
+    assert "opening_" not in schema
 
 def test_dashboard_passage_setting_is_inside_each_contact_card():
     method=CARD[CARD.index("_settingsContactRows("):CARD.index("_settingsRoomEditor(",CARD.index("_settingsContactRows("))]

@@ -1,3 +1,11 @@
+## 0.25.2.15 — Contact Identity & Passage Door UI Hotfix
+
+- Replaces the failed dynamic `opening_1_*` / `opening_2_*` native form fields with static, fully translatable fields.
+- Shows one real window/door contact at a time and identifies it by the Home Assistant friendly name, with a readable entity-id fallback.
+- Keeps the actual entity id visible in the page description for unambiguous identification.
+- Adds the requested passage-door example (terrace/balcony/smoking) and the strict genuine three-state sensor-in-door-hardware requirement.
+- Preserves per-contact persistence, Dashboard parity, existing room data and backwards compatibility.
+
 ## 0.25.2.14 — Native Contact Translation Hotfix
 
 - Fixes internal generated contact keys being shown as labels in Home Assistant.

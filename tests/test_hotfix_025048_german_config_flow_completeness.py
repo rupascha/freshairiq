@@ -52,7 +52,7 @@ def test_sectioned_forms_have_nested_german_field_translations():
                 description = sec["data_description"].get(field, "")
                 assert label and label != field, (step_id, section_id, field)
                 assert "Standard:" not in description, (step_id, section_id, field)
-                assert ("Beispiel:" not in description) or field in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles"}, (step_id, section_id, field)
+                assert ("Beispiel:" not in description) or field in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles", "passage_door"}, (step_id, section_id, field)
 
 
 def test_every_german_config_and_options_field_has_help_default_example():
@@ -63,4 +63,4 @@ def test_every_german_config_and_options_field_has_help_default_example():
                 desc = step.get("data_description", {}).get(field, "")
                 assert desc, (area, step_id, field)
                 assert "Standard:" not in desc, (area, step_id, field)
-                assert ("Beispiel:" not in desc) or field in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles"}, (area, step_id, field)
+                assert ("Beispiel:" not in desc) or field in {"cross_ventilation_pairs", "cross_zone_connections", "resident_room_profiles", "passage_door"}, (area, step_id, field)

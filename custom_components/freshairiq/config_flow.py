@@ -300,72 +300,76 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
 
 
 def _contact_reference_field(contact: str, kind: str) -> str:
-    """Legacy dynamic key kept only for backwards-compatible parsing/tests."""
+    """Legacy key retained only for backwards compatibility with older flows."""
     return f"{contact}__freshairiq_reference_{kind}"
 
 
-def _contact_reference_slot(index: int, kind: str) -> str:
-    """Stable translated form key for one opening; entity IDs never become UI labels."""
-    return f"opening_{index + 1}_{kind}"
+def _contact_display_name(hass, entity_id: str) -> str:
+    """Return the user's HA entity name, with a readable entity-id fallback."""
+    entity_id = str(entity_id or "").strip()
+    state = hass.states.get(entity_id) if hass is not None else None
+    friendly = str((state.attributes or {}).get("friendly_name") or "").strip() if state else ""
+    if friendly:
+        return friendly
+    object_id = entity_id.split(".", 1)[-1] if "." in entity_id else entity_id
+    readable = re.sub(r"[_-]+", " ", object_id).strip()
+    return readable.title() if readable else entity_id
 
 
-def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
-    """Build translated per-opening fields without leaking entity IDs as labels."""
-    fields: dict[Any, Any] = {}
+def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.Schema:
+    """Static translated schema for exactly one real window/door contact."""
     temperatures = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidities = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
     covers = room.get(CONF_CONTACT_COVERS) or {}
     passage_doors = room.get(CONF_CONTACT_PASSAGE_DOORS) or {}
-    for index, contact in enumerate(room.get(CONF_ROOM_CONTACTS, []) or []):
-        temp = str(temperatures.get(contact) or "").strip()
-        humidity = str(humidities.get(contact) or "").strip()
-        temp_key = _contact_reference_slot(index, "temperature")
-        humidity_key = _contact_reference_slot(index, "humidity")
-        cover_key = _contact_reference_slot(index, "covers")
-        passage_key = _contact_reference_slot(index, "passage")
-        fields[vol.Optional(temp_key, default=temp) if temp else vol.Optional(temp_key)] = selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
-        )
-        fields[vol.Optional(humidity_key, default=humidity) if humidity else vol.Optional(humidity_key)] = selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
-        )
-        fields[vol.Optional(cover_key, default=list(covers.get(contact) or []))] = selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="cover", multiple=True)
-        )
-        fields[vol.Optional(passage_key, default=bool(passage_doors.get(contact, False)))] = selector.BooleanSelector()
+    temp = str(temperatures.get(contact) or "").strip()
+    humidity = str(humidities.get(contact) or "").strip()
+    fields: dict[Any, Any] = {
+        (vol.Optional("reference_temperature", default=temp) if temp else vol.Optional("reference_temperature")):
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+        (vol.Optional("reference_humidity", default=humidity) if humidity else vol.Optional("reference_humidity")):
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+        vol.Optional("covers", default=list(covers.get(contact) or [])):
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="cover", multiple=True)),
+        vol.Optional("passage_door", default=bool(passage_doors.get(contact, False))):
+            selector.BooleanSelector(),
+    }
     return vol.Schema(fields)
 
 
+def _apply_single_contact_reference(
+    room: dict[str, Any], contact: str, user_input: dict[str, Any]
+) -> bool:
+    """Persist one opening without touching metadata belonging to other openings."""
+    temp = str(user_input.get("reference_temperature") or "").strip()
+    humidity = str(user_input.get("reference_humidity") or "").strip()
+    if bool(temp) != bool(humidity):
+        return False
 
-def _apply_contact_references(room: dict[str, Any], user_input: dict[str, Any]) -> bool:
-    """Apply atomic per-opening settings; translated form slots map back to contacts."""
-    temperatures: dict[str, str] = {}
-    humidities: dict[str, str] = {}
-    contact_covers: dict[str, list[str]] = {}
-    passage_doors: dict[str, bool] = {}
-    for index, raw_contact in enumerate(room.get(CONF_ROOM_CONTACTS, []) or []):
-        contact = str(raw_contact)
-        def _value(kind: str, default=None):
-            slot = _contact_reference_slot(index, kind)
-            legacy = _contact_reference_field(contact, kind)
-            return user_input.get(slot, user_input.get(legacy, default))
+    temperatures = dict(room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {})
+    humidities = dict(room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {})
+    contact_covers = dict(room.get(CONF_CONTACT_COVERS) or {})
+    passage_doors = dict(room.get(CONF_CONTACT_PASSAGE_DOORS) or {})
 
-        temp = str(_value("temperature") or "").strip()
-        humidity = str(_value("humidity") or "").strip()
-        if bool(temp) != bool(humidity):
-            return False
-        if temp and humidity:
-            temperatures[contact] = temp
-            humidities[contact] = humidity
+    if temp and humidity:
+        temperatures[contact] = temp
+        humidities[contact] = humidity
+    else:
+        temperatures.pop(contact, None)
+        humidities.pop(contact, None)
 
-        raw_covers = _value("covers", []) or []
-        if isinstance(raw_covers, str):
-            raw_covers = [raw_covers]
-        selected_covers = [str(entity_id) for entity_id in raw_covers if str(entity_id).startswith("cover.")]
-        if selected_covers:
-            contact_covers[contact] = list(dict.fromkeys(selected_covers))
-        passage_doors[contact] = bool(_value("passage", False))
+    raw_covers = user_input.get("covers") or []
+    if isinstance(raw_covers, str):
+        raw_covers = [raw_covers]
+    selected_covers = [
+        str(entity_id) for entity_id in raw_covers if str(entity_id).startswith("cover.")
+    ]
+    if selected_covers:
+        contact_covers[contact] = list(dict.fromkeys(selected_covers))
+    else:
+        contact_covers.pop(contact, None)
 
+    passage_doors[contact] = bool(user_input.get("passage_door", False))
     room[CONF_CONTACT_REFERENCE_TEMPERATURES] = temperatures
     room[CONF_CONTACT_REFERENCE_HUMIDITIES] = humidities
     room[CONF_CONTACT_COVERS] = contact_covers
@@ -915,18 +919,32 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_room_references(self, user_input=None) -> FlowResult:
         room = next((r for r in self._rooms if r.get("key") == getattr(self, "_pending_room_key", None)), None)
-        if room is None or not room.get(CONF_ROOM_CONTACTS):
+        contacts = list(room.get(CONF_ROOM_CONTACTS, []) or []) if room is not None else []
+        if room is None or not contacts:
+            self._room_reference_contact_index = 0
             return await self.async_step_more_rooms()
+        index = int(getattr(self, "_room_reference_contact_index", 0) or 0)
+        if index >= len(contacts):
+            self._room_reference_contact_index = 0
+            return await self.async_step_more_rooms()
+        contact = str(contacts[index])
         errors = {}
         if user_input is not None:
-            if _apply_contact_references(room, user_input):
-                return await self.async_step_more_rooms()
+            if _apply_single_contact_reference(room, contact, user_input):
+                self._room_reference_contact_index = index + 1
+                return await self.async_step_room_references()
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="room_references",
-            data_schema=_contact_reference_schema(room, self.hass),
+            data_schema=_single_contact_reference_schema(room, contact),
             errors=errors,
-            description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum"))},
+            description_placeholders={
+                "room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum")),
+                "contact_name": _contact_display_name(self.hass, contact),
+                "contact_entity": contact,
+                "contact_position": str(index + 1),
+                "contact_count": str(len(contacts)),
+            },
         )
 
     async def async_step_more_rooms(self, user_input=None) -> FlowResult:
@@ -1229,19 +1247,34 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
 
     async def async_step_room_references(self, user_input=None):
         room = self._current_room()
-        if not room.get(CONF_ROOM_CONTACTS):
+        contacts = list(room.get(CONF_ROOM_CONTACTS, []) or [])
+        if not contacts:
+            self._room_reference_contact_index = 0
             return await self.async_step_reconfigure()
+        index = int(getattr(self, "_room_reference_contact_index", 0) or 0)
+        if index >= len(contacts):
+            self._room_reference_contact_index = 0
+            self._persist_room_update()
+            return await self.async_step_reconfigure()
+        contact = str(contacts[index])
         errors = {}
         if user_input is not None:
-            if _apply_contact_references(room, user_input):
+            if _apply_single_contact_reference(room, contact, user_input):
                 self._persist_room_update()
-                return await self.async_step_reconfigure()
+                self._room_reference_contact_index = index + 1
+                return await self.async_step_room_references()
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="room_references",
-            data_schema=_contact_reference_schema(room, self.hass),
+            data_schema=_single_contact_reference_schema(room, contact),
             errors=errors,
-            description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum")},
+            description_placeholders={
+                "room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum"),
+                "contact_name": _contact_display_name(self.hass, contact),
+                "contact_entity": contact,
+                "contact_position": str(index + 1),
+                "contact_count": str(len(contacts)),
+            },
         )
 
     async def async_step_save_room(self, user_input=None):
@@ -1873,21 +1906,33 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         room = next(
             (r for r in self._rooms() if r["key"] == self._selected_room_key), None
         )
-        if room is None:
+        contacts = list(room.get(CONF_ROOM_CONTACTS, []) or []) if room is not None else []
+        if room is None or not contacts:
+            self._contact_reference_index = 0
             return await self.async_step_rooms()
-        if not room.get(CONF_ROOM_CONTACTS):
+        index = int(getattr(self, "_contact_reference_index", 0) or 0)
+        if index >= len(contacts):
+            self._contact_reference_index = 0
             return await self.async_step_rooms()
+        contact = str(contacts[index])
         errors = {}
         if user_input is not None:
-            if _apply_contact_references(room, user_input):
+            if _apply_single_contact_reference(room, contact, user_input):
                 self._persist_working_state()
-                return await self.async_step_rooms()
+                self._contact_reference_index = index + 1
+                return await self.async_step_contact_references()
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="contact_references",
-            data_schema=_contact_reference_schema(room, self.hass),
+            data_schema=_single_contact_reference_schema(room, contact),
             errors=errors,
-            description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum"))},
+            description_placeholders={
+                "room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum")),
+                "contact_name": _contact_display_name(self.hass, contact),
+                "contact_entity": contact,
+                "contact_position": str(index + 1),
+                "contact_count": str(len(contacts)),
+            },
         )
 
     async def async_step_remove_room(self, user_input=None):

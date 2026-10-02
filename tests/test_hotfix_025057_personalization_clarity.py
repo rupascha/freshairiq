@@ -40,6 +40,6 @@ def test_de_descriptions_do_not_duplicate_defaults():
             for v in x: walk(v,path)
         elif isinstance(x,str) and 'data_description' in path:
             if 'Standard:' in x: bad.append(('.'.join(path),x))
-            if 'Beispiel:' in x and path[-1] not in {'cross_ventilation_pairs','cross_zone_connections','resident_room_profiles'}: bad.append(('.'.join(path),x))
+            if 'Beispiel:' in x and path[-1] not in {'cross_ventilation_pairs','cross_zone_connections','resident_room_profiles','passage_door'}: bad.append(('.'.join(path),x))
     walk(d)
     assert not bad, bad[:10]

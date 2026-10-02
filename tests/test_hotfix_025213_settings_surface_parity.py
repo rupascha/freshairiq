@@ -87,7 +87,7 @@ def test_per_contact_settings_share_same_room_storage():
     for js_key,py_key in pairs.items():
         assert js_key in CARD
         assert py_key in FLOW and py_key in API
-    assert '_contact_reference_slot(index, "passage")' in FLOW
+    assert 'passage_doors[contact] = bool(user_input.get("passage_door", False))' in FLOW
     assert 'room.contact_passage_doors[contact]' in CARD
 
 def test_room_changes_sync_parent_and_native_subentries_in_both_directions():
