@@ -300,86 +300,78 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
 
 
 def _contact_reference_field(contact: str, kind: str) -> str:
+    """Legacy dynamic key kept only for backwards-compatible parsing/tests."""
     return f"{contact}__freshairiq_reference_{kind}"
 
 
-def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
-    """Build one temperature/humidity reference pair per configured opening.
+def _contact_reference_slot(index: int, kind: str) -> str:
+    """Stable translated form key for one opening; entity IDs never become UI labels."""
+    return f"opening_{index + 1}_{kind}"
 
-    Reference-air selectors intentionally accept every sensor entity. A number
-    of perfectly valid Home Assistant sensors expose °C/% but no device_class;
-    filtering those out made local zones such as conservatories impossible to
-    select. Runtime plausibility checks still reject unusable numeric states.
-    """
+
+def _contact_reference_schema(room: dict[str, Any], hass=None) -> vol.Schema:
+    """Build translated per-opening fields without leaking entity IDs as labels."""
     fields: dict[Any, Any] = {}
     temperatures = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidities = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
     covers = room.get(CONF_CONTACT_COVERS) or {}
     passage_doors = room.get(CONF_CONTACT_PASSAGE_DOORS) or {}
-    for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
-        state = hass.states.get(contact) if hass is not None else None
-        label = str((state.attributes or {}).get("friendly_name") or contact) if state else str(contact)
-        temp_key = _contact_reference_field(str(contact), "temperature")
-        humidity_key = _contact_reference_field(str(contact), "humidity")
+    for index, contact in enumerate(room.get(CONF_ROOM_CONTACTS, []) or []):
         temp = str(temperatures.get(contact) or "").strip()
         humidity = str(humidities.get(contact) or "").strip()
-        is_de = str(getattr(getattr(hass, "config", None), "language", "") or "").lower().startswith("de")
-        ref_temp_label = "Referenztemperatur" if is_de else "Reference temperature"
-        ref_humidity_label = "Referenzfeuchte" if is_de else "Reference humidity"
-        cover_label = "Rollo/Jalousie" if is_de else "Blind/shutter"
-        passage_label = (
-            "Durchgangstür – wird von außen nur zugezogen"
-            if is_de else
-            "Passage door – may only be pulled shut from outside"
+        temp_key = _contact_reference_slot(index, "temperature")
+        humidity_key = _contact_reference_slot(index, "humidity")
+        cover_key = _contact_reference_slot(index, "covers")
+        passage_key = _contact_reference_slot(index, "passage")
+        fields[vol.Optional(temp_key, default=temp) if temp else vol.Optional(temp_key)] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor")
         )
-        temp_marker = vol.Optional(temp_key, default=temp, description=f"{label} · {ref_temp_label}") if temp else vol.Optional(temp_key, description=f"{label} · {ref_temp_label}")
-        humidity_marker = vol.Optional(humidity_key, default=humidity, description=f"{label} · {ref_humidity_label}") if humidity else vol.Optional(humidity_key, description=f"{label} · {ref_humidity_label}")
-        cover_key = _contact_reference_field(str(contact), "covers")
-        contact_covers = list(covers.get(contact) or [])
-        cover_marker = vol.Optional(cover_key, default=contact_covers, description=f"{label} · {cover_label}")
-        passage_key = _contact_reference_field(str(contact), "passage")
-        passage_marker = vol.Optional(
-            passage_key,
-            default=bool(passage_doors.get(contact, False)),
-            description=f"{label} · {passage_label}",
+        fields[vol.Optional(humidity_key, default=humidity) if humidity else vol.Optional(humidity_key)] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor")
         )
-        fields[temp_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
-        fields[humidity_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
-        fields[cover_marker] = selector.EntitySelector(selector.EntitySelectorConfig(domain="cover", multiple=True))
-        fields[passage_marker] = selector.BooleanSelector()
+        fields[vol.Optional(cover_key, default=list(covers.get(contact) or []))] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="cover", multiple=True)
+        )
+        fields[vol.Optional(passage_key, default=bool(passage_doors.get(contact, False)))] = selector.BooleanSelector()
     return vol.Schema(fields)
 
 
 
 def _apply_contact_references(room: dict[str, Any], user_input: dict[str, Any]) -> bool:
-    """Apply atomic per-opening reference pairs; return False for partial pairs."""
+    """Apply atomic per-opening settings; translated form slots map back to contacts."""
     temperatures: dict[str, str] = {}
     humidities: dict[str, str] = {}
     contact_covers: dict[str, list[str]] = {}
     passage_doors: dict[str, bool] = {}
-    for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
-        contact = str(contact)
-        temp = str(user_input.get(_contact_reference_field(contact, "temperature")) or "").strip()
-        humidity = str(user_input.get(_contact_reference_field(contact, "humidity")) or "").strip()
+    for index, raw_contact in enumerate(room.get(CONF_ROOM_CONTACTS, []) or []):
+        contact = str(raw_contact)
+        def _value(kind: str, default=None):
+            slot = _contact_reference_slot(index, kind)
+            legacy = _contact_reference_field(contact, kind)
+            return user_input.get(slot, user_input.get(legacy, default))
+
+        temp = str(_value("temperature") or "").strip()
+        humidity = str(_value("humidity") or "").strip()
         if bool(temp) != bool(humidity):
             return False
         if temp and humidity:
             temperatures[contact] = temp
             humidities[contact] = humidity
-        raw_covers = user_input.get(_contact_reference_field(contact, "covers")) or []
+
+        raw_covers = _value("covers", []) or []
         if isinstance(raw_covers, str):
             raw_covers = [raw_covers]
         selected_covers = [str(entity_id) for entity_id in raw_covers if str(entity_id).startswith("cover.")]
         if selected_covers:
             contact_covers[contact] = list(dict.fromkeys(selected_covers))
+        passage_doors[contact] = bool(_value("passage", False))
+
     room[CONF_CONTACT_REFERENCE_TEMPERATURES] = temperatures
     room[CONF_CONTACT_REFERENCE_HUMIDITIES] = humidities
     room[CONF_CONTACT_COVERS] = contact_covers
-    for contact in room.get(CONF_ROOM_CONTACTS, []) or []:
-        contact = str(contact)
-        passage_doors[contact] = bool(user_input.get(_contact_reference_field(contact, "passage"), False))
     room[CONF_CONTACT_PASSAGE_DOORS] = passage_doors
     return True
+
 
 
 def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, Any]], *, keep_key: str | None = None) -> tuple[dict[str, Any] | None, dict[str, str]]:

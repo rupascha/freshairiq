@@ -1,3 +1,11 @@
+## 0.25.2.14 — Native Contact Translation Hotfix
+
+- Fixes internal generated contact keys being shown as labels in Home Assistant.
+- Uses stable translated per-opening form slots instead of entity IDs as native form field names.
+- Adds German and English labels for reference temperature, reference humidity, blind/shutter and passage-door settings.
+- Adds an explicit passage-door explanation: enable only for a genuine three-state contact sensor in the door hardware; not for normal two-state contacts or helper-composed three-state sensors.
+- Keeps the persisted per-contact configuration and Dashboard/Devices & Services parity unchanged.
+
 ## 0.25.2.13 — Settings Surface Parity Contract Hotfix
 
 - Verified Devices & Services and Dashboard settings against one canonical ConfigEntry contract.
