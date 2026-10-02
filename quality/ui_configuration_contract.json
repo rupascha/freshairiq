@@ -1,8 +1,8 @@
 {
-  "dashboard_settings_methods_sha256": "4b1585d46612e84ed1aa4368350446ed5591a74d21e8e497d328f6f386136bd8",
+  "dashboard_settings_methods_sha256": "35a6c76f8e4da9a9541513628e7008ff558013c1d49c9d6823f2f8b8580ddd01",
   "dashboard_settings_events_sha256": "e58409c8fb530d302a6fcf253087954e0bd0660d7eab4d27f3d99e3ac406d953",
-  "config_flow_sha256": "e857ba39e1a64d6b0d11329375e24605e6b0118143107278139d24862ba5dd27",
-  "de_configuration_sha256": "cb0a8ef0b44c5d0ef2a06fb99e0195eeebef3dae62235d9dad5e4bafbf02a18b",
-  "en_configuration_sha256": "db93dff9691332948126988c50d89f38526ec91040cca6fa70970fdd8aec9949",
-  "strings_configuration_sha256": "db93dff9691332948126988c50d89f38526ec91040cca6fa70970fdd8aec9949"
+  "config_flow_sha256": "e43dd2fa79ce0d7571e6aee44d7abfde98daec4ac8ceda766f5e00a00139de63",
+  "de_configuration_sha256": "f7d12585e8fb2fb5dcd08a227d53bc7e5a1e190155f45f168e0afc6fcc9a40e0",
+  "en_configuration_sha256": "f5400d40f52f652bc1b28f70bde3ed0a5a5bff9466fe52eedd6563f4440437a8",
+  "strings_configuration_sha256": "f5400d40f52f652bc1b28f70bde3ed0a5a5bff9466fe52eedd6563f4440437a8"
 }

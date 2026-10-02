@@ -130,6 +130,18 @@ def _outdoor_configuration_error(data: dict[str, Any]) -> str | None:
     return "outdoor_pair_required" if has_temperature != has_humidity else None
 
 
+
+def _quick_outdoor_configuration_error(data: dict[str, Any]) -> str | None:
+    """Quick setup must end with a usable outdoor reference."""
+    pair_error = _outdoor_configuration_error(data)
+    if pair_error:
+        return pair_error
+    if data.get(CONF_OUTDOOR_WEATHER):
+        return None
+    if data.get(CONF_OUTDOOR_TEMPERATURE) and data.get(CONF_OUTDOOR_HUMIDITY):
+        return None
+    return "outdoor_source_required"
+
 def _outdoor_schema(data: dict[str, Any] | None = None) -> vol.Schema:
     data = data or {}
     return vol.Schema({
@@ -839,19 +851,19 @@ QUICK_SETUP_HEIGHT_ASSUMED_KEY = "height_assumed"
 
 
 def _quick_room_schema() -> vol.Schema:
-    """Minimal first-room setup: sensors first, geometry may be estimated."""
+    """Minimum viable calculated room for the guided first-run path."""
     return vol.Schema({
         vol.Required(CONF_ROOM_NAME): selector.TextSelector(),
-        vol.Optional(CONF_ROOM_TEMPERATURE): selector.EntitySelector(
+        vol.Required(CONF_ROOM_TEMPERATURE): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="temperature")
         ),
-        vol.Optional(CONF_ROOM_HUMIDITY): selector.EntitySelector(
+        vol.Required(CONF_ROOM_HUMIDITY): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
         ),
         vol.Optional(CONF_ROOM_CONTACTS, default=[]): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "input_select", "select"], multiple=True)
         ),
-        vol.Required(QUICK_SETUP_AREA_KEY, default=15.0): _number(2, 300, 0.5, "m²"),
+        vol.Required(QUICK_SETUP_AREA_KEY): _number(2, 300, 0.5, "m²"),
     })
 
 
@@ -873,27 +885,34 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._rooms: list[dict[str, Any]] = []
 
     async def async_step_user(self, user_input=None) -> FlowResult:
-        await self.async_set_unique_id(DOMAIN); self._abort_if_unique_id_configured()
+        """Offer two obvious first-run paths instead of a technical mode selector."""
+        await self.async_set_unique_id(DOMAIN)
+        self._abort_if_unique_id_configured()
         legacy_entries = self.hass.config_entries.async_entries(LEGACY_DOMAIN)
-        if legacy_entries and user_input is None:
+        if legacy_entries:
             return await self.async_step_legacy_import()
+        return self.async_show_menu(
+            step_id="user",
+            menu_options=["quick_start", "exact_outdoor"],
+        )
+
+    async def async_step_quick_start(self, user_input=None) -> FlowResult:
+        """Guided setup: establish outside reference before creating a room."""
+        self._setup_mode = "quick"
+        errors: dict[str, str] = {}
         if user_input is not None:
-            mode = str(user_input.get("setup_mode") or "quick")
-            if mode == "later":
-                self._base = {}
+            error = _quick_outdoor_configuration_error(dict(user_input))
+            if error:
+                errors["base"] = error
+            else:
+                self._base = {k: v for k, v in dict(user_input).items() if v not in (None, "")}
                 self._base.setdefault(CONF_ROOMS, [])
                 self._base.setdefault(CONF_LEVELS, [])
-                return self.async_create_entry(title="FreshAirIQ", data=self._base)
-            if mode == "exact":
-                return await self.async_step_exact_outdoor()
-            return await self.async_step_quick_room()
+                return await self.async_step_quick_room()
         return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema({
-                vol.Required("setup_mode", default="quick"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(options=["quick", "exact", "later"], mode=selector.SelectSelectorMode.LIST, translation_key="setup_mode")
-                )
-            }),
+            step_id="quick_start",
+            data_schema=_outdoor_schema(self._base),
+            errors=errors,
         )
 
     async def async_step_reconfigure(self, user_input=None) -> FlowResult:
@@ -933,6 +952,7 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_exact_outdoor(self, user_input=None) -> FlowResult:
+        self._setup_mode = "exact"
         errors = {}
         if user_input is not None:
             error = _outdoor_configuration_error(dict(user_input))
@@ -952,100 +972,59 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if room and not errors:
                 self._rooms.append(room)
                 self._base = {CONF_ROOMS: self._rooms, CONF_LEVELS: [room.get(CONF_ROOM_FLOOR, "Unzugeordnet")]}
-                subentries = [{"subentry_type": "room", "data": dict(room), "title": room.get(CONF_ROOM_NAME, room["key"]), "unique_id": f"room:{room['key']}"}]
-                return self.async_create_entry(title="FreshAirIQ", data=self._base, subentries=subentries)
+                return await self.async_step_quick_success()
         return self.async_show_form(
             step_id="quick_room", data_schema=_quick_room_schema(), errors=errors,
             description_placeholders={"assumed_height": f"{QUICK_SETUP_HEIGHT_M:.2f}"},
         )
 
-    async def async_step_legacy_import(self, user_input=None) -> FlowResult:
-        legacy_entries = self.hass.config_entries.async_entries(LEGACY_DOMAIN)
-        if not legacy_entries:
-            return await self.async_step_user(user_input={})
-        legacy = legacy_entries[0]
-        if user_input is not None:
-            if user_input.get("import_legacy", True):
-                data = _normalise_legacy_entry_data(dict(legacy.data)); data[CONF_LEGACY_ENTRY_ID] = legacy.entry_id
-                data[CONF_LEVELS] = list(dict.fromkeys(r.get(CONF_ROOM_FLOOR, "Unzugeordnet") for r in data.get(CONF_ROOMS, [])))
-                subentries = [
-                    {"subentry_type": "room", "data": dict(room), "title": room.get(CONF_ROOM_NAME, room["key"]), "unique_id": f"room:{room['key']}"}
-                    for room in data.get(CONF_ROOMS, [])
-                ]
-                return self.async_create_entry(title="FreshAirIQ", data=data, subentries=subentries)
-            return self.async_show_form(step_id="user", data_schema=_outdoor_schema())
-        return self.async_show_form(step_id="legacy_import", data_schema=vol.Schema({vol.Required("import_legacy", default=True): bool}))
-
-    async def async_step_room(self, user_input=None) -> FlowResult:
-        errors = {}
-        if user_input is not None:
-            room, errors = _normalise_room(user_input, self._rooms)
-            if room and not errors:
-                self._rooms.append(room); self._pending_room_key = room["key"]; return await self.async_step_room_orientations()
-        return self.async_show_form(step_id="room", data_schema=_room_schema(levels=list(dict.fromkeys(r.get(CONF_ROOM_FLOOR, "") for r in self._rooms if r.get(CONF_ROOM_FLOOR)))), errors=errors, description_placeholders={"room_count": str(len(self._rooms) + 1)})
-
-    async def async_step_room_orientations(self, user_input=None) -> FlowResult:
-        room = next((r for r in self._rooms if r.get("key") == getattr(self, "_pending_room_key", None)), None)
-        if room is None or not room.get(CONF_ROOM_CONTACTS):
-            return await self.async_step_more_rooms()
-        contacts = room.get(CONF_ROOM_CONTACTS, [])
-        if user_input is not None:
-            room[CONF_CONTACT_ORIENTATIONS] = {c: str(user_input.get(c, ORIENTATION_UNKNOWN)) for c in contacts}
-            return await self.async_step_room_references()
-        return self.async_show_form(step_id="room_orientations", data_schema=vol.Schema({
-            vol.Required(c, default=str((room.get(CONF_CONTACT_ORIENTATIONS) or {}).get(c, ORIENTATION_UNKNOWN))): selector.SelectSelector(
-                selector.SelectSelectorConfig(options=ORIENTATIONS, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="window_orientation")
-            ) for c in contacts
-        }), description_placeholders={"room_name": room.get("name", room["key"])})
-
-    async def async_step_room_references(self, user_input=None) -> FlowResult:
-        room = next((r for r in self._rooms if r.get("key") == getattr(self, "_pending_room_key", None)), None)
-        if room is None or not room.get(CONF_ROOM_CONTACTS):
-            return await self.async_step_more_rooms()
-        errors = {}
-        if user_input is not None:
-            if _apply_contact_references(room, user_input):
-                self._passage_contact_index = 0
-                return await self.async_step_room_passage_door()
-            errors["base"] = "contact_reference_pair_required"
-        return self.async_show_form(
-            step_id="room_references",
-            data_schema=_contact_reference_schema(room, self.hass),
-            errors=errors,
-            description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum"))},
+    async def async_step_quick_success(self, user_input=None) -> FlowResult:
+        """Show first success and two explicit next actions."""
+        room = self._rooms[-1] if self._rooms else {}
+        area = _number_or_none(room.get(QUICK_SETUP_AREA_KEY))
+        volume = _number_or_none(room.get(CONF_ROOM_VOLUME))
+        return self.async_show_menu(
+            step_id="quick_success",
+            menu_options=["quick_add_room", "quick_finish"],
+            description_placeholders={
+                "room_name": str(room.get(CONF_ROOM_NAME, "")),
+                "area": f"{area:g}" if area is not None else "–",
+                "height": f"{QUICK_SETUP_HEIGHT_M:.2f}",
+                "volume": f"{volume:g}" if volume is not None else "–",
+            },
         )
 
+    async def async_step_quick_add_room(self, user_input=None) -> FlowResult:
+        self._setup_mode = "quick"
+        return await self.async_step_quick_room()
 
-    async def async_step_room_passage_door(self, user_input=None) -> FlowResult:
-        room = next((r for r in self._rooms if r.get("key") == getattr(self, "_pending_room_key", None)), None)
-        contacts = [str(c) for c in (room or {}).get(CONF_ROOM_CONTACTS, []) or []]
-        idx = int(getattr(self, "_passage_contact_index", 0))
-        if room is None or idx >= len(contacts):
-            return await self.async_step_more_rooms()
-        contact = contacts[idx]
-        if user_input is not None:
-            _apply_passage_door(room, contact, bool(user_input.get("passage_door", False)))
-            self._passage_contact_index = idx + 1
-            return await self.async_step_room_passage_door()
-        state = self.hass.states.get(contact) if self.hass is not None else None
-        label = str((state.attributes or {}).get("friendly_name") or contact) if state else contact
-        return self.async_show_form(step_id="room_passage_door", data_schema=_passage_door_schema(room, contact), description_placeholders={"room_name": room.get(CONF_ROOM_NAME, room.get("key", "Room")), "opening_name": label})
+    async def async_step_quick_finish(self, user_input=None) -> FlowResult:
+        return self._create_setup_entry()
+
+    def _create_setup_entry(self) -> FlowResult:
+        data = {
+            **self._base,
+            CONF_ROOMS: self._rooms,
+            CONF_LEVELS: list(dict.fromkeys(r.get(CONF_ROOM_FLOOR, "Unzugeordnet") for r in self._rooms)),
+        }
+        subentries = [
+            {
+                "subentry_type": "room",
+                "data": dict(room),
+                "title": room.get(CONF_ROOM_NAME, room["key"]),
+                "unique_id": f"room:{room['key']}",
+            }
+            for room in self._rooms
+        ]
+        return self.async_create_entry(title="FreshAirIQ", data=data, subentries=subentries)
 
     async def async_step_more_rooms(self, user_input=None) -> FlowResult:
         if user_input is not None:
             if user_input["add_another"]:
+                if getattr(self, "_setup_mode", "exact") == "quick":
+                    return await self.async_step_quick_room()
                 return await self.async_step_room()
-            data = {**self._base, CONF_ROOMS: self._rooms, CONF_LEVELS: list(dict.fromkeys(r.get(CONF_ROOM_FLOOR, "Unzugeordnet") for r in self._rooms))}
-            subentries = [
-                {
-                    "subentry_type": "room",
-                    "data": dict(room),
-                    "title": room.get(CONF_ROOM_NAME, room["key"]),
-                    "unique_id": f"room:{room['key']}",
-                }
-                for room in self._rooms
-            ]
-            return self.async_create_entry(title="FreshAirIQ", data=data, subentries=subentries)
+            return self._create_setup_entry()
         return self.async_show_form(step_id="more_rooms", data_schema=vol.Schema({vol.Required("add_another", default=True): bool}), description_placeholders={"room_count": str(len(self._rooms))})
 
     @classmethod
@@ -1534,9 +1513,13 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             step_id="init",
             menu_options=[
                 "home_setup",
+                "residents",
+                "rooms",
                 "ventilation_settings",
-                "notification_energy_settings",
+                "comfort_health",
+                "notifications",
                 "data_learning_settings",
+                "energy",
                 "maintenance",
                 "finish",
             ],
@@ -1545,7 +1528,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_home_setup(self, user_input=None):
         return self.async_show_menu(
             step_id="home_setup",
-            menu_options=["outdoor", "building", "residents", "levels", "rooms", "back_to_main"],
+            menu_options=["outdoor", "building", "levels", "back_to_main"],
         )
 
     async def async_step_ventilation_settings(self, user_input=None):
@@ -1554,7 +1537,6 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             menu_options=[
                 "profile",
                 "forecast",
-                "air_quality",
                 "cross_ventilation",
                 "threshold",
                 "model",
@@ -1576,7 +1558,10 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
 
     # Compatibility aliases for flows started with v0.19.0.0 or older.
     async def async_step_comfort_health(self, user_input=None):
-        return await self.async_step_ventilation_settings(user_input)
+        return self.async_show_menu(
+            step_id="comfort_health",
+            menu_options=["air_quality", "back_to_main"],
+        )
 
     async def async_step_automation_costs(self, user_input=None):
         return await self.async_step_notification_energy_settings(user_input)

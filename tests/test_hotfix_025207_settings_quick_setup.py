@@ -9,7 +9,9 @@ def test_quick_setup_contract_and_translations_are_present():
     assert 'QUICK_SETUP_HEIGHT_M = 2.40' in source
     assert 'area * QUICK_SETUP_HEIGHT_M' in source
     assert 'async_step_quick_room' in source
-    assert '"quick", "exact", "later"' in source
+    user = source[source.index("async def async_step_user"):source.index("async def async_step_quick_start")]
+    assert 'menu_options=["quick_start", "exact_outdoor"]' in user
+    assert '"later"' not in user
     for language in ('de', 'en'):
         data = json.loads((ROOT / f'custom_components/freshairiq/translations/{language}.json').read_text(encoding='utf-8'))
         assert 'quick_room' in data['config']['step']

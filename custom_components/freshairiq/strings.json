@@ -3,13 +3,11 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add FreshAirIQ",
-        "description": "FreshAirIQ can still be installed without configuring any rooms, so the dashboard remains available immediately. For a quick start you can add a first room with an estimated size, or choose detailed setup. Everything can be changed later under Settings and Devices & services.",
-        "data": {
-          "setup_mode": "Setup path (Default: Quick setup)"
-        },
-        "data_description": {
-          "setup_mode": "Default: Quick setup. Example: choose “Install now, configure later” if you only want to explore FreshAirIQ first."
+        "title": "Set up FreshAirIQ",
+        "description": "Choose how you want to start. For most homes, Quick setup is the easiest way in. You can add or refine every detail later.",
+        "menu_options": {
+          "quick_start": "Quick setup · recommended",
+          "exact_outdoor": "Precise setup"
         }
       },
       "room": {
@@ -76,6 +74,112 @@
           "humidity": "Humidity sensor for the room. Required for calculated rooms; default: no preselection.",
           "name": "Custom display name, for example “Living room”. FreshAirIQ derives a stable internal room key from it.",
           "temperature": "Temperature sensor for the room. Required for calculated rooms; default: no preselection."
+        },
+        "sections": {
+          "identity": {
+            "name": "Room",
+            "description": "Name, level and whether the room participates in calculations.",
+            "data": {
+              "name": "Room name",
+              "floor": "Floor",
+              "include_in_calculations": "Include in FreshAirIQ calculations"
+            },
+            "data_description": {
+              "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
+              "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+            }
+          },
+          "sensors": {
+            "name": "Sensors & windows",
+            "description": "Sensors and contacts FreshAirIQ uses for this room.",
+            "data": {
+              "temperature": "Temperature sensor",
+              "humidity": "Humidity sensor",
+              "contacts": "Ventilation contacts",
+              "contact_mode": "Contact logic"
+            },
+            "data_description": {
+              "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
+              "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
+              "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
+              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+            }
+          },
+          "geometry": {
+            "name": "Room size",
+            "description": "Enter either the volume directly or length, width and height.",
+            "data": {
+              "volume": "Room volume",
+              "length": "Room length",
+              "width": "Room width",
+              "height": "Room height"
+            },
+            "data_description": {
+              "volume": "Enter the volume directly in m³ OR use length, width and height.",
+              "length": "Only required when no direct room volume is entered.",
+              "width": "Only required when no direct room volume is entered.",
+              "height": "Only required when no direct room volume is entered."
+            }
+          },
+          "optional_sensors": {
+            "name": "Optional additional sensors & references",
+            "description": "Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation.",
+            "data": {
+              "reference_temperature": "Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "co2": "CO₂ sensor (optional)",
+              "voc": "VOC/TVOC sensor (optional)",
+              "pm25": "PM2.5 sensor (optional)",
+              "illuminance": "Illuminance sensor (optional)"
+            },
+            "data_description": {
+              "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+              "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+              "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
+              "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
+              "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
+              "illuminance": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance."
+            }
+          },
+          "properties": {
+            "name": "Room properties",
+            "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
+            "data": {
+              "moisture_sources": "Moisture sources in the room (Default: none)",
+              "ventilation_threshold_mode": "Individual ventilation threshold",
+              "ventilation_threshold_percent": "Room threshold percentage (Default: 5%)",
+              "ventilation_threshold_ml": "Fixed room threshold (Default: 100 mL)"
+            },
+            "data_description": {
+              "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
+              "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
+              "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+            }
+          },
+          "optional_actuators": {
+            "name": "Optional devices – data collection",
+            "description": "These devices are currently logged for future FreshAirIQ features. They do not change the current ventilation/moisture recommendation and are not controlled automatically.",
+            "data": {
+              "climate": "Climate/HVAC entity (optional)",
+              "exhaust_fan": "Exhaust device (optional)",
+              "supply_fan": "Supply-air device (optional)",
+              "ventilation_device": "Ventilation/HRV device (optional)",
+              "dehumidifier": "Dehumidifier (optional)",
+              "humidifier": "Humidifier (optional)",
+              "air_purifier": "Air purifier (optional)"
+            },
+            "data_description": {
+              "climate": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: climate.living_room.",
+              "exhaust_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.bath_exhaust.",
+              "supply_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.supply.",
+              "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
+              "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
+              "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
+              "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
+            }
+          }
         }
       },
       "more_rooms": {
@@ -156,26 +260,50 @@
         }
       },
       "quick_room": {
-        "title": "Quick setup · First room",
-        "description": "Select the sensors you already have and estimate the room floor area. For quick setup FreshAirIQ automatically assumes a room height of 2.40 m. You can replace this estimate with exact dimensions later under Settings → Rooms.",
+        "title": "Quick setup · Room",
+        "description": "Only the essentials FreshAirIQ needs for a usable room: name, temperature, humidity and an approximate floor area. A window/door contact is useful but not required. FreshAirIQ temporarily assumes a 2.40 m room height; exact dimensions can be added later.",
         "data": {
           "name": "Room name",
-          "temperature": "Temperature sensor (optional)",
-          "humidity": "Humidity sensor (optional)",
+          "temperature": "Temperature sensor",
+          "humidity": "Humidity sensor",
           "contacts": "Window/door contact (optional)",
-          "estimated_area_m2": "Estimated floor area (Default: empty)"
+          "estimated_area_m2": "Approximate floor area (m²)"
         },
         "data_description": {
-          "estimated_area_m2": "A rough estimate is sufficient for quick setup and can be replaced with an exact value later.",
+          "estimated_area_m2": "A rough estimate is enough. No artificial default value is inserted.",
           "name": "Custom display name for the first room.",
-          "temperature": "Optional for first start. Use together with a humidity sensor for active climate calculations.",
-          "humidity": "Optional for first start. Use together with a temperature sensor for active climate calculations.",
+          "temperature": "Required so FreshAirIQ can actually calculate the room climate.",
+          "humidity": "Required so FreshAirIQ can actually calculate the room climate.",
           "contacts": "Optional. Window and door contacts can be added now or later."
+        }
+      },
+      "quick_success": {
+        "title": "Your first room is ready",
+        "description": "FreshAirIQ can now evaluate {room_name}. For quick setup it temporarily uses {area} m² × {height} m = {volume} m³. The {height} m height is only an estimate. You can enter exact dimensions later under Settings → Rooms.",
+        "menu_options": {
+          "quick_add_room": "Add another room",
+          "quick_finish": "Start FreshAirIQ"
+        }
+      },
+      "quick_start": {
+        "title": "Quick setup · Outdoor air",
+        "description": "FreshAirIQ compares your room air with the outdoor air. Choose either your weather entity or a matching pair of outdoor temperature and humidity sensors. Nothing else is required here.",
+        "data": {
+          "outdoor_weather": "Weather entity",
+          "outdoor_temperature": "Outdoor temperature",
+          "outdoor_humidity": "Outdoor humidity",
+          "pollen_entity": "Pollen sensor (optional)"
+        },
+        "data_description": {
+          "outdoor_weather": "Easiest option: select your existing Home Assistant weather entity.",
+          "outdoor_temperature": "Only needed if you do not want to use a weather entity.",
+          "outdoor_humidity": "Select together with outdoor temperature when no weather entity is used.",
+          "pollen_entity": "Can also be added later."
         }
       }
     },
     "error": {
-      "outdoor_source_required": "Select a local weather entity or both a temperature and humidity sensor.",
+      "outdoor_source_required": "Select a weather entity or both outdoor temperature and outdoor humidity.",
       "ventilation_contact_required": "An opening contact is optional. Without one, the room remains climate-calculated and indirect ventilation can be detected and learned.",
       "room_volume_required": "Enter either room volume or complete length, width and height.",
       "room_volume_too_small": "Room volume must be at least 2 m³.",
@@ -327,29 +455,37 @@
   "options": {
     "step": {
       "init": {
-        "title": "Settings",
-        "description": "Step-by-step FreshAirIQ configuration directly in Home Assistant. As in a well-structured native config flow, basic data and advanced settings are separated; each page explains the purpose, default value and, where useful, an example. Saved changes take effect immediately and are used identically by the dashboard settings.",
+        "title": "FreshAirIQ – Settings",
+        "description": "All settings use the same clear sections as the FreshAirIQ dashboard. Each page still explains its purpose, default value and, where useful, an example. Saved changes take effect immediately.",
         "menu_options": {
-          "home_setup": "Home & rooms",
-          "comfort_health": "Comfort & air quality",
+          "home_setup": "Set up home",
+          "comfort_health": "Comfort & health",
           "automation_costs": "Notifications & energy",
           "expert_data": "Insights & expert settings",
-          "maintenance": "Maintenance & reset",
-          "finish": "Save changes",
-          "ventilation_settings": "Ventilation & recommendations",
+          "maintenance": "Maintenance",
+          "finish": "Done",
+          "ventilation_settings": "Ventilation strategy",
           "notification_energy_settings": "Notifications & energy",
-          "data_learning_settings": "Data & learning"
+          "data_learning_settings": "Learning & analytics",
+          "residents": "Residents & presence",
+          "rooms": "Rooms",
+          "notifications": "Notifications",
+          "energy": "Energy & costs"
         },
         "menu_option_descriptions": {
-          "home_setup": "Outdoor air, building, occupants, levels and rooms",
-          "comfort_health": "Operating profile, pollen and wind",
+          "home_setup": "Outdoor air, building and floors",
+          "comfort_health": "Comfort, air quality, pollen and wind",
           "automation_costs": "Notifications and heating costs",
           "expert_data": "Statistics and technical fine-tuning",
-          "maintenance": "Reset learning data or defaults",
-          "finish": "Apply all changes and reload FreshAirIQ",
-          "ventilation_settings": "Operating profile, forecasts, pollen/wind, cross ventilation and model limits",
+          "maintenance": "Reset learning data or settings",
+          "finish": "Close settings",
+          "ventilation_settings": "Ventilation rules, forecasts and cross-ventilation",
           "notification_energy_settings": "Notifications and heating-system cost model",
-          "data_learning_settings": "Statistics period and stored analysis"
+          "data_learning_settings": "Learning progress, statistics and analytics",
+          "residents": "People, presence and personal preferences",
+          "rooms": "Room sizes, sensors, windows, doors and airflow paths",
+          "notifications": "Alerts, quiet hours and targets",
+          "energy": "Heating system and cost model"
         }
       },
       "outdoor": {
@@ -1532,13 +1668,11 @@
         }
       },
       "comfort_health": {
-        "title": "Comfort & air quality",
-        "description": "Control how FreshAirIQ prioritizes comfort, humidity, pollen and wind.",
+        "title": "Comfort & health",
+        "description": "Optional air-quality and environmental data FreshAirIQ can use for comfort and health context.",
         "menu_options": {
-          "profile": "Operating profile",
-          "forecast": "Forecast horizon",
-          "air_quality": "Pollen & wind",
-          "back": "Back"
+          "air_quality": "Air quality, pollen & wind",
+          "back_to_main": "Back to settings"
         }
       },
       "automation_costs": {

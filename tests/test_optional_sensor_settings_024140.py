@@ -79,11 +79,9 @@ def test_devices_services_sections_have_icons_and_german_optional_sensor_copy() 
 
 
 def test_initial_setup_no_longer_forces_room_configuration() -> None:
-    """Initial setup creates the integration before any room is required."""
-    flow = (PKG / "config_flow.py").read_text(encoding="utf-8")
-    start = flow.index("async def async_step_user")
-    end = flow.index("async def async_step_reconfigure", start)
-    user_step = flow[start:end]
-    assert "self._base.setdefault(CONF_ROOMS, [])" in user_step
-    assert "self.async_create_entry" in user_step
-    assert "async_step_room" not in user_step
+    """The redesigned first run has two explicit paths and no empty-shell escape."""
+    source = (PKG / "config_flow.py").read_text(encoding="utf-8")
+    user_step = source[source.index("async def async_step_user"):source.index("async def async_step_quick_start")]
+    assert 'menu_options=["quick_start", "exact_outdoor"]' in user_step
+    assert '"later"' not in user_step
+    assert "async_create_entry" not in user_step

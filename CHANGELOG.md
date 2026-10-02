@@ -1,3 +1,19 @@
+## 0.25.2.10 – Guided Setup & Settings Architecture Hotfix
+
+- Rebuilt first-run navigation around two explicit setup paths.
+- Quick setup now produces a genuinely usable first room with an outdoor reference.
+- Precise setup remains precise for subsequent rooms and uses grouped mobile sections.
+- Removed overlapping category ownership between Rooms, Ventilation strategy and Comfort & health.
+
+## 0.25.2.9 – Onboarding & Settings Information Architecture Hotfix
+
+- Reworks Quick Setup into a real first-success journey instead of ending after the first room.
+- Shows the provisional room calculation and the assumed 2.40 m height before setup finishes.
+- Lets users add more rooms with the same minimal Quick Setup flow.
+- Aligns native Home Assistant options and dashboard settings around the same canonical sections.
+- Keeps diagnostics and feedback in the separate Support area.
+- Preserves existing configuration data and detailed expert settings.
+
 ## 0.25.2.8 - Settings UX i18n & Quick Setup Provenance Hotfix
 
 - Completes English fallbacks for the new room-size and Support settings introduced in v0.25.2.7.
