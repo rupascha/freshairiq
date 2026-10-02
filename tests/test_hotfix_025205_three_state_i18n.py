@@ -31,9 +31,7 @@ def test_all_new_three_state_user_visible_backend_copy_is_covered():
     coordinator = COORD.read_text(encoding="utf-8")
     card = CARD.read_text(encoding="utf-8")
     expected = [
-        "Fenster ist gekippt; vollständig öffnen erhöht den Luftwechsel für die aktuelle Empfehlung",
-        "Drei-Zustands-Sensor meldet Kipplüftung; FreshAirIQ empfiehlt für den aktuellen Bedarf vollständiges Öffnen",
-        "Drei-Zustands-Sensor meldet Kipplüftung; der reduzierte Luftwechsel wird separat gelernt",
+        "Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet",
     ]
     for text in expected:
         assert text in coordinator

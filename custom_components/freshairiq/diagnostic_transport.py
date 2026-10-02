@@ -397,7 +397,7 @@ def build_cloud_payload(
                 "period_start", "period_end", "period_span_days", "calendar_days_with_records",
                 "longest_consecutive_calendar_day_streak", "largest_sampling_gap_minutes",
                 "record_count", "reason_counts", "completed_session_count",
-                "recommendation_followed_session_count", "window_event_count",
+                "recommendation_opportunity_count", "recommendation_followed_count", "recommendation_missed_count", "recommendation_pending_count", "recommendation_followed_session_count", "window_event_count",
                 "average_room_data_quality_percent",
             ) if key in dossier
         },

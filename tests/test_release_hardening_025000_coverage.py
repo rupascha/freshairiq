@@ -139,6 +139,7 @@ def test_intelligence_finalize_and_invalid_age_paths():
         },
     }
     intelligence._finalize_advice(store)
+    assert store["rooms"]["missed"]["recommendation_opportunities"] == 0
     assert store["rooms"]["missed"]["recommendation_missed"] == 1
 
 

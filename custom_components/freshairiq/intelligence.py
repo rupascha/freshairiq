@@ -147,7 +147,6 @@ def _finalize_advice(store_data: dict[str, Any]) -> None:
         if not isinstance(room, dict):
             continue
         ensure_behaviour_defaults(room)
-        room["recommendation_opportunities"] = min(int(room.get("recommendation_opportunities", 0)) + 1, 100000)
         if key in followed_keys:
             room["recommendation_followed"] = min(int(room.get("recommendation_followed", 0)) + 1, 100000)
         else:
@@ -185,6 +184,23 @@ def sync_active_recommendation(store_data: dict[str, Any], recommendation: dict[
         return bool(previous_signature)
 
     if signature != previous_signature:
+        # Count an opportunity when the recommendation is first issued, not when
+        # the episode later ends. Repeated coordinator refreshes keep the same
+        # signature and therefore cannot double-count the episode.
+        rooms = store_data.setdefault("rooms", {})
+        for key in room_keys:
+            room = rooms.get(key)
+            if not isinstance(room, dict):
+                continue
+            ensure_behaviour_defaults(room)
+            room["recommendation_opportunities"] = min(
+                int(room.get("recommendation_opportunities", 0)) + 1, 100000
+            )
+            opportunities = max(int(room.get("recommendation_opportunities", 0)), 1)
+            room["recommendation_follow_rate"] = round(
+                100.0 * int(room.get("recommendation_followed", 0)) / opportunities, 1
+            )
+
         store_data["iq_active_advice"] = {
             "signature": signature,
             "kind": kind,

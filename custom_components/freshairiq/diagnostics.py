@@ -287,6 +287,54 @@ def _pick(source: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
     return {key: _json_safe(source.get(key)) for key in keys if key in source}
 
 
+def _three_state_learning_diagnostic(runtime: Any, stored: Any) -> dict[str, Any]:
+    """Return privacy-safe three-state learning evidence without entity IDs.
+
+    The nightly diagnostics need enough evidence to compare tilt/open/cross model
+    maturity and forecast behaviour over time, but contact entity IDs and the
+    entity-keyed passage behaviour map must never leave the installation.
+    """
+    runtime = runtime if isinstance(runtime, dict) else {}
+    stored = stored if isinstance(stored, dict) else {}
+    contacts = stored.get("three_state_contacts") or runtime.get("three_state_contacts") or []
+    models = stored.get("opening_learning") or runtime.get("opening_learning") or {}
+    if not isinstance(models, dict):
+        models = {}
+
+    def model(mode: str) -> dict[str, Any]:
+        row = models.get(mode) if isinstance(models.get(mode), dict) else {}
+        return {
+            "rate_per_min": _json_safe(row.get("rate")),
+            "samples": _safe_int(row.get("samples")),
+            "credit": _json_safe(row.get("credit")),
+        }
+
+    passage = stored.get("passage_behavior") or runtime.get("passage_behavior") or {}
+    passage_rows = list(passage.values()) if isinstance(passage, dict) else []
+    passage_rows = [row for row in passage_rows if isinstance(row, dict)]
+    return {
+        "available": bool(contacts),
+        "proven_contact_count": len(contacts) if isinstance(contacts, (list, tuple, set)) else 0,
+        "current_opening_state": _json_safe(runtime.get("opening_state")),
+        "opening_state_explicit": bool(runtime.get("opening_state_explicit")),
+        "active_specialist_model": _json_safe(
+            stored.get("session_specialist_opening_mode") or runtime.get("opening_learning_mode")
+        ),
+        "models": {"tilted": model("tilted"), "open": model("open"), "cross": model("cross")},
+        "session_active": bool(stored.get("session_active")),
+        "mixed_source_session": bool(stored.get("session_opening_mode_mixed")),
+        "session_learning_quarantined": bool(stored.get("session_learning_quarantined")),
+        "session_learning_quarantine_code": _json_safe(stored.get("session_learning_quarantine_code")),
+        "session_predicted_removed_ml": _json_safe(stored.get("session_predicted_removed_ml")),
+        "session_predicted_temperature_change_c": _json_safe(stored.get("session_predicted_temperature_change_c")),
+        "session_prediction_confidence": _json_safe(stored.get("session_prediction_confidence")),
+        "three_state_transients_suppressed": _safe_int(stored.get("three_state_transients_suppressed")),
+        "passage_door_configured": bool(runtime.get("passage_door_configured")),
+        "passage_pattern_count": len(passage_rows),
+        "passage_patterns_learned": sum(1 for row in passage_rows if row.get("learned")),
+    }
+
+
 _TOP_LEVEL_KEYS = (
     "status", "status_text", "potential_total_ml", "actionable_potential_ml",
     "theoretical_potential_total_ml", "theoretical_actionable_potential_ml",
@@ -865,6 +913,18 @@ class FreshAirIQDiagnosticsRecorder:
             orientations = raw.get("contact_orientations") or {}
             if isinstance(orientations, dict):
                 room["contact_orientations"] = sorted({str(v) for v in orientations.values() if v})
+            stored_room = (store_data.get("rooms") or {}).get(str(key), {}) if isinstance(store_data.get("rooms"), dict) else {}
+            # Recommendation behaviour counters live in persistent room memory,
+            # not in the coordinator's public room payload. Export them from the
+            # canonical store so the nightly beta funnel can observe real advice.
+            for counter_key in (
+                "recommendation_opportunities", "recommendation_followed",
+                "recommendation_missed", "recommendation_follow_rate",
+                "avg_follow_delay_min", "follow_delay_samples",
+            ):
+                if counter_key in stored_room:
+                    room[counter_key] = _json_safe(stored_room.get(counter_key))
+            room["three_state_learning"] = _three_state_learning_diagnostic(raw, stored_room)
             rooms.append(room)
 
         learning_rooms = []
@@ -876,6 +936,7 @@ class FreshAirIQDiagnosticsRecorder:
                 continue
             compact = _pick(raw, _LEARNING_ROOM_KEYS)
             compact["key"] = str(key)
+            compact["three_state_learning"] = _three_state_learning_diagnostic(room_map.get(str(key), {}), raw)
             learning_rooms.append(compact)
 
         if window_events is None:
@@ -1302,6 +1363,8 @@ class FreshAirIQDiagnosticsRecorder:
         first_followed_recommendation_at = None
         first_completed_session_at = None
         recommendation_opportunities = 0
+        recommendation_followed = 0
+        recommendation_missed = 0
         for record in records:
             stamp = record.get("timestamp") if isinstance(record.get("timestamp"), str) else None
             quality = record.get("sensor_quality") if isinstance(record.get("sensor_quality"), dict) else {}
@@ -1313,6 +1376,10 @@ class FreshAirIQDiagnosticsRecorder:
                 for room in rooms if isinstance(room, dict)
             )
             recommendation_opportunities = max(recommendation_opportunities, record_opportunities)
+            record_followed = sum(_safe_int(room.get("recommendation_followed")) for room in rooms if isinstance(room, dict))
+            record_missed = sum(_safe_int(room.get("recommendation_missed")) for room in rooms if isinstance(room, dict))
+            recommendation_followed = max(recommendation_followed, record_followed)
+            recommendation_missed = max(recommendation_missed, record_missed)
             if first_recommendation_at is None and record_opportunities > 0:
                 first_recommendation_at = stamp
             sessions = record.get("completed_sessions") if isinstance(record.get("completed_sessions"), list) else []
@@ -1340,6 +1407,9 @@ class FreshAirIQDiagnosticsRecorder:
             "returning_user": len(active_days) >= 2,
             "retained_7d_signal": len(active_days) >= 2 and bool(active_days and first_timestamp and active_days[-1] > str(first_timestamp)[:10]),
             "recommendation_opportunities": recommendation_opportunities,
+            "recommendation_followed": recommendation_followed,
+            "recommendation_missed": recommendation_missed,
+            "recommendation_pending": max(recommendation_opportunities - recommendation_followed - recommendation_missed, 0),
             "completed_sessions": completed_session_count,
             "followed_sessions": followed_session_count,
             "follow_rate_percent": round(100.0 * followed_session_count / completed_session_count, 1) if completed_session_count else None,
@@ -1495,6 +1565,10 @@ class FreshAirIQDiagnosticsRecorder:
                 "record_count": len(records),
                 "reason_counts": reason_counts,
                 "completed_session_count": completed_session_count,
+                "recommendation_opportunity_count": recommendation_opportunities,
+                "recommendation_followed_count": recommendation_followed,
+                "recommendation_missed_count": recommendation_missed,
+                "recommendation_pending_count": max(recommendation_opportunities - recommendation_followed - recommendation_missed, 0),
                 "recommendation_followed_session_count": followed_session_count,
                 "beta_funnel": beta_funnel,
                 "window_event_count": window_event_count,

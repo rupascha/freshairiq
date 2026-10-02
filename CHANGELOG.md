@@ -1,3 +1,30 @@
+## 0.25.2.20
+
+- Hotfix: Recommendation opportunities are counted when a new recommendation episode is issued, not only when it later ends.
+- Repeated coordinator refreshes of the same episode do not double-count.
+- Finalization now classifies an already-counted opportunity only as followed or missed.
+- Ventilation, three-state, mixed-source, learning and forecast logic are unchanged.
+
+## 0.25.2.18
+- Hotfix: mixed two-state/three-state opening sessions remain on the established general forecast model; specialist tilt/open learning stays provenance-strict.
+- Night diagnostics now expose privacy-safe mixed-source session evidence for three-state learning analysis.
+- Fix recommendation telemetry: persistent recommendation opportunity/follow counters are copied into diagnostic room records instead of being read from the public runtime room payload.
+- Night transport now carries `recommendation_opportunity_count` alongside completed/followed session counts so the Hub can observe recommendation reach.
+
+## 0.25.2.17
+
+- Restored the established generic ventilation recommendation flow; three-state contacts no longer create tilt-vs-shock recommendations.
+- Preserved separate tilted/open/cross learning and specialist forecast selection from the detected physical opening state.
+- Preserved binary-contact long-open probable tilt/continuous-ventilation handling.
+- Added privacy-safe three-state specialist-learning evidence to rolling diagnostics for nightly observation and future optimisation.
+
+## 0.25.2.16
+
+- Hotfix: adaptive three-state tilt-vs-shock ventilation recommendations.
+- Respects a user-selected tilted mode for the running session instead of escalating to fully open.
+- Exposes transparent 5/10-minute tilt-vs-open benefit comparisons using the separate learned opening models.
+- Normalizes legacy `Open fully` presentation handling.
+
 ## 0.25.2.15 — Contact Identity & Passage Door UI Hotfix
 
 - Replaces the failed dynamic `opening_1_*` / `opening_2_*` native form fields with static, fully translatable fields.

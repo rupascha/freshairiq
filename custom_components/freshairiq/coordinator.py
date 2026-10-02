@@ -1994,12 +1994,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             mem["last_measurement_at"] = now.isoformat()
             mem["last_measurement_valid"] = result.data_quality == "ok"
             action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed)
-            if explicit_tilted and action in {"Ventilate", "Ventilate for cooling"}:
-                action = "Open fully"
-                reason = "Fenster ist gekippt; vollständig öffnen erhöht den Luftwechsel für die aktuelle Empfehlung"
-                reason_list.append("Drei-Zustands-Sensor meldet Kipplüftung; FreshAirIQ empfiehlt für den aktuellen Bedarf vollständiges Öffnen")
-            elif explicit_tilted and action not in {"Close", "Check sensor"}:
-                reason_list.append("Drei-Zustands-Sensor meldet Kipplüftung; der reduzierte Luftwechsel wird separat gelernt")
+            if explicit_tilted and action not in {"Close", "Check sensor"}:
+                # A tilted three-state session is a valid, separately learned
+                # ventilation mode. Do not silently upgrade a user's deliberate
+                # tilt choice to fully-open after the session has started.
+                reason_list.append("Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet")
             indirect_candidate = bool(not has_ventilation_contact and result.ventilation_candidate)
             indirect_cooling_candidate = bool(not has_ventilation_contact and result.cooling_candidate)
             if not has_ventilation_contact and action in {"Ventilate", "Ventilate for cooling"}:
@@ -3583,6 +3582,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         intelligent_recommendation = enrich_opening_recommendation(
             intelligent_recommendation, results, options
         )
+        # Three-state mode selection is the last action-specific presentation
+        # layer so generic wording/personalisation cannot erase the explicit
+        # tilt-vs-shock recommendation or a running user's selected mode.
 
         # Decision Intelligence & Validation v1: attach an observational trace
         # only after every layer has finished. It cannot alter the canonical

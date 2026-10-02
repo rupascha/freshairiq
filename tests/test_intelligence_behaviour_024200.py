@@ -31,6 +31,9 @@ def test_active_recommendation_episode_follow_and_finalize():
     rec = _recommendation()
     assert sync_active_recommendation(store, rec, now) is True
     room = store["rooms"]["living"]
+    assert room["recommendation_opportunities"] == 1
+    assert room["recommendation_followed"] == 0
+    assert room["recommendation_missed"] == 0
     assert mark_recommendation_followed(store, room, "living", now + timedelta(minutes=4)) is True
     assert room["session_predicted_removed_ml"] == 100
     assert room["avg_follow_delay_min"] == 4.0
@@ -39,6 +42,7 @@ def test_active_recommendation_episode_follow_and_finalize():
     updated = _recommendation(duration_min=12, estimated_removed_ml=130)
     assert sync_active_recommendation(store, updated, now + timedelta(minutes=5)) is False
     assert store["iq_active_advice"]["duration_min"] == 12
+    assert room["recommendation_opportunities"] == 1
 
     # Ending/changing the episode finalises behavioural evidence exactly once.
     assert sync_active_recommendation(store, {"kind": "okay", "room_keys": []}, now + timedelta(minutes=6)) is True

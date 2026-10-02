@@ -53,7 +53,8 @@ def test_mode_specific_learning_and_recommendation_are_wired():
     text=(Path(__file__).parents[1]/'custom_components/freshairiq/coordinator.py').read_text()
     assert 'session_opening_mode_mixed' in text
     assert 'session_mode in {"open", "tilted", "cross"}' in text
-    assert 'action = "Open fully"' in text
+    assert 'action = "Open fully"' not in text
+    assert 'apply_three_state_recommendation' not in text
     assert 'opening_learning' in text
 
 

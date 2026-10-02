@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2.15";
+const FAIQ_VERSION = "0.25.2.20";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -130,6 +130,7 @@ const FAIQ_UI_EN = [
   ["FreshAirIQ übernimmt", "FreshAirIQ is handling it"], ["Aktuell ist kein Eingreifen nötig.", "No action is currently needed."],
   ["Fenster ist gekippt; vollständig öffnen erhöht den Luftwechsel für die aktuelle Empfehlung", "Window is tilted; opening it fully increases airflow for the current recommendation"],
   ["Drei-Zustands-Sensor meldet Kipplüftung; FreshAirIQ empfiehlt für den aktuellen Bedarf vollständiges Öffnen", "Three-state sensor reports a tilted window; FreshAirIQ recommends opening it fully for the current ventilation demand"],
+  ["Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet", "Three-state sensor reports tilted ventilation; the selected ventilation mode is evaluated with the separate tilt model"],
   ["Drei-Zustands-Sensor meldet Kipplüftung; der reduzierte Luftwechsel wird separat gelernt", "Three-state sensor reports a tilted window; the reduced airflow is learned separately"],
   ["Vollständig öffnen", "Open fully"],
   ["Nacht", "Night"], ["Hinweis", "Notice"], ["im Blick", "monitored"], ["Pollen", "Pollen"], ["beachten", "watch"], ["okay", "okay"], ["Lernen", "Learning"], ["aktiv", "active"],
