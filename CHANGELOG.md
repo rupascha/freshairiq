@@ -1,3 +1,7 @@
+## 0.25.2.23
+- Hotfix: nativer Home-Assistant-Dialog „Raum hinzufügen“ nutzt wieder den gültigen per-Kontakt-Referenzpfad; Kontaktverzögerungen und kontaktlose Räume führen nicht mehr in einen undefinierten Legacy-Handler.
+- Geräte-&-Dienste-Raumerstellung erhält vollständige DE/EN-Feld-, Abschnitts- und Erklärungstexte einschließlich optionaler Geräte.
+
 ## 0.25.2.22
 - Hotfix: widersprüchliche Einzelkontakt-Anweisung „offen lassen“ und „schließen“ verhindert.
 - Gebäudetyp „Dachgeschosswohnung“ / „Attic apartment“ ergänzt; bestehende „Wohnung“ bleibt erhalten.

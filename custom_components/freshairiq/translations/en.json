@@ -2477,28 +2477,122 @@
             "moisture_sources": "Moisture sources in the room",
             "ventilation_threshold_mode": "Individual ventilation threshold",
             "ventilation_threshold_percent": "Room threshold percentage",
-            "ventilation_threshold_ml": "Fixed room threshold"
+            "ventilation_threshold_ml": "Fixed room threshold",
+            "voc": "VOC/TVOC sensor (optional)",
+            "pm25": "PM2.5 sensor (optional)",
+            "illuminance": "Illuminance sensor (optional)",
+            "climate": "Climate/HVAC entity (optional)",
+            "exhaust_fan": "Exhaust device (optional)",
+            "supply_fan": "Supply-air device (optional)",
+            "ventilation_device": "Ventilation/HRV device (optional)",
+            "dehumidifier": "Dehumidifier (optional)",
+            "humidifier": "Humidifier (optional)",
+            "air_purifier": "Air purifier (optional)"
           },
           "sections": {
             "identity": {
               "name": "Room",
-              "description": "Name, level and whether the room participates in calculations."
+              "description": "Name, level and whether the room participates in calculations.",
+              "data": {
+                "name": "Room name",
+                "floor": "Floor",
+                "include_in_calculations": "Include in FreshAirIQ calculations"
+              },
+              "data_description": {
+                "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
+                "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
+                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              }
             },
             "sensors": {
               "name": "Sensors & windows",
-              "description": "Sensors and contacts FreshAirIQ uses for this room."
+              "description": "Sensors and contacts FreshAirIQ uses for this room.",
+              "data": {
+                "temperature": "Temperature sensor",
+                "humidity": "Humidity sensor",
+                "contacts": "Ventilation contacts",
+                "contact_mode": "Contact logic"
+              },
+              "data_description": {
+                "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
+                "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
+                "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
+                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              }
             },
             "geometry": {
               "name": "Room size",
-              "description": "Enter either the volume directly or length, width and height."
+              "description": "Enter either the volume directly or length, width and height.",
+              "data": {
+                "volume": "Room volume",
+                "length": "Room length",
+                "width": "Room width",
+                "height": "Room height"
+              },
+              "data_description": {
+                "volume": "Enter the volume directly in m³ OR use length, width and height.",
+                "length": "Only required when no direct room volume is entered.",
+                "width": "Only required when no direct room volume is entered.",
+                "height": "Only required when no direct room volume is entered."
+              }
             },
             "optional_sensors": {
               "name": "Optional sensors",
-              "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them."
+              "description": "Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them.",
+              "data": {
+                "reference_temperature": "Reference temperature",
+                "reference_humidity": "Reference humidity",
+                "co2": "CO₂ sensor (optional)",
+                "voc": "VOC/TVOC sensor (optional)",
+                "pm25": "PM2.5 sensor (optional)",
+                "illuminance": "Illuminance sensor (optional)"
+              },
+              "data_description": {
+                "reference_temperature": "Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings.",
+                "reference_humidity": "Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air.",
+                "co2": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_co2.",
+                "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
+                "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
+                "illuminance": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance."
+              }
             },
             "properties": {
               "name": "Room properties",
-              "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured."
+              "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
+              "data": {
+                "moisture_sources": "Moisture sources in the room",
+                "ventilation_threshold_mode": "Individual ventilation threshold",
+                "ventilation_threshold_percent": "Room threshold percentage",
+                "ventilation_threshold_ml": "Fixed room threshold"
+              },
+              "data_description": {
+                "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+                "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
+                "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
+                "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+              }
+            },
+            "optional_actuators": {
+              "name": "Optional devices – data collection",
+              "description": "These devices are currently logged for future FreshAirIQ features. They do not change the current ventilation/moisture recommendation and are not controlled automatically.",
+              "data": {
+                "climate": "Climate/HVAC entity (optional)",
+                "exhaust_fan": "Exhaust device (optional)",
+                "supply_fan": "Supply-air device (optional)",
+                "ventilation_device": "Ventilation/HRV device (optional)",
+                "dehumidifier": "Dehumidifier (optional)",
+                "humidifier": "Humidifier (optional)",
+                "air_purifier": "Air purifier (optional)"
+              },
+              "data_description": {
+                "climate": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: climate.living_room.",
+                "exhaust_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.bath_exhaust.",
+                "supply_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.supply.",
+                "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
+                "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
+                "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
+                "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
+              }
             }
           },
           "data_description": {
@@ -2519,7 +2613,17 @@
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-            "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+            "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+            "voc": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_voc.",
+            "pm25": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_pm25.",
+            "illuminance": "Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance.",
+            "climate": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: climate.living_room.",
+            "exhaust_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.bath_exhaust.",
+            "supply_fan": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.supply.",
+            "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
+            "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
+            "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
+            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
           }
         },
         "reconfigure": {
@@ -2731,13 +2835,19 @@
           "data": {}
         },
         "add_references": {
-          "title": "{room_name} · Reference air per opening",
-          "description": "Optional: Windows/doors into another air zone can use their own sensor pair. For a conservatory, select both its temperature and humidity sensors. Leave outdoor openings empty.",
+          "title": "{room_name} · {contact_name}",
+          "description": "Settings for **{contact_name}** (`{contact_entity}`) – window/door {contact_position} of {contact_count}. The following settings apply only to this contact.",
           "data": {
-            "contact_passage_doors": "Door is used as a passage and pulled shut from outside"
+            "reference_temperature": "Reference temperature",
+            "reference_humidity": "Reference humidity",
+            "covers": "Blind/shutter",
+            "passage_door": "Door is used as a passage and pulled shut from outside"
           },
           "data_description": {
-            "contact_passage_doors": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
+            "reference_temperature": "Optional. Reference-air temperature for this specific window or door. Leave empty for normal outdoor air.",
+            "reference_humidity": "Optional. Humidity from the same reference air. Always select reference temperature and reference humidity together.",
+            "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
+            "passage_door": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample."
           }
         },
         "room_references": {

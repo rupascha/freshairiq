@@ -1058,85 +1058,100 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         )
 
     async def async_step_add_references(self, user_input=None):
+        """Configure each opening reference, then atomically create the room subentry."""
         room = self._working_room or {}
-        if not room.get(CONF_ROOM_CONTACTS) and user_input is None:
-            user_input = {}
-        errors = {}
-        if user_input is not None:
-            if not _apply_contact_references(room, user_input):
+        contacts = list(room.get(CONF_ROOM_CONTACTS, []) or [])
+        index = int(getattr(self, "_add_reference_contact_index", 0) or 0)
+
+        # No contact is a supported room configuration. In that case there is
+        # no per-opening page and creation proceeds directly to the same atomic
+        # finalizer used after the last configured contact.
+        if contacts and index < len(contacts):
+            contact = str(contacts[index])
+            errors = {}
+            if user_input is not None:
+                if _apply_single_contact_reference(room, contact, user_input):
+                    self._add_reference_contact_index = index + 1
+                    return await self.async_step_add_references()
                 errors["base"] = "contact_reference_pair_required"
-            else:
-                entry = self._get_entry()
-                room_to_commit = dict(room)
-                unique_id = f"room:{room_to_commit['key']}"
+            return self.async_show_form(
+                step_id="add_references",
+                data_schema=_single_contact_reference_schema(room, contact),
+                errors=errors,
+                description_placeholders={
+                    "room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum"),
+                    "contact_name": _contact_display_name(self.hass, contact),
+                    "contact_entity": contact,
+                    "contact_position": str(index + 1),
+                    "contact_count": str(len(contacts)),
+                },
+            )
 
-                async def _commit_parent_after_subentry() -> None:
-                    # The ConfigSubentryFlowManager owns the actual subentry commit.
-                    # Never publish the room into canonical parent data before that
-                    # commit has completed: async_setup_entry() mirrors parent rooms
-                    # back into subentries, so parent-first persistence can race or
-                    # leave a ghost room when the HA flow itself fails.
-                    # Home Assistant commits CREATE_ENTRY in
-                    # ConfigSubentryFlowManager.async_finish_flow(), after this flow
-                    # step has returned.  A single sleep(0) is not a commit barrier:
-                    # on a busy installation our task may resume before HA has added
-                    # the subentry.  Wait for the observable HA commit for a short,
-                    # bounded period instead of treating the first scheduler turn as
-                    # definitive.
-                    committed = None
-                    await asyncio.sleep(0)
-                    for _attempt in range(20):
-                        await asyncio.sleep(0.05)
-                        committed = next(
-                            (
-                                subentry
-                                for subentry in entry.subentries.values()
-                                if subentry.subentry_type == "room"
-                                and subentry.unique_id == unique_id
-                            ),
-                            None,
-                        )
-                        if committed is not None:
-                            break
-                    if committed is None:
-                        # No successful HA subentry commit means no canonical room
-                        # mutation and no reload. This keeps a failed flow atomic.
-                        trace_room_creation(self.hass, entry, source="native_subentry", stage="subentry_commit_timeout", room_key=room_to_commit["key"], outcome="missing", extra={"commit_wait_ms": 1000})
-                        return
+        self._add_reference_contact_index = 0
+        entry = self._get_entry()
+        room_to_commit = dict(room)
+        unique_id = f"room:{room_to_commit['key']}"
 
-                    trace_room_creation(self.hass, entry, source="native_subentry", stage="subentry_commit_observed", room_key=room_to_commit["key"], outcome="ok")
-                    rooms = [dict(existing) for existing in entry.data.get(CONF_ROOMS, [])]
-                    if not any(existing.get("key") == room_to_commit["key"] for existing in rooms):
-                        rooms.append(room_to_commit)
-                    data = dict(entry.data)
-                    data[CONF_ROOMS] = rooms
-                    levels = list(data.get(CONF_LEVELS, []))
-                    floor = room_to_commit.get(CONF_ROOM_FLOOR)
-                    if floor and floor not in levels:
-                        levels.append(floor)
-                    data[CONF_LEVELS] = levels
-                    self.hass.config_entries.async_update_entry(entry, data=data)
-                    self.hass.config_entries.async_schedule_reload(entry.entry_id)
-                    trace_room_creation(self.hass, entry, source="native_subentry", stage="parent_persisted", room_key=room_to_commit["key"], outcome="ok", extra={"reload_scheduled": True})
-                    trace_room_creation_after_reload(self.hass, entry.entry_id, source="native_subentry", room_key=room_to_commit["key"])
-
-                # Start the post-commit synchronizer now. hass.async_create_task()
-                # runs eagerly until its first await; the explicit sleep above yields
-                # back to Home Assistant so ConfigSubentryFlowManager.async_finish_flow
-                # can commit the CREATE_ENTRY result first.
-                self.hass.async_create_task(_commit_parent_after_subentry())
-                return self.async_create_entry(
-                    title=room_to_commit.get(CONF_ROOM_NAME, room_to_commit["key"]),
-                    data=room_to_commit,
-                    unique_id=unique_id,
+        async def _commit_parent_after_subentry() -> None:
+            # The ConfigSubentryFlowManager owns the actual subentry commit.
+            # Never publish the room into canonical parent data before that
+            # commit has completed: async_setup_entry() mirrors parent rooms
+            # back into subentries, so parent-first persistence can race or
+            # leave a ghost room when the HA flow itself fails.
+            # Home Assistant commits CREATE_ENTRY in
+            # ConfigSubentryFlowManager.async_finish_flow(), after this flow
+            # step has returned.  A single sleep(0) is not a commit barrier:
+            # on a busy installation our task may resume before HA has added
+            # the subentry.  Wait for the observable HA commit for a short,
+            # bounded period instead of treating the first scheduler turn as
+            # definitive.
+            committed = None
+            await asyncio.sleep(0)
+            for _attempt in range(20):
+                await asyncio.sleep(0.05)
+                committed = next(
+                    (
+                        subentry
+                        for subentry in entry.subentries.values()
+                        if subentry.subentry_type == "room"
+                        and subentry.unique_id == unique_id
+                    ),
+                    None,
                 )
-        return self.async_show_form(
-            step_id="add_references",
-            data_schema=_contact_reference_schema(room, self.hass),
-            errors=errors,
-            description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum")},
-        )
+                if committed is not None:
+                    break
+            if committed is None:
+                # No successful HA subentry commit means no canonical room
+                # mutation and no reload. This keeps a failed flow atomic.
+                trace_room_creation(self.hass, entry, source="native_subentry", stage="subentry_commit_timeout", room_key=room_to_commit["key"], outcome="missing", extra={"commit_wait_ms": 1000})
+                return
 
+            trace_room_creation(self.hass, entry, source="native_subentry", stage="subentry_commit_observed", room_key=room_to_commit["key"], outcome="ok")
+            rooms = [dict(existing) for existing in entry.data.get(CONF_ROOMS, [])]
+            if not any(existing.get("key") == room_to_commit["key"] for existing in rooms):
+                rooms.append(room_to_commit)
+            data = dict(entry.data)
+            data[CONF_ROOMS] = rooms
+            levels = list(data.get(CONF_LEVELS, []))
+            floor = room_to_commit.get(CONF_ROOM_FLOOR)
+            if floor and floor not in levels:
+                levels.append(floor)
+            data[CONF_LEVELS] = levels
+            self.hass.config_entries.async_update_entry(entry, data=data)
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+            trace_room_creation(self.hass, entry, source="native_subentry", stage="parent_persisted", room_key=room_to_commit["key"], outcome="ok", extra={"reload_scheduled": True})
+            trace_room_creation_after_reload(self.hass, entry.entry_id, source="native_subentry", room_key=room_to_commit["key"])
+
+        # Start the post-commit synchronizer now. hass.async_create_task()
+        # runs eagerly until its first await; the explicit sleep above yields
+        # back to Home Assistant so ConfigSubentryFlowManager.async_finish_flow
+        # can commit the CREATE_ENTRY result first.
+        self.hass.async_create_task(_commit_parent_after_subentry())
+        return self.async_create_entry(
+            title=room_to_commit.get(CONF_ROOM_NAME, room_to_commit["key"]),
+            data=room_to_commit,
+            unique_id=unique_id,
+        )
 
     def _persist_room_update(self) -> None:
         """Persist the currently edited room immediately after a submitted page."""

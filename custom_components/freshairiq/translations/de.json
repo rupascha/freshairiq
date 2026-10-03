@@ -2490,28 +2490,122 @@
             "moisture_sources": "Feuchtequellen im Raum",
             "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
             "ventilation_threshold_percent": "Raumgrenze in Prozent",
-            "ventilation_threshold_ml": "Feste Raumgrenze"
+            "ventilation_threshold_ml": "Feste Raumgrenze",
+            "voc": "VOC-/TVOC-Sensor (optional)",
+            "pm25": "PM2.5-Sensor (optional)",
+            "illuminance": "Helligkeitssensor (optional)",
+            "climate": "Klimaanlage/Heizung (optional)",
+            "exhaust_fan": "Abluftgerät (optional)",
+            "supply_fan": "Zuluftgerät (optional)",
+            "ventilation_device": "Lüftungs-/WRG-Gerät (optional)",
+            "dehumidifier": "Entfeuchter (optional)",
+            "humidifier": "Luftbefeuchter (optional)",
+            "air_purifier": "Luftreiniger (optional)"
           },
           "sections": {
             "identity": {
               "name": "Raum & Zuordnung",
-              "description": "Name, Stockwerk/Bereich und Teilnahme an den Berechnungen."
+              "description": "Name, Stockwerk/Bereich und Teilnahme an den Berechnungen.",
+              "data": {
+                "name": "Raumname",
+                "floor": "Stockwerk/Bereich",
+                "include_in_calculations": "In Berechnungen einbeziehen"
+              },
+              "data_description": {
+                "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
+                "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
+                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              }
             },
             "properties": {
               "name": "Raumeigenschaften",
-              "description": "Besondere Eigenschaften wie Dusche, Badewanne oder Sauna. Standard: keine Feuchtequelle hinterlegt."
+              "description": "Besondere Eigenschaften wie Dusche, Badewanne oder Sauna. Standard: keine Feuchtequelle hinterlegt.",
+              "data": {
+                "moisture_sources": "Feuchtequellen im Raum",
+                "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
+                "ventilation_threshold_percent": "Raumgrenze in Prozent",
+                "ventilation_threshold_ml": "Feste Raumgrenze"
+              },
+              "data_description": {
+                "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner und/oder Bügelstation. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
+                "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
+                "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
+                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+              }
             },
             "sensors": {
               "name": "Sensoren & Fenster",
-              "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt."
+              "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.",
+              "data": {
+                "temperature": "Temperatursensor",
+                "humidity": "Feuchtesensor",
+                "contacts": "Fenster-/Türkontakte",
+                "contact_mode": "Kontaktlogik"
+              },
+              "data_description": {
+                "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
+                "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
+                "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
+                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              }
             },
             "geometry": {
               "name": "Raumgröße",
-              "description": "Standard: keine Vorauswahl. Entweder Volumen direkt oder vollständige Maße angeben."
+              "description": "Standard: keine Vorauswahl. Entweder Volumen direkt oder vollständige Maße angeben.",
+              "data": {
+                "volume": "Raumvolumen direkt",
+                "length": "Raumlänge",
+                "width": "Raumbreite",
+                "height": "Raumhöhe"
+              },
+              "data_description": {
+                "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
+                "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
+                "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
+                "height": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird."
+              }
             },
             "optional_sensors": {
               "name": "Optionale Zusatzsensoren & Referenzen",
-              "description": "Optional und ohne Einfluss auf die bestehende Feuchte-, Lüftungs- oder ml-Prognoseberechnung: Referenzsensoren beschreiben besondere Zuluftbereiche. VOC/TVOC misst gasförmige Luftschadstoffe, PM2.5 misst sehr feinen Schwebstaub bis 2,5 µm und Helligkeitssensoren messen Beleuchtungsstärke in Lux. Diese Zusatzwerte können ergänzende Empfehlungen liefern und werden – wenn aktiviert – für die 30-Tage-Diagnostik gesammelt, damit spätere FreshAirIQ-Funktionserweiterungen darauf aufbauen können."
+              "description": "Optional und ohne Einfluss auf die bestehende Feuchte-, Lüftungs- oder ml-Prognoseberechnung: Referenzsensoren beschreiben besondere Zuluftbereiche. VOC/TVOC misst gasförmige Luftschadstoffe, PM2.5 misst sehr feinen Schwebstaub bis 2,5 µm und Helligkeitssensoren messen Beleuchtungsstärke in Lux. Diese Zusatzwerte können ergänzende Empfehlungen liefern und werden – wenn aktiviert – für die 30-Tage-Diagnostik gesammelt, damit spätere FreshAirIQ-Funktionserweiterungen darauf aufbauen können.",
+              "data": {
+                "reference_temperature": "Referenztemperatur",
+                "reference_humidity": "Referenzfeuchte",
+                "co2": "CO₂-Sensor",
+                "voc": "VOC-/TVOC-Sensor (optional)",
+                "pm25": "PM2.5-Sensor (optional)",
+                "illuminance": "Helligkeitssensor (optional)"
+              },
+              "data_description": {
+                "reference_temperature": "Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.",
+                "reference_humidity": "Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
+                "co2": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+                "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+                "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+                "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht."
+              }
+            },
+            "optional_actuators": {
+              "name": "Optionale Geräte – Datensammlung",
+              "description": "Diese Geräte werden derzeit nur protokolliert. Die Daten werden für spätere FreshAirIQ-Funktionen gesammelt; aktuell verändern sie die Lüftungs-/ml-Empfehlung nicht und werden nicht automatisch geschaltet.",
+              "data": {
+                "climate": "Klimaanlage/Heizung (optional)",
+                "exhaust_fan": "Abluftgerät (optional)",
+                "supply_fan": "Zuluftgerät (optional)",
+                "ventilation_device": "Lüftungs-/WRG-Gerät (optional)",
+                "dehumidifier": "Entfeuchter (optional)",
+                "humidifier": "Luftbefeuchter (optional)",
+                "air_purifier": "Luftreiniger (optional)"
+              },
+              "data_description": {
+                "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+                "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+                "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+                "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+                "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+                "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+                "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch."
+              }
             }
           },
           "data_description": {
@@ -2532,7 +2626,17 @@
             "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner und/oder Bügelstation. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
             "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
             "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-            "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+            "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+            "voc": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+            "pm25": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+            "illuminance": "Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.",
+            "climate": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "exhaust_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "supply_fan": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch."
           }
         },
         "reconfigure": {
@@ -2744,13 +2848,19 @@
           "data": {}
         },
         "add_references": {
-          "title": "{room_name} · Referenzluft & Rollo/Jalousie je Öffnung",
-          "description": "Optional: Tür/Fenster zu einem anderen Luftbereich können ein eigenes Sensorpaar erhalten. Beispiel Wintergarten: Temperatur und Feuchte des Wintergartens gemeinsam auswählen. Außenfenster leer lassen.",
+          "title": "{room_name} · {contact_name}",
+          "description": "Einstellungen für **{contact_name}** (`{contact_entity}`) – Fenster/Tür {contact_position} von {contact_count}. Die folgenden Angaben gehören ausschließlich zu diesem Kontakt.",
           "data": {
-            "contact_passage_doors": "Tür wird als Durchgang genutzt und von außen zugezogen"
+            "reference_temperature": "Referenztemperatur",
+            "reference_humidity": "Referenzfeuchte",
+            "covers": "Rollo/Jalousie",
+            "passage_door": "Tür wird als Durchgang genutzt und von außen zugezogen"
           },
           "data_description": {
-            "contact_passage_doors": "Nur aktivieren, wenn ein echter Drei-Zustands-Sensor am Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Diese Option ist für Türen gedacht, die als Durchgang genutzt und anschließend von außen nur zugezogen werden, während der Sensor weiterhin „offen“ meldet. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden. FreshAirIQ schützt dadurch das Lernmodell vor einer falschen Open-Lernprobe."
+            "reference_temperature": "Optional. Temperatur der Referenzluft für genau dieses Fenster bzw. diese Tür. Bei normaler Außenluft leer lassen.",
+            "reference_humidity": "Optional. Feuchte derselben Referenzluft. Referenztemperatur und Referenzfeuchte immer gemeinsam auswählen.",
+            "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
+            "passage_door": "Nur aktivieren, wenn ein echter Drei-Zustands-Sensor am Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Diese Option ist für Türen gedacht, die als Durchgang genutzt und anschließend von außen nur zugezogen werden, während der Sensor weiterhin „offen“ meldet. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden. FreshAirIQ schützt dadurch das Lernmodell vor einer falschen Open-Lernprobe."
           }
         },
         "room_references": {
