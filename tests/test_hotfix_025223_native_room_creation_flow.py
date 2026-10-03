@@ -1,5 +1,6 @@
 """Regression guards for v0.25.2.23 native HA room creation hotfix."""
 from __future__ import annotations
+from tests.release_version import CURRENT_RELEASE_VERSION
 import json
 from pathlib import Path
 
@@ -58,5 +59,5 @@ def test_native_user_form_has_full_documented_section_parity_de_en():
 
 def test_release_version_025223():
     manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.25.2.23"
+    assert manifest["version"] == CURRENT_RELEASE_VERSION
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.2.23.md").is_file()

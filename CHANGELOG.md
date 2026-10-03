@@ -1,3 +1,7 @@
+## 0.25.2.24
+- Hotfix: Dashboard-Darstellung bleibt bei der expliziten Auswahl „FreshAirIQ IQ“ und wird bei einem kurzzeitig veralteten Lovelace-Config-Echo erneut an Home Assistant übermittelt, statt auf „Klassisch“ zurückzuspringen.
+- Regression: Persistenz-/Echo-Contract des visuellen Karteneditors abgesichert.
+
 ## 0.25.2.23
 - Hotfix: nativer Home-Assistant-Dialog „Raum hinzufügen“ nutzt wieder den gültigen per-Kontakt-Referenzpfad; Kontaktverzögerungen und kontaktlose Räume führen nicht mehr in einen undefinierten Legacy-Handler.
 - Geräte-&-Dienste-Raumerstellung erhält vollständige DE/EN-Feld-, Abschnitts- und Erklärungstexte einschließlich optionaler Geräte.

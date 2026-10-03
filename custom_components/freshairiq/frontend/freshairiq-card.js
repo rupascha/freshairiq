@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2.23";
+const FAIQ_VERSION = "0.25.2.24";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -2780,12 +2780,27 @@ class FreshAirIQCardEditor extends HTMLElement {
         super();
         this.attachShadow({ mode: "open" });
         this._config = normalizeDashboardConfig({});
+        this._pendingDashboardVariant = null;
         this._globalSensorOptions = null;
         this._globalSensorEntryId = null;
         this._globalSensorLoading = false;
         this._globalSensorError = null;
     }
-    setConfig(c) { this._config = normalizeDashboardConfig(c); this._render(); }
+    setConfig(c) {
+        const incoming = normalizeDashboardConfig(c);
+        if (this._pendingDashboardVariant && incoming.dashboard_variant !== this._pendingDashboardVariant) {
+            this._config = normalizeDashboardConfig(Object.assign({}, incoming, {dashboard_variant: this._pendingDashboardVariant}));
+            queueMicrotask(() => this._emitConfigChanged(this._config));
+        } else {
+            this._config = incoming;
+            if (this._pendingDashboardVariant === incoming.dashboard_variant) this._pendingDashboardVariant = null;
+        }
+        this._render();
+    }
+    _emitConfigChanged(config) {
+        const event = new CustomEvent("config-changed", {detail: {config: normalizeDashboardConfig(config)}, bubbles: true, composed: true});
+        this.dispatchEvent(event);
+    }
     _editorDE() {
         return this._uiLanguage() === "de";
     }
@@ -2902,8 +2917,9 @@ class FreshAirIQCardEditor extends HTMLElement {
           </div>`;
         this.shadowRoot.getElementById("dashboard-variant")?.addEventListener("change", e => {
             const nextConfig = Object.assign({}, this._config, {dashboard_variant: e.target.value === "classic" ? "classic" : "iq"});
+            this._pendingDashboardVariant = nextConfig.dashboard_variant;
             this._config = normalizeDashboardConfig(nextConfig);
-            this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config }, bubbles: true, composed: true }));
+            this._emitConfigChanged(this._config);
         });
         this.shadowRoot.querySelectorAll("ha-switch[data-key]").forEach(x => x.addEventListener("change", () => {
             const key = x.dataset.key;
