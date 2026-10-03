@@ -200,7 +200,7 @@
       "options": {
         "house": "House (general)",
         "apartment": "Apartment",
-        "attic_apartment": "Attic apartment",
+        "attic_apartment": "Top-floor apartment",
         "maisonette": "Maisonette",
         "other": "Other",
         "detached": "Detached house",

@@ -31,6 +31,7 @@ from .const import (
     DIAGNOSTICS_SCHEMA_VERSION,
     DIAGNOSTICS_UPLOAD_MAX_BYTES,
     DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS,
+    SUPPORT_DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS,
     SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS,
     SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS,
     DOMAIN,
@@ -540,7 +541,7 @@ class FreshAirIQDiagnosticsClient:
             if not installation_id:
                 raise RuntimeError("identity_unavailable")
             session = async_get_clientsession(self.hass)
-            timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+            timeout = ClientTimeout(total=SUPPORT_DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
             token = await self._async_ensure_enrolled(session, installation_id, timeout)
             exported = await self.recorder.async_export()
             case_id = f"support-{secrets.token_hex(12)}"

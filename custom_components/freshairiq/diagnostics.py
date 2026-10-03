@@ -1655,6 +1655,15 @@ class FreshAirIQSupportDiagnosticsView(HomeAssistantView):
         except ValueError as err:
             return self.json({"error": str(err)}, status_code=400)
         except Exception as err:  # Do not expose traceback or diagnostic contents to the browser.
-            return self.json({"error": "support_upload_failed", "detail": type(err).__name__}, status_code=502)
+            raw = str(err)
+            if isinstance(err, TimeoutError):
+                detail = "timeout"
+            elif isinstance(err, RuntimeError) and raw.startswith("support_diagnostics_http_"):
+                detail = raw
+            elif isinstance(err, RuntimeError) and raw in {"identity_unavailable", "hub_unconfigured", "hub_credential_persistence_failed"}:
+                detail = raw
+            else:
+                detail = type(err).__name__
+            return self.json({"error": "support_upload_failed", "detail": detail}, status_code=502)
         status = 429 if result.get("reason") == "cooldown" else 200
         return self.json(result, status_code=status)

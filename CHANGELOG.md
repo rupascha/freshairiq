@@ -1,3 +1,12 @@
+## 0.25.2.29
+
+- Hotfix: deutsche Drei-Zustands-Helfer (`Offen` / `Gekippt` / `Geschlossen`) vollständig normalisiert.
+- Hotfix: Guardian wertet legitime finale Präsentations-Overrides nicht mehr als Empfehlungsfehler; echte unerklärte Widersprüche bleiben geschützt.
+- Hotfix: IQ-Branding respektiert `show_branding: false`; dunkle Raum-/Entscheidungstexte erhalten einen theme-unabhängigen Kontrast.
+- Hotfix: Support-Diagnoseversand erhält einen separaten 90-Sekunden-Timeout und datenschutzkonforme technische Fehlerklassifizierung.
+- Übersetzung: `Dachgeschosswohnung` wird englisch als `Top-floor apartment` angezeigt; interne Konfigurations-ID bleibt unverändert.
+
+
 ## 0.25.2.28
 
 - Hotfix: FreshAirIQ-IQ-Texte und Aktionsbuttons bleiben auf der dunklen Kartenfläche unabhängig vom Home-Assistant-Theme lesbar; untere Aktionen sind konsistent links ausgerichtet.

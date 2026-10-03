@@ -57,9 +57,16 @@ def evaluate_guardian(data: Mapping[str, Any] | None) -> dict[str, Any]:
         canonical = str(room.get("canonical_action") or room.get("canonical_recommendation") or "").lower()
         visible = str(room.get("action") or "").lower()
         if canonical and visible:
+            override = room.get("presentation_action_override")
+            explained_override = (
+                isinstance(override, Mapping)
+                and str(override.get("reason") or "") == "final_recommendation_alignment"
+                and str(override.get("action") or "").strip().lower() == visible.strip().lower()
+                and str(override.get("recommendation_kind") or "") in {"ventilate", "continue", "close"}
+            )
             keep = any(token in canonical for token in ("keep", "continue", "open", "monitor"))
             close = "close" in visible or "schließ" in visible
-            if keep and close:
+            if keep and close and not explained_override:
                 contradictory_rooms += 1
     if invalid_rooms:
         findings.append(GuardianFinding("FAIQ-GUARDIAN-SENSOR-001", "high", "room_measurements_physical_range", "measurement", {"affected_room_count": invalid_rooms}))

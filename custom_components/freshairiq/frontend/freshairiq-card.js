@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2.28";
+const FAIQ_VERSION = "0.25.2.29";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -61,7 +61,7 @@ const FAIQ_UI_EN = [
   ["Entfeuchten", "Dehumidify"], ["Komfort", "Comfort"], ["Sommer kühlen", "Summer cooling"],
   ["Kellergeschoss", "Basement"], ["Erdgeschoss", "Ground floor"], ["Obergeschoss", "Upper floor"], ["Dachgeschoss", "Attic"],
   ["Unzugeordnet", "Unassigned"], ["Freistehendes Haus", "Detached house"], ["Doppelhaushälfte", "Semi-detached house"],
-  ["Reihenmittelhaus", "Mid-terrace house"], ["Reihenendhaus", "End-terrace house"], ["Wohnung", "Apartment"], ["Dachgeschosswohnung", "Attic apartment"],
+  ["Reihenmittelhaus", "Mid-terrace house"], ["Reihenendhaus", "End-terrace house"], ["Wohnung", "Apartment"], ["Dachgeschosswohnung", "Top-floor apartment"],
   ["Mehrfamilienhaus", "Multi-family house"], ["Sonstiges", "Other"], ["Haus", "House"],
   ["Wärmepumpe", "Heat pump"], ["Fernwärme", "District heating"], ["Elektro", "Electric"], ["Öl", "Oil"],
   ["Nordost", "Northeast"], ["Nordwest", "Northwest"], ["Südost", "Southeast"], ["Südwest", "Southwest"],
@@ -389,6 +389,10 @@ const FAIQ_COMPACT_DISCLOSURE_CSS = `
 /* v0.25.1.40: materially larger Classic typography; responsive grids stay intact. */
 .hero{font-size:12px;line-height:16px}.pill{font-size:11px}.decision-kicker{font-size:11px;line-height:15px}.decision-main h2{font-size:22px;line-height:27px}.decision-action{font-size:15px;line-height:20px}.decision-rooms span{font-size:11px}.decision-summary{font-size:13px;line-height:18px}.decision-impact span{font-size:10px;line-height:13px}.decision-impact b,.night-context b{font-size:14px;line-height:19px}.decision-impact small{font-size:12px;line-height:16px}.decision-room-disclosure>summary span{font-size:14px}.decision-room-disclosure>summary strong{font-size:12px}.decision-room-reason span{font-size:13px;line-height:18px}.decision-room-values span{font-size:11.5px}.decision-room-open{font-size:12px}.decision-more>summary>span:first-child{font-size:14px}.decision-more-hint{font-size:11px}.decision-more-content .decision-summary,.decision-more-content .decision-why span,.decision-more-content .iq-process-text{font-size:13px;line-height:18px}.decision-more-content .decision-section-title,.decision-room-detail .decision-section-title{font-size:10px!important;line-height:13px}.decision-more-content .decision-alternative,.decision-more-content .iq-process-head{font-size:12px;line-height:16px}.tiny{font-size:10px;line-height:13px}.muted{font-size:11px;line-height:15px}.details-btn{font-size:11px}
 @media(max-width:520px){.decision-main h2{font-size:21px;line-height:26px}.decision-action{font-size:14px;line-height:19px}.decision-impact span{font-size:9.5px}.decision-impact b{font-size:13.5px;line-height:18px}.decision-impact small{font-size:11.5px;line-height:16px}.decision-room-disclosure>summary span{font-size:13.5px}.decision-room-reason span,.decision-more-content .decision-summary,.decision-more-content .decision-why span,.decision-more-content .iq-process-text{font-size:12.5px;line-height:17px}}
+
+/* v0.25.2.29: dashboard text contrast contract. The card uses its own dark surfaces,
+   therefore room labels must not inherit a light HA theme's dark primary text. */
+.room-title,.room-water strong,.room-value,.room-big,.breakdown-row b,.breakdown-row strong,.ai-room b,.decision-room-disclosure>summary span,.decision-more>summary>span:first-child{color:#e9f0f4}
 
 `;
 class FreshAirIQCard extends HTMLElement {
@@ -2428,7 +2432,7 @@ class FreshAirIQCard extends HTMLElement {
         const showBranding = this._config.show_branding !== false;
         const showProfileBadge = this._config.show_profile_badge !== false;
         const classicTopBar = showBranding || showProfileBadge ? `<div class="top ai-top${showBranding ? "" : " profile-only"}">${showBranding ? `<img class="logo" src="/freshairiq/frontend/freshairiq-icon.png" alt="FreshAirIQ"><div><div class="brand">FreshAir<span class="iq">IQ</span></div><div class="brand-subtitle">INTELLIGENT HOME CLIMATE</div></div>` : ""}${showProfileBadge ? `<div class="pill" data-info="profile">${esc(profileDE(profile))}</div>` : ""}</div>` : "";
-        const iqTopBar = `<div class="top ai-top"><img class="logo" src="/freshairiq/frontend/freshairiq-icon.png" alt="FreshAirIQ"><div><div class="brand">FreshAir<span class="iq">IQ</span></div><div class="brand-subtitle">${esc(this._t("shell.subtitle_iq"))}</div></div>${showProfileBadge ? `<div class="pill" data-info="profile">${esc(profileDE(profile))}</div>` : ""}</div>`;
+        const iqTopBar = showBranding || showProfileBadge ? `<div class="top ai-top${showBranding ? "" : " profile-only"}">${showBranding ? `<img class="logo" src="/freshairiq/frontend/freshairiq-icon.png" alt="FreshAirIQ"><div><div class="brand">FreshAir<span class="iq">IQ</span></div><div class="brand-subtitle">${esc(this._t("shell.subtitle_iq"))}</div></div>` : ""}${showProfileBadge ? `<div class="pill" data-info="profile">${esc(profileDE(profile))}</div>` : ""}</div>` : "";
         const topBar = dashboardVariant === "classic" ? classicTopBar : iqTopBar;
         this.style.setProperty("--faiq-hero-color", hero.color);
         this.style.setProperty("--faiq-hero-bg", `${hero.color}12`);

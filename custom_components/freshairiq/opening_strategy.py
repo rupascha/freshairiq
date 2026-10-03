@@ -305,3 +305,8 @@ def synchronize_room_presentation_actions(
         if final_action and current != final_action:
             room["canonical_action"] = current
             room["action"] = final_action
+            room["presentation_action_override"] = {
+                "action": final_action,
+                "recommendation_kind": kind,
+                "reason": "final_recommendation_alignment",
+            }
