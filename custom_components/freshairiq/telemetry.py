@@ -49,6 +49,7 @@ _LOGGER = logging.getLogger(__name__)
 _STORE_VERSION = 1
 _CHECK_INTERVAL = timedelta(minutes=15)
 _INITIAL_UPLOAD_GRACE = timedelta(minutes=30)
+_ACTIVITY_HEARTBEAT_INTERVAL = timedelta(hours=6)
 _GZIP_COMPRESSLEVEL = 4
 
 
@@ -199,12 +200,59 @@ class FreshAirIQDiagnosticsClient:
     def _schedule_check(self, _now: datetime) -> None:
         if not self._started or (self._task and not self._task.done()):
             return
-        self._task = self.hass.async_create_task(self.async_maybe_upload())
+        self._task = self.hass.async_create_task(self._async_periodic_check())
 
     @callback
     def request_check(self) -> None:
         """Request a non-blocking upload check after a live option change."""
         self._schedule_check(dt_util.now())
+
+    async def _async_periodic_check(self) -> bool:
+        """Run the privacy-safe activity heartbeat before the diagnostics cadence check."""
+        await self.async_activity_heartbeat()
+        return await self.async_maybe_upload()
+
+    async def async_activity_heartbeat(self) -> bool:
+        """Refresh anonymous installation activity without sending diagnostics payload."""
+        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "daily"))
+        if mode == "off" or not self.endpoint:
+            return False
+        now = dt_util.now()
+        last = self._parse_dt(self._state.get("last_activity_heartbeat_at"))
+        if last is not None:
+            if now.tzinfo is not None and last.tzinfo is None: last = last.replace(tzinfo=now.tzinfo)
+            elif now.tzinfo is None and last.tzinfo is not None: last = last.replace(tzinfo=None)
+            if now - last < _ACTIVITY_HEARTBEAT_INTERVAL:
+                return False
+        identity = await self.recorder.async_get_identity()
+        installation_id = str(identity.get("installation_id") or "")
+        if not installation_id:
+            return False
+        session = async_get_clientsession(self.hass)
+        timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+        try:
+            token = await self._async_ensure_enrolled(session, installation_id, timeout)
+            activity_url = f"{self.endpoint}/v1/activity"
+            payload = {
+                "anonymous_installation_id": installation_id,
+                "client_token": token,
+                "upload_schema_version": 2,
+                "freshairiq_version": VERSION,
+            }
+            async with session.post(
+                activity_url,
+                json=payload,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=timeout,
+            ) as response:
+                if response.status >= 400:
+                    raise RuntimeError(f"activity_http_{response.status}")
+        except (ClientError, TimeoutError, RuntimeError, ValueError, TypeError, OSError):
+            _LOGGER.debug("FreshAirIQ activity heartbeat failed", exc_info=True)
+            return False
+        self._state["last_activity_heartbeat_at"] = now.isoformat()
+        await self._save_state()
+        return True
 
     def _health(self) -> Mapping[str, Any]:
         try:

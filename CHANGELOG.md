@@ -1,3 +1,13 @@
+## 0.25.2.28
+
+- Hotfix: FreshAirIQ-IQ-Texte und Aktionsbuttons bleiben auf der dunklen Kartenfläche unabhängig vom Home-Assistant-Theme lesbar; untere Aktionen sind konsistent links ausgerichtet.
+- Hotfix: Aktivitäts-Heartbeat nutzt den authentifizierten `/v1/activity`-Pfad statt wiederholtem Enrollment.
+
+
+## 0.25.2.27
+
+- Hotfix: privacy-safe activity heartbeat for diagnostics-enabled installations; Hub can distinguish active installations from diagnostic senders.
+
 
 ## 0.25.2.26
 - Unified client platform/access telemetry for multi-platform diagnostics.
