@@ -1,3 +1,11 @@
+
+## 0.25.2.26
+- Unified client platform/access telemetry for multi-platform diagnostics.
+## 0.25.2.25
+
+- Hotfix: verhindert, dass das Darstellungs-Dropdown im visuellen Karteneditor durch laufende Home-Assistant-State-Updates sofort wieder geschlossen wird.
+- Hotfix: Raumname in der klassischen Entscheidungsansicht nutzt nun die Home-Assistant-Theme-Textfarbe und bleibt im Dark- und Light-Theme lesbar.
+
 ## 0.25.2.24
 - Hotfix: Dashboard-Darstellung bleibt bei der expliziten Auswahl „FreshAirIQ IQ“ und wird bei einem kurzzeitig veralteten Lovelace-Config-Echo erneut an Home Assistant übermittelt, statt auf „Klassisch“ zurückzuspringen.
 - Regression: Persistenz-/Echo-Contract des visuellen Karteneditors abgesichert.
