@@ -201,6 +201,7 @@
       "options": {
         "house": "Haus (allgemein)",
         "apartment": "Wohnung",
+        "attic_apartment": "Dachgeschosswohnung",
         "maisonette": "Maisonette",
         "other": "Sonstiges",
         "detached": "Freistehendes Haus",
@@ -1210,7 +1211,7 @@
           "child_resident_names": "Namen Kinder"
         },
         "data_description": {
-          "property_type": "Unterscheidet u. a. freistehendes Haus, Doppelhaushälfte, Reihenmittel-/Reihenendhaus, Wohnung, Maisonette und Mehrfamilienhaus.",
+          "property_type": "Unterscheidet u. a. freistehendes Haus, Doppelhaushälfte, Reihenmittel-/Reihenendhaus, Wohnung, Dachgeschosswohnung, Maisonette und Mehrfamilienhaus.",
           "adult_occupants": "Wird zusammen mit den Lernwerten für Tages- und Nachtprognosen verwendet.",
           "child_occupants": "Kinder erhalten im Startmodell einen eigenen, niedrigeren Feuchtebeitrag.",
           "night_start_hour": "Komfortable Uhrzeitauswahl statt Stunden-Zahl.",

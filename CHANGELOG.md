@@ -1,3 +1,7 @@
+## 0.25.2.22
+- Hotfix: widersprüchliche Einzelkontakt-Anweisung „offen lassen“ und „schließen“ verhindert.
+- Gebäudetyp „Dachgeschosswohnung“ / „Attic apartment“ ergänzt; bestehende „Wohnung“ bleibt erhalten.
+
 ## 0.25.2.21
 
 - Hotfix: Raum-Erstellungsdialog löst keinen Config-Entry-Reload mehr mitten im Kontakt-Workflow aus.

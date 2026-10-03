@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2.21";
+const FAIQ_VERSION = "0.25.2.22";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_STRATEGY = "freshairiq";
 const FAIQ_UI = Object.freeze({
@@ -61,7 +61,7 @@ const FAIQ_UI_EN = [
   ["Entfeuchten", "Dehumidify"], ["Komfort", "Comfort"], ["Sommer kühlen", "Summer cooling"],
   ["Kellergeschoss", "Basement"], ["Erdgeschoss", "Ground floor"], ["Obergeschoss", "Upper floor"], ["Dachgeschoss", "Attic"],
   ["Unzugeordnet", "Unassigned"], ["Freistehendes Haus", "Detached house"], ["Doppelhaushälfte", "Semi-detached house"],
-  ["Reihenmittelhaus", "Mid-terrace house"], ["Reihenendhaus", "End-terrace house"], ["Wohnung", "Apartment"],
+  ["Reihenmittelhaus", "Mid-terrace house"], ["Reihenendhaus", "End-terrace house"], ["Wohnung", "Apartment"], ["Dachgeschosswohnung", "Attic apartment"],
   ["Mehrfamilienhaus", "Multi-family house"], ["Sonstiges", "Other"], ["Haus", "House"],
   ["Wärmepumpe", "Heat pump"], ["Fernwärme", "District heating"], ["Elektro", "Electric"], ["Öl", "Oil"],
   ["Nordost", "Northeast"], ["Nordwest", "Northwest"], ["Südost", "Southeast"], ["Südwest", "Southwest"],
@@ -172,7 +172,7 @@ const mouldDE = v => ({ "Very high": "Sehr hoch", "High": "Hoch", "Elevated": "E
 const learnDE = v => ({ "Very stable": "Sehr stabil", "Stable": "Stabil", "Usable": "Brauchbar", "Learning": "Lernt", "Base estimate": "Grundschätzung" }[v] || v || "–");
 const profileDE = v => ({ dehumidify: "Entfeuchten", comfort: "Komfort", summer_cooling: "Sommer kühlen" }[v] || v || "Komfort");
 const floorDE = v => ({ basement: "Kellergeschoss", base_floor: "Kellergeschoss", "base floor": "Kellergeschoss", Basement: "Kellergeschoss", ground_floor: "Erdgeschoss", "ground floor": "Erdgeschoss", "Ground Floor": "Erdgeschoss", upper_floor: "Obergeschoss", "upper floor": "Obergeschoss", "Upper Floor": "Obergeschoss", attic: "Dachgeschoss", Attic: "Dachgeschoss", other: "Sonstige", Other: "Sonstige" }[String(v || "")] || v || "Unzugeordnet");
-const propertyDE = v => ({ house: "Haus", detached: "Freistehendes Haus", semi_detached: "Doppelhaushälfte", row_mid: "Reihenmittelhaus", row_end: "Reihenendhaus", apartment: "Wohnung", maisonette: "Maisonette", multi_family: "Mehrfamilienhaus", other: "Sonstiges" }[v] || v || "–");
+const propertyDE = v => ({ house: "Haus", detached: "Freistehendes Haus", semi_detached: "Doppelhaushälfte", row_mid: "Reihenmittelhaus", row_end: "Reihenendhaus", apartment: "Wohnung", attic_apartment: "Dachgeschosswohnung", maisonette: "Maisonette", multi_family: "Mehrfamilienhaus", other: "Sonstiges" }[v] || v || "–");
 const heatingDE = v => ({ heat_pump: "Wärmepumpe", gas: "Gas", district_heating: "Fernwärme", electric: "Elektro", oil: "Öl" }[v] || v || "–");
 const orientationDE = v => ({ unknown: "–", n: "Nord", ne: "Nordost", e: "Ost", se: "Südost", s: "Süd", sw: "Südwest", w: "West", nw: "Nordwest" }[String(v || "unknown").toLowerCase()] || "–");
 const roomVisual = r => {
@@ -1850,7 +1850,7 @@ class FreshAirIQCard extends HTMLElement {
             this._settingsField({scope:"data",key:"pollen_entity",label:"Pollensensor",description:"Optionaler Sensor für die Pollenbewertung.",type:"entity",domains:["sensor"],defaultValue:"nicht gesetzt"}),
         ])}</section>`;
         if (name === "building") return `<section class="info-panel settings-panel"><div class="tiny info-kicker">GEBÄUDE</div><h3>Grundprofil des Hauses</h3><p>Das Gebäudeprofil liefert FreshAirIQ die passenden Grundannahmen für Luftaustausch und Gebäudehülle. Bewohner und Anwesenheit werden getrennt im Bereich „Bewohner“ verwaltet.</p>${this._settingsGroup("GEBÄUDEPROFIL", "Diese Auswahl beschreibt nur das Gebäude – nicht die Bewohner.", [
-            this._settingsField({key:"property_type",label:"Gebäudetyp",description:"Beeinflusst Grundannahmen zu Luftaustausch und Gebäudehülle.",type:"select",options:[select("house","Haus"),select("detached","Freistehendes Haus"),select("semi_detached","Doppelhaushälfte"),select("row_mid","Reihenmittelhaus"),select("row_end","Reihenendhaus"),select("apartment","Wohnung"),select("maisonette","Maisonette"),select("multi_family","Mehrfamilienhaus"),select("other","Sonstiges")]}),
+            this._settingsField({key:"property_type",label:"Gebäudetyp",description:"Beeinflusst Grundannahmen zu Luftaustausch und Gebäudehülle.",type:"select",options:[select("house","Haus"),select("detached","Freistehendes Haus"),select("semi_detached","Doppelhaushälfte"),select("row_mid","Reihenmittelhaus"),select("row_end","Reihenendhaus"),select("apartment","Wohnung"),select("attic_apartment","Dachgeschosswohnung"),select("maisonette","Maisonette"),select("multi_family","Mehrfamilienhaus"),select("other","Sonstiges")]}),
         ])}</section>`;
         if (["residents", "house", "personalisation"].includes(name)) return `<section class="info-panel settings-panel resident-unified"><div class="resident-profile-spotlight resident-static"><div class="resident-profile-spotlight-icon"><ha-icon icon="mdi:account-heart-outline"></ha-icon><ha-icon class="resident-profile-spotlight-brain" icon="mdi:brain"></ha-icon></div><div><div class="tiny">PERSÖNLICHES FRESHAIRIQ PROFIL</div><h3>Dein Bewohnerprofil</h3><p>Alle Bewohnerdaten werden hier genau einmal gepflegt: Personen, Anwesenheit, zugeordnete Räume, Komfortpräferenzen und persönliche Endgeräte.</p></div></div>${this._settingsGroup("BEWOHNERPROFILE", "Regelmäßig im Haushalt lebende Personen. Anzahl, Name und Tracker gehören ausschließlich hierher.", [
             this._settingsField({key:"adult_occupants",label:"Erwachsene",description:"Regelmäßig im Haushalt lebende Erwachsene.",type:"number",min:0,max:20,step:1}),

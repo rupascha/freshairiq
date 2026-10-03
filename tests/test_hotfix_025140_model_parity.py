@@ -10,6 +10,8 @@ import json
 
 import pytest
 
+from tests.release_version import CURRENT_RELEASE_VERSION
+
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.model import RoomInput, evaluate_room
 
@@ -86,7 +88,7 @@ def test_release_version_025140_everywhere():
     package = json.loads((ROOT / "package.json").read_text())
     policy = json.loads((ROOT / "quality/quality_policy.json").read_text())
     baseline = json.loads((ROOT / "quality/performance_baseline.json").read_text())
-    assert manifest["version"] == package["version"] == policy["version"] == baseline["version"] == "0.25.2.21"
+    assert manifest["version"] == package["version"] == policy["version"] == baseline["version"] == CURRENT_RELEASE_VERSION
     assert (ROOT / "docs/releases/RELEASE_NOTES_0.25.1.40.md").is_file()
     for frontend in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert 'const FAIQ_VERSION = "0.25.2.21";' in (ROOT / "custom_components/freshairiq/frontend" / frontend).read_text(encoding="utf-8")
+        assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend" / frontend).read_text(encoding="utf-8")

@@ -55,6 +55,7 @@ def _property_background_factor(options: dict[str, Any]) -> float:
     return {
         "house": 1.0,
         "apartment": 0.85,
+        "attic_apartment": 0.85,
         "maisonette": 0.92,
         "other": 1.0,
     }.get(str(options.get("property_type", "house")), 1.0)

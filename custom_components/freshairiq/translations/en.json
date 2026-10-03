@@ -200,6 +200,7 @@
       "options": {
         "house": "House (general)",
         "apartment": "Apartment",
+        "attic_apartment": "Attic apartment",
         "maisonette": "Maisonette",
         "other": "Other",
         "detached": "Detached house",
@@ -1207,7 +1208,7 @@
           "child_resident_names": "Child resident names"
         },
         "data_description": {
-          "property_type": "Distinguishes detached house, semi-detached house, mid/end-terrace house, apartment, maisonette and multi-family building, among others.",
+          "property_type": "Distinguishes detached house, semi-detached house, mid/end-terrace house, apartment, attic apartment, maisonette and multi-family building, among others.",
           "adult_occupants": "Used together with learned values for daytime and overnight forecasts.",
           "child_occupants": "Children receive their own lower moisture contribution in the initial model.",
           "night_start_hour": "Convenient time selection instead of a numeric hour.",

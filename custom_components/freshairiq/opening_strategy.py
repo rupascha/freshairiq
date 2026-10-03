@@ -98,6 +98,21 @@ def _room_opening_plan(
                 _poor(x) or _f(x.get("delta_g_m3")) <= float(close_delta)
             )
         ]
+        # A cooling-only path can be usable even while its moisture gradient is
+        # harmful. With a single opening this previously put the exact same
+        # contact into both keep and close, producing a contradictory command.
+        # Preserve the established close_delta behaviour for weak-but-positive
+        # ventilation paths; only remove true keep/close self-conflicts.
+        keep_ids = {id(x) for x in (preferred_open or useful_open)}
+        bad_open = [
+            x for x in bad_open
+            if not (
+                id(x) in keep_ids
+                and bool(x.get("cooling_candidate"))
+                and not bool(x.get("ventilation_candidate"))
+                and _f(x.get("moisture_effect_next_5_min_ml")) <= 0.0
+            )
+        ]
         # Do not invent a route change during an active session unless there is
         # already at least one useful open path that can keep ventilating.
         if bad_open and useful_open:
