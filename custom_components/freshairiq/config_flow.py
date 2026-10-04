@@ -47,6 +47,15 @@ def _slug(name: str) -> str:
     return value or "room"
 
 
+def _entity_list(value: Any) -> list[str]:
+    """Normalise legacy single-entity values for multi-entity selectors."""
+    if isinstance(value, str):
+        return [value] if value else []
+    if isinstance(value, (list, tuple, set)):
+        return list(dict.fromkeys(str(item) for item in value if item))
+    return []
+
+
 def _number_or_none(value: Any) -> float | None:
     if value in (None, ""):
         return None
@@ -153,12 +162,14 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
     levels = list(dict.fromkeys(levels or []))
     return vol.Schema({
         _required(CONF_ROOM_NAME, room.get(CONF_ROOM_NAME)): selector.TextSelector(),
-        _optional(CONF_ROOM_TEMPERATURE, room.get(CONF_ROOM_TEMPERATURE)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", device_class="temperature")
+        _optional(CONF_ROOM_TEMPERATURE, _entity_list(room.get(CONF_ROOM_TEMPERATURE))): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=True)
         ),
-        _optional(CONF_ROOM_HUMIDITY, room.get(CONF_ROOM_HUMIDITY)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
+        _optional(CONF_ROOM_HUMIDITY, _entity_list(room.get(CONF_ROOM_HUMIDITY))): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", device_class="humidity", multiple=True)
         ),
+        vol.Required(CONF_ROOM_TEMPERATURE_AGGREGATION, default=str(room.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["mean", "median", "max", "min"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="climate_aggregation")),
+        vol.Required(CONF_ROOM_HUMIDITY_AGGREGATION, default=str(room.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["mean", "median", "max", "min"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="climate_aggregation")),
         vol.Optional(CONF_ROOM_CONTACTS, default=room.get(CONF_ROOM_CONTACTS, [])): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "input_select", "select"], multiple=True)
         ),
@@ -246,12 +257,14 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             vol.Required(CONF_ROOM_THRESHOLD_ML, default=_bounded(room.get(CONF_ROOM_THRESHOLD_ML), 100, 10, 1000)): _number(10, 1000, 10, "mL"),
         }), {"collapsed": True}),
         vol.Required("sensors"): section(vol.Schema({
-            _optional(CONF_ROOM_TEMPERATURE, room.get(CONF_ROOM_TEMPERATURE)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor", device_class="temperature")
+            _optional(CONF_ROOM_TEMPERATURE, _entity_list(room.get(CONF_ROOM_TEMPERATURE))): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=True)
             ),
-            _optional(CONF_ROOM_HUMIDITY, room.get(CONF_ROOM_HUMIDITY)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
+            _optional(CONF_ROOM_HUMIDITY, _entity_list(room.get(CONF_ROOM_HUMIDITY))): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", device_class="humidity", multiple=True)
             ),
+            vol.Required(CONF_ROOM_TEMPERATURE_AGGREGATION, default=str(room.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["mean", "median", "max", "min"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="climate_aggregation")),
+            vol.Required(CONF_ROOM_HUMIDITY_AGGREGATION, default=str(room.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean"))): selector.SelectSelector(selector.SelectSelectorConfig(options=["mean", "median", "max", "min"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="climate_aggregation")),
             vol.Optional(CONF_ROOM_CONTACTS, default=room.get(CONF_ROOM_CONTACTS, [])): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "input_select", "select"], multiple=True)
             ),
@@ -435,6 +448,10 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         raw_sources = [raw_sources]
     moisture_sources = [x for x in raw_sources if x in MOISTURE_SOURCES]
     room = {k: v for k, v in dict(user_input).items() if v not in (None, "")}
+    for aggregation_key in (CONF_ROOM_TEMPERATURE_AGGREGATION, CONF_ROOM_HUMIDITY_AGGREGATION):
+        if str(room.get(aggregation_key, "mean")) not in {"mean", "median", "min", "max"}:
+            room[aggregation_key] = "mean"
+
     room.update({
         "key": key,
         CONF_ROOM_NAME: name,
@@ -497,6 +514,8 @@ def _normalise_legacy_entry_data(data: dict[str, Any]) -> dict[str, Any]:
         room.setdefault(CONF_ROOM_INCLUDE_CALCULATIONS, True)
         room.setdefault(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)
         room.setdefault(CONF_ROOM_MOISTURE_SOURCES, [])
+        room.setdefault(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")
+        room.setdefault(CONF_ROOM_HUMIDITY_AGGREGATION, "mean")
         room.setdefault(CONF_ROOM_THRESHOLD_MODE, ROOM_THRESHOLD_AUTOMATIC)
         room.setdefault(CONF_ROOM_THRESHOLD_PERCENT, 5.0)
         room.setdefault(CONF_ROOM_THRESHOLD_ML, 100.0)
@@ -1628,9 +1647,15 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
 
         for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
             values = sorted(dict.fromkeys(candidates[key]))
-            # Auto-fill only an unambiguous candidate. With several sensors the
-            # normal HA selector remains available so the user stays in control.
-            if key not in defaults and len(values) == 1:
+            if key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
+                # Multi-sensor climate is explicit: show the complete detected
+                # redundant set during import so the user can confirm/remove it.
+                preferred_id = preferred.get(key)
+                if preferred_id and preferred_id not in values:
+                    values.insert(0, preferred_id)
+                if values:
+                    defaults[key] = values
+            elif key not in defaults and len(values) == 1:
                 defaults[key] = values[0]
         contacts = sorted(dict.fromkeys(candidates[CONF_ROOM_CONTACTS]))
         if contacts:

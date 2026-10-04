@@ -68,4 +68,6 @@ def test_support_upload_uses_dedicated_long_timeout_and_exposes_only_safe_failur
     assert 'support_diagnostics_http_' in diagnostics
     assert 'detail = "timeout"' in diagnostics
     assert 'str(err)' in diagnostics
-    assert 'return self.json({"error": "support_upload_failed", "detail": detail}' in diagnostics
+    assert '"error": "support_upload_failed"' in diagnostics
+    assert '"detail": detail' in diagnostics
+    assert '"error_code": "FAIQ-SUPPORT-UPLOAD-001"' in diagnostics

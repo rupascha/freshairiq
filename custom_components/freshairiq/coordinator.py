@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 import logging
+from time import perf_counter
 from math import cos, pi
 from typing import TYPE_CHECKING, Any
 
@@ -12,12 +13,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .const import *
+from .climate_sources import aggregate_states, entity_ids, climate_report_snapshot, advance_climate_report_activity, participating_climate_entities
 from .energy import energy_price_per_kwh_equivalent, exchanged_air_fraction, heating_cost_context, ventilation_cost, ventilation_cost_for_duration, ventilation_cost_for_temperature_path
 from .forecast import effective_night_rate_ml_h, estimated_daily_moisture_ml, horizon_forecast, in_night_window, night_interval_bounds, night_window_hours, overnight_forecast_ml, remaining_night_hours, update_night_learning
 from .model import RoomInput, absolute_humidity, evaluate_room, update_learning
 from .moisture_source import update_moisture_source
 from .notifications import process_notifications
-from .presence import resolve_occupancy
+from .presence import presence_diagnostics, resolve_occupancy
 from .recommendation import build_recommendation
 from .opening_strategy import enrich_opening_recommendation, synchronize_room_presentation_actions
 from .opening_state import normalize_opening_state, opening_contact_profile, aggregate_opening_mode, specialist_opening_provenance, stabilise_explicit_mode, update_passage_pattern, stable_state_seconds
@@ -46,6 +48,7 @@ from .telemetry import FreshAirIQDiagnosticsClient
 from .runtime_health import RuntimeHealthMonitor
 from .guardian import evaluate_guardian
 from .ventilation_result import append_completed_sessions, finalise_ventilation_group, include_ventilation_group_start, new_ventilation_group, update_session_cross_tracking
+from .ventilation_log import append_ventilation_log
 from .forecast_validation import (
     append_validation_record,
     build_validation_record,
@@ -84,6 +87,18 @@ def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
     return finite_float(state.state)
 
 
+
+
+def _aggregate_state_proxy(hass: HomeAssistant, configured: Any, source: Any) -> Any:
+    """Return the original State for one sensor, or a conservative multi-source proxy."""
+    ids = entity_ids(configured)
+    if len(ids) == 1:
+        return hass.states.get(ids[0])
+    if source.value is None:
+        return None
+    from types import SimpleNamespace
+    stamp = source.oldest_reported
+    return SimpleNamespace(state=str(source.value), last_reported=stamp, last_updated=stamp, last_changed=stamp)
 
 
 def _state_report_timestamp(state: Any) -> str | None:
@@ -590,41 +605,51 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._sensor_recovery_required_valid_cycles = 2
 
 
-    def _required_source_entities(self) -> set[str]:
-        """Return entities whose loss prevents reliable core calculations."""
-        required: set[str] = set()
-        for entity_id in (
-            self.entry.data.get(CONF_OUTDOOR_WEATHER),
-            self.entry.data.get(CONF_OUTDOOR_TEMPERATURE),
-            self.entry.data.get(CONF_OUTDOOR_HUMIDITY),
+    def _required_source_groups(self) -> list[tuple[str, list[str]]]:
+        """Return required source groups; redundant room sensors form one group."""
+        groups: list[tuple[str, list[str]]] = []
+        for key, entity_id in (
+            ("outdoor_weather", self.entry.data.get(CONF_OUTDOOR_WEATHER)),
+            ("outdoor_temperature", self.entry.data.get(CONF_OUTDOOR_TEMPERATURE)),
+            ("outdoor_humidity", self.entry.data.get(CONF_OUTDOOR_HUMIDITY)),
         ):
             if entity_id:
-                required.add(str(entity_id))
+                groups.append((key, [str(entity_id)]))
         rooms = self.entry.data.get(CONF_ROOMS, [])
         if isinstance(rooms, list):
-            for room in rooms:
+            for index, room in enumerate(rooms):
                 if not isinstance(room, dict) or not room.get(CONF_ROOM_INCLUDE_CALCULATIONS, True):
                     continue
+                room_key = str(room.get("key") or index)
                 for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
-                    entity_id = room.get(key)
-                    if entity_id:
-                        required.add(str(entity_id))
-        return required
+                    ids = entity_ids(room.get(key))
+                    if ids:
+                        groups.append((f"room:{room_key}:{key}", ids))
+        return groups
+
+    def _required_source_entities(self) -> set[str]:
+        """Return all configured entities that participate in required groups."""
+        return {entity_id for _, ids in self._required_source_groups() for entity_id in ids}
 
     def _log_required_source_availability(self) -> None:
-        """Log required-source loss and recovery once per state transition."""
+        """Track loss per logical source group, tolerating redundant room sensors."""
         unavailable: set[str] = set()
-        for entity_id in self._required_source_entities():
-            state = self.hass.states.get(entity_id)
-            if state is None or str(state.state).lower() in {"unknown", "unavailable", "none", ""}:
-                unavailable.add(entity_id)
+        for group_key, entity_ids_group in self._required_source_groups():
+            any_available = False
+            for entity_id in entity_ids_group:
+                state = self.hass.states.get(entity_id)
+                if state is not None and str(state.state).lower() not in {"unknown", "unavailable", "none", ""}:
+                    any_available = True
+                    break
+            if not any_available:
+                unavailable.add(group_key)
 
         newly_unavailable = unavailable - self._unavailable_required_sources
         recovered = self._unavailable_required_sources - unavailable
-        for entity_id in sorted(newly_unavailable):
-            _LOGGER.info("Required FreshAirIQ source %s is unavailable", entity_id)
-        for entity_id in sorted(recovered):
-            _LOGGER.info("Required FreshAirIQ source %s is available again", entity_id)
+        for group_key in sorted(newly_unavailable):
+            _LOGGER.info("Required FreshAirIQ source group %s is unavailable", group_key)
+        for group_key in sorted(recovered):
+            _LOGGER.info("Required FreshAirIQ source group %s is available again", group_key)
         self._unavailable_required_sources = unavailable
 
     @property
@@ -646,7 +671,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             (CONF_ROOM_ILLUMINANCE, bool(options.get("illuminance_sensor_enabled", True))),
         ]
         for room in self.entry.data.get(CONF_ROOMS, []):
-            for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY, CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_CO2):
+            for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
+                entities.update(entity_ids(room.get(key)))
+            for key in (CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_CO2):
                 if room.get(key): entities.add(room[key])
             for key, enabled in optional_sensor_keys:
                 if enabled and room.get(key):
@@ -722,7 +749,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         candidates: set[str] = set()
         for entity_id in (
-            cfg.get(CONF_ROOM_TEMPERATURE), cfg.get(CONF_ROOM_HUMIDITY),
+            *entity_ids(cfg.get(CONF_ROOM_TEMPERATURE)), *entity_ids(cfg.get(CONF_ROOM_HUMIDITY)),
             cfg.get(CONF_ROOM_REFERENCE_TEMPERATURE), cfg.get(CONF_ROOM_REFERENCE_HUMIDITY),
             active_reference_temperature, active_reference_humidity,
             self.entry.data.get(CONF_OUTDOOR_TEMPERATURE),
@@ -919,6 +946,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return data
 
     async def _async_update_data_impl(self) -> dict[str, Any]:
+        _phase_started = perf_counter()
         self._log_required_source_availability()
         options = self.options
         occupancy = resolve_occupancy(options, self.hass.states.get)
@@ -1057,10 +1085,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # are estimated when a configured sensor is missing.
                 temperature_entity = cfg.get(CONF_ROOM_TEMPERATURE)
                 humidity_entity = cfg.get(CONF_ROOM_HUMIDITY)
-                temperature_state = self.hass.states.get(temperature_entity) if temperature_entity else None
-                humidity_state = self.hass.states.get(humidity_entity) if humidity_entity else None
-                monitor_t = _float_state(self.hass, temperature_entity) if temperature_entity else None
-                monitor_rh = _float_state(self.hass, humidity_entity) if humidity_entity else None
+                monitor_temp_source = aggregate_states(self.hass, temperature_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")))
+                monitor_humidity_source = aggregate_states(self.hass, humidity_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean")))
+                temperature_state = _aggregate_state_proxy(self.hass, temperature_entity, monitor_temp_source)
+                humidity_state = _aggregate_state_proxy(self.hass, humidity_entity, monitor_humidity_source)
+                monitor_t = monitor_temp_source.value
+                monitor_rh = monitor_humidity_source.value
                 monitor_valid = bool(
                     monitor_t is not None and monitor_rh is not None
                     and -10 < monitor_t < 50 and 5 <= monitor_rh <= 100
@@ -1119,8 +1149,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 continue
             temperature_entity = cfg.get(CONF_ROOM_TEMPERATURE)
             humidity_entity = cfg.get(CONF_ROOM_HUMIDITY)
-            temperature_state = self.hass.states.get(temperature_entity) if temperature_entity else None
-            humidity_state = self.hass.states.get(humidity_entity) if humidity_entity else None
+            temperature_source = aggregate_states(self.hass, temperature_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")))
+            humidity_source = aggregate_states(self.hass, humidity_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean")))
+            temperature_state = _aggregate_state_proxy(self.hass, temperature_entity, temperature_source)
+            humidity_state = _aggregate_state_proxy(self.hass, humidity_entity, humidity_source)
             room_reference_temperature_entity = cfg.get(CONF_ROOM_REFERENCE_TEMPERATURE)
             room_reference_humidity_entity = cfg.get(CONF_ROOM_REFERENCE_HUMIDITY)
             default_reference_temperature_entity = room_reference_temperature_entity or outdoor_temp_entity
@@ -1135,7 +1167,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             reference_temperature_state = self.hass.states.get(reference_temperature_entity) if reference_temperature_entity else outdoor_temp_state
             reference_humidity_state = self.hass.states.get(reference_humidity_entity) if reference_humidity_entity else outdoor_humidity_state
-            t = _float_state(self.hass, temperature_entity) if temperature_entity else None; rh = _float_state(self.hass, humidity_entity) if humidity_entity else None
+            t = temperature_source.value; rh = humidity_source.value
             measurement_frame = build_measurement_frame(
                 now,
                 temperature_state=temperature_state,
@@ -1370,11 +1402,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 mem["session_learning_start_ah"] = mem["session_start_ah"]
                 mem["session_learning_source_ah"] = mem["session_start_source_ah"]
                 mem["session_start_temp"] = t
+                mem["session_start_humidity"] = rh
                 mem["session_result_base_ml"] = 0.0
                 mem["session_result_ml"] = 0.0
                 mem["close_notified"] = False
-                temperature_state = self.hass.states.get(temperature_entity) if temperature_entity else None
-                humidity_state = self.hass.states.get(humidity_entity) if humidity_entity else None
+                # Use the same aggregated/proxy states as the room calculation;
+                # list-valued multi-sensor configs are not valid hass.states keys.
                 temp_reported = _state_report_timestamp(temperature_state)
                 humidity_reported = _state_report_timestamp(humidity_state)
                 mem["session_last_temperature_update"] = temp_reported
@@ -1401,9 +1434,21 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         return False
                 mem["session_temperature_reports"] = int(_after_physical_open(temp_reported))
                 mem["session_humidity_reports"] = int(_after_physical_open(humidity_reported))
-                mem["session_fresh_measurements"] = min(
-                    int(mem["session_temperature_reports"]) + int(mem["session_humidity_reports"]), 2
-                )
+                # Track every logical climate sensor independently. Reports that
+                # already arrived after physical opening count even when a contact
+                # delay postponed creation of the FreshAirIQ session.
+                sensor_snapshot = climate_report_snapshot(self.hass, temperature_entity, humidity_entity)
+                sensor_counts: dict[str, int] = {}
+                for sensor_key, sensor_row in sensor_snapshot.items():
+                    count = 0
+                    for stamp in dict(sensor_row.get("reports") or {}).values():
+                        if _after_physical_open(stamp):
+                            count += 1
+                    sensor_counts[sensor_key] = min(count, 99)
+                mem["session_climate_report_state"] = sensor_snapshot
+                mem["session_climate_report_counts"] = sensor_counts
+                available_counts = [sensor_counts.get(k, 0) for k, row in sensor_snapshot.items() if row.get("available")]
+                mem["session_fresh_measurements"] = min(max(available_counts), 2) if available_counts else 0
                 self._clear_final_measurement_wait(mem, key)
                 mem["session_start_frame_quality"] = measurement_frame.get("quality")
                 mem["session_start_frame_skew_s"] = measurement_frame.get("skew_s")
@@ -1520,6 +1565,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     physical_started = _room_physical_opened_at(self.hass, cfg, contact_modes=stable_session_modes, contact_since=stable_since) or now
                     mem["session_physical_started"] = physical_started.isoformat()
                     mem["session_start_temp"] = t
+                    mem["session_start_humidity"] = rh
                     mem["session_start_ah"] = absolute_humidity(t, rh)
                     mem["session_start_source_ah"] = absolute_humidity(ref_t, ref_rh)
                     mem["session_start_source_temp"] = ref_t
@@ -1528,8 +1574,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_result_base_ml"] = 0.0
                     mem["session_result_ml"] = 0.0
                     mem["close_notified"] = False
-                    temperature_state = self.hass.states.get(temperature_entity) if temperature_entity else None
-                    humidity_state = self.hass.states.get(cfg[CONF_ROOM_HUMIDITY])
+                    # Keep the same aggregated/proxy states used for this calculation cycle.
+                    # For a legacy single sensor this is the original HA State object.
                     mem["session_last_temperature_update"] = _state_report_timestamp(temperature_state)
                     mem["session_last_humidity_update"] = _state_report_timestamp(humidity_state)
                     mem["session_open_temperature_reported_at"] = mem["session_last_temperature_update"]
@@ -1549,6 +1595,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_start_frame_max_age_s"] = measurement_frame.get("max_age_s")
                     mem["session_start_frame_learning_eligible"] = bool(measurement_frame.get("learning_eligible"))
                     mem["session_fresh_measurements"] = 0
+                    mem["session_climate_report_state"] = climate_report_snapshot(self.hass, temperature_entity, humidity_entity)
+                    mem["session_climate_report_counts"] = {key: 0 for key in mem["session_climate_report_state"]}
                     mem["session_moisture_source_detected"] = False
                     mem["session_reference_moisture_reversal"] = False
                     mem["session_cross_active"] = bool(cross)
@@ -1663,8 +1711,20 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     if inside_session:
                         mem[counter_key] = min(int(mem.get(counter_key, 0)) + 1, 99)
                     changed = True
-                combined_reports = int(mem.get("session_temperature_reports", 0)) + int(mem.get("session_humidity_reports", 0))
-                new_fresh = min(max(combined_reports, 0), 2)
+                current_sensor_snapshot = climate_report_snapshot(self.hass, temperature_entity, humidity_entity)
+                next_sensor_state, next_sensor_counts, new_fresh = advance_climate_report_activity(
+                    mem.get("session_climate_report_state"),
+                    mem.get("session_climate_report_counts"),
+                    current_sensor_snapshot,
+                    window_start=report_window_start,
+                    window_end=report_window_end,
+                )
+                if mem.get("session_climate_report_state") != next_sensor_state:
+                    mem["session_climate_report_state"] = next_sensor_state
+                    changed = True
+                if mem.get("session_climate_report_counts") != next_sensor_counts:
+                    mem["session_climate_report_counts"] = next_sensor_counts
+                    changed = True
                 if int(mem.get("session_fresh_measurements", 0)) != new_fresh:
                     mem["session_fresh_measurements"] = new_fresh
                     changed = True
@@ -2633,6 +2693,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     _room["passive_learned_exchange_rate_per_min"] = float(_mem["passive_learning_rate"])
                     changed = True
         if completed_sessions:
+            self.store.data["ventilation_log"] = append_ventilation_log(
+                self.store.data.get("ventilation_log", []), completed_sessions, now
+            )
+            changed = True
             if not isinstance(ventilation_group, dict) or not ventilation_group.get("active"):
                 starts = []
                 for event in completed_sessions:
@@ -3729,7 +3793,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "away_tracked_occupants": occupancy["away_adults"] + occupancy["away_children"], "unknown_tracked_occupants": occupancy["unknown_adults"] + occupancy["unknown_children"],
             "untracked_adults": occupancy["untracked_adults"], "untracked_children": occupancy["untracked_children"],
             "guest_adults": occupancy["guest_adults"], "guest_children": occupancy["guest_children"], "presence_confidence": occupancy["presence_confidence"],
-            "presence_explanation": occupancy.get("presence_explanation"), "pets_in_household": occupancy.get("pets_in_household", False),
+            "presence_explanation": occupancy.get("presence_explanation"), "presence_diagnostics": presence_diagnostics(options, self.hass.states.get), "pets_in_household": occupancy.get("pets_in_household", False),
             "soft_presence_score": occupancy.get("soft_presence_score", 0.0), "active_presence_sensors": occupancy.get("active_presence_sensors", []),
             "property_type": options.get("property_type", PROPERTY_HOUSE), "heating_system": options.get("heating_system"),
             "energy_price_per_kwh": energy_price_per_kwh_equivalent(options), "notifications_enabled": bool(options.get("notifications_enabled")), "estimated_moisture_generation_day_ml": current_daily_generation, "configured_moisture_generation_day_ml": expected_daily_generation, "estimated_generated_so_far_ml": expected_generated_so_far, "moisture_balance_today_ml": moisture_balance_today,
@@ -3761,7 +3825,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "grace_seconds": self._sensor_recovery_grace_seconds,
             },
         }
+        _core_finished = perf_counter()
+        self.runtime_health.observe_metric("coordinator_phase_core_ms", (_core_finished - _phase_started) * 1000.0, now, unit="ms")
+        _guardian_started = perf_counter()
         guardian = evaluate_guardian(data)
+        self.runtime_health.observe_metric("coordinator_phase_guardian_ms", (perf_counter() - _guardian_started) * 1000.0, now, unit="ms")
         # Guardian is observation-first. Only explicitly allow-listed, reversible
         # runtime repairs may mutate coordinator state. Never touch user config,
         # entity assignments or learned preferences here.
@@ -3782,11 +3850,18 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             guardian["auto_healed"] = []
             guardian["recovery_events"] = []
         data["guardian"] = guardian
-        changed = changed or await process_notifications(self.hass, self.store, data, options, now, completed_sessions)
+        _notification_started = perf_counter()
+        notification_changed = await process_notifications(self.hass, self.store, data, options, now, completed_sessions)
+        self.runtime_health.observe_metric("coordinator_phase_notifications_ms", (perf_counter() - _notification_started) * 1000.0, now, unit="ms")
+        changed = changed or notification_changed
+        _persistence_started = perf_counter()
         if changed: await self.store.async_save()
+        self.runtime_health.observe_metric("coordinator_phase_persistence_ms", (perf_counter() - _persistence_started) * 1000.0, now, unit="ms")
         data["runtime_health"] = self.runtime_health.snapshot
+        _diagnostics_started = perf_counter()
         self.diagnostics.update_configuration_snapshot(self.entry.data, options, data, now)
         await self.diagnostics.async_record(data, self.store.data, now, completed_sessions)
+        self.runtime_health.observe_metric("coordinator_phase_diagnostics_ms", (perf_counter() - _diagnostics_started) * 1000.0, now, unit="ms")
         data["diagnostics"] = self.diagnostics.status
         data["diagnostics_upload"] = self.telemetry.status
         self._first_update = False
@@ -3808,6 +3883,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "session_last_eligible_ah": None,
             "session_last_eligible_at": None,
             "session_start_temp": None,
+            "session_start_humidity": None,
             "session_result_base_ml": 0.0,
             "close_notified": False,
             "session_fresh_measurements": 0,
@@ -3932,6 +4008,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "validation_duration_min": None,
             "validation_temp_delta_c": None,
             "temp_delta_c": None,
+            "start_temperature_c": finite_float(mem.get("session_start_temp")),
+            "end_temperature_c": None,
+            "start_humidity_percent": finite_float(mem.get("session_start_humidity")),
+            "end_humidity_percent": None,
+            "start_absolute_humidity_g_m3": finite_float(mem.get("session_start_ah")),
+            "end_absolute_humidity_g_m3": None,
             "energy_kwh": None,
             "cost": None,
             "cross_ventilation": cross_seconds > 0.0,
@@ -4044,6 +4126,25 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             measurement_started = now
         elapsed = max(0.0, (now - started).total_seconds() / 60.0)
         measurement_elapsed = max(0.0, (now - measurement_started).total_seconds() / 60.0)
+
+        # Keep live room climate independent from the session evidence gate. For
+        # learning/finalisation, however, only logical sensors that produced at
+        # least one fresh in-session report may influence the end measurement.
+        # One sensor with >=2 reports is sufficient to open the room learning gate.
+        _temperature_cfg = cfg.get(CONF_ROOM_TEMPERATURE)
+        _humidity_cfg = cfg.get(CONF_ROOM_HUMIDITY)
+        _snapshot = climate_report_snapshot(self.hass, _temperature_cfg, _humidity_cfg)
+        _qualified_t, _qualified_h = participating_climate_entities(
+            _temperature_cfg, _humidity_cfg, _snapshot, mem.get("session_climate_report_counts") or {}, min_reports=1
+        )
+        if _qualified_t:
+            _session_t = aggregate_states(self.hass, _qualified_t, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean"))).value
+            if _session_t is not None:
+                t = _session_t
+        if _qualified_h:
+            _session_rh = aggregate_states(self.hass, _qualified_h, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean"))).value
+            if _session_rh is not None:
+                rh = _session_rh
         end_ah = absolute_humidity(t, rh) if -10 < t < 50 and 5 <= rh <= 100 else 0.0
         session_quality = session_measurement_quality(
             int(mem.get("session_fresh_measurements", 0)),
@@ -4345,6 +4446,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "validation_duration_min": round(validation_elapsed, 3) if validation_started is not None else None,
             "validation_temp_delta_c": round(validation_temp_delta, 2) if validation_temp_delta is not None else None,
             "temp_delta_c": temp_delta, "energy_kwh": purchased, "cost": cost,
+            "start_temperature_c": finite_float(mem.get("session_start_temp")),
+            "end_temperature_c": t,
+            "start_humidity_percent": finite_float(mem.get("session_start_humidity")),
+            "end_humidity_percent": rh,
+            "start_absolute_humidity_g_m3": finite_float(mem.get("session_start_ah")),
+            "end_absolute_humidity_g_m3": end_ah,
             "cross_ventilation": cross_seconds > 0.0,
             "cross_ventilation_minutes": round(cross_seconds / 60.0, 2),
             "cross_ventilation_percent": round(cross_ratio * 100.0, 1),

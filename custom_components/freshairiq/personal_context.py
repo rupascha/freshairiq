@@ -11,6 +11,8 @@ import json
 from math import isfinite
 from typing import Any
 
+from .presence import normalize_presence_state
+
 
 def _f(value: Any, default: float = 0.0) -> float:
     try:
@@ -104,15 +106,7 @@ def build_resident_context(
             state = state_source.get(entity_id)
         except Exception:
             state = None
-        if state is None:
-            return "unknown"
-        raw = getattr(state, "state", state)
-        text = str(raw or "").lower()
-        if text == "home":
-            return "home"
-        if text in {"not_home", "away"}:
-            return "away"
-        return "unknown"
+        return normalize_presence_state(entity_id, state)
 
     adults = max(0, int(_f(options.get("adult_occupants"), 0)))
     children = max(0, int(_f(options.get("child_occupants"), 0)))

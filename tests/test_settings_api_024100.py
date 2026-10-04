@@ -183,7 +183,7 @@ def test_entry_payload_exposes_only_supported_options_and_notify_services():
         def async_services(self):
             return {"notify": {"mobile_app_b": object(), "mobile_app_a": object()}}
 
-    hass = types.SimpleNamespace(services=Services())
+    hass = types.SimpleNamespace(services=Services(), states=types.SimpleNamespace(async_all=lambda: [types.SimpleNamespace(entity_id="notify.sweethome"), types.SimpleNamespace(entity_id="sensor.temp")]))
     entry = types.SimpleNamespace(
         entry_id="id1", title="FreshAirIQ", data={c.CONF_ROOMS: []},
         options={"statistics_days": 90, "internal_secret": "no"},
@@ -192,3 +192,4 @@ def test_entry_payload_exposes_only_supported_options_and_notify_services():
     assert payload["options"]["statistics_days"] == 90
     assert "internal_secret" not in payload["options"]
     assert payload["notify_services"] == ["mobile_app_a", "mobile_app_b"]
+    assert payload["notify_entities"] == ["notify.sweethome"]

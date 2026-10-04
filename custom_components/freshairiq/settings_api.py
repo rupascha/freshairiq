@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from .config_flow import _normalise_legacy_entry_data, _normalise_room
 from .settings_contract import NATIVE_OPTION_KEYS
 from .runtime import get_runtime_coordinator
+from .notifications import _all_notification_targets, _send_targets
 from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
 from .typing import FreshAirIQConfigEntry
 from .validation import option_relationship_message_de
@@ -360,6 +361,11 @@ def _entry_payload(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> dict[st
     data[CONF_ROOMS] = _sorted_rooms(list(data.get(CONF_ROOMS, [])))
     options = {**DEFAULT_OPTIONS, **dict(entry.options)}
     notify_services = sorted((hass.services.async_services().get("notify") or {}).keys())
+    states = getattr(hass, "states", None)
+    notify_entities = sorted(
+        state.entity_id for state in (states.async_all() if states is not None and hasattr(states, "async_all") else [])
+        if str(getattr(state, "entity_id", "")).startswith("notify.")
+    )
     return {
         "version": VERSION,
         "entry_id": entry.entry_id,
@@ -373,6 +379,7 @@ def _entry_payload(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> dict[st
             "data_keys": sorted(_DATA_KEYS),
         },
         "notify_services": notify_services,
+        "notify_entities": notify_entities,
     }
 
 
@@ -568,6 +575,17 @@ class FreshAirIQSettingsView(HomeAssistantView):
                 # not add/remove entities and therefore does not need a config
                 # entry reload.
                 await _apply_runtime_update(hass, entry)
+            elif action == "test_notification":
+                options = {**DEFAULT_OPTIONS, **dict(entry.options)}
+                targets = _all_notification_targets(options)
+                if not targets:
+                    raise ValueError("Es ist noch kein Benachrichtigungsziel konfiguriert.")
+                sent = await _send_targets(
+                    hass, targets, "FreshAirIQ · Test",
+                    "Test erfolgreich: FreshAirIQ kann dieses Benachrichtigungsziel erreichen.",
+                )
+                if not sent:
+                    raise ValueError("Keines der konfigurierten Benachrichtigungsziele ist in Home Assistant verfügbar.")
             elif action == "reset_defaults":
                 hass.config_entries.async_update_entry(entry, options=deepcopy(DEFAULT_OPTIONS))
                 await _apply_runtime_update(hass, entry, rebuild_listeners=True)
@@ -583,12 +601,12 @@ class FreshAirIQSettingsView(HomeAssistantView):
             if locals().get("action") == "upsert_room":
                 raw_room = locals().get("raw")
                 trace_room_creation(hass, entry, source="dashboard", stage="failed", room_key=(raw_room or {}).get("key") if isinstance(raw_room, dict) else None, outcome="rejected", error_type=type(err).__name__)
-            return self.json({"error": str(err)}, status_code=400)
+            return self.json({"error": str(err), "error_code": "FAIQ-SETTINGS-VALIDATION-001"}, status_code=400)
         except Exception as err:  # Keep frontend error reporting useful without leaking traceback.
             if locals().get("action") == "upsert_room":
                 raw_room = locals().get("raw")
                 trace_room_creation(hass, entry, source="dashboard", stage="failed", room_key=(raw_room or {}).get("key") if isinstance(raw_room, dict) else None, outcome="exception", error_type=type(err).__name__)
-            return self.json({"error": f"Einstellung konnte nicht gespeichert werden: {err}"}, status_code=500)
+            return self.json({"error": f"Einstellung konnte nicht gespeichert werden: {err}", "error_code": "FAIQ-SETTINGS-SAVE-001", "error_type": type(err).__name__}, status_code=500)
 
         # Return the canonical state after each write. The frontend can update its
         # controls immediately after either the lightweight runtime refresh or a

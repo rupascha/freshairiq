@@ -51,6 +51,7 @@ from .coordinator import FreshAirIQCoordinator
 from .storage import LearningStore
 from .diagnostics import FreshAirIQDiagnosticsView, FreshAirIQSupportDiagnosticsView
 from .settings_api import FreshAirIQSettingsView, FreshAirIQFeedbackView
+from .ventilation_log_api import FreshAirIQVentilationLogView
 from .validation import RELATION_OPTION_KEYS, repair_option_relationships
 from .runtime import clear_runtime_coordinator, get_runtime_coordinator, iter_runtime_coordinators, set_runtime_coordinator
 from .intervention import executable_intervention
@@ -213,6 +214,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     if not hass.data.get(f"{DOMAIN}_settings_view_registered"):
         hass.http.register_view(FreshAirIQSettingsView())
         hass.http.register_view(FreshAirIQFeedbackView())
+        hass.http.register_view(FreshAirIQVentilationLogView())
         hass.data[f"{DOMAIN}_settings_view_registered"] = True
     if not hass.services.has_service(DOMAIN, "execute_intervention"):
         hass.services.async_register(

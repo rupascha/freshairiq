@@ -76,6 +76,7 @@ def _room_defaults() -> dict[str, Any]:
         "session_learning_start_ah": None,
         "session_learning_source_ah": None,
         "session_start_temp": None,
+        "session_start_humidity": None,
         "session_result_base_ml": 0.0,
         "session_result_ml": 0.0,
         "close_notified": False,
@@ -292,6 +293,7 @@ class LearningStore:
             "night_last_water_ml": None,
             "night_observed_dates": [],
             "notifications": {},
+            "notification_diagnostics": [],
             "last_house_status": None,
             "last_night_notification_date": None,
             "last_ventilation": None,
@@ -329,6 +331,12 @@ class LearningStore:
         self.data.setdefault("history", {})
         self.data.setdefault("temperature_points", [])
         self.data.setdefault("notifications", {})
+        self.data.setdefault("notification_diagnostics", [])
+        if not isinstance(self.data.get("notification_diagnostics"), list):
+            self.data["notification_diagnostics"] = []
+        self.data["notification_diagnostics"] = [
+            item for item in self.data["notification_diagnostics"] if isinstance(item, dict)
+        ][-50:]
         self.data.setdefault("night_model_ml_h", None)
         self.data.setdefault("night_model_samples", 0)
         self.data.setdefault("night_observed_dates", [])

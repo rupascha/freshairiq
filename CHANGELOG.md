@@ -1,3 +1,63 @@
+## 0.25.3
+- Screenshot-safe support errors: runtime incidents and user-facing failures now expose stable `FAIQ-*` codes so users can post a screenshot in the forum when a diagnostic file cannot be sent.
+- Details view includes a compact privacy-safe error-help panel; settings, diagnostic upload/export, ventilation PDF export, panel-loader and frontend-loader failures show traceable codes without entity IDs, room names or resident names.
+- Backend API failure paths for settings, diagnostics/support and ventilation-PDF generation return stable error codes; unexpected PDF-generation failures are also recorded in runtime health.
+- Local ventilation log with period-based PDF export for readable, local ventilation evidence.
+- Multi-sensor learning hotfix: every currently available logical room climate sensor must contribute two fresh reports during the ventilation before the strict measurement/learning gate opens; 2x temperature, 2x humidity, or 1x each are accepted.
+- A failed/unavailable redundant climate sensor is excluded from that gate, so remaining healthy sensors continue to operate and the room does not fail solely because one secondary sensor drops out.
+- Legacy single-sensor rooms retain the established two-report contract.
+- Dark-surface theme isolation: FreshAirIQ now owns primary/secondary text CSS variables on its dark card and details dialog, preventing light Home Assistant themes from injecting dark text onto dark surfaces.
+- Preserves semantic status/accent colors and all v0.25.2.38 multi-sensor compatibility fixes.
+
+## 0.25.2.38
+
+- HOTFIX: preserves legacy single-sensor selections in the dashboard multi-select editor.
+- HOTFIX: repair checks correctly normalize single and multiple room climate sensor references.
+- HOTFIX: sensor recovery treats redundant room climate sensors as a logical group; one healthy sensor keeps the source available.
+- Adds regressions for all three multi-sensor compatibility contracts.
+
+## 0.25.2.37
+
+- Per-room aggregation for multiple temperature and humidity sensors: arithmetic mean, maximum or minimum.
+- Temperature and humidity aggregation can be selected independently for every room.
+- Existing single-sensor rooms remain unchanged; existing multi-sensor rooms retain arithmetic mean by default.
+- Native room editing retains multi-select sensor support.
+
+## 0.25.2.36
+
+- Feature: rooms can use multiple temperature and humidity sensors.
+- Compatibility: existing single-sensor room configurations remain valid and retain the exact previous value path.
+- Aggregation: multiple currently valid sensors use the arithmetic mean; unavailable secondary sensors do not disable a room while at least one configured source remains valid.
+- Freshness remains conservative for multi-sensor inputs by using the oldest contributing report timestamp.
+
+## 0.25.2.35
+
+- Hotfix: unified HA presence normalization and privacy-safe tracker diagnostics.
+- Unknown/custom device-tracker states no longer silently become away.
+
+## 0.25.2.34
+- Benachrichtigungen unterstützen zusätzlich moderne Home-Assistant-Notify-Entitäten über `notify.send_message` mit explizitem `target.entity_id`.
+- Die Dashboard-Einstellungen zeigen registrierte Notify-Entitäten neben Legacy-Notify-Diensten an.
+- Neuer manueller „Test senden“-Pfad prüft die konfigurierten Ziele unabhängig von Cooldown und Nachtunterdrückung.
+- Bestehende Mobile-App-/Legacy-Notify-Ziele und die Notification-Diagnose bleiben unverändert kompatibel.
+
+## 0.25.2.33
+- Diagnostics precision hotfix: phase-specific coordinator runtime metrics identify whether latency originates in core calculation, Guardian, notifications, persistence, or diagnostics.
+- Sensor-quality diagnostics now include privacy-safe reason counts, age buckets, and recovery-state aggregates.
+- Guardian decision-consistency incidents now include privacy-safe mismatch counters. No recommendation logic was changed because the latest available diagnostics no longer show an active FAIQ-GUARDIAN-DECISION-001 incident.
+
+## 0.25.2.32
+- Hotfix: privacy-safe notification delivery diagnostics are persisted and included in manual diagnostic exports (status, counts, suppression/failure class; no target IDs or message content).
+
+## 0.25.2.31
+
+- Hotfix: notification processing is now always executed even when the coordinator already has other state changes to persist. Previously Python short-circuit evaluation could skip the complete notification pipeline on such cycles.
+- Keeps the 0.25.2.30 dark-surface contrast fix unchanged.
+
+## 0.25.2.30
+- Hotfix: dark FreshAirIQ-owned dashboard and dialog surfaces now define a stable light foreground so buttons and Intelligence/detail text cannot inherit dark text from light Home Assistant themes.
+- Regression coverage extended across main actions, dialog controls and Intelligence learning controls.
+
 ## 0.25.2.29
 
 - Hotfix: deutsche Drei-Zustands-Helfer (`Offen` / `Gekippt` / `Geschlossen`) vollständig normalisiert.

@@ -11,6 +11,61 @@ from collections.abc import Callable
 from typing import Any
 
 _UNKNOWN_STATES = {"", "unknown", "unavailable", "none", "null"}
+_AWAY_STATES = {"not_home", "away"}
+
+
+def normalize_presence_state(entity_id: str | None, value: Any) -> str:
+    """Normalize a HA primary presence entity without guessing custom states.
+
+    ``person`` entities use zone names while away from home, so every known
+    non-home person state is safely away. ``device_tracker`` integrations may
+    expose integration-specific states; only HA's canonical away states are
+    treated as away and unknown custom states stay unknown.
+    """
+    if value is None:
+        return "unknown"
+    state = str(getattr(value, "state", value) or "").strip().lower()
+    if state in _UNKNOWN_STATES:
+        return "unknown"
+    if state == "home":
+        return "home"
+    domain = str(entity_id or "").partition(".")[0].lower()
+    if domain == "person" and hasattr(value, "attributes"):
+        # Real HA person State objects can expose a zone name as their state.
+        return "away"
+    if state in _AWAY_STATES:
+        return "away"
+    return "unknown"
+
+
+def presence_diagnostics(options: dict[str, Any], state_getter: Callable[[str], Any]) -> dict[str, Any]:
+    """Return privacy-safe aggregate evidence for configured primary trackers."""
+    entities = _unique_entities([
+        *(options.get("adult_presence_entities", []) or []),
+        *(options.get("child_presence_entities", []) or []),
+    ])
+    counts = {"home": 0, "away": 0, "unknown": 0}
+    domains: dict[str, int] = {}
+    raw_classes = {"home": 0, "canonical_away": 0, "unavailable": 0, "custom": 0, "missing": 0}
+    for entity_id in entities:
+        value = state_getter(entity_id)
+        kind = normalize_presence_state(entity_id, value)
+        counts[kind] += 1
+        domain = entity_id.partition(".")[0] or "other"
+        domains[domain] = domains.get(domain, 0) + 1
+        if value is None:
+            raw_classes["missing"] += 1
+            continue
+        raw = str(getattr(value, "state", value) or "").strip().lower()
+        if raw == "home": raw_classes["home"] += 1
+        elif raw in _AWAY_STATES: raw_classes["canonical_away"] += 1
+        elif raw in _UNKNOWN_STATES: raw_classes["unavailable"] += 1
+        else: raw_classes["custom"] += 1
+    return {
+        "schema_version": 1, "configured_tracker_count": len(entities),
+        "normalized": counts, "domains": domains, "raw_state_classes": raw_classes,
+        "privacy": "Aggregate counts only; no entity IDs, raw custom state values or resident names are exported.",
+    }
 
 
 def _unique_entities(values: Any) -> list[str]:
@@ -27,7 +82,7 @@ def _unique_entities(values: Any) -> list[str]:
 
 
 def _state_kind(value: Any) -> str:
-    """Map HA presence state to ``home`` / ``away`` / ``unknown``."""
+    """Legacy value-only helper retained for compatibility with older callers/tests."""
     if value is None:
         return "unknown"
     state = str(getattr(value, "state", value) or "").strip().lower()
@@ -35,7 +90,6 @@ def _state_kind(value: Any) -> str:
         return "unknown"
     if state == "home":
         return "home"
-    # person/device_tracker states other than home represent a zone or away.
     return "away"
 
 
@@ -61,7 +115,7 @@ def resolve_occupancy(
     child_entities = _unique_entities(options.get("child_presence_entities", []))[:configured_children]
 
     def counts(entities: list[str]) -> tuple[int, int, int]:
-        kinds = [_state_kind(state_getter(entity_id)) for entity_id in entities]
+        kinds = [normalize_presence_state(entity_id, state_getter(entity_id)) for entity_id in entities]
         return kinds.count("home"), kinds.count("away"), kinds.count("unknown")
 
     ah, aa, au = counts(adult_entities)

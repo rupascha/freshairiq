@@ -285,6 +285,14 @@
         "percent_room_water": "Prozent der Raum-Wassermenge",
         "fixed_ml": "Fester ml-Wert"
       }
+    },
+    "climate_aggregation": {
+      "options": {
+        "mean": "Mittelwert (empfohlen)",
+        "max": "Maximalwert",
+        "min": "Minimalwert",
+        "median": "Median (robust gegen Ausreißer)"
+      }
     }
   },
   "options": {
@@ -456,14 +464,14 @@
             "name": "Sensoren & Fenster",
             "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.",
             "data": {
-              "temperature": "Temperatursensor",
-              "humidity": "Feuchtesensor",
+              "temperature": "Temperatursensor(en)",
+              "humidity": "Feuchtigkeitssensor(en)",
               "contacts": "Fenster-/Türkontakte",
               "contact_mode": "Kontaktlogik"
             },
             "data_description": {
-              "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
-              "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
+              "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
+              "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
@@ -743,14 +751,14 @@
             "name": "Sensoren & Fenster",
             "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.",
             "data": {
-              "temperature": "Temperatursensor",
-              "humidity": "Feuchtesensor",
+              "temperature": "Temperatursensor(en)",
+              "humidity": "Feuchtigkeitssensor(en)",
               "contacts": "Fenster-/Türkontakte",
               "contact_mode": "Kontaktlogik"
             },
             "data_description": {
-              "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
-              "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
+              "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
+              "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
               "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
             }
@@ -1909,7 +1917,7 @@
       },
       "import_ha_room_details": {
         "title": "Importierten Raum vervollständigen",
-        "description": "Home Assistant hat Name und Etage für {room_name} geliefert. Ergänze jetzt nur die FreshAirIQ-spezifischen Raumdaten. Einschließlich dieses Raums sind noch {remaining} ausgewählte Räume offen.",
+        "description": "Vervollständige den importierten Raum „{room_name}“. Erkannte Temperatur- und Feuchtigkeitssensoren sind bereits gemeinsam vorausgewählt. Du kannst jeden Sensor vor dem Speichern entfernen oder weitere hinzufügen. Noch {remaining} Raum/Räume in der Importliste.",
         "data": {
           "name": "Raumname",
           "temperature": "Temperatursensor",
@@ -2537,16 +2545,20 @@
               "name": "Sensoren & Fenster",
               "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.",
               "data": {
-                "temperature": "Temperatursensor",
-                "humidity": "Feuchtesensor",
+                "temperature": "Temperatursensor(en)",
+                "humidity": "Feuchtigkeitssensor(en)",
                 "contacts": "Fenster-/Türkontakte",
-                "contact_mode": "Kontaktlogik"
+                "contact_mode": "Kontaktlogik",
+                "temperature_aggregation": "Temperatur-Auswertung",
+                "humidity_aggregation": "Feuchte-Auswertung"
               },
               "data_description": {
-                "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
-                "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
+                "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
+                "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+                "temperature_aggregation": "Nur bei mehreren gültigen Temperatursensoren relevant. Wähle arithmetischen Mittelwert, Maximalwert oder Minimalwert.",
+                "humidity_aggregation": "Nur bei mehreren gültigen Feuchtigkeitssensoren relevant. Wähle arithmetischen Mittelwert, Maximalwert oder Minimalwert."
               }
             },
             "geometry": {
@@ -2725,16 +2737,20 @@
               "name": "Sensoren & Fenster",
               "description": "Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.",
               "data": {
-                "temperature": "Temperatursensor",
-                "humidity": "Feuchtesensor",
+                "temperature": "Temperatursensor(en)",
+                "humidity": "Feuchtigkeitssensor(en)",
                 "contacts": "Fenster-/Türkontakte",
-                "contact_mode": "Kontaktlogik"
+                "contact_mode": "Kontaktlogik",
+                "temperature_aggregation": "Temperatur-Auswertung",
+                "humidity_aggregation": "Feuchte-Auswertung"
               },
               "data_description": {
-                "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
-                "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
+                "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
+                "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+                "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+                "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
               }
             },
             "geometry": {

@@ -468,6 +468,7 @@ class FreshAirIQDiagnosticsRecorder:
         self._configuration_changed = False
         self._legacy_compaction_mtime_ns: dict[str, int] = {}
         self._last_export_client: dict[str, Any] = {}
+        self._notification_delivery_snapshot: list[dict[str, Any]] = []
         self._field_test_storage_lock = Lock()
 
     @property
@@ -846,11 +847,31 @@ class FreshAirIQDiagnosticsRecorder:
         # sufficient to replay the sensor-safety branch without exporting a
         # room key, room label or Home Assistant entity ID.
         issue_quality_counts: dict[str, int] = {}
+        issue_reason_counts: dict[str, int] = {}
+        issue_age_buckets: dict[str, int] = {}
         for room in rooms:
             if room.get("data_quality") == "ok":
                 continue
             quality = str(room.get("data_quality") or "unknown").strip().lower()[:32]
             issue_quality_counts[quality] = issue_quality_counts.get(quality, 0) + 1
+            reason = str(room.get("measurement_frame_reason") or "unspecified").strip().lower()[:64]
+            # Keep only a bounded technical class; never export room/entity identity here.
+            reason = "_".join(part for part in reason.replace("-", "_").split() if part) or "unspecified"
+            issue_reason_counts[reason] = issue_reason_counts.get(reason, 0) + 1
+            ages = [room.get("frame_age_temp_s"), room.get("frame_age_humidity_s")]
+            numeric_ages = []
+            for value in ages:
+                try:
+                    if value is not None:
+                        numeric_ages.append(max(float(value), 0.0))
+                except (TypeError, ValueError, OverflowError):
+                    pass
+            if not numeric_ages:
+                bucket = "unknown"
+            else:
+                age = max(numeric_ages)
+                bucket = "lt_60s" if age < 60 else "60_300s" if age < 300 else "gt_300s"
+            issue_age_buckets[bucket] = issue_age_buckets.get(bucket, 0) + 1
         return {
             "rooms_total": len(rooms),
             "rooms_ok": len(valid),
@@ -859,6 +880,10 @@ class FreshAirIQDiagnosticsRecorder:
             "rooms_all_total": len(all_rooms),
             "rooms_monitor_only": len(monitor_only),
             "issue_quality_counts": dict(sorted(issue_quality_counts.items())),
+            "issue_reason_counts": dict(sorted(issue_reason_counts.items())),
+            "issue_age_buckets": dict(sorted(issue_age_buckets.items())),
+            "sensor_recovery_active": bool((data.get("sensor_recovery") or {}).get("active")) if isinstance(data.get("sensor_recovery"), dict) else False,
+            "sensor_recovery_unavailable_sources": int((data.get("sensor_recovery") or {}).get("required_sources_unavailable") or 0) if isinstance(data.get("sensor_recovery"), dict) else 0,
             "outdoor_data_quality": _json_safe(data.get("outdoor_data_quality")),
             "issues": issues,
         }
@@ -968,11 +993,18 @@ class FreshAirIQDiagnosticsRecorder:
             "sensor_quality": sensor_quality,
             "support_incident": _json_safe(support_incident),
             "runtime_health": _json_safe(data.get("runtime_health") or {}),
+            "presence_tracking": _json_safe(data.get("presence_diagnostics") or {}),
             "guardian": _json_safe(data.get("guardian") or {}),
             "recommendation_tracking": {
                 "active_advice": _json_safe(store_data.get("iq_active_advice")),
                 "followed_session_count": sum(1 for item in completed_sessions if item.get("recommendation_followed")),
                 "completed_session_count": len(completed_sessions),
+            },
+            "notification_delivery": {
+                "trace_schema_version": 1,
+                "recent_attempts": _json_safe((store_data.get("notification_diagnostics") or [])[-50:])
+                if isinstance(store_data.get("notification_diagnostics"), list) else [],
+                "privacy": "No notify entity IDs, service names, titles, messages or resident names are exported.",
             },
             "heating_model": {
                 "system": _json_safe(data.get("heating_system")),
@@ -1039,6 +1071,7 @@ class FreshAirIQDiagnosticsRecorder:
             },
             "sensor_quality": self._sensor_quality_summary(data),
             "runtime_health": _json_safe(data.get("runtime_health") or {}),
+            "presence_tracking": _json_safe(data.get("presence_diagnostics") or {}),
             "guardian": _json_safe(data.get("guardian") or {}),
         }
 
@@ -1106,6 +1139,8 @@ class FreshAirIQDiagnosticsRecorder:
     ) -> bool:
         """Record compact trends and preserve meaningful events in full."""
         completed_sessions = completed_sessions or []
+        trace = store_data.get("notification_diagnostics")
+        self._notification_delivery_snapshot = _json_safe(trace[-50:]) if isinstance(trace, list) else []
         signature = self._signature(data)
         window_events = self._window_events(data, now)
         active_ventilation = self._is_active_ventilation(data)
@@ -1589,6 +1624,11 @@ class FreshAirIQDiagnosticsRecorder:
                 "decision_state_changes_compacted": True,
                 "legacy_routine_records_compacted_on_export": True,
             },
+            "notification_delivery": {
+                "trace_schema_version": 1,
+                "recent_attempts": _json_safe(self._notification_delivery_snapshot),
+                "privacy": "No notify entity IDs, service names, titles, messages or resident names are exported.",
+            },
             "read_errors": errors,
             "records": records,
         }
@@ -1612,7 +1652,7 @@ class FreshAirIQDiagnosticsView(HomeAssistantView):
         hass: HomeAssistant = request.app["hass"]
         recorder = self._recorder(hass)
         if recorder is None:
-            return self.json({"error": "FreshAirIQ diagnostics are unavailable"}, status_code=503)
+            return self.json({"error": "FreshAirIQ diagnostics are unavailable", "error_code": "FAIQ-DIAG-RUNTIME-001"}, status_code=503)
         return self.json(await recorder.async_export())
 
     async def post(self, request):
@@ -1620,13 +1660,13 @@ class FreshAirIQDiagnosticsView(HomeAssistantView):
         hass: HomeAssistant = request.app["hass"]
         recorder = self._recorder(hass)
         if recorder is None:
-            return self.json({"error": "FreshAirIQ diagnostics are unavailable"}, status_code=503)
+            return self.json({"error": "FreshAirIQ diagnostics are unavailable", "error_code": "FAIQ-DIAG-RUNTIME-001"}, status_code=503)
         try:
             payload = await request.json()
         except Exception:
-            return self.json({"registered": False, "reason": "invalid_json"}, status_code=400)
+            return self.json({"registered": False, "reason": "invalid_json", "error_code": "FAIQ-DIAG-REQUEST-001"}, status_code=400)
         if not isinstance(payload, dict):
-            return self.json({"registered": False, "reason": "invalid_payload"}, status_code=400)
+            return self.json({"registered": False, "reason": "invalid_payload", "error_code": "FAIQ-DIAG-REQUEST-002"}, status_code=400)
         return self.json(await recorder.async_register_client(payload))
 
 
@@ -1641,19 +1681,19 @@ class FreshAirIQSupportDiagnosticsView(HomeAssistantView):
         hass: HomeAssistant = request.app["hass"]
         coordinators = iter_runtime_coordinators(hass)
         if not coordinators:
-            return self.json({"error": "FreshAirIQ diagnostics are unavailable"}, status_code=503)
+            return self.json({"error": "FreshAirIQ diagnostics are unavailable", "error_code": "FAIQ-DIAG-RUNTIME-001"}, status_code=503)
         coordinator = coordinators[0]
         try:
             payload = await request.json()
         except Exception:
-            return self.json({"error": "invalid_json"}, status_code=400)
+            return self.json({"error": "invalid_json", "error_code": "FAIQ-SUPPORT-REQUEST-001"}, status_code=400)
         if not isinstance(payload, dict):
-            return self.json({"error": "invalid_payload"}, status_code=400)
+            return self.json({"error": "invalid_payload", "error_code": "FAIQ-SUPPORT-REQUEST-002"}, status_code=400)
         message = str(payload.get("message") or "").strip()
         try:
             result = await coordinator.telemetry.async_submit_support_diagnostics(message)
         except ValueError as err:
-            return self.json({"error": str(err)}, status_code=400)
+            return self.json({"error": str(err), "error_code": "FAIQ-SUPPORT-VALIDATION-001"}, status_code=400)
         except Exception as err:  # Do not expose traceback or diagnostic contents to the browser.
             raw = str(err)
             if isinstance(err, TimeoutError):
@@ -1664,6 +1704,6 @@ class FreshAirIQSupportDiagnosticsView(HomeAssistantView):
                 detail = raw
             else:
                 detail = type(err).__name__
-            return self.json({"error": "support_upload_failed", "detail": detail}, status_code=502)
+            return self.json({"error": "support_upload_failed", "detail": detail, "error_code": "FAIQ-SUPPORT-UPLOAD-001"}, status_code=502)
         status = 429 if result.get("reason") == "cooldown" else 200
         return self.json(result, status_code=status)

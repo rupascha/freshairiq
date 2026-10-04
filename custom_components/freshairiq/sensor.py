@@ -253,6 +253,7 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
                 "learning_components": self.coordinator.data.get("learning_components", {}),
                 "diagnostics": self.coordinator.data.get("diagnostics", {}),
                 "diagnostics_upload": self.coordinator.data.get("diagnostics_upload", {}),
+                "support_status": self.coordinator.runtime_health.user_summary,
                 "version": VERSION,
             }
             self.coordinator.runtime_health.observe_attribute_payload(

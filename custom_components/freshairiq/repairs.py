@@ -14,6 +14,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 
 from .typing import FreshAirIQConfigEntry
+from .climate_sources import entity_ids
 from .const import (
     CONF_OUTDOOR_HUMIDITY,
     CONF_OUTDOOR_TEMPERATURE,
@@ -52,11 +53,9 @@ def _required_entity_references(entry: FreshAirIQConfigEntry) -> list[tuple[str,
         if not isinstance(room, Mapping) or not room.get(CONF_ROOM_INCLUDE_CALCULATIONS, True):
             continue
         room_name = str(room.get("name") or room.get("key") or "Raum")
-        temperature = str(room.get(CONF_ROOM_TEMPERATURE) or "").strip()
-        humidity = str(room.get(CONF_ROOM_HUMIDITY) or "").strip()
-        if temperature:
+        for temperature in entity_ids(room.get(CONF_ROOM_TEMPERATURE)):
             refs.append((temperature, f"{room_name}: Temperatur"))
-        if humidity:
+        for humidity in entity_ids(room.get(CONF_ROOM_HUMIDITY)):
             refs.append((humidity, f"{room_name}: Luftfeuchte"))
         contacts = room.get(CONF_ROOM_CONTACTS) or []
         if isinstance(contacts, str):

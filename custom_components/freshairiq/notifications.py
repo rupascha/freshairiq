@@ -23,6 +23,39 @@ def _target_service(target: str) -> str:
     return target.split(".", 1)[1] if target.startswith("notify.") else target
 
 
+def _target_entity(target: str) -> str | None:
+    """Return a notify entity target encoded by the settings contract."""
+    value = str(target or "").strip()
+    if value.startswith("entity:notify."):
+        return value.split(":", 1)[1]
+    return None
+
+
+def _target_available(hass: HomeAssistant, target: str) -> bool:
+    entity_id = _target_entity(target)
+    if entity_id is not None:
+        return bool(hass.services.has_service("notify", "send_message") and hass.states.get(entity_id) is not None)
+    return hass.services.has_service("notify", _target_service(str(target)))
+
+
+async def _send_target(hass: HomeAssistant, target: str, title: str, message: str) -> bool:
+    """Send through either a legacy notify service or a modern notify entity."""
+    entity_id = _target_entity(target)
+    if entity_id is not None:
+        if not _target_available(hass, target):
+            return False
+        data = {"message": message, "target": {"entity_id": entity_id}}
+        if title:
+            data["title"] = title
+        await hass.services.async_call("notify", "send_message", data, blocking=False)
+        return True
+    service = _target_service(str(target))
+    if not hass.services.has_service("notify", service):
+        return False
+    await hass.services.async_call("notify", service, {"title": title, "message": message}, blocking=False)
+    return True
+
+
 def _allowed_room(room_key: str, options: dict[str, Any]) -> bool:
     selected = options.get("notification_room_keys") or []
     return not selected or room_key in selected
@@ -76,6 +109,43 @@ def _has_notification_targets(options: dict[str, Any]) -> bool:
     return bool(_all_notification_targets(options))
 
 
+def _record_notification_diagnostic(
+    store, *, now: datetime, event: str, scope: str, status: str,
+    target_count: int, available_service_count: int, reason: str | None = None,
+    exception_type: str | None = None,
+) -> None:
+    """Persist a bounded privacy-safe notification delivery trace.
+
+    Never stores notify entity IDs, service names, titles, messages, resident names
+    or other user content. The trace exists so a later manual diagnostic export can
+    distinguish suppression/configuration problems from HA notify-service failures.
+    """
+    trace = store.data.setdefault("notification_diagnostics", [])
+    if not isinstance(trace, list):
+        trace = []
+        store.data["notification_diagnostics"] = trace
+    row = {
+        "timestamp": now.isoformat(),
+        "event": str(event)[:48],
+        "scope": str(scope)[:16],
+        "status": str(status)[:24],
+        "target_count": max(int(target_count), 0),
+        "available_service_count": max(int(available_service_count), 0),
+    }
+    if reason:
+        row["reason"] = str(reason)[:64]
+    if exception_type:
+        row["exception_type"] = str(exception_type)[:64]
+    trace.append(row)
+    store.data["notification_diagnostics"] = trace[-50:]
+
+
+def _notification_service_counts(hass: HomeAssistant, options: dict[str, Any]) -> tuple[int, int]:
+    targets = _all_notification_targets(options)
+    available = sum(1 for target in targets if _target_available(hass, str(target)))
+    return len(targets), available
+
+
 async def _send_targets(
     hass: HomeAssistant, targets: list[str], title: str, message: str
 ) -> bool:
@@ -86,13 +156,8 @@ async def _send_targets(
         if not value or value in used:
             continue
         used.add(value)
-        service = _target_service(value)
-        if not hass.services.has_service("notify", service):
-            continue
-        await hass.services.async_call(
-            "notify", service, {"title": title, "message": message}, blocking=False
-        )
-        sent = True
+        if await _send_target(hass, value, title, message):
+            sent = True
     return sent
 
 
@@ -123,26 +188,16 @@ async def _send_room_personalised(
             if not value or value in used:
                 continue
             used.add(value)
-            service = _target_service(value)
-            if not hass.services.has_service("notify", service):
-                continue
-            await hass.services.async_call(
-                "notify", service, {"title": title, "message": personal_message}, blocking=False
-            )
-            sent = True
+            if await _send_target(hass, value, title, personal_message):
+                sent = True
 
     for target in options.get("notification_targets") or []:
         value = str(target)
         if not value or value in used:
             continue
         used.add(value)
-        service = _target_service(value)
-        if not hass.services.has_service("notify", service):
-            continue
-        await hass.services.async_call(
-            "notify", service, {"title": title, "message": message}, blocking=False
-        )
-        sent = True
+        if await _send_target(hass, value, title, message):
+            sent = True
     return sent
 
 
@@ -173,16 +228,12 @@ async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title
             if not value or value in used:
                 continue
             used.add(value)
-            service = _target_service(value)
-            if hass.services.has_service("notify", service):
-                await hass.services.async_call("notify", service, {"title": title, "message": personal}, blocking=False)
+            if await _send_target(hass, value, title, personal):
                 sent = True
     for target in options.get("notification_targets") or []:
         if str(target) in used:
             continue
-        service = _target_service(str(target))
-        if hass.services.has_service("notify", service):
-            await hass.services.async_call("notify", service, {"title": title, "message": message}, blocking=False)
+        if await _send_target(hass, str(target), title, message):
             sent = True
     return sent
 
@@ -233,18 +284,41 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
 
     async def emit(event: str, title: str, message: str, room_key: str | None = None) -> bool:
         nonlocal changed
+        target_count, available_count = _notification_service_counts(hass, options)
         if suppress_at_night:
+            _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="night_suppression")
+            changed = True
             return True
         if room_key and not _allowed_room(room_key, options):
+            _record_notification_diagnostic(store, now=now, event=event, scope="room", status="suppressed", target_count=target_count, available_service_count=available_count, reason="room_not_selected")
+            changed = True
             return True
         key = f"{event}:{room_key or 'house'}"
         if not _due(store, key, now, cooldown):
+            _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown")
+            changed = True
             return True
-        sender_ok = (
-            await _send_room_personalised(hass, options, title, message, room_key)
-            if room_key
-            else await _send(hass, options, title, message)
+        try:
+            sender_ok = (
+                await _send_room_personalised(hass, options, title, message, room_key)
+                if room_key
+                else await _send(hass, options, title, message)
+            )
+        except Exception as err:
+            _record_notification_diagnostic(
+                store, now=now, event=event, scope="room" if room_key else "house",
+                status="failed", target_count=target_count, available_service_count=available_count,
+                reason="notify_service_exception", exception_type=type(err).__name__,
+            )
+            changed = True
+            return False
+        _record_notification_diagnostic(
+            store, now=now, event=event, scope="room" if room_key else "house",
+            status="sent" if sender_ok else "not_sent", target_count=target_count,
+            available_service_count=available_count,
+            reason=None if sender_ok else "no_available_notify_service",
         )
+        changed = True
         if sender_ok:
             _mark_sent(store, key, now)
             changed = True
@@ -290,8 +364,34 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
             enabled = ((kind in {"ventilate", "continue", "pollen_wait"} and options.get("notify_ventilate")) or (kind == "close" and options.get("notify_close")) or (kind == "sensor" and options.get("notify_sensor")))
             handled = True
             event_key = f"iq_{kind}:house"
+            target_count, available_count = _notification_service_counts(hass, options)
+            if not enabled:
+                _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="event_type_disabled")
+                changed = True
+            elif suppress_at_night:
+                _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="night_suppression")
+                changed = True
+            elif not _due(store, event_key, now, cooldown):
+                _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown")
+                changed = True
             if enabled and not suppress_at_night and _due(store, event_key, now, cooldown):
-                handled = await _send_personalised(hass, options, title, message, iq)
+                try:
+                    handled = await _send_personalised(hass, options, title, message, iq)
+                except Exception as err:
+                    handled = False
+                    _record_notification_diagnostic(
+                        store, now=now, event=f"iq_{kind}", scope="house", status="failed",
+                        target_count=target_count, available_service_count=available_count,
+                        reason="notify_service_exception", exception_type=type(err).__name__,
+                    )
+                else:
+                    _record_notification_diagnostic(
+                        store, now=now, event=f"iq_{kind}", scope="house",
+                        status="sent" if handled else "not_sent", target_count=target_count,
+                        available_service_count=available_count,
+                        reason=None if handled else "no_available_notify_service",
+                    )
+                changed = True
                 if handled:
                     _mark_sent(store, event_key, now)
             if handled:

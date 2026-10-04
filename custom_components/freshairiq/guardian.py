@@ -45,6 +45,8 @@ def evaluate_guardian(data: Mapping[str, Any] | None) -> dict[str, Any]:
     rooms = state.get("rooms") if isinstance(state.get("rooms"), Mapping) else {}
     invalid_rooms = 0
     contradictory_rooms = 0
+    keep_to_close_rooms = 0
+    missing_alignment_override_rooms = 0
     for room in rooms.values():
         if not isinstance(room, Mapping):
             invalid_rooms += 1
@@ -68,10 +70,21 @@ def evaluate_guardian(data: Mapping[str, Any] | None) -> dict[str, Any]:
             close = "close" in visible or "schließ" in visible
             if keep and close and not explained_override:
                 contradictory_rooms += 1
+                keep_to_close_rooms += 1
+                if not isinstance(override, Mapping):
+                    missing_alignment_override_rooms += 1
     if invalid_rooms:
         findings.append(GuardianFinding("FAIQ-GUARDIAN-SENSOR-001", "high", "room_measurements_physical_range", "measurement", {"affected_room_count": invalid_rooms}))
     if contradictory_rooms:
-        findings.append(GuardianFinding("FAIQ-GUARDIAN-DECISION-001", "high", "canonical_visible_recommendation_consistency", "recommendation", {"affected_room_count": contradictory_rooms}))
+        findings.append(GuardianFinding(
+            "FAIQ-GUARDIAN-DECISION-001", "high",
+            "canonical_visible_recommendation_consistency", "recommendation",
+            {
+                "affected_room_count": contradictory_rooms,
+                "keep_to_close_count": keep_to_close_rooms,
+                "missing_alignment_override_count": missing_alignment_override_rooms,
+            },
+        ))
 
     # Forecast monotonicity: cumulative moisture effect must not decrease when the
     # same start state is projected further into the future.

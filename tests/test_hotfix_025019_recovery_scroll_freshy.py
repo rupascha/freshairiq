@@ -48,8 +48,9 @@ def test_sensor_recovery_guard_has_grace_and_two_valid_cycles():
     )
     assert (started, cycles, active) == (None, 0, False)
 
-    required_block = COORD.split("def _required_source_entities", 1)[1].split("def _log_required_source_availability", 1)[0]
+    required_block = COORD.split("def _required_source_groups", 1)[1].split("def _log_required_source_availability", 1)[0]
     assert "CONF_ROOM_TEMPERATURE" in required_block and "CONF_ROOM_HUMIDITY" in required_block
+    assert "entity_ids(room.get(key))" in required_block
     assert "_contact_ids(room)" not in required_block
 
 def test_scroll_restore_keeps_snapshot_through_delayed_ha_layout():

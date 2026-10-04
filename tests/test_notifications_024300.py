@@ -131,7 +131,8 @@ def test_house_recommendation_signature_personalisation_and_failed_delivery():
     failed_store = Store()
     failed = Hass(available=())
     changed = asyncio.run(process_notifications(failed, failed_store, data, options, now, []))
-    assert changed is False
+    assert changed is True  # privacy-safe failed-delivery diagnostics are persisted
+    assert failed_store.data["notification_diagnostics"][-1]["status"] == "not_sent"
     assert "last_house_recommendation_signature" not in failed_store.data
 
 
@@ -224,3 +225,81 @@ def test_night_suppression_respects_switch_night_feature_and_boundaries():
     opts = base_options(notification_scope="room", suppress_notifications_at_night=True, night_forecast_enabled=False)
     asyncio.run(process_notifications(hass, store, data, opts, datetime(2026,9,14,23,0,tzinfo=timezone.utc), []))
     assert len(hass.services.calls) == 1
+
+
+def test_coordinator_never_short_circuits_notification_processing():
+    """Regression: pending state changes must not skip process_notifications."""
+    from pathlib import Path
+    source = (Path(__file__).parents[1] / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    assert "notification_changed = await process_notifications(" in source
+    assert "changed = changed or await process_notifications(" not in source
+
+
+def test_notification_delivery_diagnostics_are_privacy_safe_and_bounded():
+    now = datetime(2026, 10, 4, 8, 0, tzinfo=timezone.utc)
+    store = Store()
+    data = {"rooms": {}, "intelligent_recommendation": {
+        "kind": "close", "title": "Close", "instruction": "Close now", "summary": "Done", "room_keys": ["bedroom"]
+    }}
+    failed = Hass(available=())
+    changed = asyncio.run(process_notifications(failed, store, data, base_options(notification_scope="house"), now, []))
+    assert changed is True  # diagnostic trace itself must be persisted
+    trace = store.data["notification_diagnostics"]
+    assert trace[-1]["status"] == "not_sent"
+    assert trace[-1]["reason"] == "no_available_notify_service"
+    assert trace[-1]["target_count"] == 1
+    assert trace[-1]["available_service_count"] == 0
+    serialised = str(trace[-1])
+    assert "notify.phone" not in serialised
+    assert "Close now" not in serialised
+
+
+def test_notification_delivery_diagnostics_capture_exception_type_without_message():
+    class FailingServices(Services):
+        async def async_call(self, domain, service, data, blocking=False):
+            raise RuntimeError("secret device detail")
+    hass = Hass()
+    hass.services = FailingServices()
+    store = Store()
+    now = datetime(2026, 10, 4, 8, 0, tzinfo=timezone.utc)
+    data = {"rooms": {}, "intelligent_recommendation": {
+        "kind": "close", "title": "Close", "instruction": "Close now", "summary": "Done", "room_keys": []
+    }}
+    assert asyncio.run(process_notifications(hass, store, data, base_options(notification_scope="house"), now, []))
+    row = store.data["notification_diagnostics"][-1]
+    assert row["status"] == "failed"
+    assert row["exception_type"] == "RuntimeError"
+    assert "secret device detail" not in str(row)
+
+
+def test_modern_notify_entity_uses_send_message_target_contract():
+    from custom_components.freshairiq.notifications import _send_targets
+
+    class States:
+        def get(self, entity_id):
+            return object() if entity_id == "notify.sweethome" else None
+
+    hass = Hass(available=("send_message",))
+    hass.states = States()
+    sent = asyncio.run(_send_targets(
+        hass, ["entity:notify.sweethome"], "FreshAirIQ · Test", "Hallo"
+    ))
+    assert sent is True
+    assert hass.services.calls == [(
+        "notify", "send_message",
+        {"message": "Hallo", "target": {"entity_id": "notify.sweethome"}, "title": "FreshAirIQ · Test"},
+        False,
+    )]
+
+
+def test_modern_notify_entity_is_not_sent_when_entity_is_missing():
+    from custom_components.freshairiq.notifications import _send_targets
+
+    class States:
+        def get(self, _entity_id):
+            return None
+
+    hass = Hass(available=("send_message",))
+    hass.states = States()
+    assert asyncio.run(_send_targets(hass, ["entity:notify.missing"], "Test", "Hallo")) is False
+    assert hass.services.calls == []

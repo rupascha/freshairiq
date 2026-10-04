@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2.29";
+const FAIQ_VERSION = "0.25.3";
 const FAIQ_CARD = "freshairiq-card";
 const FAIQ_EDITOR = "freshairiq-card-editor";
 const FAIQ_IMPL = "freshairiq-card-impl";
@@ -50,7 +50,7 @@ class FreshAirIQLoaderProxy extends HTMLElement {
   _showLoadError() {
     if (this._impl) return;
     if (!this.shadowRoot) this.attachShadow({mode:"open"});
-    this.shadowRoot.innerHTML = `<ha-card><div style="padding:16px"><b>${faiqLoaderCopy("FreshAirIQ wird geladen", "FreshAirIQ is loading")}</b><div style="margin-top:6px;color:var(--secondary-text-color);font-size:12px">${faiqLoaderCopy("Das Kartenmodul konnte auf diesem Gerät noch nicht vollständig geladen werden. Die FreshAirIQ-Konfiguration selbst ist nicht beschädigt.", "The card module could not be fully loaded on this device yet. Your FreshAirIQ configuration is not damaged.")}</div></div></ha-card>`;
+    this.shadowRoot.innerHTML = `<ha-card><div style="padding:16px"><b>${faiqLoaderCopy("FreshAirIQ wird geladen", "FreshAirIQ is loading")}</b><div style="margin-top:6px;color:var(--secondary-text-color);font-size:12px">${faiqLoaderCopy("Das Kartenmodul konnte auf diesem Gerät noch nicht vollständig geladen werden. Die FreshAirIQ-Konfiguration selbst ist nicht beschädigt.<br><b>Fehlercode: FAIQ-UI-LOADER-001</b><br>Bitte diesen Code oder einen Screenshot im Forum mitsenden.", "The card module could not be fully loaded on this device yet. Your FreshAirIQ configuration is not damaged.<br><b>Error code: FAIQ-UI-LOADER-001</b><br>Please include this code or a screenshot in the forum.")}</div></div></ha-card>`;
   }
   async _ensureImplementation() {
     if (this._impl || this._loading) return;

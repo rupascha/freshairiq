@@ -16,7 +16,8 @@ def test_native_support_dialogs_use_i18n_keys():
         assert f'"{key}"' in CARD
     assert 'window.prompt(this._t("support.prompt")' in CARD
     assert 'window.confirm(this._t("support.confirm"))' in CARD
-    assert 'window.alert(this._t("support.failure_alert"))' in CARD
+    assert 'this._t("support.failure_alert")' in CARD
+    assert 'FAIQ-SUPPORT-UPLOAD-001' in CARD
 
 def test_loader_and_safe_panel_have_english_fallback_copy():
     assert 'FreshAirIQ is loading' in LOADER

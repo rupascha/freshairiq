@@ -253,6 +253,32 @@ class RuntimeHealthMonitor:
         return snap
 
     @property
+    def user_summary(self) -> dict[str, Any]:
+        """Return a compact screenshot-safe view of active support incidents.
+
+        This intentionally exposes only stable support codes and technical
+        classifications already stripped of names, entity IDs and messages.
+        """
+        active = []
+        for row in sorted(self._incidents.values(), key=lambda item: str(item.get("last_seen_at") or ""), reverse=True):
+            if str(row.get("status") or "active") == "resolved":
+                continue
+            classification = row.get("classification") if isinstance(row.get("classification"), Mapping) else {}
+            active.append({
+                "code": str(classification.get("support_code") or "FAIQ-RUNTIME-UNKNOWN-001")[:80],
+                "category": str(classification.get("category") or "runtime")[:64],
+                "component": str(classification.get("component") or classification.get("metric") or "FreshAirIQ")[:64],
+                "operation": str(classification.get("operation") or classification.get("invariant") or "")[:96],
+                "error_type": str(classification.get("error_type") or "")[:80],
+                "severity": str(classification.get("severity") or "medium")[:16],
+                "occurrences": int(row.get("occurrences") or 0),
+                "last_seen_at": row.get("last_seen_at"),
+            })
+            if len(active) >= 5:
+                break
+        return {"active_problem": bool(active), "active_count": sum(1 for row in self._incidents.values() if str(row.get("status") or "active") != "resolved"), "incidents": active}
+
+    @property
     def snapshot(self) -> dict[str, Any]:
         incidents = sorted(
             (dict(row) for row in self._incidents.values()),

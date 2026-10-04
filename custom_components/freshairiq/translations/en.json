@@ -284,6 +284,14 @@
         "percent_room_water": "Percentage of room water content",
         "fixed_ml": "Fixed mL value"
       }
+    },
+    "climate_aggregation": {
+      "options": {
+        "mean": "Mean (recommended)",
+        "max": "Maximum",
+        "min": "Minimum",
+        "median": "Median (robust to outliers)"
+      }
     }
   },
   "options": {
@@ -422,14 +430,14 @@
             "name": "Sensors & windows",
             "description": "Sensors and contacts FreshAirIQ uses for this room.",
             "data": {
-              "temperature": "Temperature sensor",
-              "humidity": "Humidity sensor",
+              "temperature": "Temperature sensor(s)",
+              "humidity": "Humidity sensor(s)",
               "contacts": "Ventilation contacts",
               "contact_mode": "Contact logic"
             },
             "data_description": {
-              "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
-              "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
+              "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
+              "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
@@ -709,14 +717,14 @@
             "name": "Sensors & windows",
             "description": "Sensors and contacts FreshAirIQ uses for this room.",
             "data": {
-              "temperature": "Temperature sensor",
-              "humidity": "Humidity sensor",
+              "temperature": "Temperature sensor(s)",
+              "humidity": "Humidity sensor(s)",
               "contacts": "Ventilation contacts",
               "contact_mode": "Contact logic"
             },
             "data_description": {
-              "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
-              "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
+              "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
+              "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
               "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
             }
@@ -1896,7 +1904,7 @@
       },
       "import_ha_room_details": {
         "title": "Complete imported room",
-        "description": "Home Assistant supplied the name and floor for {room_name}. Add the FreshAirIQ-specific room data. {remaining} selected room(s) including this one remain.",
+        "description": "Complete the imported room “{room_name}”. Detected temperature and humidity sensors are already preselected together. You can remove any sensor or add more before saving. {remaining} room(s) remain in the import queue.",
         "data": {
           "name": "Room name",
           "temperature": "Temperature sensor",
@@ -2508,16 +2516,20 @@
               "name": "Sensors & windows",
               "description": "Sensors and contacts FreshAirIQ uses for this room.",
               "data": {
-                "temperature": "Temperature sensor",
-                "humidity": "Humidity sensor",
+                "temperature": "Temperature sensor(s)",
+                "humidity": "Humidity sensor(s)",
                 "contacts": "Ventilation contacts",
-                "contact_mode": "Contact logic"
+                "contact_mode": "Contact logic",
+                "temperature_aggregation": "Temperature aggregation",
+                "humidity_aggregation": "Humidity aggregation"
               },
               "data_description": {
-                "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
-                "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
+                "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
+                "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+                "temperature_aggregation": "Relevant only with multiple valid temperature sensors. Choose arithmetic mean, maximum or minimum.",
+                "humidity_aggregation": "Relevant only with multiple valid humidity sensors. Choose arithmetic mean, maximum or minimum."
               }
             },
             "geometry": {
@@ -2696,16 +2708,20 @@
               "name": "Sensors & windows",
               "description": "Sensors and contacts FreshAirIQ uses for this room.",
               "data": {
-                "temperature": "Temperature sensor",
-                "humidity": "Humidity sensor",
+                "temperature": "Temperature sensor(s)",
+                "humidity": "Humidity sensor(s)",
                 "contacts": "Ventilation contacts",
-                "contact_mode": "Contact logic"
+                "contact_mode": "Contact logic",
+                "temperature_aggregation": "Temperature aggregation",
+                "humidity_aggregation": "Humidity aggregation"
               },
               "data_description": {
-                "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
-                "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
+                "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
+                "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+                "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+                "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
               }
             },
             "geometry": {

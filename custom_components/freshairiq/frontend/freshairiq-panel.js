@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.25.2.29";
+const FAIQ_VERSION = "0.25.3";
 const FAIQ_IMPL = "freshairiq-card-impl";
 
 // FreshAirIQ safe panel.
@@ -98,7 +98,7 @@ class FreshAirIQPanel extends HTMLElement {
             <div style="padding:16px">
               <b>${this._copy("FreshAirIQ konnte nicht geladen werden", "FreshAirIQ could not be loaded")}</b>
               <div style="margin-top:6px;color:var(--secondary-text-color);font-size:12px">
-                ${this._copy("Das sichere FreshAirIQ-Panel konnte sein Frontend-Modul nicht initialisieren.", "The safe FreshAirIQ panel could not initialize its frontend module.")}
+                ${this._copy("Das sichere FreshAirIQ-Panel konnte sein Frontend-Modul nicht initialisieren.<br><b>Fehlercode: FAIQ-UI-PANEL-001</b><br>Bitte diesen Code oder einen Screenshot im Forum mitsenden.", "The safe FreshAirIQ panel could not initialize its frontend module.<br><b>Error code: FAIQ-UI-PANEL-001</b><br>Please include this code or a screenshot in the forum.")}
               </div>
             </div>
           </ha-card>`;
