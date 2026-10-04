@@ -28,7 +28,7 @@ def compact_ventilation_event(event: dict[str, Any]) -> dict[str, Any]:
         "duration_min": _num(event.get("duration_min")),
         "opening_mode": event.get("opening_learning_mode"),
         "cross_ventilation": bool(event.get("cross_ventilation")),
-        "recommendation_followed": bool(event.get("recommendation_followed")),
+        "recommendation_followed": (None if event.get("recommendation_followed") is None else bool(event.get("recommendation_followed"))),
         "removed_ml": _num(event.get("removed_ml")),
         "measurement_valid": bool(event.get("moisture_measurement_valid")),
         "start_temperature_c": _num(event.get("start_temperature_c")),
@@ -106,78 +106,139 @@ def _fmt(value: Any, digits: int = 1) -> str:
 
 
 def build_ventilation_pdf(events: list[dict[str, Any]], start: datetime, end: datetime) -> bytes:
-    """Generate a dependency-free, local PDF report (PDF 1.4 / WinAnsi)."""
+    """Generate a structured, dependency-free A4 PDF report (PDF 1.4 / WinAnsi)."""
     total_min = sum(max(_num(e.get("duration_min")) or 0.0, 0.0) for e in events)
     valid_removed = [_num(e.get("removed_ml")) for e in events if e.get("measurement_valid")]
     valid_removed = [v for v in valid_removed if v is not None]
     room_names = sorted({str(e.get("room_name") or "Raum") for e in events})
-    lines = [
-        ("FreshAirIQ Lüftungsprotokoll", 16, True),
-        (f"Zeitraum: {start.strftime('%d.%m.%Y')} bis {end.strftime('%d.%m.%Y')}", 10, False),
-        ("Lokale Dokumentation der durch Sensoren erfassten Lüftungsvorgänge", 9, False),
-        ("", 9, False),
-        (f"Erfasste Lüftungen: {len(events)}   Gesamtdauer: {_fmt(total_min, 0)} min   Räume: {len(room_names)}", 10, True),
-        (f"Gemessene Feuchtebilanz: {_fmt(sum(valid_removed), 0)} ml" if valid_removed else "Gemessene Feuchtebilanz: keine vollständigen Messwerte im Zeitraum", 10, False),
-        ("", 9, False),
-        ("Chronologisches Protokoll", 12, True),
-    ]
-    for event in events:
-        effect = f"{_fmt(event.get('removed_ml'), 0)} ml" if event.get("measurement_valid") else "Messwert nicht vollständig"
-        followed = "ja" if event.get("recommendation_followed") else "nein/nicht erfasst"
-        lines.extend([
-            (f"{_fmt_dt(event.get('started_at'))} – {_fmt_dt(event.get('ended_at'))} | {event.get('room_name') or event.get('name') or 'Raum'}", 10, True),
-            (f"Dauer {_fmt(event.get('duration_min'), 1)} min | Feuchtebilanz {effect} | Empfehlung befolgt: {followed}", 9, False),
-            (f"Klima: {_fmt(event.get('start_temperature_c'))} → {_fmt(event.get('end_temperature_c'))} °C | {_fmt(event.get('start_humidity_percent'),0)} → {_fmt(event.get('end_humidity_percent'),0)} % rF | {_fmt(event.get('start_absolute_humidity_g_m3'),2)} → {_fmt(event.get('end_absolute_humidity_g_m3'),2)} g/m³", 9, False),
-            ("", 6, False),
-        ])
-    lines.extend([
-        ("Hinweis", 10, True),
-        ("Dieses Protokoll dokumentiert die von FreshAirIQ und Home Assistant erfassten Sensordaten. Es ist keine rechtliche Bewertung oder Garantie für ein bestimmtes Lüftungsverhalten.", 8, False),
-    ])
 
-    # Wrap into fixed-width text lines; generate as many A4 pages as necessary.
-    wrapped: list[tuple[str, int, bool]] = []
-    for text, size, bold in lines:
-        width = 92 if size <= 9 else 82
-        words = text.split()
-        if not words:
-            wrapped.append(("", size, bold)); continue
-        current = ""
-        for word in words:
-            candidate = f"{current} {word}".strip()
-            if len(candidate) > width and current:
-                wrapped.append((current, size, bold)); current = word
-            else:
-                current = candidate
-        wrapped.append((current, size, bold))
-
-    pages: list[list[tuple[str, int, bool]]] = []
-    page: list[tuple[str, int, bool]] = []
-    y = 790
-    for row in wrapped:
-        step = max(row[1] + 4, 11)
-        if y - step < 48:
-            pages.append(page); page = []; y = 790
-        page.append(row); y -= step
-    if page or not pages: pages.append(page)
-
+    # Keep the PDF renderer dependency-free so the integration works on stock HA.
+    # Each page is composed from primitive PDF drawing/text commands.  All visible
+    # strings stay within WinAnsi; before/after values use labelled columns instead
+    # of the unsupported Unicode arrow that previously rendered as '?'.
     objects: list[bytes] = []
     def add(data: str | bytes) -> int:
-        objects.append(data.encode("latin1") if isinstance(data, str) else data); return len(objects)
+        objects.append(data.encode("latin1") if isinstance(data, str) else data)
+        return len(objects)
+
     catalog = add("<< /Type /Catalog /Pages 2 0 R >>")
     add(b"")  # pages placeholder
     font = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
     font_bold = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
+
+    page_streams: list[list[str]] = []
+    current: list[str] = []
+    y = 0.0
+
+    def text(x: float, yy: float, value: Any, size: int = 9, bold: bool = False, rgb=(0.12, 0.16, 0.19)) -> None:
+        r, g, b = rgb
+        current.extend(["BT", f"{r:.3f} {g:.3f} {b:.3f} rg", f"/{'F2' if bold else 'F1'} {size} Tf", f"1 0 0 1 {x:.1f} {yy:.1f} Tm ({_pdf_escape(value)}) Tj", "ET"])
+
+    def rect(x: float, yy: float, w: float, h: float, fill, stroke=None, width: float = 0.7) -> None:
+        r, g, b = fill
+        current.append(f"{r:.3f} {g:.3f} {b:.3f} rg")
+        if stroke is None:
+            current.append(f"{x:.1f} {yy:.1f} {w:.1f} {h:.1f} re f")
+        else:
+            sr, sg, sb = stroke
+            current.extend([f"{sr:.3f} {sg:.3f} {sb:.3f} RG", f"{width:.2f} w", f"{x:.1f} {yy:.1f} {w:.1f} {h:.1f} re B"])
+
+    def line(x1: float, y1: float, x2: float, y2: float, rgb=(0.78, 0.84, 0.87), width: float = 0.6) -> None:
+        r, g, b = rgb
+        current.extend([f"{r:.3f} {g:.3f} {b:.3f} RG", f"{width:.2f} w", f"{x1:.1f} {y1:.1f} m {x2:.1f} {y2:.1f} l S"])
+
+    def header(first: bool = False) -> None:
+        nonlocal y
+        rect(0, 0, 595, 842, (0.985, 0.990, 0.992))
+        rect(0, 770, 595, 72, (0.055, 0.090, 0.115))
+        rect(42, 789, 28, 28, (0.20, 0.72, 0.86))
+        text(50, 798, "FA", 10, True, (1, 1, 1))
+        text(82, 805, "FreshAirIQ", 19, True, (1, 1, 1))
+        text(82, 788, "Lueftungsprotokoll", 10, False, (0.72, 0.82, 0.87))
+        text(444, 801, f"{start.strftime('%d.%m.%Y')}", 8, True, (0.75, 0.85, 0.89))
+        text(444, 787, f"bis {end.strftime('%d.%m.%Y')}", 8, False, (0.75, 0.85, 0.89))
+        y = 744
+        if first:
+            text(42, y, "Zusammenfassung", 13, True); y -= 48
+            boxes = [
+                ("LUEFTUNGEN", str(len(events))),
+                ("GESAMTDAUER", f"{_fmt(total_min, 0)} min"),
+                ("RAEUME", str(len(room_names))),
+                ("FEUCHTEBILANZ", f"{_fmt(sum(valid_removed), 0)} ml" if valid_removed else "-"),
+            ]
+            x = 42
+            for label, value in boxes:
+                rect(x, y, 119, 42, (0.94, 0.965, 0.975), (0.79, 0.88, 0.91))
+                text(x + 9, y + 27, label, 6, True, (0.34, 0.48, 0.55))
+                text(x + 9, y + 10, value, 12, True, (0.07, 0.20, 0.25))
+                x += 128
+            y -= 26
+            text(42, y, "Chronologisches Protokoll", 13, True); y -= 12
+
+    def finish_page() -> None:
+        # quiet footer on every page
+        line(42, 34, 553, 34, (0.86, 0.89, 0.91), 0.5)
+        text(42, 20, "FreshAirIQ - lokale Sensordokumentation", 6, False, (0.45, 0.52, 0.56))
+        page_streams.append(list(current))
+        current.clear()
+
+    header(True)
+    if not events:
+        rect(42, y - 78, 511, 66, (0.965, 0.975, 0.980), (0.84, 0.88, 0.90))
+        text(58, y - 38, "Keine erfassten Lueftungsvorgaenge im gewaehlten Zeitraum.", 10, True)
+        text(58, y - 55, "Es werden ausschliesslich lokal gespeicherte, abgeschlossene Vorgange dokumentiert.", 8, False, (0.38, 0.46, 0.50))
+        y -= 100
+    else:
+        for idx, event in enumerate(events, 1):
+            card_h = 126
+            # Reserve the lower page area for the legal note and footer.
+            if y - card_h < 105:
+                finish_page(); header(False)
+                text(42, y, "Chronologisches Protokoll - Fortsetzung", 12, True); y -= 16
+            top = y
+            bottom = top - card_h
+            rect(42, bottom, 511, card_h - 6, (1, 1, 1), (0.82, 0.87, 0.89))
+            rect(42, top - 30, 511, 24, (0.93, 0.965, 0.975))
+            room = str(event.get("room_name") or event.get("name") or "Raum")
+            text(53, top - 21, f"{idx:02d}  {room}", 11, True, (0.05, 0.22, 0.28))
+            text(330, top - 21, f"{_fmt_dt(event.get('started_at'))} bis {_fmt_dt(event.get('ended_at'))}", 7, False, (0.35, 0.45, 0.50))
+
+            effect = f"{_fmt(event.get('removed_ml'), 0)} ml" if event.get("measurement_valid") else "nicht vollstaendig"
+            recommendation_followed = event.get("recommendation_followed")
+            if recommendation_followed is True:
+                followed = "Ja"
+            elif recommendation_followed is False:
+                followed = "Nein"
+            else:
+                followed = "Nicht erfasst"
+            metrics = [("DAUER", f"{_fmt(event.get('duration_min'),1)} min"), ("FEUCHTEBILANZ", effect), ("EMPFEHLUNG BEFOLGT", followed)]
+            x = 54
+            for label, value in metrics:
+                text(x, top - 48, label, 6, True, (0.40, 0.51, 0.56))
+                text(x, top - 63, value, 9, True)
+                x += 166
+
+            line(54, top - 72, 541, top - 72, (0.88, 0.91, 0.92), 0.5)
+            text(54, top - 88, "KLIMAWERTE - VORHER -> NACHHER", 6, True, (0.40, 0.51, 0.56))
+            climate = [
+                ("Temperatur", _fmt(event.get("start_temperature_c")), _fmt(event.get("end_temperature_c")), "C"),
+                ("Luftfeuchte", _fmt(event.get("start_humidity_percent"), 0), _fmt(event.get("end_humidity_percent"), 0), "% rF"),
+                ("Absolute Feuchte", _fmt(event.get("start_absolute_humidity_g_m3"), 2), _fmt(event.get("end_absolute_humidity_g_m3"), 2), "g/m3"),
+            ]
+            cx = 54
+            for label, before, after, unit in climate:
+                text(cx, top - 104, label, 7, False, (0.36, 0.45, 0.49))
+                text(cx, top - 117, f"{before} -> {after} {unit}", 8, True)
+                cx += 166
+            y = bottom - 10
+
+    text(42, 84, "Hinweis", 8, True, (0.30, 0.40, 0.45))
+    text(42, 70, "Dieses Protokoll dokumentiert die von FreshAirIQ und Home Assistant erfassten Sensordaten.", 7, False, (0.42, 0.49, 0.53))
+    text(42, 58, "Es ist keine rechtliche Bewertung oder Garantie fuer ein bestimmtes Lueftungsverhalten.", 7, False, (0.42, 0.49, 0.53))
+    finish_page()
+
     page_ids = []
-    for rows in pages:
-        cmds = ["BT", "1 0 0 1 48 790 Tm"]
-        current_y = 790
-        for text, size, bold in rows:
-            step = max(size + 4, 11)
-            cmds.append(f"/{'F2' if bold else 'F1'} {size} Tf")
-            cmds.append(f"1 0 0 1 48 {current_y} Tm ({_pdf_escape(text)}) Tj")
-            current_y -= step
-        cmds.append("ET")
+    for cmds in page_streams:
         stream = "\n".join(cmds).encode("latin1")
         content_id = add(f"<< /Length {len(stream)} >>\nstream\n".encode("latin1") + stream + b"\nendstream")
         page_id = add(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 {font} 0 R /F2 {font_bold} 0 R >> >> /Contents {content_id} 0 R >>")

@@ -1,3 +1,10 @@
+## 0.25.3.3
+
+- HOTFIX: transient sensor-error notifications now respect the existing startup/recovery grace period.
+- HOTFIX: removed the obsolete visible technical support-code card while preserving internal diagnostics.
+- HOTFIX: strengthened room-name contrast on the room overview.
+- HOTFIX: redesigned the local ventilation PDF for clearer summary and per-session before/after values; fixed unsupported arrow rendering.
+
 ## 0.25.3.2
 
 - Fixed the ventilation-log PDF endpoint passing the config-entry ID string instead of the loaded Home Assistant ConfigEntry object to runtime lookup; this caused the persistent HTTP 500 export failure.

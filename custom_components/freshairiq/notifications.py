@@ -263,6 +263,13 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
         and options.get("night_forecast_enabled", True)
         and in_night_window(now, options.get("night_start_hour"), options.get("night_end_hour"))
     )
+    # A Home Assistant restart can restore FreshAirIQ before its source integrations.
+    # The coordinator already protects decisions for 90 seconds while those sources
+    # recover. Mirror that guard for sensor-error notifications: keep the safe
+    # sensor_error state internally, but do not alarm the user about a condition
+    # which the runtime is explicitly treating as transient.
+    recovery = data.get("sensor_recovery") if isinstance(data.get("sensor_recovery"), dict) else {}
+    sensor_recovery_active = bool(recovery.get("active"))
 
     # Per-room action transitions. The action state is persisted, so restart does not spam.
     room_events: dict[str, list[dict[str, Any]]] = {"Ventilate": [], "Ventilate for cooling": [], "Close": [], "sensor": [], "mould": []}
@@ -340,7 +347,7 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
         if options.get("notify_mould"):
             for r in room_events["mould"]:
                 await emit("mould", f"FreshAirIQ · {r['name']}", f"Schimmelrisiko {r['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(r['surface_rh'])} %.", r["key"])
-        if options.get("notify_sensor"):
+        if options.get("notify_sensor") and not sensor_recovery_active:
             for r in room_events["sensor"]:
                 await emit("sensor", f"FreshAirIQ · {r['name']}", "Messwerte fehlen oder sind unplausibel. Sensoren prüfen.", r["key"])
 
@@ -365,7 +372,14 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
             handled = True
             event_key = f"iq_{kind}:house"
             target_count, available_count = _notification_service_counts(hass, options)
-            if not enabled:
+            if kind == "sensor" and sensor_recovery_active:
+                # Do not persist this transient signature. If recovery really fails
+                # beyond the coordinator grace period, the unchanged recommendation
+                # is then still eligible for delivery on the next cycle.
+                handled = False
+                _record_notification_diagnostic(store, now=now, event="iq_sensor", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="sensor_recovery_grace")
+                changed = True
+            elif not enabled:
                 _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="event_type_disabled")
                 changed = True
             elif suppress_at_night:
@@ -374,7 +388,7 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
             elif not _due(store, event_key, now, cooldown):
                 _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown")
                 changed = True
-            if enabled and not suppress_at_night and _due(store, event_key, now, cooldown):
+            if enabled and not suppress_at_night and not (kind == "sensor" and sensor_recovery_active) and _due(store, event_key, now, cooldown):
                 try:
                     handled = await _send_personalised(hass, options, title, message, iq)
                 except Exception as err:
