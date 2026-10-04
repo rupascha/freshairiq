@@ -393,7 +393,9 @@
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
           "ventilation_threshold_percent": "Room threshold percentage",
-          "ventilation_threshold_ml": "Fixed room threshold"
+          "ventilation_threshold_ml": "Fixed room threshold",
+          "temperature_aggregation": "Temperature aggregation",
+          "humidity_aggregation": "Humidity aggregation"
         },
         "sections": {
           "identity": {
@@ -433,13 +435,17 @@
               "temperature": "Temperature sensor(s)",
               "humidity": "Humidity sensor(s)",
               "contacts": "Ventilation contacts",
-              "contact_mode": "Contact logic"
+              "contact_mode": "Contact logic",
+              "temperature_aggregation": "Temperature aggregation",
+              "humidity_aggregation": "Humidity aggregation"
             },
             "data_description": {
               "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+              "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+              "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
             }
           },
           "geometry": {
@@ -530,7 +536,9 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+          "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
         },
         "section": {
           "identity": {
@@ -680,7 +688,9 @@
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
           "ventilation_threshold_percent": "Room threshold percentage",
-          "ventilation_threshold_ml": "Fixed room threshold"
+          "ventilation_threshold_ml": "Fixed room threshold",
+          "temperature_aggregation": "Temperature aggregation",
+          "humidity_aggregation": "Humidity aggregation"
         },
         "sections": {
           "identity": {
@@ -720,13 +730,17 @@
               "temperature": "Temperature sensor(s)",
               "humidity": "Humidity sensor(s)",
               "contacts": "Ventilation contacts",
-              "contact_mode": "Contact logic"
+              "contact_mode": "Contact logic",
+              "temperature_aggregation": "Temperature aggregation",
+              "humidity_aggregation": "Humidity aggregation"
             },
             "data_description": {
               "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+              "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+              "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
             }
           },
           "geometry": {
@@ -817,7 +831,9 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+          "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
         },
         "section": {
           "identity": {
@@ -1936,7 +1952,9 @@
           "air_purifier": "Air purifier (optional)",
           "ventilation_threshold_mode": "Individual ventilation threshold",
           "ventilation_threshold_percent": "Room threshold percentage",
-          "ventilation_threshold_ml": "Fixed room threshold"
+          "ventilation_threshold_ml": "Fixed room threshold",
+          "temperature_aggregation": "Temperature aggregation",
+          "humidity_aggregation": "Humidity aggregation"
         },
         "sections": {
           "identity": {
@@ -1976,13 +1994,17 @@
               "temperature": "Temperature sensor",
               "humidity": "Humidity sensor",
               "contacts": "Ventilation contacts",
-              "contact_mode": "Contact logic"
+              "contact_mode": "Contact logic",
+              "temperature_aggregation": "Temperature aggregation",
+              "humidity_aggregation": "Humidity aggregation"
             },
             "data_description": {
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+              "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+              "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
             }
           },
           "geometry": {
@@ -2073,7 +2095,9 @@
           "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
           "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
           "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
-          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
+          "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
+          "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+          "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
         },
         "section": {
           "identity": {

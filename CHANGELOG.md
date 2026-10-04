@@ -1,3 +1,9 @@
+## 0.25.3.2
+
+- Fixed the ventilation-log PDF endpoint passing the config-entry ID string instead of the loaded Home Assistant ConfigEntry object to runtime lookup; this caused the persistent HTTP 500 export failure.
+- Fixed native Devices & Services room-add/edit translations so temperature/humidity aggregation fields are labeled in the selected language and explain Mean, Median, Minimum and Maximum directly where the selectors are rendered.
+- Added regression contracts for both runtime lookup and the exact options-flow translation path.
+
 ## 0.25.3.1
 
 - Hotfix release for the v0.25.3 runtime/UX corrections.

@@ -396,7 +396,9 @@
           "air_purifier": "Luftreiniger (optional)",
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
-          "ventilation_threshold_ml": "Feste Raumgrenze"
+          "ventilation_threshold_ml": "Feste Raumgrenze",
+          "temperature_aggregation": "Temperatur-Auswertung",
+          "humidity_aggregation": "Feuchte-Auswertung"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -427,7 +429,9 @@
           "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+          "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
         },
         "sections": {
           "identity": {
@@ -467,13 +471,17 @@
               "temperature": "Temperatursensor(en)",
               "humidity": "Feuchtigkeitssensor(en)",
               "contacts": "Fenster-/Türkontakte",
-              "contact_mode": "Kontaktlogik"
+              "contact_mode": "Kontaktlogik",
+              "temperature_aggregation": "Temperatur-Auswertung",
+              "humidity_aggregation": "Feuchte-Auswertung"
             },
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+              "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+              "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
             }
           },
           "geometry": {
@@ -683,7 +691,9 @@
           "air_purifier": "Luftreiniger (optional)",
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
-          "ventilation_threshold_ml": "Feste Raumgrenze"
+          "ventilation_threshold_ml": "Feste Raumgrenze",
+          "temperature_aggregation": "Temperatur-Auswertung",
+          "humidity_aggregation": "Feuchte-Auswertung"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -714,7 +724,9 @@
           "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+          "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
         },
         "sections": {
           "identity": {
@@ -754,13 +766,17 @@
               "temperature": "Temperatursensor(en)",
               "humidity": "Feuchtigkeitssensor(en)",
               "contacts": "Fenster-/Türkontakte",
-              "contact_mode": "Kontaktlogik"
+              "contact_mode": "Kontaktlogik",
+              "temperature_aggregation": "Temperatur-Auswertung",
+              "humidity_aggregation": "Feuchte-Auswertung"
             },
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+              "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+              "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
             }
           },
           "geometry": {
@@ -1949,7 +1965,9 @@
           "air_purifier": "Luftreiniger (optional)",
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
-          "ventilation_threshold_ml": "Feste Raumgrenze"
+          "ventilation_threshold_ml": "Feste Raumgrenze",
+          "temperature_aggregation": "Temperatur-Auswertung",
+          "humidity_aggregation": "Feuchte-Auswertung"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -1980,7 +1998,9 @@
           "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+          "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+          "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
         },
         "sections": {
           "identity": {
@@ -2020,13 +2040,17 @@
               "temperature": "Temperatursensor",
               "humidity": "Feuchtesensor",
               "contacts": "Fenster-/Türkontakte",
-              "contact_mode": "Kontaktlogik"
+              "contact_mode": "Kontaktlogik",
+              "temperature_aggregation": "Temperatur-Auswertung",
+              "humidity_aggregation": "Feuchte-Auswertung"
             },
             "data_description": {
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+              "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+              "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
             }
           },
           "geometry": {

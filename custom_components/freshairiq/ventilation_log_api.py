@@ -20,7 +20,7 @@ class FreshAirIQVentilationLogView(HomeAssistantView):
         entry = hass.config_entries.async_get_entry(entry_id)
         if entry is None or entry.domain != DOMAIN:
             return self.json({"error": "FreshAirIQ-Konfiguration nicht gefunden.", "error_code": "FAIQ-PDF-CONFIG-001"}, status_code=404)
-        coordinator = get_runtime_coordinator(hass, entry_id)
+        coordinator = get_runtime_coordinator(hass, entry)
         if coordinator is None:
             return self.json({"error": "FreshAirIQ ist noch nicht bereit.", "error_code": "FAIQ-PDF-RUNTIME-001"}, status_code=503)
         today = dt_util.now().date()

@@ -56,3 +56,13 @@ def test_pdf_helpers_invalid_and_multi_page():
         events.append(e)
     pdf=build_ventilation_pdf(events,datetime(2026,10,1,tzinfo=timezone.utc),datetime(2026,10,4,tzinfo=timezone.utc))
     assert pdf.count(b"/Type /Page ") > 1
+
+
+def test_filter_skips_timezone_incompatible_event_when_report_bounds_are_naive():
+    event=_event()
+    selected=filter_ventilation_log(
+        [event],
+        datetime(2026,10,4,0),
+        datetime(2026,10,4,23,59),
+    )
+    assert selected == []
