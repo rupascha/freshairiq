@@ -1258,7 +1258,8 @@
           "notify_night": "Night forecast",
           "notify_learning": "Learning messages",
           "notification_cooldown_min": "Cooldown minutes",
-          "suppress_notifications_at_night": "Suppress notifications at night"
+          "suppress_notifications_at_night": "Suppress notifications at night",
+          "test_notification_now": "Send test notification now"
         },
         "description": "Default: notifications off, no recipients, scope “House”, all rooms, ventilate/close/completion/cooling/mould/sensor-error notifications on, night/learning off, minimum interval 90 minutes.",
         "data_description": {
@@ -1275,7 +1276,8 @@
           "notify_night": "Sends night-strategy hints. Default: off, so FreshAirIQ does not notify unexpectedly at night.",
           "notify_sensor": "Warns when sensor data required for a reliable recommendation is missing or implausible. Default: on.",
           "notify_ventilate": "Sends a notification when FreshAirIQ detects a useful time to start ventilation. Default: on.",
-          "suppress_notifications_at_night": "When enabled, FreshAirIQ sends no push notifications during the configured night window. Calculations, ventilation logic and learning continue unchanged."
+          "suppress_notifications_at_night": "When enabled, FreshAirIQ sends no push notifications during the configured night window. Calculations, ventilation logic and learning continue unchanged.",
+          "test_notification_now": "Enable and confirm to immediately send a neutral test message to all currently selected recipients. This action is not saved."
         }
       },
       "statistics": {
@@ -2197,7 +2199,9 @@
       "outdoor_pair_required": "Outdoor temperature and outdoor humidity must be selected together or both left empty.",
       "resident_profiles_invalid": "The resident profile assignments are invalid. Use a JSON object or edit them from the FreshAirIQ dashboard settings.",
       "no_ha_areas_to_import": "No additional Home Assistant areas are available to import.",
-      "select_ha_area": "Select at least one Home Assistant area."
+      "select_ha_area": "Select at least one Home Assistant area.",
+      "notification_test_no_target": "Select at least one notification recipient first.",
+      "notification_test_failed": "None of the selected notification targets is currently available in Home Assistant."
     },
     "selector": {
       "operating_profile": {
@@ -2495,7 +2499,9 @@
             "ventilation_device": "Ventilation/HRV device (optional)",
             "dehumidifier": "Dehumidifier (optional)",
             "humidifier": "Humidifier (optional)",
-            "air_purifier": "Air purifier (optional)"
+            "air_purifier": "Air purifier (optional)",
+            "temperature_aggregation": "Temperature aggregation",
+            "humidity_aggregation": "Humidity aggregation"
           },
           "sections": {
             "identity": {
@@ -2528,8 +2534,8 @@
                 "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
                 "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
-                "temperature_aggregation": "Relevant only with multiple valid temperature sensors. Choose arithmetic mean, maximum or minimum.",
-                "humidity_aggregation": "Relevant only with multiple valid humidity sensors. Choose arithmetic mean, maximum or minimum."
+                "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+                "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
               }
             },
             "geometry": {
@@ -2635,7 +2641,9 @@
             "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
             "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
             "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
-            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
+            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
+            "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+            "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
           }
         },
         "reconfigure": {
@@ -2687,7 +2695,9 @@
             "ventilation_device": "Ventilation/HRV device (optional)",
             "dehumidifier": "Dehumidifier (optional)",
             "humidifier": "Humidifier (optional)",
-            "air_purifier": "Air purifier (optional)"
+            "air_purifier": "Air purifier (optional)",
+            "temperature_aggregation": "Temperature aggregation",
+            "humidity_aggregation": "Humidity aggregation"
           },
           "sections": {
             "identity": {
@@ -2827,7 +2837,9 @@
             "ventilation_device": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.ventilation.",
             "dehumidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.dehumidifier.",
             "humidifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: humidifier.living_room.",
-            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."
+            "air_purifier": "Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier.",
+            "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
+            "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point."
           }
         },
         "add_orientations": {

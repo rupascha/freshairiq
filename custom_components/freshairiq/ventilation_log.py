@@ -76,10 +76,14 @@ def filter_ventilation_log(history: Any, start: datetime, end: datetime) -> list
             ended = datetime.fromisoformat(str(item.get("ended_at")))
         except (TypeError, ValueError):
             continue
-        if started.tzinfo is None and start.tzinfo is not None:
-            started = started.replace(tzinfo=start.tzinfo)
-            ended = ended.replace(tzinfo=start.tzinfo)
-        if ended >= start and started <= end:
+        if start.tzinfo is not None:
+            started = started.replace(tzinfo=start.tzinfo) if started.tzinfo is None else started.astimezone(start.tzinfo)
+            ended = ended.replace(tzinfo=start.tzinfo) if ended.tzinfo is None else ended.astimezone(start.tzinfo)
+        try:
+            overlaps = ended >= start and started <= end
+        except TypeError:
+            continue
+        if overlaps:
             rows.append(dict(item))
     return sorted(rows, key=lambda x: str(x.get("started_at") or ""))
 

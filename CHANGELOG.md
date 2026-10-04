@@ -1,4 +1,13 @@
+## 0.25.3.1
+
+- Hotfix release for the v0.25.3 runtime/UX corrections.
+- Removed the visible support-error help card and forum screenshot instruction.
+- Added notification testing to the native Home Assistant Devices & Services options flow.
+- Completed DE/EN aggregation labels and explanations for room creation/editing.
+- Hardened local ventilation PDF export against mixed legacy timezone timestamps.
+
 ## 0.25.3
+
 - Screenshot-safe support errors: runtime incidents and user-facing failures now expose stable `FAIQ-*` codes so users can post a screenshot in the forum when a diagnostic file cannot be sent.
 - Details view includes a compact privacy-safe error-help panel; settings, diagnostic upload/export, ventilation PDF export, panel-loader and frontend-loader failures show traceable codes without entity IDs, room names or resident names.
 - Backend API failure paths for settings, diagnostics/support and ventilation-PDF generation return stable error codes; unexpected PDF-generation failures are also recorded in runtime health.

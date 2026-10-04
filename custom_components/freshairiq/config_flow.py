@@ -20,6 +20,7 @@ from homeassistant.helpers import (
 
 from .const import *
 from .settings_contract import native_option_key
+from .notifications import _all_notification_targets, _send_targets
 from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
 from .validation import option_relationship_error
 
@@ -831,6 +832,7 @@ def _notification_schema(hass, current: dict[str, Any], rooms: list[dict[str, An
         vol.Required(native_option_key("notify_learning"), default=current["notify_learning"]): bool,
         vol.Required(native_option_key("notification_cooldown_min"), default=current["notification_cooldown_min"]): _number(10, 1440, 5, "min"),
         vol.Required(native_option_key("suppress_notifications_at_night"), default=bool(current.get("suppress_notifications_at_night", False))): bool,
+        vol.Optional("test_notification_now", default=False): bool,
     })
 
 
@@ -2344,15 +2346,32 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
 
     async def async_step_notifications(self, user_input=None):
         self._ensure_working_copy()
+        errors = {}
         if user_input is not None:
-            self._working_options.update(dict(user_input))
+            submitted = dict(user_input)
+            test_now = bool(submitted.pop("test_notification_now", False))
+            self._working_options.update(submitted)
             self._persist_working_state()
+            if test_now:
+                targets = _all_notification_targets({**DEFAULT_OPTIONS, **self._working_options})
+                if not targets:
+                    errors["test_notification_now"] = "notification_test_no_target"
+                else:
+                    sent = await _send_targets(
+                        self.hass, targets, "FreshAirIQ · Test",
+                        "Test erfolgreich: FreshAirIQ kann dieses Benachrichtigungsziel erreichen.",
+                    )
+                    if not sent:
+                        errors["test_notification_now"] = "notification_test_failed"
+                return self.async_show_form(
+                    step_id="notifications",
+                    data_schema=_notification_schema(self.hass, self._working_options, self._rooms()),
+                    errors=errors,
+                )
             return await self.async_step_notification_energy_settings()
         return self.async_show_form(
             step_id="notifications",
-            data_schema=_notification_schema(
-                self.hass, self._working_options, self._rooms()
-            ),
+            data_schema=_notification_schema(self.hass, self._working_options, self._rooms()),
         )
 
     async def async_step_statistics(self, user_input=None):

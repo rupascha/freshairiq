@@ -1262,7 +1262,8 @@
           "notify_night": "Nachtprognose senden",
           "notify_learning": "Lernmeldungen senden",
           "notification_cooldown_min": "Mindestabstand gleicher Meldungen",
-          "suppress_notifications_at_night": "Nachts keine Benachrichtigungen"
+          "suppress_notifications_at_night": "Nachts keine Benachrichtigungen",
+          "test_notification_now": "Testbenachrichtigung jetzt senden"
         },
         "data_description": {
           "notifications_enabled": "Hauptschalter für alle FreshAirIQ-Pushmeldungen.",
@@ -1278,7 +1279,8 @@
           "notify_sensor": "Warnt, wenn für eine belastbare Empfehlung erforderliche Sensordaten fehlen oder unplausibel sind.",
           "notify_night": "Sendet Hinweise zur Nachtstrategie.",
           "notify_learning": "Informiert über relevante Lernfortschritte.",
-          "suppress_notifications_at_night": "Wenn aktiviert, sendet FreshAirIQ während des unter Nacht eingestellten Zeitraums keine Pushmeldungen. Berechnungen, Lüftungslogik und Learning laufen unverändert weiter."
+          "suppress_notifications_at_night": "Wenn aktiviert, sendet FreshAirIQ während des unter Nacht eingestellten Zeitraums keine Pushmeldungen. Berechnungen, Lüftungslogik und Learning laufen unverändert weiter.",
+          "test_notification_now": "Aktivieren und bestätigen, um sofort eine neutrale Testmeldung an alle aktuell ausgewählten Empfänger zu senden. Diese Auswahl wird nicht gespeichert."
         }
       },
       "statistics": {
@@ -2210,7 +2212,9 @@
       "outdoor_pair_required": "Außen-Temperatur und Außen-Luftfeuchtigkeit müssen gemeinsam ausgewählt oder beide leer gelassen werden.",
       "resident_profiles_invalid": "Die persönlichen Bewohnerprofile enthalten ungültige Daten. Bitte die Zuordnung prüfen oder im Dashboard-Zahnrad bearbeiten.",
       "no_ha_areas_to_import": "Es sind keine weiteren Home-Assistant-Bereiche zum Importieren vorhanden.",
-      "select_ha_area": "Wähle mindestens einen Home-Assistant-Bereich aus."
+      "select_ha_area": "Wähle mindestens einen Home-Assistant-Bereich aus.",
+      "notification_test_no_target": "Bitte zuerst mindestens einen Benachrichtigungsempfänger auswählen.",
+      "notification_test_failed": "Keines der ausgewählten Benachrichtigungsziele ist aktuell in Home Assistant verfügbar."
     },
     "selector": {
       "operating_profile": {
@@ -2508,7 +2512,9 @@
             "ventilation_device": "Lüftungs-/WRG-Gerät (optional)",
             "dehumidifier": "Entfeuchter (optional)",
             "humidifier": "Luftbefeuchter (optional)",
-            "air_purifier": "Luftreiniger (optional)"
+            "air_purifier": "Luftreiniger (optional)",
+            "temperature_aggregation": "Temperatur-Auswertung",
+            "humidity_aggregation": "Feuchte-Auswertung"
           },
           "sections": {
             "identity": {
@@ -2557,8 +2563,8 @@
                 "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
                 "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
-                "temperature_aggregation": "Nur bei mehreren gültigen Temperatursensoren relevant. Wähle arithmetischen Mittelwert, Maximalwert oder Minimalwert.",
-                "humidity_aggregation": "Nur bei mehreren gültigen Feuchtigkeitssensoren relevant. Wähle arithmetischen Mittelwert, Maximalwert oder Minimalwert."
+                "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+                "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
               }
             },
             "geometry": {
@@ -2648,7 +2654,9 @@
             "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
             "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
             "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
-            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch."
+            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+            "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
           }
         },
         "reconfigure": {
@@ -2700,7 +2708,9 @@
             "ventilation_device": "Lüftungs-/WRG-Gerät (optional)",
             "dehumidifier": "Entfeuchter (optional)",
             "humidifier": "Luftbefeuchter (optional)",
-            "air_purifier": "Luftreiniger (optional)"
+            "air_purifier": "Luftreiniger (optional)",
+            "temperature_aggregation": "Temperatur-Auswertung",
+            "humidity_aggregation": "Feuchte-Auswertung"
           },
           "sections": {
             "identity": {
@@ -2840,7 +2850,9 @@
             "ventilation_device": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
             "dehumidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
             "humidifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
-            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch."
+            "air_purifier": "Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.",
+            "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
+            "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle."
           }
         },
         "add_orientations": {
