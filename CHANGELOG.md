@@ -1,3 +1,13 @@
+## 0.26.2
+
+- Hotfix: moderne `notify.*`-Entities werden in Geräte & Dienste und Dashboard aus demselben HA-Backendbestand ermittelt. Bereits gespeicherte Ziele bleiben bei temporärer Nichtverfügbarkeit erhalten.
+
+## 0.26.1
+- Hotfix: replaces browser-dependent native multi-select controls in centralized Dashboard settings with explicit checkbox selection, preserving visible multi-selection consistently across browser and iOS.
+- Keeps the existing notification test action and both legacy notify services and modern notify entities via `notify.send_message`.
+- No recommendation, learning, ventilation, room-runtime or notification-delivery logic changed.
+- Full notes: `docs/releases/RELEASE_NOTES_0.26.1.md`.
+
 ## 0.26.0
 - Public feature release consolidating all relevant changes since v0.25.3.3.
 - House-first normal recommendation aggregation with room-specific critical protection overrides.

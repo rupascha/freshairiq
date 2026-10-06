@@ -20,7 +20,7 @@ from homeassistant.helpers import (
 
 from .const import *
 from .settings_contract import native_option_key
-from .notifications import _all_notification_targets, _send_targets
+from .notifications import _all_notification_targets, _available_notification_targets, _send_targets
 from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
 from .validation import option_relationship_error
 
@@ -969,8 +969,9 @@ def _energy_details_schema(current: dict[str, Any]) -> vol.Schema:
 
 
 def _notification_schema(hass, current: dict[str, Any], rooms: list[dict[str, Any]]) -> vol.Schema:
-    services = sorted((hass.services.async_services().get("notify") or {}).keys())
+    services, entities = _available_notification_targets(hass, current.get("notification_targets", []))
     targets = [{"value": s, "label": f"notify.{s}"} for s in services]
+    targets.extend({"value": f"entity:{entity_id}", "label": f"{entity_id} · notify.send_message"} for entity_id in entities)
     room_opts = [{"value": r["key"], "label": r.get("name", r["key"])} for r in rooms]
     return vol.Schema({
         vol.Required(native_option_key("notifications_enabled"), default=current["notifications_enabled"]): bool,

@@ -19,7 +19,7 @@ from homeassistant.core import HomeAssistant
 from .config_flow import _normalise_legacy_entry_data, _normalise_room
 from .settings_contract import NATIVE_OPTION_KEYS
 from .runtime import get_runtime_coordinator
-from .notifications import _all_notification_targets, _send_targets
+from .notifications import _all_notification_targets, _available_notification_targets, _send_targets
 from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
 from .typing import FreshAirIQConfigEntry
 from .validation import option_relationship_message_de
@@ -361,12 +361,8 @@ def _entry_payload(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> dict[st
     data = _normalise_legacy_entry_data(dict(entry.data))
     data[CONF_ROOMS] = _sorted_rooms(list(data.get(CONF_ROOMS, [])))
     options = {**DEFAULT_OPTIONS, **dict(entry.options)}
-    notify_services = sorted((hass.services.async_services().get("notify") or {}).keys())
-    states = getattr(hass, "states", None)
-    notify_entities = sorted(
-        state.entity_id for state in (states.async_all() if states is not None and hasattr(states, "async_all") else [])
-        if str(getattr(state, "entity_id", "")).startswith("notify.")
-    )
+    configured_targets = _all_notification_targets(options)
+    notify_services, notify_entities = _available_notification_targets(hass, configured_targets)
     return {
         "version": VERSION,
         "entry_id": entry.entry_id,

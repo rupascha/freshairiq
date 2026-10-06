@@ -19,6 +19,50 @@ def _finite_float(value: Any, default: float = 0.0) -> float:
     return number if math.isfinite(number) else float(default)
 
 
+
+
+def _available_notification_targets(hass: HomeAssistant, configured: list[str] | None = None) -> tuple[list[str], list[str]]:
+    """Discover legacy notify services and modern notify entities from HA backend state.
+
+    Configured targets are retained even when temporarily unavailable so opening and
+    saving settings never silently loses a valid target during startup/reload.
+    """
+    services = sorted(
+        service for service in (hass.services.async_services().get("notify") or {}).keys()
+        if service != "send_message"
+    )
+    entities: set[str] = set()
+    states = getattr(hass, "states", None)
+    if states is not None and hasattr(states, "async_all"):
+        entities.update(
+            str(state.entity_id) for state in states.async_all()
+            if str(getattr(state, "entity_id", "")).startswith("notify.")
+        )
+    # The entity registry is authoritative even when an entity currently has no State
+    # object (for example during a platform reload). Keep this optional for test/mocks.
+    try:
+        from homeassistant.helpers import entity_registry as er
+        registry = er.async_get(hass)
+        registry_entities = getattr(registry, "entities", {})
+        values = registry_entities.values() if hasattr(registry_entities, "values") else []
+        entities.update(
+            str(entry.entity_id) for entry in values
+            if str(getattr(entry, "entity_id", "")).startswith("notify.")
+        )
+    except (ImportError, AttributeError, TypeError):
+        pass
+    for target in configured or []:
+        value = str(target or "").strip()
+        if value.startswith("entity:notify."):
+            entities.add(value.split(":", 1)[1])
+        elif value.startswith("notify."):
+            service = value.split(".", 1)[1]
+            if service and service not in services:
+                services.append(service)
+        elif value and not value.startswith("entity:") and value not in services:
+            services.append(value)
+    return sorted(set(services)), sorted(entities)
+
 def _target_service(target: str) -> str:
     return target.split(".", 1)[1] if target.startswith("notify.") else target
 
