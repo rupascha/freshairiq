@@ -44,7 +44,9 @@ async def _send_target(hass: HomeAssistant, target: str, title: str, message: st
     if entity_id is not None:
         if not _target_available(hass, target):
             return False
-        data = {"message": message, "target": {"entity_id": entity_id}}
+        # ``target:`` is automation/script syntax. Direct ServiceRegistry calls
+        # pass the resolved entity target as ``entity_id`` in service_data.
+        data = {"message": message, "entity_id": entity_id}
         if title:
             data["title"] = title
         await hass.services.async_call("notify", "send_message", data, blocking=False)

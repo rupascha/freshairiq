@@ -52,29 +52,11 @@ def test_dashboard_settings_api_uses_the_existing_config_entry():
     assert "Store(" not in api
 
 
-def test_dashboard_has_settings_gear_and_full_category_navigation():
+def test_dashboard_no_longer_exposes_duplicate_integration_settings_gear():
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
-    assert 'id="settings-gear"' in card
-    for text in (
-        "Außenluft & Wetter",
-        "Gebäude",
-        "Bewohnerprofil",
-        "Stockwerke & Bereiche",
-        "Räume & Sensoren",
-        "Betriebsprofil",
-        "Prognose",
-        "Optionale Sensoren & Außenluft",
-        "Querlüftung",
-        "Lüftungsmodell",
-        "Energie & Kosten",
-        "Benachrichtigungen",
-        "Daten & Statistik",
-        "Wartung",
-    ):
-        assert text in card
-    assert "Standard:" in card
-    assert "wohnzimmer+schlafzimmer" in card
-    assert "wohnzimmer+fitnessraum" in card
+    assert 'id="settings-gear"' not in card
+    assert 'data-support-open-settings=' not in card
+    assert "Geräte & Dienste → FreshAirIQ → Konfigurieren" in card
 
 
 def test_dashboard_settings_cover_every_native_options_key():

@@ -142,6 +142,49 @@ def refine_live_recommendation(
     target = _clamp(target, min_duration, max_duration)
     remaining = max(target - elapsed, 0.0)
 
+    # Canonical protection gate: no goal priority or ETA may extend a session
+    # once any room reports a hard close condition.
+    hard_close_rooms = [r for r in active if isinstance(r.get("goal_state"), dict) and r["goal_state"].get("hard_close")]
+    if hard_close_rooms:
+        out = dict(recommendation)
+        open_goals=[]
+        for room in hard_close_rooms:
+            for goal in room.get("goal_state", {}).get("goals", []):
+                if goal.get("active") and not goal.get("reached"):
+                    open_goals.append(goal)
+        eta_values=[float(g["eta_min"]) for g in open_goals if g.get("eta_min") is not None and float(g.get("eta_min") or 0)>0]
+        suffix = f" Das nächste offene Ziel bräuchte voraussichtlich noch etwa {max(round(min(eta_values)),1)} min." if eta_values else ""
+        reason = "Schutzgrenze erreicht; offene Komfortziele dürfen die Lüftung nicht weiter verlängern." + suffix
+        out.update({
+            "kind":"close", "status":"close_windows", "title":"Jetzt schließen",
+            "instruction":" + ".join(str(r.get("name", r.get("key", "Raum"))) for r in active)+" schließen",
+            "summary":"Eine Schutzgrenze ist erreicht. Noch offene Ziele bleiben sichtbar, rechtfertigen aber kein weiteres Lüften.",
+            "duration_min":0.0, "live_coach":True, "live_coach_state":"protection_close",
+            "live_coach_reason":reason, "live_coach_remaining_min":0.0,
+            "live_coach_confidence":confidence,
+        })
+        reasons=list(out.get("reasons") or []); reasons.insert(0,reason); out["reasons"]=reasons[:6]
+        return out
+
+    # Multi-goal extension: a still-open, user-prioritised goal may justify a
+    # limited continuation, but never across the configured thermal protection
+    # boundary. This is deliberately conservative: unknown ETA never invents a
+    # duration and the established safety/close gates remain authoritative.
+    priority_open = []
+    for room in active:
+        gs = room.get("goal_state") if isinstance(room.get("goal_state"), dict) else {}
+        for goal in gs.get("goals", []):
+            if goal.get("active") and not goal.get("reached") and goal.get("achievable_now"):
+                priority_open.append(goal)
+                break
+    thermal_protection = next5_temp <= -abs(_f(options.get("max_temp_loss_next_5_min_c"), 1.5))
+    priority_eta = [float(g["eta_min"]) for g in priority_open if g.get("eta_min") is not None and float(g.get("eta_min") or 0) > 0]
+    if priority_open and not thermal_protection and priority_eta:
+        target = max(target, min(elapsed + min(priority_eta), max_duration))
+        remaining = max(target - elapsed, 0.0)
+        state = "goal_extended"
+        reason = f"Höher priorisiertes Lüftungsziel noch offen; voraussichtlich etwa {max(round(min(priority_eta)),1)} min bis zum nächsten Ziel"
+
     # If the learned target has been reached and marginal return is weak, ask to close.
     if (
         all_close_decisions_ready

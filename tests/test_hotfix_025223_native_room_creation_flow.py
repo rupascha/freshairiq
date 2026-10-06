@@ -45,7 +45,7 @@ def test_native_user_form_has_full_documented_section_parity_de_en():
     for filename in ("strings.json", "translations/en.json", "translations/de.json"):
         data = json.loads((COMP / filename).read_text(encoding="utf-8"))
         steps = data["config_subentries"]["room"]["step"]
-        user = steps["user"]
+        user = steps["create_room"]
         basics = steps["room_basics"]
         assert set(user["data"]) == set(basics["data"])
         assert set(user["data_description"]) == set(basics["data_description"])

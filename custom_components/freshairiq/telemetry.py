@@ -15,6 +15,7 @@ import json
 import logging
 import ipaddress
 import secrets
+from pathlib import Path
 from functools import partial
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit, urlunsplit
@@ -215,8 +216,7 @@ class FreshAirIQDiagnosticsClient:
 
     async def async_activity_heartbeat(self) -> bool:
         """Refresh anonymous installation activity without sending diagnostics payload."""
-        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "daily"))
-        if mode == "off" or not self.endpoint:
+        if not self.endpoint:
             return False
         now = dt_util.now()
         last = self._parse_dt(self._state.get("last_activity_heartbeat_at"))
@@ -321,6 +321,52 @@ class FreshAirIQDiagnosticsClient:
             raise RuntimeError("hub_credential_persistence_failed")
         return token
 
+    def _candidate_persisted_client_tokens(self) -> list[str]:
+        """Return other locally persisted diagnostics tokens for this HA instance.
+
+        The anonymous installation identity is shared across FreshAirIQ config
+        entries, while older releases stored the Hub credential per config entry.
+        A second/recreated entry could therefore hit HTTP 409 although this Home
+        Assistant instance still owns the original credential.
+        """
+        storage = Path(self.hass.config.path(".storage"))
+        current = str(self._state.get("client_token") or "")
+        found: list[str] = []
+        for path in storage.glob(f"{DOMAIN}.diagnostics_upload.*"):
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError, UnicodeError):
+                continue
+            data = raw.get("data") if isinstance(raw, dict) else None
+            token = str((data or {}).get("client_token") or "") if isinstance(data, dict) else ""
+            if len(token) >= 32 and token != current and token not in found:
+                found.append(token)
+        return found
+
+    async def _async_recover_enrollment_token(self, session: Any, installation_id: str, timeout: ClientTimeout) -> str | None:
+        """Adopt a locally owned legacy credential that the Hub already knows."""
+        candidates = await self.hass.async_add_executor_job(self._candidate_persisted_client_tokens)
+        for token in candidates:
+            body = json.dumps({
+                "anonymous_installation_id": installation_id,
+                "client_token": token,
+                "upload_schema_version": 2,
+                "freshairiq_version": VERSION,
+            }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            headers = {"Content-Type":"application/json","Accept":"application/json","User-Agent":f"FreshAirIQ/{VERSION}"}
+            try:
+                async with session.post(self.enroll_endpoint, data=body, headers=headers, timeout=timeout) as response:
+                    if 200 <= int(response.status) < 300:
+                        self._state["client_token"] = token
+                        self._state["hub_enrolled"] = True
+                        self._state["last_enrolled_at"] = dt_util.now().isoformat()
+                        self._state["enrollment_recovered_from_local_credential"] = True
+                        await self._save_state()
+                        return token
+            except (ClientError, TimeoutError, OSError):
+                continue
+        return None
+
     async def _async_ensure_enrolled(
         self,
         session: Any,
@@ -353,6 +399,10 @@ class FreshAirIQDiagnosticsClient:
         async with session.post(self.enroll_endpoint, data=body, headers=headers, timeout=timeout) as response:
             status = int(response.status)
             self._state["last_status_code"] = status
+            if status == 409:
+                recovered = await self._async_recover_enrollment_token(session, installation_id, timeout)
+                if recovered is not None:
+                    return recovered
             if status < 200 or status >= 300:
                 raise RuntimeError(f"hub_enroll_http_{status}")
         self._state["hub_enrolled"] = True

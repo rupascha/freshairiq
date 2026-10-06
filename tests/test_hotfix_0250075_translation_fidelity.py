@@ -25,7 +25,7 @@ def test_critical_english_help_preserves_semantics():
       'options.step.init.description':['default value','example','take effect immediately'],
       'options.step.contact_delays.description':['Default: 0 s','120 s','two minutes'],
       'config_subentries.room.step.room_delays.description':['Default: 0 s','120 s','two minutes','saved immediately'],
-      'config_subentries.room.step.user.sections.optional_sensors.description':['VOC/TVOC','PM2.5','lux','30-day diagnostics'],
+      'config_subentries.room.step.create_room.sections.optional_sensors.description':['VOC/TVOC','PM2.5','lux','30-day diagnostics'],
       'config.step.room.data_description.voc':['volatile organic compounds','ml forecast','30-day diagnostics'],
       'config.step.room.data_description.pm25':['2.5 µm','µg/m³','ml forecast'],
       'config.step.room.data_description.illuminance':['lux (lx)','ml forecast','30-day diagnostics'],

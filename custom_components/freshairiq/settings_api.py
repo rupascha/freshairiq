@@ -81,6 +81,7 @@ _ENUMS: dict[str, set[str]] = {
     "heating_system": {HEATING_HEAT_PUMP, HEATING_GAS, HEATING_DISTRICT, HEATING_ELECTRIC, HEATING_OIL},
     "notification_scope": {NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_BOTH},
     "diagnostics_reporting_mode": {"off", "errors", "daily", "weekly"},
+    "cover_position_zero_means": {"closed", "open"},
 }
 
 # Same effective bounds as the native options flow. Keeping these constraints
@@ -96,7 +97,7 @@ _BOUNDS: dict[str, tuple[float, float]] = {
     "min_efficiency_ml_per_01c": (0, 200), "surface_factor": (.05, .8),
     "mould_warn_surface_rh": (60, 95), "mould_critical_surface_rh": (70, 100),
     "co2_warn": (600, 2500), "co2_critical": (800, 4000),
-    "learning_max_duration_min": (15, 240), "cooling_start_temp_c": (18, 35),
+    "learning_max_duration_min": (15, 240), "cover_learning_max_closed_percent": (0, 100), "cooling_start_temp_c": (18, 35),
     "cooling_min_outdoor_delta_c": (.5, 10), "cooling_max_indoor_rh": (40, 90),
     "cooling_max_moisture_gain_5min_ml": (0, 500), "forecast_horizon_min": (1, 120),
     "pollen_max": (0, 10), "voc_warn": (50, 5000), "voc_critical": (100, 10000),
@@ -526,9 +527,18 @@ class FreshAirIQSettingsView(HomeAssistantView):
                 data[CONF_ROOMS] = _sorted_rooms(rooms)
                 hass.config_entries.async_update_entry(entry, data=data)
                 _sync_room_subentries(hass, entry, data[CONF_ROOMS])
-                hass.config_entries.async_schedule_reload(entry.entry_id)
-                trace_room_creation(hass, entry, source="dashboard", stage="parent_and_subentries_persisted", room_key=normalised.get("key"), outcome="ok", extra={"reload_scheduled": True})
-                trace_room_creation_after_reload(hass, entry.entry_id, source="dashboard", room_key=normalised.get("key"))
+                if keep_key:
+                    # Editing an existing room does not change the HA entity topology.
+                    # Apply its sensors/goals/thresholds live so the FreshAirIQ entities
+                    # stay available while the coordinator adopts the new config.
+                    await _apply_runtime_update(hass, entry, rebuild_listeners=True)
+                    trace_room_creation(hass, entry, source="dashboard", stage="parent_and_subentries_persisted", room_key=normalised.get("key"), outcome="ok", extra={"reload_scheduled": False})
+                else:
+                    # A new room creates a new HA entity set and therefore still needs
+                    # one structural config-entry reload.
+                    hass.config_entries.async_schedule_reload(entry.entry_id)
+                    trace_room_creation(hass, entry, source="dashboard", stage="parent_and_subentries_persisted", room_key=normalised.get("key"), outcome="ok", extra={"reload_scheduled": True})
+                    trace_room_creation_after_reload(hass, entry.entry_id, source="dashboard", room_key=normalised.get("key"))
             elif action == "delete_room":
                 room_key = str(payload.get("room_key") or "")
                 data = _normalise_legacy_entry_data(dict(entry.data))

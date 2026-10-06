@@ -58,6 +58,7 @@ _SAFE_OPTION_KEYS = (
     "illuminance_sensor_enabled", "voc_warn", "voc_critical", "pm25_warn",
     "pm25_critical", "humidify_below_rh", "shade_above_temp_c",
     "shade_min_illuminance_lx", "learning_enabled", "learning_max_duration_min",
+    "cover_position_zero_means", "cover_learning_max_closed_percent",
     "cross_ventilation_pairs", "cross_zone_connections", "operating_profile",
     "personalisation_enabled", "thermal_preference", "personal_priority",
     "night_window_preference", "cooling_start_temp_c",
@@ -1707,3 +1708,32 @@ class FreshAirIQSupportDiagnosticsView(HomeAssistantView):
             return self.json({"error": "support_upload_failed", "detail": detail, "error_code": "FAIQ-SUPPORT-UPLOAD-001"}, status_code=502)
         status = 429 if result.get("reason") == "cooldown" else 200
         return self.json(result, status_code=status)
+
+async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: Any) -> dict[str, Any]:
+    """Return a compact Home Assistant native diagnostic without entity IDs.
+
+    The full rolling support dossier remains available through FreshAirIQ's
+    explicit support export. Native HA diagnostics intentionally expose only a
+    current, privacy-reduced runtime snapshot.
+    """
+    from .runtime import get_runtime_coordinator
+    coordinator = get_runtime_coordinator(hass, entry)
+    data = coordinator.data if isinstance(getattr(coordinator, "data", None), dict) else {}
+    rooms = []
+    for room in (data.get("rooms") or {}).values() if isinstance(data.get("rooms"), dict) else []:
+        if not isinstance(room, dict):
+            continue
+        rooms.append({k: _json_safe(room.get(k)) for k in (
+            "name", "floor", "data_quality", "temperature", "humidity", "absolute_humidity",
+            "co2", "co2_available", "surface_rh", "mould_level", "action", "active",
+            "ventilation_type", "mechanical_exhaust_active", "goal_state", "comfort_target_c",
+            "comfort_target_source", "learning_status", "learning_samples",
+        )})
+    return {
+        "freshairiq_version": getattr(coordinator, "version", None) or getattr(coordinator, "integration_version", None),
+        "diagnostics_schema_version": DIAGNOSTICS_SCHEMA_VERSION,
+        "runtime_available": True,
+        "house_status": data.get("status"),
+        "rooms": rooms,
+        "privacy": "Entity IDs, coordinates, credentials, notification targets and resident names are omitted.",
+    }

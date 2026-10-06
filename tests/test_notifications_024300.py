@@ -287,7 +287,7 @@ def test_modern_notify_entity_uses_send_message_target_contract():
     assert sent is True
     assert hass.services.calls == [(
         "notify", "send_message",
-        {"message": "Hallo", "target": {"entity_id": "notify.sweethome"}, "title": "FreshAirIQ · Test"},
+        {"message": "Hallo", "entity_id": "notify.sweethome", "title": "FreshAirIQ · Test"},
         False,
     )]
 

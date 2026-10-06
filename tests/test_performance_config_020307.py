@@ -15,8 +15,10 @@ def test_020307_runtime_settings_use_lightweight_refresh():
 
 
 def test_020307_only_structural_dashboard_room_changes_keep_reload():
-    # Dashboard settings API keeps exactly two full reloads: room upsert and delete.
+    # Existing-room edits are live; only topology changes (add/delete) reload.
     assert SETTINGS.count("async_schedule_reload(entry.entry_id)") == 2
+    assert "if keep_key:" in SETTINGS
+    assert "await _apply_runtime_update(hass, entry, rebuild_listeners=True)" in SETTINGS
     assert 'elif action == "upsert_room":' in SETTINGS
     assert 'elif action == "delete_room":' in SETTINGS
     assert 'elif action == "reorder_rooms":' in SETTINGS
@@ -33,7 +35,9 @@ def test_020307_coordinator_can_rebuild_source_listeners_without_unload():
 
 
 def test_020307_native_options_flow_avoids_reload_for_non_structural_changes():
-    assert "structural_change = CONF_ROOMS in changed_data_keys" in CONFIG_FLOW
+    assert 'old_room_keys = {str(room.get("key")) for room in old_data.get(CONF_ROOMS, [])}' in CONFIG_FLOW
+    assert 'new_room_keys = {str(room.get("key")) for room in new_data.get(CONF_ROOMS, [])}' in CONFIG_FLOW
+    assert "structural_change = old_room_keys != new_room_keys" in CONFIG_FLOW
     assert "if structural_change:" in CONFIG_FLOW
     assert "self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)" in CONFIG_FLOW
     assert "await coordinator.async_rebuild_listeners(" in CONFIG_FLOW

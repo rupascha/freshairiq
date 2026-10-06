@@ -59,20 +59,47 @@ def aggregate_close_gate_ready(rooms: list[dict[str, Any]]) -> bool:
     return bool(rooms) and all(bool(room.get("close_decision_ready", False)) for room in rooms)
 
 
+def _reachable_open_non_humidity_goal(room: dict[str, Any]) -> bool:
+    """Return whether a room still has a useful non-humidity goal right now.
+
+    Aggregate house/floor efficiency is moisture-based. A low moisture return is
+    therefore only a soft close reason and must not terminate a session while
+    CO2 or thermal comfort can still benefit from the same ventilation action.
+    """
+    state = room.get("goal_state") if isinstance(room.get("goal_state"), dict) else {}
+    if bool(state.get("hard_close")):
+        return False
+    for goal in state.get("goals") or []:
+        if not isinstance(goal, dict) or goal.get("id") == "humidity":
+            continue
+        if bool(goal.get("active")) and not bool(goal.get("reached")) and bool(goal.get("achievable_now")):
+            return True
+    return False
+
+
 def aggregate_close_allowed(
     rooms: list[dict[str, Any]],
     *,
     low_return: bool,
     thermal_bad: bool,
 ) -> bool:
-    """Allow an aggregate close only after every affected room released its gate."""
+    """Allow an aggregate close only after every affected room released its gate.
+
+    Hard/thermal protection and unanimous room-close decisions remain dominant.
+    Moisture low-return alone is suppressed while another configured goal is
+    still open and achievable in any participating room.
+    """
     if not aggregate_close_gate_ready(rooms):
         return False
-    return bool(
-        all(str(room.get("action")) == "Close" for room in rooms)
-        or low_return
-        or thermal_bad
-    )
+    if any(bool((room.get("goal_state") or {}).get("hard_close")) for room in rooms):
+        return True
+    if all(str(room.get("action")) == "Close" for room in rooms):
+        return True
+    if thermal_bad:
+        return True
+    if low_return and any(_reachable_open_non_humidity_goal(room) for room in rooms):
+        return False
+    return bool(low_return)
 
 
 def stabilise_recommendation(

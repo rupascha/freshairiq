@@ -7,7 +7,7 @@ def test_actual_room_subentry_is_fully_translated_and_documented():
   sec=step['sections'][section]; assert sec.get('name') and sec.get('description'); assert sec.get('data'); assert set(sec['data'])==set(sec['data_description'])
  for key in ('floor','include_in_calculations','moisture_sources','ventilation_threshold_mode','reference_temperature','reference_humidity','co2','voc','pm25','illuminance','climate','exhaust_fan','supply_fan','ventilation_device','dehumidifier','humidifier','air_purifier'):
   assert key in step['data'] and key in step['data_description']; assert 'Standard:' not in step['data_description'][key]
- blob=json.dumps(step,ensure_ascii=False); assert 'spätere FreshAirIQ-Funktionen' in blob; assert 'verändert die aktuelle Lüftungs-/ml-Empfehlung nicht' in blob
+ blob=json.dumps(step,ensure_ascii=False); assert '30-Tage-Diagnostik' in blob; assert 'mechanischen Lüftung' in blob
 def test_english_fallback_matches_strings():
  strings=json.loads((COMP/'strings.json').read_text(encoding='utf-8')); en=json.loads((COMP/'translations/en.json').read_text(encoding='utf-8'))
  for section in ('config','options','config_subentries'): assert strings[section]==en[section]

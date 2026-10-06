@@ -11,7 +11,7 @@ def card_text() -> str:
 
 def test_details_header_sticks_to_top_of_actual_scroll_viewport():
     text = card_text()
-    assert '.dialog-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px 42px;align-items:center;gap:8px;position:relative' in text
+    assert '.dialog-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;position:relative' in text
     assert '.dialog-scroll{min-height:0;flex:1 1 0;overflow-y:auto' in text
     assert 'position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px)' not in text
 

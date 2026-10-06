@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.25.3.3",
+  "version": "0.26.0",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
     "ha_combined_coverage_percent": 99.0,
@@ -39,7 +39,7 @@
     "baseline_file": "quality/performance_baseline.json",
     "warning_regression_percent": 15.0,
     "failure_regression_percent": 30.0,
-    "rounds": 7
+    "rounds": 11
   },
   "compatibility": {
     "python_required": [

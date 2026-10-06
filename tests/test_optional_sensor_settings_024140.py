@@ -32,10 +32,11 @@ def test_optional_sensor_controls_share_the_integration_settings_store() -> None
     for key in ("voc_sensor_enabled", "pm25_sensor_enabled", "illuminance_sensor_enabled"):
         assert key in editable
         assert key in flow
-        assert f'["{key}",' in frontend
-        assert "data-global-sensor-key" in frontend
-    assert 'action:"set_option"' in frontend
-    assert "OPTIONALE ZUSATZSENSOREN · GLOBAL" in frontend
+    # v0.25.4.10 centralization: integration options are no longer editable
+    # from the dashboard card editor.
+    editor = frontend[frontend.index("class FreshAirIQCardEditor"): ]
+    assert "data-global-sensor-key" not in editor
+    assert 'action:"set_option"' not in editor
 
 
 def test_dashboard_and_native_editable_option_surfaces_remain_in_parity() -> None:

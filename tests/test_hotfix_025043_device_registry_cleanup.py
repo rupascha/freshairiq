@@ -5,7 +5,8 @@ INIT = ROOT / "custom_components/freshairiq/__init__.py"
 
 def test_cleanup_iterates_device_entries_not_mapping_keys():
     text = INIT.read_text(encoding="utf-8")
-    assert 'registered_devices.values()' in text
+    assert 'registered_devices.values()' not in text
+    assert 'getattr(registered_devices, "data", registered_devices)' in text
     assert 'for device in device_registry.devices:' not in text
 
 def test_cleanup_skips_unexpected_registry_items_without_blocking_setup():

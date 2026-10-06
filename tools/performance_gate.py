@@ -154,14 +154,21 @@ def _control_median_ns(iterations: int, rounds: int) -> float:
 
 
 def measure(rounds: int) -> dict[str, dict[str, float]]:
+    # Take three complete normalized samples and use their median. This makes
+    # the release gate resistant to transient scheduler/CPU-frequency jitter
+    # without relaxing any regression threshold.
     results: dict[str, dict[str, float]] = {}
     for name, (iterations, fn) in BENCHMARKS.items():
-        workload_ns = _median_ns(fn, iterations, rounds)
-        # The control loop intentionally uses more iterations so its duration is
-        # large enough to be stable at timer resolution.
-        control_iterations = iterations * 12
-        control_ns = _control_median_ns(control_iterations, rounds)
-        ratio = workload_ns / control_ns if control_ns > 0 else float("inf")
+        samples: list[tuple[float, float, float]] = []
+        for _ in range(3):
+            workload_ns = _median_ns(fn, iterations, rounds)
+            control_iterations = iterations * 1200
+            control_ns = _control_median_ns(control_iterations, rounds)
+            ratio = workload_ns / control_ns if control_ns > 0 else float("inf")
+            samples.append((ratio, workload_ns, control_ns))
+        ratio = float(statistics.median(row[0] for row in samples))
+        workload_ns = float(statistics.median(row[1] for row in samples))
+        control_ns = float(statistics.median(row[2] for row in samples))
         results[name] = {
             "ratio": ratio,
             "us_per_call": workload_ns / iterations / 1000.0,

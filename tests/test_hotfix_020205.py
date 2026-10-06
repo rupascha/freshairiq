@@ -64,7 +64,7 @@ def test_house_mode_is_aggregate_not_presentation_only():
     assert 'house_should_close' in coordinator
     assert 'house_next5_removed' in coordinator
     assert '"room_keys"] = active_room_keys' in coordinator
-    assert '"selected_rooms": []' in coordinator
+    assert '"selected_rooms": active_room_names' in coordinator
     assert 'len(intelligent_recommendation.get("room_keys") or []) < len(active)' not in coordinator
 
 

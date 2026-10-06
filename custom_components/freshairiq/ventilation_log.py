@@ -106,31 +106,26 @@ def _fmt(value: Any, digits: int = 1) -> str:
 
 
 def build_ventilation_pdf(events: list[dict[str, Any]], start: datetime, end: datetime) -> bytes:
-    """Generate a structured, dependency-free A4 PDF report (PDF 1.4 / WinAnsi)."""
+    """Generate a compact room-grouped A4 table PDF (PDF 1.4 / WinAnsi)."""
     total_min = sum(max(_num(e.get("duration_min")) or 0.0, 0.0) for e in events)
     valid_removed = [_num(e.get("removed_ml")) for e in events if e.get("measurement_valid")]
     valid_removed = [v for v in valid_removed if v is not None]
     room_names = sorted({str(e.get("room_name") or "Raum") for e in events})
 
-    # Keep the PDF renderer dependency-free so the integration works on stock HA.
-    # Each page is composed from primitive PDF drawing/text commands.  All visible
-    # strings stay within WinAnsi; before/after values use labelled columns instead
-    # of the unsupported Unicode arrow that previously rendered as '?'.
     objects: list[bytes] = []
     def add(data: str | bytes) -> int:
         objects.append(data.encode("latin1") if isinstance(data, str) else data)
         return len(objects)
 
     catalog = add("<< /Type /Catalog /Pages 2 0 R >>")
-    add(b"")  # pages placeholder
+    add(b"")
     font = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
     font_bold = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
-
     page_streams: list[list[str]] = []
     current: list[str] = []
     y = 0.0
 
-    def text(x: float, yy: float, value: Any, size: int = 9, bold: bool = False, rgb=(0.12, 0.16, 0.19)) -> None:
+    def text(x: float, yy: float, value: Any, size: int = 8, bold: bool = False, rgb=(0.12, 0.16, 0.19)) -> None:
         r, g, b = rgb
         current.extend(["BT", f"{r:.3f} {g:.3f} {b:.3f} rg", f"/{'F2' if bold else 'F1'} {size} Tf", f"1 0 0 1 {x:.1f} {yy:.1f} Tm ({_pdf_escape(value)}) Tj", "ET"])
 
@@ -143,7 +138,7 @@ def build_ventilation_pdf(events: list[dict[str, Any]], start: datetime, end: da
             sr, sg, sb = stroke
             current.extend([f"{sr:.3f} {sg:.3f} {sb:.3f} RG", f"{width:.2f} w", f"{x:.1f} {yy:.1f} {w:.1f} {h:.1f} re B"])
 
-    def line(x1: float, y1: float, x2: float, y2: float, rgb=(0.78, 0.84, 0.87), width: float = 0.6) -> None:
+    def line(x1: float, y1: float, x2: float, y2: float, rgb=(0.78, 0.84, 0.87), width: float = 0.5) -> None:
         r, g, b = rgb
         current.extend([f"{r:.3f} {g:.3f} {b:.3f} RG", f"{width:.2f} w", f"{x1:.1f} {y1:.1f} m {x2:.1f} {y2:.1f} l S"])
 
@@ -155,11 +150,11 @@ def build_ventilation_pdf(events: list[dict[str, Any]], start: datetime, end: da
         text(50, 798, "FA", 10, True, (1, 1, 1))
         text(82, 805, "FreshAirIQ", 19, True, (1, 1, 1))
         text(82, 788, "Lueftungsprotokoll", 10, False, (0.72, 0.82, 0.87))
-        text(444, 801, f"{start.strftime('%d.%m.%Y')}", 8, True, (0.75, 0.85, 0.89))
+        text(444, 801, start.strftime("%d.%m.%Y"), 8, True, (0.75, 0.85, 0.89))
         text(444, 787, f"bis {end.strftime('%d.%m.%Y')}", 8, False, (0.75, 0.85, 0.89))
         y = 744
         if first:
-            text(42, y, "Zusammenfassung", 13, True); y -= 48
+            text(42, y, "Zusammenfassung", 12, True); y -= 42
             boxes = [
                 ("LUEFTUNGEN", str(len(events))),
                 ("GESAMTDAUER", f"{_fmt(total_min, 0)} min"),
@@ -168,69 +163,75 @@ def build_ventilation_pdf(events: list[dict[str, Any]], start: datetime, end: da
             ]
             x = 42
             for label, value in boxes:
-                rect(x, y, 119, 42, (0.94, 0.965, 0.975), (0.79, 0.88, 0.91))
-                text(x + 9, y + 27, label, 6, True, (0.34, 0.48, 0.55))
-                text(x + 9, y + 10, value, 12, True, (0.07, 0.20, 0.25))
+                rect(x, y, 119, 36, (0.94, 0.965, 0.975), (0.79, 0.88, 0.91))
+                text(x + 8, y + 23, label, 6, True, (0.34, 0.48, 0.55))
+                text(x + 8, y + 8, value, 10, True, (0.07, 0.20, 0.25))
                 x += 128
-            y -= 26
-            text(42, y, "Chronologisches Protokoll", 13, True); y -= 12
+            y -= 18
 
     def finish_page() -> None:
-        # quiet footer on every page
         line(42, 34, 553, 34, (0.86, 0.89, 0.91), 0.5)
         text(42, 20, "FreshAirIQ - lokale Sensordokumentation", 6, False, (0.45, 0.52, 0.56))
-        page_streams.append(list(current))
-        current.clear()
+        page_streams.append(list(current)); current.clear()
+
+    # Compact table requested in GitHub issue #9.  One row represents one
+    # completed ventilation session; rooms are grouped so repeated room names
+    # no longer consume a full card per event.
+    cols = [
+        ("Datum", 42, 55), ("Zeit", 97, 72), ("Dauer", 169, 48),
+        ("Temperatur", 217, 85), ("Luftfeuchte", 302, 78),
+        ("Abs. Feuchte", 380, 86), ("Bilanz", 466, 45), ("Empf.", 511, 42),
+    ]
+    row_h = 22
+    table_w = 511
+
+    def table_header(room: str, continued: bool = False) -> None:
+        nonlocal y
+        label = f"{room}{' - Fortsetzung' if continued else ''}"
+        rect(42, y - 24, table_w, 24, (0.93, 0.965, 0.975), (0.79, 0.88, 0.91))
+        text(50, y - 16, label[:72], 10, True, (0.05, 0.22, 0.28)); y -= 24
+        rect(42, y - 28, table_w, 28, (0.965, 0.975, 0.980), (0.79, 0.84, 0.87))
+        for label, x, _w in cols:
+            text(x + 3, y - 17, label, 6, True, (0.30, 0.40, 0.45))
+        y -= 28
+
+    def row_values(event: dict[str, Any]) -> list[str]:
+        try:
+            started = datetime.fromisoformat(str(event.get("started_at")))
+            ended = datetime.fromisoformat(str(event.get("ended_at")))
+            date = started.strftime("%d.%m.%y")
+            period = f"{started.strftime('%H:%M')}-{ended.strftime('%H:%M')}"
+        except (TypeError, ValueError):
+            date, period = "-", "-"
+        temp = f"{_fmt(event.get('start_temperature_c'))} -> {_fmt(event.get('end_temperature_c'))}"
+        rh = f"{_fmt(event.get('start_humidity_percent'), 0)} -> {_fmt(event.get('end_humidity_percent'), 0)}"
+        ah = f"{_fmt(event.get('start_absolute_humidity_g_m3'), 2)} -> {_fmt(event.get('end_absolute_humidity_g_m3'), 2)}"
+        effect = f"{_fmt(event.get('removed_ml'), 0)} ml" if event.get("measurement_valid") else "n.v."
+        followed = "Ja" if event.get("recommendation_followed") is True else ("Nein" if event.get("recommendation_followed") is False else "Nicht erfasst")
+        return [date, period, f"{_fmt(event.get('duration_min'), 0)} min", temp, rh, ah, effect, followed]
 
     header(True)
     if not events:
-        rect(42, y - 78, 511, 66, (0.965, 0.975, 0.980), (0.84, 0.88, 0.90))
-        text(58, y - 38, "Keine erfassten Lueftungsvorgaenge im gewaehlten Zeitraum.", 10, True)
-        text(58, y - 55, "Es werden ausschliesslich lokal gespeicherte, abgeschlossene Vorgange dokumentiert.", 8, False, (0.38, 0.46, 0.50))
-        y -= 100
+        rect(42, y - 66, 511, 54, (0.965, 0.975, 0.980), (0.84, 0.88, 0.90))
+        text(58, y - 34, "Keine erfassten Lueftungsvorgaenge im gewaehlten Zeitraum.", 10, True)
+        text(58, y - 49, "Es werden ausschliesslich lokal gespeicherte, abgeschlossene Vorgaenge dokumentiert.", 8, False, (0.38, 0.46, 0.50))
     else:
-        for idx, event in enumerate(events, 1):
-            card_h = 126
-            # Reserve the lower page area for the legal note and footer.
-            if y - card_h < 105:
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for event in events:
+            grouped.setdefault(str(event.get("room_name") or event.get("name") or "Raum"), []).append(event)
+        for room in sorted(grouped):
+            if y - 52 - row_h < 105:
                 finish_page(); header(False)
-                text(42, y, "Chronologisches Protokoll - Fortsetzung", 12, True); y -= 16
-            top = y
-            bottom = top - card_h
-            rect(42, bottom, 511, card_h - 6, (1, 1, 1), (0.82, 0.87, 0.89))
-            rect(42, top - 30, 511, 24, (0.93, 0.965, 0.975))
-            room = str(event.get("room_name") or event.get("name") or "Raum")
-            text(53, top - 21, f"{idx:02d}  {room}", 11, True, (0.05, 0.22, 0.28))
-            text(330, top - 21, f"{_fmt_dt(event.get('started_at'))} bis {_fmt_dt(event.get('ended_at'))}", 7, False, (0.35, 0.45, 0.50))
-
-            effect = f"{_fmt(event.get('removed_ml'), 0)} ml" if event.get("measurement_valid") else "nicht vollstaendig"
-            recommendation_followed = event.get("recommendation_followed")
-            if recommendation_followed is True:
-                followed = "Ja"
-            elif recommendation_followed is False:
-                followed = "Nein"
-            else:
-                followed = "Nicht erfasst"
-            metrics = [("DAUER", f"{_fmt(event.get('duration_min'),1)} min"), ("FEUCHTEBILANZ", effect), ("EMPFEHLUNG BEFOLGT", followed)]
-            x = 54
-            for label, value in metrics:
-                text(x, top - 48, label, 6, True, (0.40, 0.51, 0.56))
-                text(x, top - 63, value, 9, True)
-                x += 166
-
-            line(54, top - 72, 541, top - 72, (0.88, 0.91, 0.92), 0.5)
-            text(54, top - 88, "KLIMAWERTE - VORHER -> NACHHER", 6, True, (0.40, 0.51, 0.56))
-            climate = [
-                ("Temperatur", _fmt(event.get("start_temperature_c")), _fmt(event.get("end_temperature_c")), "C"),
-                ("Luftfeuchte", _fmt(event.get("start_humidity_percent"), 0), _fmt(event.get("end_humidity_percent"), 0), "% rF"),
-                ("Absolute Feuchte", _fmt(event.get("start_absolute_humidity_g_m3"), 2), _fmt(event.get("end_absolute_humidity_g_m3"), 2), "g/m3"),
-            ]
-            cx = 54
-            for label, before, after, unit in climate:
-                text(cx, top - 104, label, 7, False, (0.36, 0.45, 0.49))
-                text(cx, top - 117, f"{before} -> {after} {unit}", 8, True)
-                cx += 166
-            y = bottom - 10
+            table_header(room)
+            for event in grouped[room]:
+                if y - row_h < 105:
+                    finish_page(); header(False); table_header(room, True)
+                rect(42, y - row_h, table_w, row_h, (1, 1, 1), (0.86, 0.89, 0.91), 0.4)
+                values = row_values(event)
+                for value, (_label, x, _w) in zip(values, cols):
+                    text(x + 3, y - 14, value, 6, False)
+                y -= row_h
+            y -= 10
 
     text(42, 84, "Hinweis", 8, True, (0.30, 0.40, 0.45))
     text(42, 70, "Dieses Protokoll dokumentiert die von FreshAirIQ und Home Assistant erfassten Sensordaten.", 7, False, (0.42, 0.49, 0.53))

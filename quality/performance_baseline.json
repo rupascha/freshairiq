@@ -1,17 +1,17 @@
 {
   "schema": 1,
-  "version": "0.25.3.3",
+  "version": "0.26.0",
   "python": "3.13",
-  "description": "Normalized ratios captured by tools/performance_gate.py.",
+  "description": "Normalized ratios recalibrated from accepted v0.25.4.9 with a 100x longer control workload than the former gate to eliminate sub-millisecond scheduler noise; regression thresholds unchanged.",
   "benchmarks": {
     "evaluate_room": {
-      "ratio": 8.51026672339571
+      "ratio": 0.07253231439125103
     },
     "recommendation_12_rooms": {
-      "ratio": 107.8768424167155
+      "ratio": 1.1210579402372813
     },
     "simulate_6_rooms": {
-      "ratio": 24.785748086860735
+      "ratio": 0.26973427650757836
     }
   }
 }

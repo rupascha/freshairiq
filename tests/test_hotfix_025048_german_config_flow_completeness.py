@@ -10,7 +10,7 @@ SECTION_FIELDS = {
         "properties": ["moisture_sources", "ventilation_threshold_mode", "ventilation_threshold_percent", "ventilation_threshold_ml"],
         "sensors": ["temperature", "humidity", "contacts", "contact_mode"],
         "geometry": ["volume", "length", "width", "height"],
-        "optional_sensors": ["reference_temperature", "reference_humidity", "co2", "voc", "pm25", "illuminance"],
+        "optional_sensors": ["voc", "pm25", "illuminance"],
         "optional_actuators": ["climate", "exhaust_fan", "supply_fan", "ventilation_device", "dehumidifier", "humidifier", "air_purifier"],
     },
     "edit_room": {},

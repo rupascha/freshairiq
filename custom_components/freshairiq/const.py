@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.25.3.3"
+VERSION = "0.26.0"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -49,6 +49,14 @@ VOLUME_MODE_DIMENSIONS = "dimensions"
 CONF_ROOM_REFERENCE_TEMPERATURE = "reference_temperature"
 CONF_ROOM_REFERENCE_HUMIDITY = "reference_humidity"
 CONF_ROOM_CO2 = "co2"
+CONF_ROOM_GOAL_PRIORITIES = "goal_priorities"
+CONF_ROOM_TARGET_TEMPERATURE = "target_temperature"
+CONF_ROOM_TARGET_TEMPERATURE_MODE = "target_temperature_mode"
+CONF_ROOM_TARGET_TEMPERATURE_FALLBACK = "target_temperature_fallback"
+GOAL_HUMIDITY = "humidity"
+GOAL_CO2 = "co2"
+GOAL_TEMPERATURE = "temperature"
+DEFAULT_GOAL_PRIORITIES = [GOAL_HUMIDITY, GOAL_CO2, GOAL_TEMPERATURE]
 
 # Optional room air-quality sensors. They enrich decisions but are never required.
 CONF_ROOM_VOC = "voc"
@@ -95,9 +103,10 @@ MOISTURE_SOURCE_COOKING = "cooking"
 MOISTURE_SOURCE_WASHING_MACHINE = "washing_machine"
 MOISTURE_SOURCE_DRYER = "dryer"
 MOISTURE_SOURCE_IRONING_STATION = "ironing_station"
+MOISTURE_SOURCE_LAUNDRY_DRYING = "laundry_drying"
 MOISTURE_SOURCES = [
     MOISTURE_SOURCE_SHOWER, MOISTURE_SOURCE_BATH, MOISTURE_SOURCE_SAUNA, MOISTURE_SOURCE_COOKING,
-    MOISTURE_SOURCE_WASHING_MACHINE, MOISTURE_SOURCE_DRYER, MOISTURE_SOURCE_IRONING_STATION,
+    MOISTURE_SOURCE_WASHING_MACHINE, MOISTURE_SOURCE_DRYER, MOISTURE_SOURCE_IRONING_STATION, MOISTURE_SOURCE_LAUNDRY_DRYING,
 ]
 
 FLOOR_BASEMENT = "basement"
@@ -188,6 +197,9 @@ DEFAULT_OPTIONS = {
     "shade_min_illuminance_lx": 10000.0,
     "learning_enabled": True,
     "learning_max_duration_min": 120.0,
+    # Cover learning guard: normalize all cover devices to percent closed.
+    "cover_position_zero_means": "closed",
+    "cover_learning_max_closed_percent": 20.0,
     "cross_ventilation_pairs": "",
     "cross_zone_connections": "",
 

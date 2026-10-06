@@ -41,6 +41,8 @@ _RUNTIME_LISTENER_DATA_KEYS = {
     CONF_POLLEN_ENTITY,
 }
 
+_RESIDENT_PROFILE_STORAGE_KEY = native_option_key("resident_room_profiles")
+
 
 def _slug(name: str) -> str:
     value = name.lower().strip().translate(str.maketrans("äöüß", "aous"))
@@ -92,7 +94,13 @@ def _required(key: str, value: Any = None):
 
 
 def _optional(key: str, value: Any = None):
-    return vol.Optional(key, default=value) if value not in (None, "") else vol.Optional(key)
+    """Optional field prefill that stays genuinely clearable.
+
+    ``default=`` is re-injected by voluptuous when HA omits a cleared optional
+    selector. ``suggested_value`` pre-fills the UI without resurrecting the old
+    value on submit, so remove → save really removes the entity/value.
+    """
+    return vol.Optional(key, description={"suggested_value": value}) if value not in (None, "") else vol.Optional(key)
 
 
 
@@ -158,6 +166,54 @@ def _outdoor_schema(data: dict[str, Any] | None = None) -> vol.Schema:
     })
 
 
+def _available_room_goals(room: dict[str, Any]) -> list[str]:
+    """Goals available from this room's configured data sources."""
+    goals: list[str] = []
+    if room.get(CONF_ROOM_HUMIDITY) and room.get(CONF_ROOM_TEMPERATURE):
+        goals.append("humidity")
+    if room.get(CONF_ROOM_CO2):
+        goals.append("co2")
+    if room.get(CONF_ROOM_CLIMATE) or room.get(CONF_ROOM_TARGET_TEMPERATURE) not in (None, "") or room.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK) not in (None, ""):
+        goals.append("temperature")
+    return goals
+
+
+def _filter_room_priorities(value: Any, room: dict[str, Any]) -> list[str]:
+    available = _available_room_goals(room)
+    vals = value if isinstance(value, list) else []
+    ordered = list(dict.fromkeys(str(x) for x in vals if str(x) in available))
+    return ordered + [x for x in available if x not in ordered]
+
+def _goal_priority_schema(room: dict[str, Any]) -> vol.Schema:
+    """Move one ventilation goal up/down; avoids error-prone numeric ranks."""
+    current = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
+    if not current:
+        return vol.Schema({})
+    return vol.Schema({
+        vol.Required("goal_to_move", default=current[0]): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=current, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="ventilation_goal")
+        ),
+        vol.Required("move_direction", default="up"): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=["up", "down"], mode=selector.SelectSelectorMode.LIST, translation_key="move_direction")
+        ),
+    })
+
+def _ranked_goal_priorities(user_input: dict[str, Any], room: dict[str, Any]) -> list[str]:
+    current = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
+    goal = str(user_input.get("goal_to_move") or "")
+    direction = str(user_input.get("move_direction") or "up")
+    if goal not in current:
+        return current
+    idx = current.index(goal)
+    target = idx - 1 if direction == "up" else idx + 1
+    if 0 <= target < len(current):
+        current[idx], current[target] = current[target], current[idx]
+    return current
+
+def _goal_priority_errors(user_input: dict[str, Any], room: dict[str, Any]) -> dict[str, str]:
+    return {}
+
+# Legacy room-level reference keys remain readable for migration only: CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY
 def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = None) -> vol.Schema:
     room = room or {}
     levels = list(dict.fromkeys(levels or []))
@@ -182,15 +238,14 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         _optional(CONF_ROOM_LENGTH, room.get(CONF_ROOM_LENGTH)): _number(0.5, 100, 0.01, "m"),
         _optional(CONF_ROOM_WIDTH, room.get(CONF_ROOM_WIDTH)): _number(0.5, 100, 0.01, "m"),
         _optional(CONF_ROOM_HEIGHT, room.get(CONF_ROOM_HEIGHT)): _number(1, 20, 0.01, "m"),
-        _optional(CONF_ROOM_REFERENCE_TEMPERATURE, room.get(CONF_ROOM_REFERENCE_TEMPERATURE)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
-        ),
-        _optional(CONF_ROOM_REFERENCE_HUMIDITY, room.get(CONF_ROOM_REFERENCE_HUMIDITY)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
-        ),
         _optional(CONF_ROOM_CO2, room.get(CONF_ROOM_CO2)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="carbon_dioxide")
         ),
+        vol.Required(CONF_ROOM_TARGET_TEMPERATURE_MODE, default=str(room.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=["automatic", "manual"], mode=selector.SelectSelectorMode.DROPDOWN)
+        ),
+        _optional(CONF_ROOM_TARGET_TEMPERATURE, room.get(CONF_ROOM_TARGET_TEMPERATURE)): _number(12, 30, 0.5, "°C"),
+        _optional(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK, room.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK)): _number(12, 30, 0.5, "°C"),
         _optional(CONF_ROOM_VOC, room.get(CONF_ROOM_VOC)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor")
         ),
@@ -203,12 +258,24 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         _optional(CONF_ROOM_CLIMATE, room.get(CONF_ROOM_CLIMATE)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="climate")
         ),
-        _optional(CONF_ROOM_EXHAUST_FAN, room.get(CONF_ROOM_EXHAUST_FAN)): selector.EntitySelector(),
-        _optional(CONF_ROOM_SUPPLY_FAN, room.get(CONF_ROOM_SUPPLY_FAN)): selector.EntitySelector(),
-        _optional(CONF_ROOM_VENTILATION_DEVICE, room.get(CONF_ROOM_VENTILATION_DEVICE)): selector.EntitySelector(),
-        _optional(CONF_ROOM_DEHUMIDIFIER, room.get(CONF_ROOM_DEHUMIDIFIER)): selector.EntitySelector(),
-        _optional(CONF_ROOM_HUMIDIFIER, room.get(CONF_ROOM_HUMIDIFIER)): selector.EntitySelector(),
-        _optional(CONF_ROOM_AIR_PURIFIER, room.get(CONF_ROOM_AIR_PURIFIER)): selector.EntitySelector(),
+        _optional(CONF_ROOM_EXHAUST_FAN, room.get(CONF_ROOM_EXHAUST_FAN)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
+        _optional(CONF_ROOM_SUPPLY_FAN, room.get(CONF_ROOM_SUPPLY_FAN)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
+        _optional(CONF_ROOM_VENTILATION_DEVICE, room.get(CONF_ROOM_VENTILATION_DEVICE)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
+        _optional(CONF_ROOM_DEHUMIDIFIER, room.get(CONF_ROOM_DEHUMIDIFIER)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["humidifier", "fan", "switch"])
+        ),
+        _optional(CONF_ROOM_HUMIDIFIER, room.get(CONF_ROOM_HUMIDIFIER)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["humidifier", "fan", "switch"])
+        ),
+        _optional(CONF_ROOM_AIR_PURIFIER, room.get(CONF_ROOM_AIR_PURIFIER)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
         vol.Optional(CONF_ROOM_FLOOR, default=room.get(CONF_ROOM_FLOOR, "")): selector.SelectSelector(
             selector.SelectSelectorConfig(options=levels, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True, translation_key="floor")
         ),
@@ -272,6 +339,20 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             vol.Required(CONF_CONTACT_MODE, default=room.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY)): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=[CONTACT_MODE_ANY, CONTACT_MODE_ALL], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="contact_mode")
             ),
+            _optional(CONF_ROOM_CO2, room.get(CONF_ROOM_CO2)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", device_class="carbon_dioxide")
+            ),
+            _optional(CONF_ROOM_EXHAUST_FAN, room.get(CONF_ROOM_EXHAUST_FAN)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=["fan", "switch"])
+            ),
+            _optional(CONF_ROOM_CLIMATE, room.get(CONF_ROOM_CLIMATE)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="climate")
+            ),
+            vol.Required(CONF_ROOM_TARGET_TEMPERATURE_MODE, default=str(room.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))): selector.SelectSelector(
+                selector.SelectSelectorConfig(options=["automatic", "manual"], mode=selector.SelectSelectorMode.DROPDOWN)
+            ),
+            _optional(CONF_ROOM_TARGET_TEMPERATURE, room.get(CONF_ROOM_TARGET_TEMPERATURE)): _number(12, 30, 0.5, "°C"),
+            _optional(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK, room.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK)): _number(12, 30, 0.5, "°C"),
         }), {"collapsed": False}),
         vol.Required("geometry"): section(vol.Schema({
             _optional(CONF_ROOM_VOLUME, room.get(CONF_ROOM_VOLUME)): _number(2, 1000, 0.1, "m³"),
@@ -280,15 +361,6 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             _optional(CONF_ROOM_HEIGHT, room.get(CONF_ROOM_HEIGHT)): _number(1, 20, 0.01, "m"),
         }), {"collapsed": True}),
         vol.Optional("optional_sensors"): section(vol.Schema({
-            _optional(CONF_ROOM_REFERENCE_TEMPERATURE, room.get(CONF_ROOM_REFERENCE_TEMPERATURE)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
-            ),
-            _optional(CONF_ROOM_REFERENCE_HUMIDITY, room.get(CONF_ROOM_REFERENCE_HUMIDITY)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
-            ),
-            _optional(CONF_ROOM_CO2, room.get(CONF_ROOM_CO2)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor", device_class="carbon_dioxide")
-            ),
             _optional(CONF_ROOM_VOC, room.get(CONF_ROOM_VOC)): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="sensor")
             ),
@@ -300,15 +372,21 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             ),
         }), {"collapsed": True}),
         vol.Optional("optional_actuators"): section(vol.Schema({
-            _optional(CONF_ROOM_CLIMATE, room.get(CONF_ROOM_CLIMATE)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="climate")
-            ),
-            _optional(CONF_ROOM_EXHAUST_FAN, room.get(CONF_ROOM_EXHAUST_FAN)): selector.EntitySelector(),
-            _optional(CONF_ROOM_SUPPLY_FAN, room.get(CONF_ROOM_SUPPLY_FAN)): selector.EntitySelector(),
-            _optional(CONF_ROOM_VENTILATION_DEVICE, room.get(CONF_ROOM_VENTILATION_DEVICE)): selector.EntitySelector(),
-            _optional(CONF_ROOM_DEHUMIDIFIER, room.get(CONF_ROOM_DEHUMIDIFIER)): selector.EntitySelector(),
-            _optional(CONF_ROOM_HUMIDIFIER, room.get(CONF_ROOM_HUMIDIFIER)): selector.EntitySelector(),
-            _optional(CONF_ROOM_AIR_PURIFIER, room.get(CONF_ROOM_AIR_PURIFIER)): selector.EntitySelector(),
+            _optional(CONF_ROOM_SUPPLY_FAN, room.get(CONF_ROOM_SUPPLY_FAN)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
+            _optional(CONF_ROOM_VENTILATION_DEVICE, room.get(CONF_ROOM_VENTILATION_DEVICE)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
+            _optional(CONF_ROOM_DEHUMIDIFIER, room.get(CONF_ROOM_DEHUMIDIFIER)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["humidifier", "fan", "switch"])
+        ),
+            _optional(CONF_ROOM_HUMIDIFIER, room.get(CONF_ROOM_HUMIDIFIER)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["humidifier", "fan", "switch"])
+        ),
+            _optional(CONF_ROOM_AIR_PURIFIER, room.get(CONF_ROOM_AIR_PURIFIER)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        ),
         }), {"collapsed": True}),
     })
 
@@ -336,15 +414,23 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
     humidities = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
     covers = room.get(CONF_CONTACT_COVERS) or {}
     passage_doors = room.get(CONF_CONTACT_PASSAGE_DOORS) or {}
+    orientations = room.get(CONF_CONTACT_ORIENTATIONS) or {}
+    delays = room.get(CONF_CONTACT_DELAYS) or {}
     temp = str(temperatures.get(contact) or "").strip()
     humidity = str(humidities.get(contact) or "").strip()
     fields: dict[Any, Any] = {
         (vol.Optional("reference_temperature", default=temp) if temp else vol.Optional("reference_temperature")):
-            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", device_class="temperature")),
         (vol.Optional("reference_humidity", default=humidity) if humidity else vol.Optional("reference_humidity")):
-            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", device_class="humidity")),
+        vol.Required("delay_seconds", default=_safe_int(delays.get(contact, room.get(CONF_CONTACT_DELAY, 0)), 0, minimum=0, maximum=600)):
+            _number(0, 600, 1, "s"),
+        vol.Required("orientation", default=str(orientations.get(contact, room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)))):
+            selector.SelectSelector(selector.SelectSelectorConfig(options=ORIENTATIONS, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="window_orientation")),
         vol.Optional("covers", default=list(covers.get(contact) or [])):
             selector.EntitySelector(selector.EntitySelectorConfig(domain="cover", multiple=True)),
+        vol.Required("cover_position_zero_means", default=str(room.get("cover_position_zero_means", "closed"))):
+            selector.SelectSelector(selector.SelectSelectorConfig(options=["closed", "open"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="cover_position_zero_means")),
         vol.Optional("passage_door", default=bool(passage_doors.get(contact, False))):
             selector.BooleanSelector(),
     }
@@ -364,6 +450,8 @@ def _apply_single_contact_reference(
     humidities = dict(room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {})
     contact_covers = dict(room.get(CONF_CONTACT_COVERS) or {})
     passage_doors = dict(room.get(CONF_CONTACT_PASSAGE_DOORS) or {})
+    orientations = dict(room.get(CONF_CONTACT_ORIENTATIONS) or {})
+    delays = dict(room.get(CONF_CONTACT_DELAYS) or {})
 
     if temp and humidity:
         temperatures[contact] = temp
@@ -383,10 +471,15 @@ def _apply_single_contact_reference(
     else:
         contact_covers.pop(contact, None)
 
+    orientations[contact] = str(user_input.get("orientation", orientations.get(contact, ORIENTATION_UNKNOWN)) or ORIENTATION_UNKNOWN)
+    delays[contact] = _safe_int(user_input.get("delay_seconds", delays.get(contact, 0)), 0, minimum=0, maximum=600)
     passage_doors[contact] = bool(user_input.get("passage_door", False))
     room[CONF_CONTACT_REFERENCE_TEMPERATURES] = temperatures
     room[CONF_CONTACT_REFERENCE_HUMIDITIES] = humidities
     room[CONF_CONTACT_COVERS] = contact_covers
+    room[CONF_CONTACT_ORIENTATIONS] = orientations
+    room[CONF_CONTACT_DELAYS] = delays
+    room["cover_position_zero_means"] = str(user_input.get("cover_position_zero_means", room.get("cover_position_zero_means", "closed")) or "closed")
     room[CONF_CONTACT_PASSAGE_DOORS] = passage_doors
     return True
 
@@ -420,12 +513,25 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     width = _number_or_none(user_input.get(CONF_ROOM_WIDTH))
     height = _number_or_none(user_input.get(CONF_ROOM_HEIGHT))
     dimensions_complete = all(v is not None and v > 0 for v in (length, width, height))
-    if volume is None and not dimensions_complete:
-        errors["base"] = "room_volume_required"
-    elif volume is not None and volume < 2:
-        errors[CONF_ROOM_VOLUME] = "room_volume_too_small"
-    elif volume is None and dimensions_complete and (length * width * height) < 2:
-        errors["base"] = "room_volume_too_small"
+    # Geometry is required only for rooms that actively participate in the
+    # physical moisture/ventilation model. Passive/imported planning rooms may
+    # be saved without invented dimensions and completed later.
+    if include:
+        if volume is None and not dimensions_complete:
+            errors["base"] = "room_volume_required"
+        elif volume is not None and volume < 2:
+            errors[CONF_ROOM_VOLUME] = "room_volume_too_small"
+        elif volume is None and dimensions_complete and (length * width * height) < 2:
+            errors["base"] = "room_volume_too_small"
+    else:
+        # If passive-room geometry was supplied, still reject impossible values
+        # instead of silently persisting malformed physical metadata.
+        if volume is not None and volume < 2:
+            errors[CONF_ROOM_VOLUME] = "room_volume_too_small"
+        elif volume is None and any(v is not None for v in (length, width, height)) and not dimensions_complete:
+            errors["base"] = "room_dimensions_incomplete"
+        elif volume is None and dimensions_complete and (length * width * height) < 2:
+            errors["base"] = "room_volume_too_small"
 
     name = str(user_input.get(CONF_ROOM_NAME, "")).strip()
     if not name:
@@ -453,6 +559,9 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         if str(room.get(aggregation_key, "mean")) not in {"mean", "median", "min", "max"}:
             room[aggregation_key] = "mean"
 
+    priorities = room.get(CONF_ROOM_GOAL_PRIORITIES, previous.get(CONF_ROOM_GOAL_PRIORITIES, []))
+    priorities = _filter_room_priorities(priorities, room)
+
     room.update({
         "key": key,
         CONF_ROOM_NAME: name,
@@ -462,6 +571,8 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_ROOM_WINDOW_ORIENTATION: room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN),
         CONF_ROOM_INCLUDE_CALCULATIONS: include,
         CONF_ROOM_MOISTURE_SOURCES: list(moisture_sources),
+        CONF_ROOM_GOAL_PRIORITIES: priorities,
+        CONF_ROOM_TARGET_TEMPERATURE_MODE: str(room.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, previous.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))),
         CONF_ROOM_THRESHOLD_MODE: _choice(room.get(CONF_ROOM_THRESHOLD_MODE), ROOM_THRESHOLD_AUTOMATIC, [ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED]),
         CONF_ROOM_THRESHOLD_PERCENT: _bounded(room.get(CONF_ROOM_THRESHOLD_PERCENT), 5, 1, 30),
         CONF_ROOM_THRESHOLD_ML: _bounded(room.get(CONF_ROOM_THRESHOLD_ML), 100, 10, 1000),
@@ -471,6 +582,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_CONTACT_REFERENCE_TEMPERATURES: dict(previous.get(CONF_CONTACT_REFERENCE_TEMPERATURES, {})),
         CONF_CONTACT_REFERENCE_HUMIDITIES: dict(previous.get(CONF_CONTACT_REFERENCE_HUMIDITIES, {})),
         CONF_CONTACT_COVERS: deepcopy(previous.get(CONF_CONTACT_COVERS, {})),
+        "cover_position_zero_means": str(user_input.get("cover_position_zero_means", previous.get("cover_position_zero_means", "closed")) or "closed"),
         CONF_CONTACT_PASSAGE_DOORS: deepcopy(previous.get(CONF_CONTACT_PASSAGE_DOORS, {})),
     })
     # If all dimensions are present they are the source of truth; otherwise use
@@ -479,9 +591,18 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     if dimensions_complete:
         room[CONF_ROOM_LENGTH] = length; room[CONF_ROOM_WIDTH] = width; room[CONF_ROOM_HEIGHT] = height
         room[CONF_ROOM_VOLUME] = round(length * width * height, 3)
-    else:
+    elif volume is not None:
         room[CONF_ROOM_VOLUME] = round(volume, 3)
         room.pop(CONF_ROOM_LENGTH, None); room.pop(CONF_ROOM_WIDTH, None); room.pop(CONF_ROOM_HEIGHT, None)
+    else:
+        # Passive/imported planning shell: no physical size is known yet.
+        room.pop(CONF_ROOM_VOLUME, None); room.pop(CONF_ROOM_LENGTH, None); room.pop(CONF_ROOM_WIDTH, None); room.pop(CONF_ROOM_HEIGHT, None)
+
+    # Room-wide reference-air fields were superseded by per-opening mappings.
+    # Never write them back from current editors; coordinator migration fallback
+    # remains able to read legacy entries until each opening is migrated.
+    room.pop(CONF_ROOM_REFERENCE_TEMPERATURE, None)
+    room.pop(CONF_ROOM_REFERENCE_HUMIDITY, None)
     # Remove delays for contacts no longer configured.
     room[CONF_CONTACT_DELAYS] = {c: _safe_int(room[CONF_CONTACT_DELAYS].get(c, previous.get(CONF_CONTACT_DELAY, 0)), 0, minimum=0, maximum=600) for c in contacts}
     room[CONF_CONTACT_ORIENTATIONS] = {c: str(room[CONF_CONTACT_ORIENTATIONS].get(c, room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN))) for c in contacts}
@@ -515,6 +636,8 @@ def _normalise_legacy_entry_data(data: dict[str, Any]) -> dict[str, Any]:
         room.setdefault(CONF_ROOM_INCLUDE_CALCULATIONS, True)
         room.setdefault(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)
         room.setdefault(CONF_ROOM_MOISTURE_SOURCES, [])
+        room[CONF_ROOM_GOAL_PRIORITIES] = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
+        room.setdefault(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic")
         room.setdefault(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")
         room.setdefault(CONF_ROOM_HUMIDITY_AGGREGATION, "mean")
         room.setdefault(CONF_ROOM_THRESHOLD_MODE, ROOM_THRESHOLD_AUTOMATIC)
@@ -698,8 +821,38 @@ def _building_schema(current: dict[str, Any]) -> vol.Schema:
     })
 
 
-def _residents_schema(current: dict[str, Any]) -> vol.Schema:
-    """Unified resident/presence/personalisation form used by native HA UI."""
+def _resident_name_list(value: Any) -> list[str]:
+    text = str(value or "").replace(";", ",").replace("\n", ",")
+    return [part.strip() for part in text.split(",") if part.strip()]
+
+
+def _resident_profiles_dict(value: Any) -> dict[str, dict[str, Any]]:
+    import json
+    if isinstance(value, dict):
+        return {str(k): dict(v) for k, v in value.items() if isinstance(v, dict)}
+    try:
+        parsed = json.loads(str(value or "{}"))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    return {str(k): dict(v) for k, v in parsed.items() if isinstance(v, dict)} if isinstance(parsed, dict) else {}
+
+
+def _residents_schema(current: dict[str, Any], rooms: list[dict[str, Any]] | None = None) -> vol.Schema:
+    """Readable resident/presence/personalisation form; never expose profile JSON."""
+    rooms = rooms or []
+    room_options = [{"value": str(r.get("key")), "label": str(r.get(CONF_ROOM_NAME) or r.get("key"))} for r in rooms if r.get("key")]
+    profiles = _resident_profiles_dict(current.get("resident_room_profiles"))
+    adult_names = _resident_name_list(current.get("adult_resident_names"))
+    child_names = _resident_name_list(current.get("child_resident_names"))
+    profile_fields: dict[Any, Any] = {}
+    for role, names, count in (("adult", adult_names, int(current.get("adult_occupants", 0) or 0)), ("child", child_names, int(current.get("child_occupants", 0) or 0))):
+        total = min(max(count, len(names)), 4)
+        for idx in range(total):
+            profile = profiles.get(f"{role}:{idx}", {})
+            prefix = f"{role}_{idx + 1}"
+            profile_fields[vol.Optional(f"{prefix}_rooms", default=list(profile.get("room_keys") or []))] = selector.SelectSelector(selector.SelectSelectorConfig(options=room_options, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN))
+            profile_fields[vol.Required(f"{prefix}_thermal", default=str(profile.get("thermal_preference") or "inherit"))] = selector.SelectSelector(selector.SelectSelectorConfig(options=["inherit", "warm", "balanced", "cool"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="resident_thermal_preference"))
+            profile_fields[vol.Optional(f"{prefix}_notifications", default=", ".join(profile.get("notification_targets") or []))] = selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT))
     return vol.Schema({
         vol.Required("residents"): section(vol.Schema({
             vol.Required(native_option_key("adult_occupants"), default=current.get("adult_occupants", 2)): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=20, step=1, mode=selector.NumberSelectorMode.SLIDER)),
@@ -726,9 +879,7 @@ def _residents_schema(current: dict[str, Any]) -> vol.Schema:
             vol.Required(native_option_key("night_end_hour"), default=_time_default(current.get("night_end_hour", "07:00"), "07:00")): selector.TimeSelector(),
             vol.Required(native_option_key("night_forecast_enabled"), default=bool(current.get("night_forecast_enabled", True))): bool,
         }), {"collapsed": True}),
-        vol.Optional("resident_profiles"): section(vol.Schema({
-            vol.Optional(native_option_key("resident_room_profiles"), default=str(current.get("resident_room_profiles", "{}"))): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
-        }), {"collapsed": True}),
+        vol.Optional("resident_profiles"): section(vol.Schema(profile_fields), {"collapsed": True}),
     })
 
 
@@ -757,6 +908,10 @@ def _air_quality_schema(current: dict[str, Any]) -> vol.Schema:
         vol.Required(native_option_key("humidify_below_rh"), default=_bounded(current.get("humidify_below_rh"), 35.0, 20, 50)): _number(20, 50, 1, "%"),
         vol.Required(native_option_key("shade_above_temp_c"), default=_bounded(current.get("shade_above_temp_c"), 24.0, 18, 35)): _number(18, 35, 0.5, "°C"),
         vol.Required(native_option_key("shade_min_illuminance_lx"), default=_bounded(current.get("shade_min_illuminance_lx"), 10000.0, 0, 100000)): _number(0, 100000, 500, "lx"),
+        vol.Required(native_option_key("cover_position_zero_means"), default=str(current.get("cover_position_zero_means", "closed"))): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=["closed", "open"], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="cover_position_zero_means")
+        ),
+        vol.Required(native_option_key("cover_learning_max_closed_percent"), default=_bounded(current.get("cover_learning_max_closed_percent"), 20.0, 0, 100)): _number(0, 100, 1, "%"),
     })
 
 
@@ -1000,9 +1155,10 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
     """Native Home Assistant editor for one FreshAirIQ room.
 
-    Rooms are deliberately modelled as config subentries. This keeps global
-    FreshAirIQ settings on the parent entry while room-specific settings can be
-    opened and edited directly from the room entry in Home Assistant.
+    Rooms are modelled as native Home Assistant subentries for identity/entity
+    grouping and for the quick add-room flow. Existing room subentries are
+    intentionally not reconfigurable: all FreshAirIQ settings are edited from
+    the parent integration's central OptionsFlow.
     """
 
     def __init__(self) -> None:
@@ -1026,7 +1182,14 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         return self._working_room
 
     async def async_step_user(self, user_input=None):
-        """Add a room from the integration's native subentry UI."""
+        """Quick setup: choose manual room creation or Home Assistant import."""
+        return self.async_show_menu(
+            step_id="user",
+            menu_options=["create_room", "import_ha_room"],
+        )
+
+    async def async_step_create_room(self, user_input=None):
+        """Create one room manually from the quick setup entry point."""
         rooms = self._entry_rooms()
         levels = self._levels()
         errors = {}
@@ -1037,9 +1200,131 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                 self._working_room = room
                 self._room_key = room["key"]
                 trace_room_creation(self.hass, self._get_entry(), source="native_subentry", stage="normalised", room_key=room["key"], outcome="ok")
-                return await self.async_step_add_orientations()
+                return await self.async_step_add_goals()
             trace_room_creation(self.hass, self._get_entry(), source="native_subentry", stage="validation_failed", outcome="rejected", extra={"validation_error_keys": sorted(map(str, errors))})
-        return self.async_show_form(step_id="user", data_schema=_room_section_schema(levels=levels), errors=errors)
+        return self.async_show_form(step_id="create_room", data_schema=_room_section_schema(levels=levels), errors=errors)
+
+    def _quick_ha_area_defaults(self) -> tuple[list[dict[str, str]], dict[str, dict[str, Any]]]:
+        """Build safe HA-area import suggestions for the add-only quick flow."""
+        area_reg = ar.async_get(self.hass)
+        floor_reg = fr.async_get(self.hass)
+        entity_reg = er.async_get(self.hass)
+        device_reg = dr.async_get(self.hass)
+        existing_names = {str(room.get(CONF_ROOM_NAME, "")).strip().casefold() for room in self._entry_rooms()}
+        choices: list[dict[str, str]] = []
+        defaults: dict[str, dict[str, Any]] = {}
+        for area in sorted(area_reg.async_list_areas(), key=lambda item: item.name.casefold()):
+            if area.name.strip().casefold() in existing_names:
+                continue
+            floor_name = "Unzugeordnet"
+            if area.floor_id:
+                floor = floor_reg.async_get_floor(area.floor_id)
+                if floor is not None and floor.name:
+                    floor_name = floor.name
+            label = f"{floor_name} · {area.name}" if floor_name != "Unzugeordnet" else area.name
+            candidates = {
+                CONF_ROOM_TEMPERATURE: [], CONF_ROOM_HUMIDITY: [], CONF_ROOM_CONTACTS: [],
+                CONF_ROOM_CO2: [], CONF_ROOM_ILLUMINANCE: [], CONF_ROOM_CLIMATE: [],
+            }
+            for entity_entry in entity_reg.entities.values():
+                if entity_entry.disabled_by is not None:
+                    continue
+                entity_area_id = entity_entry.area_id
+                if entity_area_id is None and entity_entry.device_id:
+                    device = device_reg.async_get(entity_entry.device_id)
+                    if device is not None:
+                        entity_area_id = dr.async_get_effective_area_id(self.hass, device)
+                if entity_area_id != area.id:
+                    continue
+                entity_id = entity_entry.entity_id
+                domain = entity_id.split(".", 1)[0]
+                state = self.hass.states.get(entity_id)
+                device_class = getattr(entity_entry, "device_class", None)
+                if state is not None:
+                    device_class = state.attributes.get("device_class") or device_class
+                device_class = str(getattr(device_class, "value", device_class) or "")
+                if domain == "sensor":
+                    if device_class == "temperature": candidates[CONF_ROOM_TEMPERATURE].append(entity_id)
+                    elif device_class == "humidity": candidates[CONF_ROOM_HUMIDITY].append(entity_id)
+                    elif device_class == "carbon_dioxide": candidates[CONF_ROOM_CO2].append(entity_id)
+                    elif device_class == "illuminance": candidates[CONF_ROOM_ILLUMINANCE].append(entity_id)
+                elif domain == "binary_sensor" and device_class in {"door", "garage_door", "opening", "window"}:
+                    candidates[CONF_ROOM_CONTACTS].append(entity_id)
+                elif domain == "climate":
+                    candidates[CONF_ROOM_CLIMATE].append(entity_id)
+            suggested: dict[str, Any] = {CONF_ROOM_NAME: area.name, CONF_ROOM_FLOOR: floor_name}
+            preferred = {
+                CONF_ROOM_TEMPERATURE: getattr(area, "temperature_entity_id", None),
+                CONF_ROOM_HUMIDITY: getattr(area, "humidity_entity_id", None),
+            }
+            for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
+                values = sorted(dict.fromkeys(candidates[key]))
+                preferred_id = preferred.get(key)
+                if preferred_id and self.hass.states.get(preferred_id) is not None and preferred_id not in values:
+                    values.insert(0, preferred_id)
+                if values: suggested[key] = values
+            for key in (CONF_ROOM_CO2, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
+                values = sorted(dict.fromkeys(candidates[key]))
+                if len(values) == 1: suggested[key] = values[0]
+            contacts = sorted(dict.fromkeys(candidates[CONF_ROOM_CONTACTS]))
+            if contacts: suggested[CONF_ROOM_CONTACTS] = contacts
+            choices.append({"value": area.id, "label": label})
+            defaults[area.id] = suggested
+        return choices, defaults
+
+    async def async_step_import_ha_room(self, user_input=None):
+        """Choose one HA area to import through the quick setup entry point."""
+        choices, defaults = self._quick_ha_area_defaults()
+        if not choices:
+            return self.async_show_form(step_id="import_ha_room", data_schema=vol.Schema({}), errors={"base": "no_ha_areas_to_import"})
+        if user_input is not None:
+            area_id = str(user_input.get("area") or "")
+            if area_id in defaults:
+                self._quick_import_defaults = defaults[area_id]
+                return await self.async_step_import_ha_room_details()
+        return self.async_show_form(
+            step_id="import_ha_room",
+            data_schema=vol.Schema({vol.Required("area"): selector.SelectSelector(selector.SelectSelectorConfig(options=choices, mode=selector.SelectSelectorMode.DROPDOWN))}),
+            errors={} if user_input is None else {"base": "select_ha_area"},
+        )
+
+    async def async_step_import_ha_room_details(self, user_input=None):
+        """Complete one imported HA room, then use the canonical room wizard."""
+        defaults = dict(getattr(self, "_quick_import_defaults", {}) or {})
+        if not defaults:
+            return await self.async_step_import_ha_room()
+        errors = {}
+        if user_input is not None:
+            room, errors = _normalise_room(user_input, self._entry_rooms())
+            if room and not errors:
+                self._working_room = room
+                self._room_key = room["key"]
+                trace_room_creation(self.hass, self._get_entry(), source="native_subentry_ha_import", stage="normalised", room_key=room["key"], outcome="ok")
+                return await self.async_step_add_goals()
+        suggested = {**defaults, CONF_ROOM_INCLUDE_CALCULATIONS: False}
+        if user_input is not None:
+            suggested.update(user_input)
+        levels = list(dict.fromkeys([*self._levels(), str(defaults.get(CONF_ROOM_FLOOR) or "Unzugeordnet")]))
+        return self.async_show_form(
+            step_id="import_ha_room_details",
+            data_schema=_room_section_schema(suggested, levels=levels),
+            errors=errors,
+            description_placeholders={"room_name": str(defaults.get(CONF_ROOM_NAME) or "Raum")},
+        )
+
+    async def async_step_add_goals(self, user_input=None):
+        room = self._working_room or {}
+        available = _available_room_goals(room)
+        if len(available) <= 1:
+            room[CONF_ROOM_GOAL_PRIORITIES] = list(available)
+            return await self.async_step_add_orientations()
+        errors = {}
+        if user_input is not None:
+            errors = _goal_priority_errors(user_input, room)
+            if not errors:
+                room[CONF_ROOM_GOAL_PRIORITIES] = _ranked_goal_priorities(user_input, room)
+                return await self.async_step_add_orientations()
+        return self.async_show_form(step_id="add_goals", data_schema=_goal_priority_schema(room), errors=errors)
 
     async def async_step_add_orientations(self, user_input=None):
         room = self._working_room or {}
@@ -1174,6 +1459,18 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
             unique_id=unique_id,
         )
 
+    def _schedule_room_runtime_update(self) -> None:
+        """Apply an existing-room edit without unloading FreshAirIQ entities."""
+        coordinator = getattr(self._get_entry(), "runtime_data", None)
+        if coordinator is None:
+            return
+
+        async def _apply() -> None:
+            await coordinator.async_rebuild_listeners()
+            await coordinator.async_request_refresh()
+
+        self.hass.async_create_task(_apply())
+
     def _persist_room_update(self) -> None:
         """Persist the currently edited room immediately after a submitted page."""
         entry = self._get_entry()
@@ -1202,15 +1499,15 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
             data=dict(room),
             title=room.get(CONF_ROOM_NAME, self._room_key or "Raum"),
         )
-        self.hass.config_entries.async_schedule_reload(entry.entry_id)
+        self._schedule_room_runtime_update()
 
-    async def async_step_reconfigure(self, user_input=None):
+    async def _async_step_reconfigure_legacy(self, user_input=None):
         """Open a clear room-local settings menu."""
         self._current_room()
         room = self._current_room()
         return self.async_show_menu(
             step_id="reconfigure",
-            menu_options=["room_basics", "room_orientations", "room_delays", "room_references", "save_room"],
+            menu_options=["room_basics", "room_goals", "room_references", "save_room"],
             description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum")},
         )
 
@@ -1231,7 +1528,7 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
                 }
                 self._working_room = updated
                 self._persist_room_update()
-                return await self.async_step_reconfigure()
+                return await self._async_step_reconfigure_legacy()
         return self.async_show_form(
             step_id="room_basics",
             data_schema=_room_section_schema(room, self._levels()),
@@ -1239,17 +1536,36 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
             description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum")},
         )
 
+    async def async_step_room_goals(self, user_input=None):
+        room = self._current_room()
+        available = _available_room_goals(room)
+        if len(available) <= 1:
+            room[CONF_ROOM_GOAL_PRIORITIES] = list(available)
+            self._persist_room_update()
+            return await self._async_step_reconfigure_legacy()
+        errors = {}
+        if user_input is not None:
+            errors = _goal_priority_errors(user_input, room)
+            if not errors:
+                room[CONF_ROOM_GOAL_PRIORITIES] = _ranked_goal_priorities(user_input, room)
+                self._persist_room_update()
+                return await self._async_step_reconfigure_legacy()
+        return self.async_show_form(
+            step_id="room_goals", data_schema=_goal_priority_schema(room), errors=errors,
+            description_placeholders={"room_name": room.get(CONF_ROOM_NAME, self._room_key or "Raum")},
+        )
+
     async def async_step_room_orientations(self, user_input=None):
         room = self._current_room()
         contacts = room.get(CONF_ROOM_CONTACTS, [])
         if not contacts:
-            return await self.async_step_reconfigure()
+            return await self._async_step_reconfigure_legacy()
         if user_input is not None:
             room[CONF_CONTACT_ORIENTATIONS] = {
                 contact: str(user_input.get(contact, ORIENTATION_UNKNOWN)) for contact in contacts
             }
             self._persist_room_update()
-            return await self.async_step_reconfigure()
+            return await self._async_step_reconfigure_legacy()
         current = room.get(CONF_CONTACT_ORIENTATIONS, {})
         fallback = room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)
         return self.async_show_form(
@@ -1266,11 +1582,11 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         room = self._current_room()
         contacts = room.get(CONF_ROOM_CONTACTS, [])
         if not contacts:
-            return await self.async_step_reconfigure()
+            return await self._async_step_reconfigure_legacy()
         if user_input is not None:
             room[CONF_CONTACT_DELAYS] = {contact: _safe_int(user_input.get(contact, 0), 0, minimum=0, maximum=600) for contact in contacts}
             self._persist_room_update()
-            return await self.async_step_reconfigure()
+            return await self._async_step_reconfigure_legacy()
         current = room.get(CONF_CONTACT_DELAYS, {})
         return self.async_show_form(
             step_id="room_delays",
@@ -1286,12 +1602,12 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         contacts = list(room.get(CONF_ROOM_CONTACTS, []) or [])
         if not contacts:
             self._room_reference_contact_index = 0
-            return await self.async_step_reconfigure()
+            return await self._async_step_reconfigure_legacy()
         index = int(getattr(self, "_room_reference_contact_index", 0) or 0)
         if index >= len(contacts):
             self._room_reference_contact_index = 0
             self._persist_room_update()
-            return await self.async_step_reconfigure()
+            return await self._async_step_reconfigure_legacy()
         contact = str(contacts[index])
         errors = {}
         if user_input is not None:
@@ -1334,7 +1650,7 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
             levels.append(floor)
         data[CONF_LEVELS] = levels
         self.hass.config_entries.async_update_entry(entry, data=data)
-        self.hass.config_entries.async_schedule_reload(entry.entry_id)
+        self._schedule_room_runtime_update()
         # Native subentry helper keeps Home Assistant's subentry state in sync.
         return self.async_update_and_abort(
             entry,
@@ -1440,7 +1756,9 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             # HA platform entities are created per room during async_setup_entry.
             # All other settings are consumed live by the coordinator and can be
             # applied without tearing down/recreating the complete integration.
-            structural_change = CONF_ROOMS in changed_data_keys
+            old_room_keys = {str(room.get("key")) for room in old_data.get(CONF_ROOMS, [])}
+            new_room_keys = {str(room.get("key")) for room in new_data.get(CONF_ROOMS, [])}
+            structural_change = old_room_keys != new_room_keys
             if structural_change:
                 self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
             else:
@@ -1506,6 +1824,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 "forecast",
                 "air_quality",
                 "cross_ventilation",
+                "recommendation_priorities",
                 "threshold",
                 "model",
                 "back_to_main",
@@ -1568,8 +1887,9 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         )
 
     async def async_step_rooms(self, user_input=None):
-        # Global room administration only. Per-room sensors, directions and
-        # contact delays also remain available on each native room subentry.
+        # Canonical room administration. Native room subentries remain visible
+        # for Home Assistant identity/entity grouping but are intentionally
+        # add-only and expose no separate FreshAirIQ reconfigure flow.
         menu = ["add_room", "import_ha_rooms"]
         if self._rooms():
             menu.extend(["edit_room_select", "sort_rooms", "remove_room"])
@@ -1776,7 +2096,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 self._persist_working_state(reload_entry=False)
                 trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="parent_persisted", room_key=room["key"], outcome="ok", extra={"reload_scheduled": False})
                 trace_room_creation_after_reload(self.hass, self.config_entry.entry_id, source="options_flow", room_key=room["key"])
-                return await self.async_step_contact_orientations()
+                return await self.async_step_room_goals()
             trace_room_creation(self.hass, self.config_entry, source="options_flow", stage="validation_failed", outcome="rejected", extra={"validation_error_keys": sorted(map(str, errors))})
         return self.async_show_form(
             step_id="add_room",
@@ -1785,6 +2105,25 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             ),
             errors=errors,
         )
+
+    async def async_step_room_goals(self, user_input=None):
+        """Configure available ventilation goals in an explicit priority order."""
+        room = next((r for r in self._rooms() if r.get("key") == self._selected_room_key), None)
+        if room is None:
+            return await self.async_step_rooms()
+        available = _available_room_goals(room)
+        if len(available) <= 1:
+            room[CONF_ROOM_GOAL_PRIORITIES] = list(available)
+            self._persist_working_state(reload_entry=False)
+            return await self.async_step_contact_references()
+        errors = {}
+        if user_input is not None:
+            errors = _goal_priority_errors(user_input, room)
+            if not errors:
+                room[CONF_ROOM_GOAL_PRIORITIES] = _ranked_goal_priorities(user_input, room)
+                self._persist_working_state(reload_entry=False)
+                return await self.async_step_contact_references()
+        return self.async_show_form(step_id="room_goals", data_schema=_goal_priority_schema(room), errors=errors)
 
     async def async_step_edit_room_select(self, user_input=None):
         if user_input is not None:
@@ -1825,7 +2164,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 # The final contact step (or the no-contact fast path) performs the
                 # single structural reload after all room metadata is committed.
                 self._persist_working_state(reload_entry=False)
-                return await self.async_step_contact_orientations()
+                return await self.async_step_room_goals()
         return self.async_show_form(
             step_id="edit_room",
             data_schema=_room_section_schema(
@@ -1837,37 +2176,32 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
 
     async def async_step_sort_rooms(self, user_input=None):
         rooms = self._rooms()
-        if user_input is not None:
-            indexed = {r["key"]: i for i, r in enumerate(rooms)}
-            ordered_rooms = sorted(
-                rooms,
-                key=lambda r: (
-                    int(user_input.get(r["key"], indexed[r["key"]] + 1)),
-                    indexed[r["key"]],
-                ),
-            )
-            for i, room in enumerate(ordered_rooms):
+        if user_input is not None and rooms:
+            key = str(user_input.get("room_to_move") or "")
+            direction = str(user_input.get("move_direction") or "up")
+            idx = next((i for i, room in enumerate(rooms) if room.get("key") == key), -1)
+            target = idx - 1 if direction == "up" else idx + 1
+            if idx >= 0 and 0 <= target < len(rooms):
+                rooms[idx], rooms[target] = rooms[target], rooms[idx]
+            for i, room in enumerate(rooms):
                 room[CONF_ROOM_SORT_ORDER] = i
-            self._working_data[CONF_ROOMS] = ordered_rooms
+            self._working_data[CONF_ROOMS] = rooms
             self._persist_working_state()
+        if not rooms:
             return await self.async_step_rooms()
-        fields = {}
-        for idx, room in enumerate(rooms, start=1):
-            label = (
-                f"{_level_label(room.get(CONF_ROOM_FLOOR))} · "
-                f"{room.get(CONF_ROOM_NAME, room['key'])}"
-            )
-            fields[
-                vol.Required(room["key"], default=idx, description=label)
-            ] = _number(1, max(len(rooms), 1), 1)
+        options = [{"value": r["key"], "label": f"{i + 1}. {r.get(CONF_ROOM_NAME, r['key'])}"} for i, r in enumerate(rooms)]
         return self.async_show_form(
-            step_id="sort_rooms", data_schema=vol.Schema(fields)
+            step_id="sort_rooms",
+            data_schema=vol.Schema({
+                vol.Required("room_to_move", default=rooms[0]["key"]): selector.SelectSelector(selector.SelectSelectorConfig(options=options, mode=selector.SelectSelectorMode.DROPDOWN)),
+                vol.Required("move_direction", default="up"): selector.SelectSelector(selector.SelectSelectorConfig(options=["up", "down"], mode=selector.SelectSelectorMode.LIST, translation_key="move_direction")),
+            }),
         )
 
     async def async_step_contact_orientations_room(self, user_input=None):
         if user_input is not None:
             self._selected_room_key = user_input["room"]
-            return await self.async_step_contact_orientations()
+            return await self.async_step_contact_references()
         return self.async_show_form(
             step_id="contact_orientations_room",
             data_schema=vol.Schema({vol.Required("room"): self._room_selector()}),
@@ -2187,6 +2521,34 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             step_id="model", data_schema=_model_schema(self._working_options)
         )
 
+    async def async_step_recommendation_priorities(self, user_input=None):
+        """Choose a room and edit its recommendation-goal ranking centrally."""
+        self._ensure_working_copy()
+        eligible = [r for r in self._rooms() if len(_available_room_goals(r)) > 1]
+        if not eligible:
+            return await self.async_step_ventilation_settings()
+        if user_input is not None:
+            self._selected_room_key = str(user_input["room"])
+            return await self.async_step_recommendation_priority_order()
+        options = [{"value": r["key"], "label": r.get(CONF_ROOM_NAME, r["key"])} for r in eligible]
+        return self.async_show_form(
+            step_id="recommendation_priorities",
+            data_schema=vol.Schema({vol.Required("room"): selector.SelectSelector(selector.SelectSelectorConfig(options=options, mode=selector.SelectSelectorMode.DROPDOWN))}),
+        )
+
+    async def async_step_recommendation_priority_order(self, user_input=None):
+        room = next((r for r in self._rooms() if r.get("key") == self._selected_room_key), None)
+        if room is None:
+            return await self.async_step_recommendation_priorities()
+        errors = {}
+        if user_input is not None:
+            errors = _goal_priority_errors(user_input, room)
+            if not errors:
+                room[CONF_ROOM_GOAL_PRIORITIES] = _ranked_goal_priorities(user_input, room)
+                self._persist_working_state()
+                return await self.async_step_ventilation_settings()
+        return self.async_show_form(step_id="recommendation_priority_order", data_schema=_goal_priority_schema(room), errors=errors)
+
     async def async_step_cross_ventilation(self, user_input=None):
         self._ensure_working_copy()
         if user_input is not None:
@@ -2253,6 +2615,26 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             values = _flatten_sections(dict(user_input))
             # Keep the same compact string representation used by the dashboard
             # resident-profile editor so both UIs write exactly one setting.
+            # Convert readable per-person controls back to the existing compact profile contract.
+            import json
+            existing_profiles = _resident_profiles_dict(self._working_options.get("resident_room_profiles"))
+            adult_names = _resident_name_list(values.get("adult_resident_names", self._working_options.get("adult_resident_names")))
+            child_names = _resident_name_list(values.get("child_resident_names", self._working_options.get("child_resident_names")))
+            structured = any(key.startswith(("adult_", "child_")) and key.endswith(("_rooms", "_thermal", "_notifications")) for key in values)
+            if structured:
+                rebuilt = {}
+                for role, names, count in (("adult", adult_names, int(values.get("adult_occupants", self._working_options.get("adult_occupants", 0)) or 0)), ("child", child_names, int(values.get("child_occupants", self._working_options.get("child_occupants", 0)) or 0))):
+                    for idx in range(min(max(count, len(names)), 4)):
+                        prefix = f"{role}_{idx + 1}"
+                        previous = existing_profiles.get(f"{role}:{idx}", {})
+                        notifications = str(values.pop(f"{prefix}_notifications", ", ".join(previous.get("notification_targets") or [])) or "")
+                        rebuilt[f"{role}:{idx}"] = {
+                            "name": names[idx] if idx < len(names) else str(previous.get("name") or ""),
+                            "room_keys": list(values.pop(f"{prefix}_rooms", previous.get("room_keys") or [])),
+                            "thermal_preference": str(values.pop(f"{prefix}_thermal", previous.get("thermal_preference") or "inherit")),
+                            "notification_targets": [x.strip() for x in notifications.replace(";", ",").split(",") if x.strip()],
+                        }
+                values["resident_room_profiles"] = json.dumps(rebuilt, ensure_ascii=False, separators=(",", ":"))
             profiles = values.get("resident_room_profiles")
             if isinstance(profiles, str):
                 import json
@@ -2264,14 +2646,14 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 except (TypeError, ValueError, json.JSONDecodeError):
                     return self.async_show_form(
                         step_id="residents",
-                        data_schema=_residents_schema(self._working_options),
+                        data_schema=_residents_schema(self._working_options, self._rooms()),
                         errors={"base": "resident_profiles_invalid"},
                     )
             self._working_options.update(values)
             self._persist_working_state()
             return await self.async_step_home_setup()
         return self.async_show_form(
-            step_id="residents", data_schema=_residents_schema(self._working_options)
+            step_id="residents", data_schema=_residents_schema(self._working_options, self._rooms())
         )
 
     async def async_step_house(self, user_input=None):

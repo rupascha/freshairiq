@@ -1,3 +1,85 @@
+## 0.26.0
+- Public feature release consolidating all relevant changes since v0.25.3.3.
+- House-first normal recommendation aggregation with room-specific critical protection overrides.
+- Multi-goal CO₂ / humidity / temperature decision support, mechanical-exhaust sessions and isolated learning.
+- Roller-shutter/blind learning guard with configurable position semantics and >20% restriction handling.
+- Expanded room configuration: CO₂, exhaust, climate/thermostat, target temperatures, multi-sensor support and per-opening references/delay/orientation/cover settings.
+- Centralized integration settings, clearer recommendation priorities/resident configuration, persistent clearing of optional sensors and complete DE/EN room-flow copy.
+- Compact ventilation-log PDF, dashboard/support/mobile polish and strengthened diagnostics/release gates.
+- Full consolidated notes: `docs/releases/RELEASE_NOTES_0.26.0.md`.
+
+## 0.25.4.17
+- Hotfix: vereinheitlicht deutsche Bezeichnungen für Ablüfter/mechanische Lüftung und Thermostat/Klimagerät in allen Konfigurationspfaden. Keine Logikänderung.
+
+## 0.25.4.16
+- Hotfix auf Basis v0.25.4.12: Pfeilbasierte Reihenfolge, entfernbarer Helligkeitssensor, mobile Details-/Support-Politur, vollständige deutsche Raumtexte, Rollo-Positionslogik und verständliche Bewohnerprofile.
+
+## 0.25.4.12
+- Hotfix: Empfehlungseinstellungen zentral gebündelt, Raum-Prioritäten als eindeutige Rangfolge, Diagnose-Navigationshinweis vereinheitlicht und optionale Sensor-Lifecycle-Regression erweitert.
+
+## 0.25.4.11
+- Stabilize the performance release gate without changing production recommendation/simulation logic or regression thresholds.
+
+## 0.25.4.10
+- Hotfix: centralized all FreshAirIQ integration settings under Devices & services → FreshAirIQ → Configure; room subentries are add-only quick setup/identity entries; dashboard configuration is presentation-only.
+
+## 0.25.4.9
+
+- Hotfix: Rollladen-/Jalousien-Positionslogik und 20-%-Lernschutz mit erklärbarem Lern-Ausschluss.
+
+## 0.25.4.8
+- Hotfix: passive/importierte Räume dürfen ohne erfundene Geometrie gespeichert werden; aktuelle Editoren schreiben keine veralteten raumweiten Referenzluftwerte mehr; doppelte Lüftungsprioritäten werden eindeutig abgewiesen statt still umsortiert.
+
+## 0.25.4.7
+- Hotfix: Einstellungen zentralisiert, Support-Kachel ergänzt, doppelte Referenzluft-Einstellungen entfernt, HA-Selector-Clear/Room-Save korrigiert, Feuchtequellen erweitert und Dashboard-Kartenoptionen für Kacheln/Empfehlungsarten ergänzt.
+
+## 0.25.4.6
+- Hotfix: edits to existing rooms no longer reload the complete FreshAirIQ config entry. Sensor, goal, thermostat, CO2 and exhaust changes rebuild source listeners and refresh the coordinator live, keeping existing entities available. Adding/removing rooms remains structural and still reloads once.
+
+## 0.25.4.5
+- Hotfix: PDF-Lüftungsprotokoll gemäß Nutzerwunsch aus GitHub Issue #9 kompakt als raumweise gruppierte Tabelle dargestellt; Datenerfassung und Export-API unverändert.
+
+## 0.25.4.4
+- Hotfix: Thermostat/Klimagerät in allen Raum-Einstellpfaden eindeutig als freiwillige Eingabe beschrieben; Automatik-, Manuell- und Fallback-Zieltemperatur erklärt. Konfiguration ohne Thermostat bleibt zulässig.
+
+## 0.25.4.3
+
+- Live moisture-balance hotfix: active configured exhaust ventilation is shown as “MECHANISCHE LÜFTUNG AKTIV” / “MECHANICAL VENTILATION ACTIVE” with a fan icon; window, passive and closed states are unchanged.
+
+## 0.25.4.2
+
+- Room-settings consistency hotfix: integrated searchable entity pickers in Dashboard settings, complete German/English room copy including laundry drying, CO₂ and mechanical exhaust explanations, thermostat promoted to primary room settings, and explicit ranked ventilation-goal priorities across Home Assistant room flows.
+
+## 0.25.4.1
+
+- Hotfix: anonymer Installations-Heartbeat bleibt auch bei deaktivierter nächtlicher Diagnoseübertragung aktiv; es werden dabei keine Diagnosedaten übertragen.
+
+## 0.25.4
+- Multi-goal house/floor arbitration, canonical dashboard scope, readable hierarchy typography, and Freshy sustained-ventilation polish.
+
+## 0.25.3.7
+
+- Dashboard hierarchy + Freshy visual-state hardening; compact multi-goal scope presentation.
+
+## 0.25.3.6
+
+- Multi-goal dashboard: canonical goal driver, goal status/ETA and protection override are visible in the main decision.
+- Dashboard entity selectors are searchable, including per-opening reference sensors and covers.
+- Per-opening reference sensors are restricted to temperature/humidity device classes in Home Assistant flows.
+- New and edited rooms get a dedicated dynamic ventilation-goal priority step after sensor selection.
+- Dashboard settings localization hardened for German/English.
+
+## 0.25.3.5
+- Promoted CO₂ and exhaust-fan configuration into the primary room setup.
+- Added first-class mechanical-exhaust ventilation sessions and isolated learning.
+- Added per-room humidity/CO₂/temperature goal priorities, comfort-target snapshot/fallback and dashboard goal tracking.
+- Completed the laundry-drying moisture-source backend contract.
+- Preserved existing safety, moisture, forecast and legacy opening behaviour with regression coverage.
+
+## 0.25.3.4
+
+Support/notification/settings compatibility hotfix.
+
 ## 0.25.3.3
 
 - HOTFIX: transient sensor-error notifications now respect the existing startup/recovery grace period.

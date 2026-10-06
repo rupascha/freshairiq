@@ -17,6 +17,7 @@ from .const import (
     MOISTURE_SOURCE_WASHING_MACHINE,
     MOISTURE_SOURCE_DRYER,
     MOISTURE_SOURCE_IRONING_STATION,
+    MOISTURE_SOURCE_LAUNDRY_DRYING,
 )
 from .energy import exchanged_air_fraction
 
@@ -28,6 +29,7 @@ _LABELS = {
     MOISTURE_SOURCE_WASHING_MACHINE: "Waschmaschine",
     MOISTURE_SOURCE_DRYER: "Trockner",
     MOISTURE_SOURCE_IRONING_STATION: "Bügelstation",
+    MOISTURE_SOURCE_LAUNDRY_DRYING: "Wäsche trocknen",
 }
 
 
@@ -98,6 +100,16 @@ def _source_signatures(
     # distinguishable from people or another weak source without appliance data.
     if MOISTURE_SOURCE_DRYER in configured and monotonic and temp_rise >= 0.50 and ah_rise >= 0.12 and source_rate >= 2.8 and generated_ml >= 16.0:
         matches.append(MOISTURE_SOURCE_DRYER)
+    # Washing machines usually produce a weaker, pulsed room-climate signature than
+    # dryers. Only classify it when the rise is sustained but clearly below the
+    # strong heat signatures of cooking/dryer/sauna.
+    if MOISTURE_SOURCE_WASHING_MACHINE in configured and samples >= 3 and monotonic and 0.08 <= temp_rise < 0.50 and 0.12 <= ah_rise < 0.45 and 1.8 <= source_rate < 4.5 and generated_ml >= 14.0:
+        matches.append(MOISTURE_SOURCE_WASHING_MACHINE)
+    # Hung laundry is deliberately recognised only as a slow, sustained humidity
+    # source without a meaningful heat rise; this prevents showers/cooking from
+    # being mislabeled as drying laundry.
+    if MOISTURE_SOURCE_LAUNDRY_DRYING in configured and samples >= 4 and strong_monotonic and -0.20 <= temp_rise <= 0.25 and 0.18 <= ah_rise < 0.55 and 1.2 <= source_rate <= 4.0 and generated_ml >= 18.0:
+        matches.append(MOISTURE_SOURCE_LAUNDRY_DRYING)
     if MOISTURE_SOURCE_IRONING_STATION in configured and monotonic and temp_rise >= 0.15 and ah_rise >= 0.30 and source_rate >= 4.0 and generated_ml >= 22.0:
         matches.append(MOISTURE_SOURCE_IRONING_STATION)
     return matches
@@ -115,7 +127,9 @@ def _identify_source(matches: list[str]) -> tuple[str, str | None, str]:
         MOISTURE_SOURCE_BATH: "Bad erkannt. Das Feuchtemuster passt zur konfigurierten Quelle; FreshAirIQ berücksichtigt die zusätzliche Feuchtelast.",
         MOISTURE_SOURCE_SAUNA: "Sauna erkannt. Der kombinierte Wärme- und Feuchteanstieg passt zur konfigurierten Quelle.",
         MOISTURE_SOURCE_DRYER: "Trockner erkannt. Der kombinierte Wärme- und Feuchteanstieg passt zur konfigurierten Quelle.",
+        MOISTURE_SOURCE_WASHING_MACHINE: "Waschmaschine erkannt. Das moderate, anhaltende Feuchte- und Wärmemuster passt zur konfigurierten Quelle.",
         MOISTURE_SOURCE_IRONING_STATION: "Bügelstation erkannt. Das Wärme- und Feuchtemuster passt zur konfigurierten Quelle.",
+        MOISTURE_SOURCE_LAUNDRY_DRYING: "Wäsche aufhängen erkannt. Der langsame, anhaltende Feuchteanstieg ohne deutliche Wärmequelle passt zur konfigurierten Quelle.",
     }.get(key, "Zusätzliche interne Feuchtigkeit erkannt.")
     return label, key, text
 

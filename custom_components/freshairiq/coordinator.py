@@ -71,6 +71,7 @@ from .learning_components import build_learning_components_status
 from .learning_v2 import build_learning_v2_status
 from .robustness import RobustnessMonitor, finite_float, prepare_runtime_rooms, safe_options
 from .intervention import build_interventions
+from .goals import effective_temperature_target, evaluate_goals
 from .repairs import async_sync_missing_entity_issue
 from .sensor_recovery import advance_sensor_recovery
 
@@ -80,11 +81,49 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+def _entity_active(hass: HomeAssistant, entity_id: str | None) -> bool:
+    """Return a conservative active state for configured mechanical ventilation."""
+    if not entity_id:
+        return False
+    state = hass.states.get(entity_id)
+    if state is None:
+        return False
+    return str(state.state).lower() in {"on", "open", "running", "fan_only", "ventilation"}
+
+
 def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
     if not entity_id: return None
     state = hass.states.get(entity_id)
     if state is None or state.state in {"unknown", "unavailable", "none", ""}: return None
     return finite_float(state.state)
+
+
+def _cover_learning_guard(hass: HomeAssistant, room: dict[str, Any], contact_modes: dict[str, str], options: dict[str, Any]) -> dict[str, Any]:
+    """Return normalized cover closure and whether current ventilation is clean enough to learn.
+
+    Home Assistant normally reports ``current_position`` as 0=closed/100=open.
+    Some installations expose the inverse convention, so the user-selected
+    interpretation is normalized here once. Only covers assigned to an opening
+    that is physically open/tilted can invalidate that ventilation sample.
+    """
+    mapping = room.get(CONF_CONTACT_COVERS) if isinstance(room.get(CONF_CONTACT_COVERS), dict) else {}
+    zero_means = str(room.get("cover_position_zero_means", options.get("cover_position_zero_means", "closed")) or "closed")
+    threshold = min(max(float(options.get("cover_learning_max_closed_percent", 20.0) or 0.0), 0.0), 100.0)
+    affected: list[dict[str, Any]] = []
+    unknown: list[str] = []
+    for contact, mode in contact_modes.items():
+        if mode not in {"open", "tilted"}:
+            continue
+        for entity_id in list(mapping.get(contact) or []):
+            state = hass.states.get(str(entity_id))
+            raw = finite_float((state.attributes or {}).get("current_position")) if state is not None else None
+            if raw is None:
+                unknown.append(str(entity_id)); continue
+            raw = min(max(float(raw), 0.0), 100.0)
+            closed_pct = raw if zero_means == "open" else 100.0 - raw
+            if closed_pct > threshold:
+                affected.append({"contact": str(contact), "cover": str(entity_id), "position": round(raw, 1), "closed_percent": round(closed_pct, 1)})
+    return {"blocked": bool(affected), "threshold": threshold, "zero_means": zero_means, "affected": affected, "unknown": sorted(set(unknown))}
 
 
 
@@ -673,7 +712,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for room in self.entry.data.get(CONF_ROOMS, []):
             for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
                 entities.update(entity_ids(room.get(key)))
-            for key in (CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_CO2):
+            for key in (CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_CLIMATE, CONF_ROOM_EXHAUST_FAN):
                 if room.get(key): entities.add(room[key])
             for key, enabled in optional_sensor_keys:
                 if enabled and room.get(key):
@@ -1312,6 +1351,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 c: (stable_session_modes[c] if c in stable_session_modes else ("open" if _open_seconds(self.hass, c, now) is not None else "closed"))
                 for c in configured_contact_ids
             }
+            cover_learning_guard = _cover_learning_guard(self.hass, cfg, physical_contact_modes, self.options)
             reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _contact_specific_reference(
                 self.hass, cfg,
                 default_temp_entity=default_reference_temperature_entity,
@@ -1332,6 +1372,22 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             session_should, _ = _room_ventilation_state(
                 self.hass, cfg, now, honour_delays=True, contact_modes=stable_session_modes, contact_since=stable_since
             )
+            mechanical_exhaust_active = _entity_active(self.hass, cfg.get(CONF_ROOM_EXHAUST_FAN))
+            # Mechanical exhaust is a first-class ventilation trigger. It shares
+            # the session lifecycle but remains explicitly typed so its learning
+            # evidence can never silently contaminate window-opening models.
+            if mechanical_exhaust_active:
+                is_open = True
+                session_should = True
+            climate_entity = cfg.get(CONF_ROOM_CLIMATE)
+            climate_state = self.hass.states.get(climate_entity) if climate_entity else None
+            thermostat_target = None
+            if climate_state is not None and str(climate_state.state).lower() not in {"unknown", "unavailable"}:
+                thermostat_target = finite_float(climate_state.attributes.get("temperature"))
+            if not mem.get("session_active") and not raw_contact_open and not mechanical_exhaust_active and thermostat_target is not None and 12.0 <= thermostat_target <= 30.0:
+                mem["last_plausible_comfort_target_c"] = round(float(thermostat_target), 1)
+                mem["last_plausible_comfort_target_at"] = now.isoformat()
+
             # A proven three-state battery contact with a persisted stable state
             # remains physically evaluable while raw HA state is unavailable. Do
             # not route that case through the legacy startup-only keep-open guard.
@@ -1388,6 +1444,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 elif include_ventilation_group_start(ventilation_group, physical_started):
                     changed = True
                 mem["session_active"] = True
+                target_mode = str(cfg.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))
+                manual_target = cfg.get(CONF_ROOM_TARGET_TEMPERATURE) if target_mode == "manual" else None
+                auto_target = mem.get("last_plausible_comfort_target_c") if target_mode == "automatic" else None
+                resolved_target, resolved_source = effective_temperature_target(
+                    manual=manual_target, thermostat_target=auto_target, fallback=cfg.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK)
+                )
+                mem["session_comfort_target_c"] = resolved_target
+                mem["session_comfort_target_source"] = resolved_source
                 mem["session_three_state_unknown_observed"] = bool(three_state_unknown_contacts)
                 # Keep both clocks deliberately: session_started marks the first
                 # trustworthy climate baseline used for moisture/temperature
@@ -1478,14 +1542,16 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 mem["session_cross_active"] = bool(cross)
                 mem["session_cross_seconds"] = 0.0
                 mem["session_cross_last_update"] = now.isoformat()
-                mem["session_opening_mode"] = ("cross" if cross and opening_mode == "open" else opening_mode)
-                mem["session_specialist_opening_mode"] = ("cross" if cross and opening_mode == "open" else specialist_opening_mode)
+                mem["session_opening_mode"] = ("mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else opening_mode))
+                mem["session_specialist_opening_mode"] = ("mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else specialist_opening_mode))
                 mem["session_specialist_opening_signature"] = list(specialist_opening_signature) if specialist_opening_mode else []
                 mem["session_opening_mode_mixed"] = False
                 mem["session_passage_door"] = bool(passage_door_active and opening_mode == "open")
                 mem["session_passage_contacts"] = list(active_passage_contacts) if opening_mode == "open" else []
                 mem["session_learning_quarantined"] = bool(three_state_stale_contacts)
                 mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006" if three_state_stale_contacts else None
+                mem["session_cover_learning_blocked"] = bool(cover_learning_guard.get("blocked"))
+                mem["session_cover_learning_guard"] = cover_learning_guard
                 # Hotfix 0.20.2.6: a session prediction is frozen from the first
                 # forecast calculated after the physical opening. Never carry a
                 # previous recommendation/live forecast into a new session.
@@ -1602,8 +1668,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     mem["session_cross_active"] = bool(cross)
                     mem["session_cross_seconds"] = 0.0
                     mem["session_cross_last_update"] = now.isoformat()
-                    mem["session_opening_mode"] = ("cross" if cross and opening_mode == "open" else opening_mode)
-                    mem["session_specialist_opening_mode"] = ("cross" if cross and opening_mode == "open" else specialist_opening_mode)
+                    mem["session_opening_mode"] = ("mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else opening_mode))
+                    mem["session_specialist_opening_mode"] = ("mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else specialist_opening_mode))
                     mem["session_specialist_opening_signature"] = list(specialist_opening_signature) if specialist_opening_mode else []
                     mem["session_opening_mode_mixed"] = False
                     mem["session_passage_door"] = bool(passage_door_active and opening_mode == "open")
@@ -1649,7 +1715,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     changed = True
 
             if mem["session_active"]:
-                current_session_mode = "cross" if cross and opening_mode == "open" else opening_mode
+                if cover_learning_guard.get("blocked"):
+                    mem["session_cover_learning_blocked"] = True
+                    mem["session_cover_learning_guard"] = cover_learning_guard
+                    changed = True
+                current_session_mode = "mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else opening_mode)
                 started_mode = str(mem.get("session_opening_mode") or current_session_mode)
                 if current_session_mode not in {"unknown", "closed"} and started_mode != current_session_mode:
                     if not mem.get("session_opening_mode_mixed"):
@@ -1658,7 +1728,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # Specialist learning is provenance-strict: the same room-level
                 # mode is not enough if a binary contact joins/leaves or another
                 # proven contact becomes the physical source.
-                current_specialist = "cross" if cross and opening_mode == "open" else specialist_opening_mode
+                current_specialist = "mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else specialist_opening_mode)
                 started_specialist = mem.get("session_specialist_opening_mode")
                 started_signature = tuple(str(x) for x in (mem.get("session_specialist_opening_signature") or []))
                 current_signature = tuple(specialist_opening_signature) if current_specialist not in {None, "cross"} else ()
@@ -2424,8 +2494,48 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 room_threshold_mode = ROOM_THRESHOLD_AUTOMATIC
                 room_threshold_effective_ml = max(float(options.get("min_potential_room_ml", 100.0) or 100.0), 0.0)
 
+            target_mode = str(cfg.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))
+            manual_target = cfg.get(CONF_ROOM_TARGET_TEMPERATURE) if target_mode == "manual" else None
+            session_target = mem.get("session_comfort_target_c") if mem.get("session_active") else None
+            automatic_target = mem.get("last_plausible_comfort_target_c") if target_mode == "automatic" else None
+            comfort_target, comfort_target_source = effective_temperature_target(
+                manual=manual_target, session_target=session_target, thermostat_target=automatic_target,
+                fallback=cfg.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK),
+            )
+            trend_prev = mem.get("goal_trend_sample") if isinstance(mem.get("goal_trend_sample"), dict) else {}
+            trend_dt = None
+            try:
+                trend_dt = max((now - datetime.fromisoformat(str(trend_prev.get("at")))).total_seconds()/60.0, 0.01)
+            except (TypeError, ValueError):
+                pass
+            def _trend(cur: Any, name: str) -> float | None:
+                old = finite_float(trend_prev.get(name))
+                return ((float(cur)-old)/trend_dt) if cur is not None and old is not None and trend_dt else None
+            goal_state = evaluate_goals(
+                humidity=rh, target_rh=options.get("target_rh", 55.0), co2=co2, co2_warn=options.get("co2_warn", 1000.0),
+                temperature=t, temperature_target=comfort_target, humidity_rate_pct_min=_trend(rh,"rh"),
+                co2_rate_ppm_min=_trend(co2,"co2"), temperature_rate_c_min=_trend(t,"temp"),
+                priorities=cfg.get(CONF_ROOM_GOAL_PRIORITIES, []),
+                available_goals=[
+                    *(["humidity"] if cfg.get(CONF_ROOM_HUMIDITY) and cfg.get(CONF_ROOM_TEMPERATURE) else []),
+                    *(["co2"] if cfg.get(CONF_ROOM_CO2) else []),
+                    *(["temperature"] if (cfg.get(CONF_ROOM_CLIMATE) or cfg.get(CONF_ROOM_TARGET_TEMPERATURE) not in (None, "") or cfg.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK) not in (None, "")) else []),
+                ],
+                hard_close=bool(result.close_recommended),
+            )
+            for goal in goal_state.get("goals", []):
+                if goal.get("id") == "humidity":
+                    goal["achievable_now"] = bool(result.ventilation_candidate or result.active)
+                elif goal.get("id") == "temperature":
+                    goal["achievable_now"] = bool(result.cooling_candidate or (result.active and ref_t < t))
+                elif goal.get("id") == "co2":
+                    goal["achievable_now"] = bool(co2_available and co2 >= float(options.get("co2_warn", 1000.0)) and not (options.get("pollen_enabled", False) and options.get("pollen_strict_veto", True) and pollen > float(options.get("pollen_max", 4.0))))
+            mem["goal_trend_sample"] = {"at": now.isoformat(), "rh": rh, "co2": co2, "temp": t}
+
             results[key] = result.as_dict() | {
                 "learning_diagnosis": mem.get("diagnosis", ""), "learning_sample_credit": round(float(mem.get("learning_sample_credit", 0.0) or 0.0), 3), "co2": co2, "co2_available": co2_available, "co2_data_quality": ("ok" if co2_available else "missing" if co2_entity else "not_configured"),
+                "goal_state": goal_state, "goal_priorities": goal_state.get("priorities"),
+                "comfort_target_c": comfort_target, "comfort_target_source": comfort_target_source,
                 "voc": voc, "voc_available": voc is not None, "voc_enabled": voc_sensor_enabled, "voc_configured": bool(voc_configured_entity),
                 "pm25": pm25, "pm25_available": pm25 is not None, "pm25_enabled": pm25_sensor_enabled, "pm25_configured": bool(pm25_configured_entity),
                 "illuminance": illuminance, "illuminance_available": illuminance is not None, "illuminance_enabled": illuminance_sensor_enabled, "illuminance_configured": bool(illuminance_configured_entity),
@@ -2495,7 +2605,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "moisture_source_observed_change_ml_window": float(moisture_source.get("observed_change_ml_window", 0.0)), "moisture_source_ventilation_change_ml_window": float(moisture_source.get("ventilation_change_ml_window", 0.0)),
                 "moisture_source_ah_rise_g_m3": float(moisture_source.get("absolute_humidity_rise_g_m3", 0.0)), "moisture_source_window_min": float(moisture_source.get("window_min", 0.0)),
                 "moisture_source_started_at": moisture_source.get("started_at"), "moisture_source_last_ended_at": moisture_source.get("last_ended_at"),
-                "recommendation_reasons": reason_list, "humidity_trend_pct_h": round(humidity_trend, 2), "humidity_high_duration_min": round(high_duration, 1),
+                "cover_learning_blocked": bool(mem.get("session_cover_learning_blocked")), "cover_learning_guard": mem.get("session_cover_learning_guard") if isinstance(mem.get("session_cover_learning_guard"), dict) else cover_learning_guard,
+                "recommendation_reasons": ([*reason_list, f"Rollladen/Jalousie stärker als {float(cover_learning_guard.get('threshold', 20.0)):.0f} % geschlossen: Lüftung wird bilanziert, aber nicht als Lernprobe verwendet"] if mem.get("session_active") and mem.get("session_cover_learning_blocked") else reason_list), "humidity_trend_pct_h": round(humidity_trend, 2), "humidity_high_duration_min": round(high_duration, 1),
                 "last_measurement_at": mem.get("last_measurement_at"), "last_measurement_valid": mem.get("last_measurement_valid"),
                 "measurement_frame_quality": measurement_frame.get("quality"), "measurement_frame_learning_eligible": bool(measurement_frame.get("learning_eligible")),
                 "measurement_frame_skew_s": measurement_frame.get("skew_s"), "measurement_frame_full_skew_s": measurement_frame.get("full_skew_s"), "measurement_frame_reference_skew_s": measurement_frame.get("reference_skew_s"), "measurement_frame_max_age_s": measurement_frame.get("max_age_s"),
@@ -2554,6 +2665,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "covers": list(cfg.get(CONF_ROOM_COVERS, []) or []),  # legacy fallback only
                 "climate": cfg.get(CONF_ROOM_CLIMATE),
                 "exhaust_fan": cfg.get(CONF_ROOM_EXHAUST_FAN),
+                "mechanical_exhaust_active": mechanical_exhaust_active,
+                "ventilation_type": mem.get("session_specialist_opening_mode") if mem.get("session_active") else None,
                 "supply_fan": cfg.get(CONF_ROOM_SUPPLY_FAN),
                 "ventilation_device": cfg.get(CONF_ROOM_VENTILATION_DEVICE),
                 "dehumidifier": cfg.get(CONF_ROOM_DEHUMIDIFIER),
@@ -3516,6 +3629,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             intelligent_recommendation["house_next_5_min_temperature_loss_c"] = round(house_next5_temp_loss, 2)
             intelligent_recommendation["house_decision_threshold_ml"] = round(house_min_return)
             intelligent_recommendation["room_keys"] = active_room_keys
+            active_room_names = [str(r.get("name") or r.get("key")) for r in active]
+            intelligent_recommendation["selected_rooms"] = active_room_names
             if house_should_close:
                 intelligent_recommendation["kind"] = "close"
                 intelligent_recommendation["status"] = "close_windows"
@@ -3568,7 +3683,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 },
                 "comparison": {},
                 "alternative": None,
-                "selected_rooms": [],
+                "selected_rooms": active_room_names,
+                "presentation_scope": "house",
+                "presentation_floor": None,
                 "short_term_options": 0,
                 "long_term_options": 0,
                 "cross_ventilation": bool(cross),
@@ -3589,6 +3706,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             intelligent_recommendation["presentation_scope"] = "floor"
             intelligent_recommendation["presentation_floor"] = floor_display_name
             intelligent_recommendation["room_keys"] = [str(r.get("key")) for r in floor_active]
+            floor_room_names = [str(r.get("name") or r.get("key")) for r in floor_active]
+            intelligent_recommendation["selected_rooms"] = floor_room_names
             intelligent_recommendation["floor_next_5_min_moisture_effect_ml"] = round(floor_next5_removed)
             if floor_should_close:
                 intelligent_recommendation.update({
@@ -3615,7 +3734,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "headline": intelligent_recommendation["title"], "action_line": intelligent_recommendation["instruction"],
                 "summary": intelligent_recommendation["summary"], "why": list(intelligent_recommendation.get("reasons") or []),
                 "impact": {"moisture_ml": round(floor_next5_removed), "temperature_c": round(-floor_temp_loss, 2), "cost": round(float(forecast_cost), 2), "duration_min": intelligent_recommendation.get("duration_min"), "confidence": round(float(forecast_confidence))},
-                "comparison": {}, "alternative": None, "selected_rooms": [], "short_term_options": 0, "long_term_options": 0, "cross_ventilation": bool(cross), "night_strategy": night_strategy if isinstance(night_strategy, dict) else {}, "night_strategy_primary": False,
+                "comparison": {}, "alternative": None, "selected_rooms": floor_room_names, "presentation_scope": "floor", "presentation_floor": floor_display_name, "short_term_options": 0, "long_term_options": 0, "cross_ventilation": bool(cross), "night_strategy": night_strategy if isinstance(night_strategy, dict) else {}, "night_strategy_primary": False,
             }
         else:
             intelligent_recommendation["presentation_scope"] = "rooms"
@@ -3911,6 +4030,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "forecast_recent_observed_at": None,
             "session_moisture_source_detected": False,
             "session_reference_moisture_reversal": False,
+            "session_cover_learning_blocked": False,
+            "session_cover_learning_guard": {},
             "session_cross_active": False,
             "session_three_state_unknown_observed": False,
             "session_cross_seconds": 0.0,
@@ -4184,9 +4305,18 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         mem["session_result_ml"] = session_removed
         source_contaminated = bool(mem.get("session_moisture_source_detected"))
         reference_moisture_reversal = bool(mem.get("session_reference_moisture_reversal"))
+        cover_learning_blocked = bool(mem.get("session_cover_learning_blocked"))
         learning_contaminated = source_contaminated or reference_moisture_reversal
         frame_learning_eligible = session_activity_eligible
-        if learning_contaminated:
+        if cover_learning_blocked:
+            rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
+            guard = mem.get("session_cover_learning_guard") if isinstance(mem.get("session_cover_learning_guard"), dict) else {}
+            threshold = float(guard.get("threshold", self.options.get("cover_learning_max_closed_percent", 20.0)) or 20.0)
+            affected = list(guard.get("affected") or [])
+            max_closed = max((float(row.get("closed_percent", 0.0) or 0.0) for row in affected if isinstance(row, dict)), default=0.0)
+            diagnosis = f"Lernmessung übersprungen: Rollladen/Jalousie war {max_closed:.0f} % geschlossen und damit stärker als die Lern-Grenze von {threshold:.0f} %. Die Lüftung wurde weiterhin erkannt und bilanziert."
+            valid = False
+        elif learning_contaminated:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
             diagnosis = (
                 "Lernmessung übersprungen: Referenzluft wurde während der Lüftung zu feucht"
@@ -4241,12 +4371,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if day not in dates:
                     dates.append(day)
                 mem["learning_observation_dates"] = dates[-730:]
+        # Legacy contract: session_mode in {"open", "tilted", "cross"} remains supported.
+        # Legacy defaults = {"open": 0.03, "tilted": 0.015, "cross": 0.04} remain unchanged.
         # Learn explicit opening strategies independently while preserving the
         # established general coefficient as the compatibility/fallback model.
         session_mode = str(mem.get("session_specialist_opening_mode") or "")
-        if valid and not mem.get("session_opening_mode_mixed") and not mem.get("session_learning_quarantined") and session_mode in {"open", "tilted", "cross"}:
+        if valid and not mem.get("session_opening_mode_mixed") and not mem.get("session_learning_quarantined") and session_mode in {"open", "tilted", "cross", "mechanical_exhaust"}:
             opening_learning = mem.get("opening_learning") if isinstance(mem.get("opening_learning"), dict) else {}
-            defaults = {"open": 0.03, "tilted": 0.015, "cross": 0.04}
+            defaults = {"open": 0.03, "tilted": 0.015, "cross": 0.04, "mechanical_exhaust": 0.02}
             row = opening_learning.get(session_mode) if isinstance(opening_learning.get(session_mode), dict) else {}
             old_mode_rate = float(row.get("rate", defaults[session_mode]) or defaults[session_mode])
             old_mode_samples = int(row.get("samples", 0) or 0)
@@ -4459,6 +4591,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "opening_learning_quarantined": bool(mem.get("session_learning_quarantined")),
             "opening_learning_quarantine_code": mem.get("session_learning_quarantine_code"),
             "learning_valid": valid,
+            "cover_learning_blocked": cover_learning_blocked,
+            "cover_learning_guard": mem.get("session_cover_learning_guard") if isinstance(mem.get("session_cover_learning_guard"), dict) else {},
             "measurement_frame_learning_eligible": bool(frame_learning_eligible),
             "session_measurement_quality": session_quality.get("quality"),
             "session_measurement_quality_reason": session_quality.get("reason"),

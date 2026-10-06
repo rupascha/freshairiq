@@ -68,8 +68,8 @@ def test_german_configuration_stays_documented_and_internal_floor_ids_stay_hidde
     blob = _canon({key: de[key] for key in CONFIG_KEYS})
     assert '"ground_floor":"Erdgeschoss"' in blob
     assert '"basement":"Kellergeschoss"' in blob
-    assert "spätere FreshAirIQ-Funktionen" in blob
-    assert "verändert die aktuelle Lüftungs-/ml-Empfehlung nicht" in blob
+    assert "30-Tage-Diagnostik" in blob
+    assert "mechanischen Lüftung" in blob
     room = de["config_subentries"]["room"]["step"]["room_basics"]
     for section in ("identity", "properties", "sensors", "geometry", "optional_sensors", "optional_actuators"):
         payload = room["sections"][section]

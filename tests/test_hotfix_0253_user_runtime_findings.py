@@ -17,7 +17,7 @@ def test_native_notifications_has_test_action():
 def test_native_room_add_and_subentry_explain_all_four_modes():
     for fn, words in [("de.json",("Mittelwert (empfohlen)","Median","Minimalwert","Maximalwert")),("en.json",("Mean (recommended)","Median","Minimum","Maximum"))]:
         d=json.loads((ROOT/"custom_components/freshairiq/translations"/fn).read_text())
-        blob=json.dumps(d["config_subentries"]["room"]["step"]["user"],ensure_ascii=False)
+        blob=json.dumps(d["config_subentries"]["room"]["step"]["create_room"],ensure_ascii=False)
         for word in words: assert word in blob
         assert "temperature_aggregation" in blob and "humidity_aggregation" in blob
 

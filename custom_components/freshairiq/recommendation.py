@@ -107,6 +107,13 @@ def _candidate(room: dict[str, Any], options: dict[str, Any], threshold_ml: floa
     # Penalise thermal/monetary cost, but never enough to suppress urgent health risk.
     penalty = min(temp_loss * 8.0, 18.0) + min(cost * 45.0, 18.0)
     score = severity + benefit - (0.25 * penalty if urgent else penalty)
+    # Per-room goal order is a soft optimisation weight, never a safety veto.
+    # The first currently open and achievable goal gets the strongest boost.
+    gs = room.get("goal_state") if isinstance(room.get("goal_state"), dict) else {}
+    for idx, goal in enumerate(gs.get("goals", [])):
+        if goal.get("active") and not goal.get("reached") and goal.get("achievable_now"):
+            score += max(12.0 - idx * 4.0, 4.0)
+            break
 
     reasons = list(problem_reasons)
     if delta > 0:
@@ -175,7 +182,17 @@ def build_recommendation(
     valid = [r for r in rooms.values() if r.get("calculation_enabled", True) and r.get("data_quality") == "ok"]
     bad = [r for r in rooms.values() if r.get("calculation_enabled", True) and r.get("data_quality") != "ok"]
     active = [r for r in valid if r.get("active")]
-    closing = [r for r in active if r.get("action") == "Close" or r.get("close_recommended")]
+    def _goal_state(room: dict[str, Any]) -> dict[str, Any]:
+        return room.get("goal_state") if isinstance(room.get("goal_state"), dict) else {}
+
+    def _open_achievable_goals(room: dict[str, Any]) -> list[dict[str, Any]]:
+        return [g for g in _goal_state(room).get("goals", [])
+                if g.get("active") and not g.get("reached") and g.get("achievable_now")]
+
+    def _has_nonhumidity_opportunity(room: dict[str, Any]) -> bool:
+        return any(g.get("id") in {"co2", "temperature"} for g in _open_achievable_goals(room))
+
+    closing = [r for r in active if r.get("action") == "Close" or r.get("close_recommended") or _goal_state(r).get("hard_close")]
 
     def result(kind: str, status: str, title: str, instruction: str, summary: str, *,
                selected: list[dict[str, Any]] | None = None, reasons: list[str] | None = None,
@@ -275,12 +292,17 @@ def build_recommendation(
         reasons = [f"Weitere {horizon} Minuten entfernen voraussichtlich etwa {round(max(effect, 0.0))} ml"]
         if any(_f(r.get("airflow_factor"), 1) >= 1.12 for r in active):
             reasons.append("Windrichtung unterstützt den aktuellen Luftwechsel")
+        restricted = [r for r in active if r.get("cover_learning_blocked")]
+        if restricted:
+            max_closed = max((max((_f(x.get("closed_percent")) for x in ((r.get("cover_learning_guard") or {}).get("affected") or []) if isinstance(x, dict)), default=0.0) for r in restricted), default=0.0)
+            reasons.append(f"Rollo/Jalousie teilweise geschlossen ({max_closed:.0f} %): für bessere Lüftungswirkung weiter öffnen; diese Session wird nicht als normale Lernprobe verwendet")
         return result("continue", "ventilation_running", "Weiterlüften", f"{names} offen lassen · noch ca. {max(round(remaining),1)} min",
                       "FreshAirIQ bewertet Nutzen und Temperaturverlust während der laufenden Lüftung weiter.",
                       selected=active, reasons=reasons, severity="good", duration=remaining, removed=max(effect, 0.0))
 
     candidates = [_candidate(r, options, threshold_ml) for r in valid
-                  if r.get("action") in {"Ventilate", "Ventilate for cooling"}
+                  if (r.get("action") in {"Ventilate", "Ventilate for cooling"} or _has_nonhumidity_opportunity(r))
+                  and not _goal_state(r).get("hard_close")
                   and not r.get("stabilizing", False)
                   and not r.get("recently_ventilated", False)]
     candidate_by_key = {c.key: c for c in candidates}
@@ -311,6 +333,7 @@ def build_recommendation(
         c for c in candidates
         if c.problem and (
             c.urgent
+            or _has_nonhumidity_opportunity(room_by_key.get(c.key, {}))
             or (house_physics_favourable and c.potential_ml >= room_threshold(room_by_key.get(c.key, {})))
         )
     ]
@@ -342,17 +365,38 @@ def build_recommendation(
             pair_score = ca.score + cb.score + 18.0  # cross-flow bonus
             if best_pair is None or pair_score > best_pair[0]:
                 best_pair = (pair_score, ca, cb)
+    urgent_targeted = [c for c in targeted if c.urgent]
     if best_pair:
         chosen = [best_pair[1], best_pair[2]]
-    elif targeted:
-        chosen = [max(targeted, key=lambda c: c.score)]
+    elif urgent_targeted:
+        # A genuine protection limit is deliberately room-specific and may
+        # override the normal house optimisation.
+        chosen = [max(urgent_targeted, key=lambda c: c.score)]
     elif house_ready and candidates:
+        # Normal ventilation is a HOUSE decision first.  Do not let a merely
+        # elevated single room pre-empt a useful whole-house opportunity.
+        # Select the meaningful contributors to the house threshold; room
+        # scores only order them.
         ranked = sorted(candidates, key=lambda c: c.score, reverse=True)
-        # Keep the instruction simple: only add a second room when it provides
-        # meaningful extra potential and is not strongly wind-disadvantaged.
-        chosen = ranked[:1]
-        if len(ranked) > 1 and ranked[1].potential_ml >= max(60.0, threshold_ml * 0.12) and ranked[1].airflow >= 0.8:
-            chosen.append(ranked[1])
+        meaningful = [c for c in ranked if c.potential_ml >= max(20.0, min(room_threshold(room_by_key.get(c.key, {})), threshold_ml * 0.10))]
+        pool = meaningful or ranked
+        chosen = []
+        accumulated = 0.0
+        for c in pool:
+            chosen.append(c)
+            accumulated += c.potential_ml
+            if accumulated >= threshold_ml and len(chosen) >= 2:
+                break
+    elif targeted:
+        # Below the house threshold a meaningful non-critical room problem may
+        # still justify a targeted recommendation.
+        chosen = [max(targeted, key=lambda c: c.score)]
+    elif candidates and any(_has_nonhumidity_opportunity(room_by_key.get(c.key, {})) for c in candidates):
+        # CO2 and thermal comfort are first-class ventilation goals. They may
+        # justify ventilation even when moisture removal is neutral/negative.
+        # Safety/hard-close filtering happened when candidates were built.
+        goal_candidates = [c for c in candidates if _has_nonhumidity_opportunity(room_by_key.get(c.key, {}))]
+        chosen = [max(goal_candidates, key=lambda c: c.score)]
 
     if chosen and pollen_blocked and not any(c.urgent for c in chosen):
         names = ", ".join(c.name for c in chosen)
@@ -399,8 +443,19 @@ def build_recommendation(
         if any(c.airflow >= 1.12 for c in chosen):
             reason_pool.append("Windrichtung unterstützt den Luftwechsel")
         secondary = "Danach neu bewerten; FreshAirIQ meldet, sobald Schließen sinnvoll ist."
+        goal_labels = {"humidity":"Entfeuchtung", "co2":"CO₂/Luftqualität", "temperature":"Temperaturkomfort"}
+        open_goal_labels=[]
+        for rr in selected_rooms:
+            for gg in _open_achievable_goals(rr):
+                label=goal_labels.get(str(gg.get("id")), str(gg.get("id")))
+                if label not in open_goal_labels: open_goal_labels.append(label)
+        if open_goal_labels:
+            reason_pool.insert(0, "Aktuell erreichbar: " + ", ".join(open_goal_labels))
+        summary = ("Die ausgewählte Aktion verbessert die aktuell erreichbaren Lüftungsziele unter Berücksichtigung von Prioritäten und Schutzgrenzen."
+                   if open_goal_labels else
+                   "Die ausgewählte Aktion liefert aktuell den besten Mix aus Feuchtewirkung, Raumrisiko und Lüftungsaufwand.")
         return result("ventilate", "ventilate", title, instruction,
-                      "Die ausgewählte Aktion liefert aktuell den besten Mix aus Feuchtewirkung, Raumrisiko und Lüftungsaufwand.",
+                      summary,
                       selected=selected_rooms, reasons=reason_pool, severity="good",
                       duration=recommended_duration_min, removed=removed, secondary=secondary)
 
@@ -458,14 +513,14 @@ def build_recommendation(
         more = max(len(blocked_problem_rooms) - 1, 0)
         delta = _f(r.get("delta_g_m3"))
         if delta <= 0:
-            why = "Außen-/Referenzluft ist gleich feucht oder feuchter und würde das Problem nicht verbessern."
+            why = "Außen-/Referenzluft ist gleich feucht oder feuchter; Entfeuchtung ist damit ungünstig und andere konfigurierte Lüftungsziele sind derzeit ebenfalls nicht sinnvoll erreichbar."
         else:
-            why = f"Der Feuchteunterschied von {delta:.1f} g/m³ ist für wirksames Entfeuchten noch zu klein."
+            why = f"Der Feuchteunterschied von {delta:.1f} g/m³ ist für wirksames Entfeuchten noch zu klein; andere konfigurierte Ziele rechtfertigen aktuell kein Öffnen."
         extra = f" · {more} weitere Räume beobachten" if more else ""
         return result("wait", "wait", "Noch nicht lüften", "Fenster geschlossen lassen",
                       f"{r.get('name')}: {problem_reasons[0] if problem_reasons else 'Raumklima auffällig'}{extra}.",
                       selected=[r], reasons=[why], severity="danger" if urgent else "warning",
-                      secondary="FreshAirIQ bewertet die Außenbedingungen laufend neu.")
+                      secondary="FreshAirIQ bewertet alle verfügbaren Ziele und Außenbedingungen laufend neu.")
 
     # Night forecast is advisory: only mention it when there is no immediate action.
     if night_forecast_ml >= max(250.0, threshold_ml * 0.35) and total_potential_ml >= max(80.0, threshold_ml * 0.25):

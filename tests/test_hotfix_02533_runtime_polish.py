@@ -39,7 +39,7 @@ def test_pdf_is_structured_and_does_not_emit_unsupported_unicode_arrow():
     }
     pdf=m.build_ventilation_pdf([event], datetime(2026,9,4,tzinfo=timezone.utc), datetime(2026,10,4,tzinfo=timezone.utc))
     assert pdf.startswith(b"%PDF-1.4")
-    assert b"Zusammenfassung" in pdf and b"VORHER -> NACHHER" in pdf
+    assert b"Zusammenfassung" in pdf and b"Temperatur" in pdf and b"Abs. Feuchte" in pdf
     assert b" -> " in pdf
     assert b"? 21" not in pdf
 
@@ -53,8 +53,8 @@ def test_pdf_empty_and_multipage_paths_are_valid():
     assert b"Keine erfassten Lueftungsvorgaenge" in empty
     base={"room_name":"Raum", "started_at":"2026-10-04T17:29:00+02:00", "ended_at":"2026-10-04T17:46:00+02:00", "duration_min":17, "measurement_valid":False}
     many=m.build_ventilation_pdf([{**base,"room_name":f"Raum {i}"} for i in range(8)],a,b)
-    assert b"Chronologisches Protokoll - Fortsetzung" in many
-    assert b"/Count 3" in many or b"/Count 2" in many
+    assert b"Datum" in many and b"Zeit" in many
+    assert many.count(b"/Type /Page ") > 1
 
 
 def test_pdf_distinguishes_recommendation_false_from_not_recorded_and_preserves_tristate():
@@ -81,8 +81,8 @@ def test_pdf_cards_reserve_legal_note_area_on_final_page():
     a=datetime(2026,9,4,tzinfo=timezone.utc); b=datetime(2026,10,4,tzinfo=timezone.utc)
     base={"room_name":"Raum","started_at":"2026-10-04T17:29:00+02:00","ended_at":"2026-10-04T17:46:00+02:00","duration_min":17,"measurement_valid":False,"recommendation_followed":None}
     pdf=m.build_ventilation_pdf([{**base,"room_name":f"Raum {i}"} for i in range(12)],a,b)
-    # Layout contract: cards may not enter the note/footer reserve below y=105.
+    # Layout contract: compact table rows may not enter the note/footer reserve below y=105.
     source=p.read_text()
-    assert "if y - card_h < 105:" in source
+    assert "if y - row_h < 105:" in source
     assert b"Dieses Protokoll dokumentiert" in pdf
     assert pdf.count(b"/Type /Page ") > 1
