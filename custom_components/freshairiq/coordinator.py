@@ -2422,7 +2422,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 elif timeline != list(mem.get("session_forecast_timeline") or []):
                     mem["session_forecast_timeline"] = timeline[-32:]
 
-            if result.data_quality == "ok" and self.store.record_room_temperature_point(key, now.replace(tzinfo=None), t, days=30): changed = True
+            if result.data_quality == "ok":
+                if self.store.record_room_temperature_point(key, now.replace(tzinfo=None), t, days=30): changed = True
+                if self.store.record_room_humidity_point(key, now.replace(tzinfo=None), rh, days=30): changed = True
             minutes_since_vent = None
             if mem.get("last_ventilation_ended_at"):
                 try: minutes_since_vent = max(0.0, (now-datetime.fromisoformat(mem["last_ventilation_ended_at"])).total_seconds()/60.0)
@@ -2645,7 +2647,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "stabilizing": stabilizing, "recently_ventilated": recently_ventilated, "repeat_cooldown_override": cooldown_override,
                 "minutes_since_last_ventilation": round(minutes_since_vent,1) if minutes_since_vent is not None else None,
                 "repeat_humidity_rebound_percent": round(humidity_rebound, 1) if humidity_rebound is not None else None,
-                "history_14d": self.store.room_history_days(key, int(options.get("statistics_days", 14))), "temperature_history_14d": self.store.room_temperature_points(key, int(options.get("statistics_days", 14))),
+                "history_14d": self.store.room_history_days(key, int(options.get("statistics_days", 14))), "temperature_history_14d": self.store.room_temperature_points(key, int(options.get("statistics_days", 14))), "humidity_history_14d": self.store.room_humidity_points(key, int(options.get("statistics_days", 14))),
             }
             results[key]["pollen_blocked"] = bool(
                 options.get("pollen_enabled", False)

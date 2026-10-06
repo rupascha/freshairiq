@@ -1,3 +1,9 @@
+## 0.26.2.1
+
+- Hotfix: room detail humidity history now records and charts actual relative room-air humidity (%) instead of ventilation-session moisture balance data.
+- Climate chart labels now reflect the actual high-resolution retention window (maximum 30 days), avoiding misleading 365-day labels.
+- Existing temperature history, ventilation statistics, recommendation logic and learning logic remain unchanged.
+
 ## 0.26.2
 
 - Hotfix: moderne `notify.*`-Entities werden in Geräte & Dienste und Dashboard aus demselben HA-Backendbestand ermittelt. Bereits gespeicherte Ziele bleiben bei temporärer Nichtverfügbarkeit erhalten.

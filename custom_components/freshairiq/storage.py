@@ -168,6 +168,7 @@ def _room_defaults() -> dict[str, Any]:
         "post_close_last_outcome": None,
         "history": {},
         "temperature_points": [],
+        "humidity_points": [],
         "recommendation_opportunities": 0,
         "recommendation_followed": 0,
         "recommendation_missed": 0,
@@ -571,6 +572,7 @@ class LearningStore:
             fresh = _room_defaults()
             fresh["history"] = old.get("history", {})
             fresh["temperature_points"] = old.get("temperature_points", [])
+            fresh["humidity_points"] = old.get("humidity_points", [])
             fresh["last_measurement_at"] = old.get("last_measurement_at")
             fresh["last_measurement_valid"] = old.get("last_measurement_valid")
             # Preserve a currently running session so a reset cannot corrupt it.
@@ -631,6 +633,7 @@ class LearningStore:
         for room in self.data.setdefault("rooms", {}).values():
             room["history"] = {}
             room["temperature_points"] = []
+            room["humidity_points"] = []
         await self.async_save()
 
 
@@ -739,6 +742,39 @@ class LearningStore:
                 continue
         self.room(room_key)["temperature_points"] = clean_points
         return True
+
+    def record_room_humidity_point(self, room_key: str, when: datetime, humidity_percent: float, days: int = 30) -> bool:
+        points = self.room(room_key).setdefault("humidity_points", [])
+        if not isinstance(points, list):
+            points = []
+            self.room(room_key)["humidity_points"] = points
+        hour_key = when.strftime("%Y-%m-%dT%H:00")
+        last_point = points[-1] if points and isinstance(points[-1], dict) else None
+        if last_point and last_point.get("time") == hour_key:
+            last_point["humidity_percent"] = round(_finite_number(humidity_percent), 2)
+            return False
+        points.append({"time": hour_key, "humidity_percent": round(_finite_number(humidity_percent), 2)})
+        cutoff = when - timedelta(days=max(1, min(int(days), RAW_TEMPERATURE_HISTORY_DAYS)), hours=2)
+        clean_points = []
+        for point in points:
+            try:
+                if datetime.fromisoformat(str(point.get("time"))) >= cutoff.replace(tzinfo=None):
+                    clean_points.append(point)
+            except (AttributeError, TypeError, ValueError, OverflowError):
+                continue
+        self.room(room_key)["humidity_points"] = clean_points
+        return True
+
+    def room_humidity_points(self, room_key: str, days: int = 14) -> list[dict[str, Any]]:
+        cutoff = dt_util.now().replace(tzinfo=None) - timedelta(days=max(1, min(int(days), RAW_TEMPERATURE_HISTORY_DAYS)), hours=1)
+        rows = []
+        for point in self.room(room_key).setdefault("humidity_points", []):
+            try:
+                if datetime.fromisoformat(point["time"]) >= cutoff:
+                    rows.append(point)
+            except (ValueError, TypeError, KeyError):
+                pass
+        return rows
 
     def room_history_days(self, room_key: str, days: int = 14) -> list[dict[str, Any]]:
         room = self.room(room_key)
