@@ -234,7 +234,7 @@ def build_recommendation(
                       "Eine belastbare Lüftungsentscheidung ist erst mit plausiblen Messwerten möglich.",
                       selected=bad[:3], reasons=["Messwerte fehlen oder sind unplausibel"], severity="danger")
 
-    # Protection-priority contract (v0.26.2.7)
+    # Protection-priority contract (v0.26.2.8)
     # --------------------------------------------
     # Critical health/protection limits must be resolved before normal comfort
     # optimisation.  Importantly, "urgent" is not synonymous with "always

@@ -1,3 +1,6 @@
+## 0.26.2.8
+- Hotfix: Räume-Schaltfläche verwendet wieder den bewährten direkten Klickpfad wie Gäste/Support.
+
 ## 0.26.2.7
 - Hotfix: Räume-Kachel nutzt wieder den zentralen Info-Overlay-Klickpfad.
 
