@@ -437,8 +437,6 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
         vol.Optional("passage_door", default=bool(passage_doors.get(contact, False))):
             selector.BooleanSelector(),
     }
-    if include_back:
-        fields[vol.Optional("wizard_back", default=False)] = selector.BooleanSelector()
     return vol.Schema(fields)
 
 
