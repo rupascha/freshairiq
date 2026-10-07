@@ -219,6 +219,7 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
     levels = list(dict.fromkeys(levels or []))
     return vol.Schema({
         _required(CONF_ROOM_NAME, room.get(CONF_ROOM_NAME)): selector.TextSelector(),
+        _optional(CONF_ROOM_ICON, room.get(CONF_ROOM_ICON)): selector.IconSelector(),
         _optional(CONF_ROOM_TEMPERATURE, _entity_list(room.get(CONF_ROOM_TEMPERATURE))): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=True)
         ),
@@ -247,19 +248,19 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         _optional(CONF_ROOM_TARGET_TEMPERATURE, room.get(CONF_ROOM_TARGET_TEMPERATURE)): _number(12, 30, 0.5, "°C"),
         _optional(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK, room.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK)): _number(12, 30, 0.5, "°C"),
         _optional(CONF_ROOM_VOC, room.get(CONF_ROOM_VOC)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
+            selector.EntitySelectorConfig(domain="sensor", device_class=["volatile_organic_compounds", "volatile_organic_compounds_parts"])
         ),
         _optional(CONF_ROOM_PM25, room.get(CONF_ROOM_PM25)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
+            selector.EntitySelectorConfig(domain="sensor", device_class="pm25")
         ),
         _optional(CONF_ROOM_ILLUMINANCE, room.get(CONF_ROOM_ILLUMINANCE)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
+            selector.EntitySelectorConfig(domain="sensor", device_class="illuminance")
         ),
         _optional(CONF_ROOM_CLIMATE, room.get(CONF_ROOM_CLIMATE)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="climate")
         ),
-        _optional(CONF_ROOM_EXHAUST_FAN, room.get(CONF_ROOM_EXHAUST_FAN)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain=["fan", "switch"])
+        _optional(CONF_ROOM_EXHAUST_FAN, _entity_list(room.get(CONF_ROOM_EXHAUST_FAN))): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["fan", "switch"], multiple=True)
         ),
         _optional(CONF_ROOM_SUPPLY_FAN, room.get(CONF_ROOM_SUPPLY_FAN)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=["fan", "switch"])
@@ -309,6 +310,7 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
     return vol.Schema({
         vol.Required("identity"): section(vol.Schema({
             _required(CONF_ROOM_NAME, room.get(CONF_ROOM_NAME)): selector.TextSelector(),
+            _optional(CONF_ROOM_ICON, room.get(CONF_ROOM_ICON)): selector.IconSelector(),
             vol.Optional(CONF_ROOM_FLOOR, default=room.get(CONF_ROOM_FLOOR, "")): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=levels, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True, translation_key="floor")
             ),
@@ -342,8 +344,8 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             _optional(CONF_ROOM_CO2, room.get(CONF_ROOM_CO2)): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="sensor", device_class="carbon_dioxide")
             ),
-            _optional(CONF_ROOM_EXHAUST_FAN, room.get(CONF_ROOM_EXHAUST_FAN)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain=["fan", "switch"])
+            _optional(CONF_ROOM_EXHAUST_FAN, _entity_list(room.get(CONF_ROOM_EXHAUST_FAN))): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=["fan", "switch"], multiple=True)
             ),
             _optional(CONF_ROOM_CLIMATE, room.get(CONF_ROOM_CLIMATE)): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="climate")
@@ -362,13 +364,13 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
         }), {"collapsed": True}),
         vol.Optional("optional_sensors"): section(vol.Schema({
             _optional(CONF_ROOM_VOC, room.get(CONF_ROOM_VOC)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
+                selector.EntitySelectorConfig(domain="sensor", device_class=["volatile_organic_compounds", "volatile_organic_compounds_parts"])
             ),
             _optional(CONF_ROOM_PM25, room.get(CONF_ROOM_PM25)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
+                selector.EntitySelectorConfig(domain="sensor", device_class="pm25")
             ),
             _optional(CONF_ROOM_ILLUMINANCE, room.get(CONF_ROOM_ILLUMINANCE)): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor")
+                selector.EntitySelectorConfig(domain="sensor", device_class="illuminance")
             ),
         }), {"collapsed": True}),
         vol.Optional("optional_actuators"): section(vol.Schema({

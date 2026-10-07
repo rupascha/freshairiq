@@ -7,7 +7,7 @@ def test_scope_is_typographic_not_scope_icon():
     assert 'mdi:home' not in CARD[CARD.index('_presentationScope'):CARD.index('_compactGoalChips')]
 def test_freshy_compact_goal_chips_use_backend_goal_state():
     start=CARD.index('    _compactGoalChips(rooms) {')
-    end=CARD.index('    _decisionGoalOverview(rooms) {', start)
+    end=CARD.index('    _decisionGoalOverview(rooms, passiveOpenMonitor=false) {', start)
     block=CARD[start:end]
     assert 'goal_state' in block
     assert 'humidity' in block and 'co2' in block and 'temperature' in block

@@ -1,3 +1,26 @@
+## 0.26.2.5
+
+- Mechanical-exhaust recommendations now obey the canonical room decision: explicit Wait / Do not ventilate / Close decisions cannot be contradicted by an exhaust start suggestion.
+- Already-running exhaust fans or configured fan stages are no longer recommended to be switched on again.
+- Supplemental mechanical ventilation no longer overrides a canonical wait decision merely because CO₂ independently exceeds the supplemental warning threshold.
+- Multi-stage detection/session behaviour from 0.26.2.4 remains unchanged; FreshAirIQ still never guesses which mutually-exclusive stage to energise.
+- Added regression scenarios covering single exhausts, multiple stages, already-active stages and recommendation-consistency gates.
+
+## 0.26.2.4
+
+- Mechanical ventilation multi-entity contract completed end-to-end; safe fan-stage handling, listener compatibility, room-icon/configuration parity regressions.
+- Platform/UI hardening: consistent dark overlay surfaces across browser and Companion themes.
+- Support diagnostics: embedded support message UI replaces the browser-origin prompt and clearly names the FreshAirIQ support destination.
+- Room intelligence charts: readable Y-axis values for humidity and temperature.
+- Room configuration: user-selectable MDI room icons and tighter entity device-class filtering.
+- Mechanical ventilation: multiple exhaust fans/fan-stage entities per room, legacy single-entity compatible.
+
+## 0.26.2.2
+
+- Hotfix: house-ventilation goal display is compacted into an icon-first house summary with reached/total counts and the longest remaining ETA per goal.
+- Per-room ventilation goals move behind one expandable “Räume & Ziele anzeigen” section; room rows use icon-only goal names, `Prio`/`Priority`, explicit reached / ETA / unreachable states, and contextual protection explanations.
+- Existing canonical multi-goal evaluation, recommendation logic, passive-opening presentation and room-detail navigation remain unchanged.
+
 ## 0.26.2.1
 
 - Hotfix: room detail humidity history now records and charts actual relative room-air humidity (%) instead of ventilation-session moisture balance data.

@@ -12,8 +12,9 @@ def test_diagnostics_send_is_explicit_direct_support_upload_with_fallback_contac
     assert 'id="diagnostics-send"' in card
     assert 'direkt an Support senden' in card
     assert 'support@freshairiq.com' in card
-    assert 'window.prompt(' in card
-    assert 'window.confirm(' in card
+    assert 'id="diagnostics-message"' in card
+    assert 'window.prompt(' not in card
+    assert 'window.confirm(this._t("support.confirm"))' not in card
     assert 'callApi("POST", "freshairiq/support-diagnostics"' in card
     assert '/api/freshairiq/support-diagnostics' in diag
     assert 'FreshAirIQSupportDiagnosticsView' in init

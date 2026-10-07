@@ -81,14 +81,18 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-def _entity_active(hass: HomeAssistant, entity_id: str | None) -> bool:
-    """Return a conservative active state for configured mechanical ventilation."""
-    if not entity_id:
-        return False
-    state = hass.states.get(entity_id)
-    if state is None:
-        return False
-    return str(state.state).lower() in {"on", "open", "running", "fan_only", "ventilation"}
+def _entity_active(hass: HomeAssistant, entity_id: str | list[str] | tuple[str, ...] | None) -> bool:
+    """Return whether any configured mechanical ventilation entity is active.
+
+    Legacy scalar values remain supported; new configurations may contain
+    multiple fans or fan-stage entities for one room.
+    """
+    entity_ids = [entity_id] if isinstance(entity_id, str) else list(entity_id or [])
+    for current in entity_ids:
+        state = hass.states.get(current)
+        if state is not None and str(state.state).lower() in {"on", "open", "running", "fan_only", "ventilation"}:
+            return True
+    return False
 
 
 def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
@@ -712,8 +716,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for room in self.entry.data.get(CONF_ROOMS, []):
             for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
                 entities.update(entity_ids(room.get(key)))
-            for key in (CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_CLIMATE, CONF_ROOM_EXHAUST_FAN):
-                if room.get(key): entities.add(room[key])
+            for key in (CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_CLIMATE):
+                if room.get(key): entities.add(str(room[key]))
+            # exhaust_fan is legacy-scalar compatible but may now contain multiple
+            # fan/switch entities (including separate hardware stage entities).
+            entities.update(entity_ids(room.get(CONF_ROOM_EXHAUST_FAN)))
             for key, enabled in optional_sensor_keys:
                 if enabled and room.get(key):
                     entities.add(room[key])
@@ -1148,6 +1155,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 results[key] = {
                     "key": key,
                     "name": cfg.get(CONF_ROOM_NAME, key),
+                    "icon": cfg.get(CONF_ROOM_ICON),
                     "floor": cfg.get(CONF_ROOM_FLOOR, "Unzugeordnet"),
                     "volume_m3": round(monitor_volume, 1),
                     "calculation_enabled": False,
@@ -2597,7 +2605,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "forecast_heat_kwh": fdel, "forecast_purchased_kwh": fpurchased, "forecast_cost": fcost,
                 "forecast_energy_amount": ffuel["amount"], "forecast_energy_unit": ffuel["unit"],
                 "free_cooling_kwh": delivered if result.action == "Ventilate for cooling" else 0.0,
-                "calculation_enabled": include, "floor": cfg.get(CONF_ROOM_FLOOR, FLOOR_GROUND), "sort_order": int(cfg.get(CONF_ROOM_SORT_ORDER, idx)),
+                "calculation_enabled": include, "icon": cfg.get(CONF_ROOM_ICON), "floor": cfg.get(CONF_ROOM_FLOOR, FLOOR_GROUND), "sort_order": int(cfg.get(CONF_ROOM_SORT_ORDER, idx)),
                 "ventilation_threshold_mode": room_threshold_mode, "ventilation_threshold_percent": float(cfg.get(CONF_ROOM_THRESHOLD_PERCENT, 5.0) or 5.0), "ventilation_threshold_configured_ml": float(cfg.get(CONF_ROOM_THRESHOLD_ML, 100.0) or 100.0), "ventilation_threshold_effective_ml": round(room_threshold_effective_ml, 1),
                 "window_orientation": cfg.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN), "airflow_factor": airflow,
                 "configured_moisture_sources": list(cfg.get(CONF_ROOM_MOISTURE_SOURCES, []) or []),

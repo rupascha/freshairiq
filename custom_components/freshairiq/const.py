@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.2.1"
+VERSION = "0.26.2.5"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -30,6 +30,7 @@ CONF_POLLEN_ENTITY = "pollen_entity"
 CONF_ROOMS = "rooms"
 CONF_LEVELS = "levels"
 CONF_ROOM_NAME = "name"
+CONF_ROOM_ICON = "icon"
 CONF_ROOM_TEMPERATURE = "temperature"
 CONF_ROOM_HUMIDITY = "humidity"
 CONF_ROOM_TEMPERATURE_AGGREGATION = "temperature_aggregation"

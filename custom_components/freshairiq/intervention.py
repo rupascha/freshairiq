@@ -7,6 +7,7 @@ ranked list of possible actions.
 """
 from __future__ import annotations
 
+from .climate_sources import entity_ids
 from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
@@ -69,7 +70,14 @@ def build_interventions(
     The output is deterministic and conservative.  Actuation is opt-in and only
     actions with an explicit Home Assistant service are executable.
     """
-    del entity_state  # reserved for state-aware suppression in later releases
+    def is_active(entity_ids: list[str]) -> bool:
+        if entity_state is None:
+            return False
+        for entity_id in entity_ids:
+            state = entity_state(entity_id)
+            if state is not None and str(state).lower() in {"on", "open", "running", "fan_only", "ventilation"}:
+                return True
+        return False
 
     humidity = _f(room.get("humidity"))
     temperature = _f(room.get("temperature"))
@@ -122,7 +130,7 @@ def build_interventions(
 
     ventilation_entity = str(config.get("ventilation_device") or "") or None
     supply_entity = str(config.get("supply_fan") or "") or None
-    if wants_fresh_air or co2_high:
+    if wants_fresh_air:
         target = ventilation_entity or supply_entity
         if target:
             add(
@@ -138,18 +146,29 @@ def build_interventions(
             )
 
     # Extraction is most useful during a known moisture event.
-    exhaust = str(config.get("exhaust_fan") or "") or None
-    if exhaust and (source_active or humidity >= _f(options.get("high_rh"), 68.0)):
+    exhaust_entities = entity_ids(config.get("exhaust_fan"))
+    exhaust_conflicts_with_canonical = action in {"Do not ventilate", "Wait", "Close"}
+    exhaust_already_active = is_active(exhaust_entities)
+    if exhaust_entities and not exhaust_conflicts_with_canonical and not exhaust_already_active and (source_active or humidity >= _f(options.get("high_rh"), 68.0)):
+        # A single configured actuator keeps the established executable action.
+        # With multiple entities FreshAirIQ cannot safely infer whether they are
+        # independent fans or mutually-exclusive hardware stages. Never choose or
+        # energise a stage by assumption; detection/session learning still uses all.
+        exhaust = exhaust_entities[0] if len(exhaust_entities) == 1 else None
         add(
             "extract_moisture",
-            "Abluft einschalten",
-            "Aktive Feuchtequelle oder hohe Raumfeuchte erkannt.",
+            "Abluft einschalten" if exhaust else "Abluft / Lüfterstufe nutzen",
+            (
+                "Aktive Feuchtequelle oder hohe Raumfeuchte erkannt."
+                if exhaust
+                else "Aktive Feuchtequelle oder hohe Raumfeuchte erkannt. Mehrere Ablüfter/Lüfterstufen sind konfiguriert; FreshAirIQ erkennt deren Betrieb, wählt aber keine Stufe automatisch."
+            ),
             98 if source_active else 90,
             exhaust,
-            service=_service_for_turn_on(exhaust),
-            service_data={"entity_id": exhaust},
+            service=_service_for_turn_on(exhaust) if exhaust else None,
+            service_data={"entity_id": exhaust} if exhaust else None,
             category="dehumidification",
-            automatic_safe=True,
+            automatic_safe=bool(exhaust),
         )
 
     # A dehumidifier is especially valuable when opening windows is currently

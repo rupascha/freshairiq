@@ -56,7 +56,8 @@
           "goal_priorities": "Ventilation goal priorities",
           "target_temperature_mode": "Comfort target temperature",
           "target_temperature": "Manual target temperature",
-          "target_temperature_fallback": "Fallback target temperature"
+          "target_temperature_fallback": "Fallback target temperature",
+          "icon": "Room icon"
         },
         "data_description": {
           "name": "Custom display name, for example “Living room”. FreshAirIQ derives a stable internal room key from it.",
@@ -81,7 +82,7 @@
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -93,7 +94,8 @@
           "goal_priorities": "Order dehumidification, CO₂/air quality and temperature comfort for this room. All goals are evaluated in parallel; protection limits always take precedence.",
           "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
           "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+          "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
         }
       },
       "more_rooms": {
@@ -448,7 +450,8 @@
           "goal_priorities": "Ventilation goal priorities",
           "target_temperature_mode": "Comfort target temperature",
           "target_temperature": "Manual target temperature",
-          "target_temperature_fallback": "Fallback target temperature"
+          "target_temperature_fallback": "Fallback target temperature",
+          "icon": "Room icon"
         },
         "sections": {
           "identity": {
@@ -457,12 +460,14 @@
             "data": {
               "name": "Room name",
               "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
+              "include_in_calculations": "Include in FreshAirIQ calculations",
+              "icon": "Room icon"
             },
             "data_description": {
               "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
               "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+              "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
             }
           },
           "properties": {
@@ -506,7 +511,7 @@
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -553,7 +558,7 @@
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -564,7 +569,7 @@
             "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
+              "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "supply_fan": "Supply-air device (optional)",
               "ventilation_device": "Ventilation/HRV device (optional)",
               "dehumidifier": "Dehumidifier (optional)",
@@ -577,7 +582,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -613,7 +618,7 @@
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -627,7 +632,8 @@
           "goal_priorities": "Order dehumidification, CO₂/air quality and temperature comfort for this room. All goals are evaluated in parallel; protection limits always take precedence.",
           "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
           "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+          "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
         },
         "section": {
           "identity": {
@@ -636,12 +642,14 @@
             "data": {
               "name": "Room name",
               "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
+              "include_in_calculations": "Include in FreshAirIQ calculations",
+              "icon": "Room icon"
             },
             "data_description": {
               "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
               "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+              "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
             }
           },
           "properties": {
@@ -716,7 +724,7 @@
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -727,7 +735,7 @@
             "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
+              "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "supply_fan": "Supply-air device (optional)",
               "ventilation_device": "Ventilation/HRV device (optional)",
               "dehumidifier": "Dehumidifier (optional)",
@@ -740,7 +748,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -803,7 +811,8 @@
           "goal_priorities": "Ventilation goal priorities",
           "target_temperature_mode": "Comfort target temperature",
           "target_temperature": "Manual target temperature",
-          "target_temperature_fallback": "Fallback target temperature"
+          "target_temperature_fallback": "Fallback target temperature",
+          "icon": "Room icon"
         },
         "sections": {
           "identity": {
@@ -812,12 +821,14 @@
             "data": {
               "name": "Room name",
               "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
+              "include_in_calculations": "Include in FreshAirIQ calculations",
+              "icon": "Room icon"
             },
             "data_description": {
               "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
               "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+              "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
             }
           },
           "properties": {
@@ -861,7 +872,7 @@
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -908,7 +919,7 @@
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -919,7 +930,7 @@
             "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
+              "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "supply_fan": "Supply-air device (optional)",
               "ventilation_device": "Ventilation/HRV device (optional)",
               "dehumidifier": "Dehumidifier (optional)",
@@ -932,7 +943,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -968,7 +979,7 @@
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -982,7 +993,8 @@
           "goal_priorities": "Order dehumidification, CO₂/air quality and temperature comfort for this room. All goals are evaluated in parallel; protection limits always take precedence.",
           "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
           "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+          "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
         },
         "section": {
           "identity": {
@@ -991,12 +1003,14 @@
             "data": {
               "name": "Room name",
               "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
+              "include_in_calculations": "Include in FreshAirIQ calculations",
+              "icon": "Room icon"
             },
             "data_description": {
               "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
               "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+              "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
             }
           },
           "properties": {
@@ -1071,7 +1085,7 @@
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -1082,7 +1096,7 @@
             "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
+              "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "supply_fan": "Supply-air device (optional)",
               "ventilation_device": "Ventilation/HRV device (optional)",
               "dehumidifier": "Dehumidifier (optional)",
@@ -1095,7 +1109,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -1639,10 +1653,12 @@
         "title": "Add zone",
         "description": "Choose any name, for example “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty.",
         "data": {
-          "name": "Floor/zone name"
+          "name": "Floor/zone name",
+          "icon": "Room icon"
         },
         "data_description": {
-          "name": "Custom display name. Example: “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty."
+          "name": "Custom display name. Example: “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty.",
+          "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
         }
       },
       "level_reorder": {
@@ -1659,10 +1675,12 @@
         "title": "Remove zone",
         "description": "Only unused zones can be removed.",
         "data": {
-          "name": "Zone"
+          "name": "Zone",
+          "icon": "Room icon"
         },
         "data_description": {
-          "name": "Select an unused area. Areas that still contain rooms must first be removed from those rooms."
+          "name": "Select an unused area. Areas that still contain rooms must first be removed from those rooms.",
+          "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
         }
       },
       "home_setup": {
@@ -2199,7 +2217,8 @@
           "goal_priorities": "Ventilation goal priorities",
           "target_temperature_mode": "Comfort target temperature",
           "target_temperature": "Manual target temperature",
-          "target_temperature_fallback": "Fallback target temperature"
+          "target_temperature_fallback": "Fallback target temperature",
+          "icon": "Room icon"
         },
         "sections": {
           "identity": {
@@ -2208,12 +2227,14 @@
             "data": {
               "name": "Room name",
               "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
+              "include_in_calculations": "Include in FreshAirIQ calculations",
+              "icon": "Room icon"
             },
             "data_description": {
               "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
               "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+              "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
             }
           },
           "properties": {
@@ -2257,7 +2278,7 @@
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -2304,7 +2325,7 @@
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -2315,7 +2336,7 @@
             "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
+              "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "supply_fan": "Supply-air device (optional)",
               "ventilation_device": "Ventilation/HRV device (optional)",
               "dehumidifier": "Dehumidifier (optional)",
@@ -2328,7 +2349,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -2364,7 +2385,7 @@
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -2378,7 +2399,8 @@
           "goal_priorities": "Order dehumidification, CO₂/air quality and temperature comfort for this room. All goals are evaluated in parallel; protection limits always take precedence.",
           "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
           "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+          "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+          "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
         },
         "section": {
           "identity": {
@@ -2387,12 +2409,14 @@
             "data": {
               "name": "Room name",
               "floor": "Floor",
-              "include_in_calculations": "Include in FreshAirIQ calculations"
+              "include_in_calculations": "Include in FreshAirIQ calculations",
+              "icon": "Room icon"
             },
             "data_description": {
               "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
               "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+              "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+              "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
             }
           },
           "properties": {
@@ -2467,7 +2491,7 @@
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -2478,7 +2502,7 @@
             "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
-              "exhaust_fan": "Exhaust device (optional)",
+              "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "supply_fan": "Supply-air device (optional)",
               "ventilation_device": "Ventilation/HRV device (optional)",
               "dehumidifier": "Dehumidifier (optional)",
@@ -2491,7 +2515,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -2890,7 +2914,8 @@
             "humidity_aggregation": "Humidity aggregation",
             "target_temperature_mode": "Comfort target temperature",
             "target_temperature": "Manual target temperature",
-            "target_temperature_fallback": "Fallback target temperature"
+            "target_temperature_fallback": "Fallback target temperature",
+            "icon": "Room icon"
           },
           "sections": {
             "identity": {
@@ -2899,12 +2924,14 @@
               "data": {
                 "name": "Room name",
                 "floor": "Floor",
-                "include_in_calculations": "Include in FreshAirIQ calculations"
+                "include_in_calculations": "Include in FreshAirIQ calculations",
+                "icon": "Room icon"
               },
               "data_description": {
                 "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
                 "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+                "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
               }
             },
             "sensors": {
@@ -2932,7 +2959,7 @@
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -2979,7 +3006,7 @@
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3006,7 +3033,7 @@
               "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
               "data": {
                 "climate": "Climate/HVAC entity (optional)",
-                "exhaust_fan": "Exhaust device (optional)",
+                "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
                 "supply_fan": "Supply-air device (optional)",
                 "ventilation_device": "Ventilation/HRV device (optional)",
                 "dehumidifier": "Dehumidifier (optional)",
@@ -3019,7 +3046,7 @@
               },
               "data_description": {
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
                 "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
                 "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3055,7 +3082,7 @@
             "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
             "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
             "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-            "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
             "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
             "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
             "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3065,7 +3092,8 @@
             "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
             "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
             "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-            "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+            "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
           }
         },
         "add_orientations": {
@@ -3182,7 +3210,7 @@
             "pm25": "PM2.5 sensor (optional)",
             "illuminance": "Illuminance sensor (optional)",
             "climate": "Climate/HVAC entity (optional)",
-            "exhaust_fan": "Exhaust device (optional)",
+            "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
             "supply_fan": "Supply-air device (optional)",
             "ventilation_device": "Ventilation/HRV device (optional)",
             "dehumidifier": "Dehumidifier (optional)",
@@ -3192,7 +3220,8 @@
             "humidity_aggregation": "Humidity aggregation",
             "target_temperature_mode": "Comfort target temperature",
             "target_temperature": "Manual target temperature",
-            "target_temperature_fallback": "Fallback target temperature"
+            "target_temperature_fallback": "Fallback target temperature",
+            "icon": "Room icon"
           },
           "sections": {
             "identity": {
@@ -3201,12 +3230,14 @@
               "data": {
                 "name": "Room name",
                 "floor": "Floor",
-                "include_in_calculations": "Include in FreshAirIQ calculations"
+                "include_in_calculations": "Include in FreshAirIQ calculations",
+                "icon": "Room icon"
               },
               "data_description": {
                 "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
                 "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+                "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
               }
             },
             "sensors": {
@@ -3234,7 +3265,7 @@
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -3281,7 +3312,7 @@
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3308,7 +3339,7 @@
               "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
               "data": {
                 "climate": "Climate/HVAC entity (optional)",
-                "exhaust_fan": "Exhaust device (optional)",
+                "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
                 "supply_fan": "Supply-air device (optional)",
                 "ventilation_device": "Ventilation/HRV device (optional)",
                 "dehumidifier": "Dehumidifier (optional)",
@@ -3321,7 +3352,7 @@
               },
               "data_description": {
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
                 "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
                 "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3357,7 +3388,7 @@
             "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
             "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
             "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-            "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
             "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
             "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
             "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3367,7 +3398,8 @@
             "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
             "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
             "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-            "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+            "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
           }
         },
         "import_ha_room": {
@@ -3406,7 +3438,7 @@
             "pm25": "PM2.5 sensor (optional)",
             "illuminance": "Illuminance sensor (optional)",
             "climate": "Climate/HVAC entity (optional)",
-            "exhaust_fan": "Exhaust device (optional)",
+            "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
             "supply_fan": "Supply-air device (optional)",
             "ventilation_device": "Ventilation/HRV device (optional)",
             "dehumidifier": "Dehumidifier (optional)",
@@ -3416,7 +3448,8 @@
             "humidity_aggregation": "Humidity aggregation",
             "target_temperature_mode": "Comfort target temperature",
             "target_temperature": "Manual target temperature",
-            "target_temperature_fallback": "Fallback target temperature"
+            "target_temperature_fallback": "Fallback target temperature",
+            "icon": "Room icon"
           },
           "sections": {
             "identity": {
@@ -3425,12 +3458,14 @@
               "data": {
                 "name": "Room name",
                 "floor": "Floor",
-                "include_in_calculations": "Include in FreshAirIQ calculations"
+                "include_in_calculations": "Include in FreshAirIQ calculations",
+                "icon": "Room icon"
               },
               "data_description": {
                 "name": "Freely selectable display name. FreshAirIQ derives a stable internal room key from it.",
                 "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
-                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."
+                "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
+                "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
               }
             },
             "sensors": {
@@ -3458,7 +3493,7 @@
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -3505,7 +3540,7 @@
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3532,7 +3567,7 @@
               "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
               "data": {
                 "climate": "Climate/HVAC entity (optional)",
-                "exhaust_fan": "Exhaust device (optional)",
+                "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
                 "supply_fan": "Supply-air device (optional)",
                 "ventilation_device": "Ventilation/HRV device (optional)",
                 "dehumidifier": "Dehumidifier (optional)",
@@ -3545,7 +3580,7 @@
               },
               "data_description": {
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
                 "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
                 "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
                 "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3581,7 +3616,7 @@
             "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
             "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
             "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-            "exhaust_fan": "Optional. Select an exhaust fan or mechanical ventilation entity. ON starts a mechanical ventilation session and OFF ends it. FreshAirIQ detects and learns this ventilation type; it does not switch the device automatically.",
+            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
             "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
             "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
             "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3591,7 +3626,8 @@
             "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
             "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
             "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
-            "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off.",
+            "icon": "Optional. Choose any Material Design icon for this room. If empty, FreshAirIQ keeps its automatic room-name based icon."
           }
         }
       },

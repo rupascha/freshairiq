@@ -14,8 +14,9 @@ def test_new_cards_default_to_classic_without_overriding_saved_choice():
 def test_native_support_dialogs_use_i18n_keys():
     for key in ("support.prompt", "support.message_too_long", "support.confirm", "support.success", "support.failure_alert", "settings.confirm_delete_room", "settings.confirm_reset_learning", "settings.confirm_reset_options"):
         assert f'"{key}"' in CARD
-    assert 'window.prompt(this._t("support.prompt")' in CARD
-    assert 'window.confirm(this._t("support.confirm"))' in CARD
+    assert 'id="diagnostics-message"' in CARD
+    assert 'window.prompt(this._t("support.prompt")' not in CARD
+    assert 'window.confirm(this._t("support.confirm"))' not in CARD
     assert 'this._t("support.failure_alert")' in CARD
     assert 'FAIQ-SUPPORT-UPLOAD-001' in CARD
 

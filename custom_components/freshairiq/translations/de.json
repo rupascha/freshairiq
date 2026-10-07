@@ -56,7 +56,8 @@
           "goal_priorities": "Lüftungsziele priorisieren",
           "target_temperature_mode": "Komfort-Zieltemperatur",
           "target_temperature": "Manuelle Zieltemperatur",
-          "target_temperature_fallback": "Fallback-Zieltemperatur"
+          "target_temperature_fallback": "Fallback-Zieltemperatur",
+          "icon": "Raum-Icon"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename, z. B. „Wohnzimmer“. Daraus erzeugt FreshAirIQ einen stabilen internen Raumschlüssel.",
@@ -81,7 +82,7 @@
           "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
           "covers": "Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion.",
           "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-          "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+          "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
           "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
           "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
           "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -93,7 +94,8 @@
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
           "target_temperature_mode": "Automatisch nutzt den letzten plausiblen Thermostat-Sollwert vor Lüftungsbeginn. Fensterautomationen mit Frostschutz oder Aus verfälschen die laufende Session nicht.",
           "target_temperature": "Optionaler manueller Komfort-Sollwert von 12–30 °C.",
-          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert."
+          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert.",
+          "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
         }
       },
       "more_rooms": {
@@ -448,7 +450,8 @@
           "goal_priorities": "Lüftungsziele priorisieren",
           "target_temperature_mode": "Komfort-Zieltemperatur",
           "target_temperature": "Manuelle Zieltemperatur",
-          "target_temperature_fallback": "Fallback-Zieltemperatur"
+          "target_temperature_fallback": "Fallback-Zieltemperatur",
+          "icon": "Raum-Icon"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -473,7 +476,7 @@
           "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
           "covers": "Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion.",
           "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-          "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+          "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
           "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
           "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
           "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -487,7 +490,8 @@
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
           "target_temperature_mode": "Automatisch nutzt den letzten plausiblen Thermostat-Sollwert vor Lüftungsbeginn. Fensterautomationen mit Frostschutz oder Aus verfälschen die laufende Session nicht.",
           "target_temperature": "Optionaler manueller Komfort-Sollwert von 12–30 °C.",
-          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert."
+          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert.",
+          "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
         },
         "sections": {
           "identity": {
@@ -496,12 +500,14 @@
             "data": {
               "name": "Raumname",
               "floor": "Stockwerk/Bereich",
-              "include_in_calculations": "In Berechnungen einbeziehen"
+              "include_in_calculations": "In Berechnungen einbeziehen",
+              "icon": "Raum-Icon"
             },
             "data_description": {
               "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
               "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+              "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
             }
           },
           "properties": {
@@ -545,7 +551,7 @@
               "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
               "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
               "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
-              "exhaust_fan": "Optional. Wähle einen Ablüfter oder eine mechanische Lüftung. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung, schaltet aber keine Stufe automatisch.",
               "climate": "Optional. Wähle den Thermostat oder das Klimagerät des Raums. Im Automatikmodus nutzt FreshAirIQ dessen letzten plausiblen Sollwert als Komfort-Zieltemperatur. Ohne Gerät bleiben Feuchte und andere konfigurierte Lüftungsziele vollständig nutzbar.",
               "target_temperature_mode": "Automatisch übernimmt den plausiblen Sollwert des Thermostats/Klimageräts. Manuell verwendet die unten eingestellte Komforttemperatur.",
               "target_temperature": "Nur bei manueller Zieltemperatur: gewünschte Komforttemperatur von 12–30 °C.",
@@ -592,7 +598,7 @@
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-              "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -616,7 +622,7 @@
             },
             "data_description": {
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-              "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
               "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
               "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -636,12 +642,14 @@
             "data": {
               "name": "Raumname",
               "floor": "Stockwerk/Bereich",
-              "include_in_calculations": "In Berechnungen einbeziehen"
+              "include_in_calculations": "In Berechnungen einbeziehen",
+              "icon": "Raum-Icon"
             },
             "data_description": {
               "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
               "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+              "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
             }
           },
           "properties": {
@@ -716,7 +724,7 @@
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-              "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -740,7 +748,7 @@
             },
             "data_description": {
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-              "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
               "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
               "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -803,7 +811,8 @@
           "goal_priorities": "Lüftungsziele priorisieren",
           "target_temperature_mode": "Temperaturziel verwenden",
           "target_temperature": "Manuelle Komforttemperatur",
-          "target_temperature_fallback": "Ersatz-Komforttemperatur"
+          "target_temperature_fallback": "Ersatz-Komforttemperatur",
+          "icon": "Raum-Icon"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -828,7 +837,7 @@
           "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
           "covers": "Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion.",
           "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-          "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+          "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
           "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
           "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
           "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -842,7 +851,8 @@
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
           "target_temperature_mode": "Automatisch nutzt den letzten plausiblen Thermostat-Sollwert vor Lüftungsbeginn. Fensterautomationen mit Frostschutz oder Aus verfälschen die laufende Session nicht.",
           "target_temperature": "Optionaler manueller Komfort-Sollwert von 12–30 °C.",
-          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert."
+          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert.",
+          "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
         },
         "sections": {
           "identity": {
@@ -851,12 +861,14 @@
             "data": {
               "name": "Raumname",
               "floor": "Stockwerk/Bereich",
-              "include_in_calculations": "In Berechnungen einbeziehen"
+              "include_in_calculations": "In Berechnungen einbeziehen",
+              "icon": "Raum-Icon"
             },
             "data_description": {
               "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
               "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+              "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
             }
           },
           "properties": {
@@ -900,7 +912,7 @@
               "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
               "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
               "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
-              "exhaust_fan": "Optional. Wähle einen Ablüfter oder eine mechanische Lüftung. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung, schaltet aber keine Stufe automatisch.",
               "climate": "Optional. Wähle den Thermostat oder das Klimagerät des Raums. Im Automatikmodus nutzt FreshAirIQ dessen letzten plausiblen Sollwert als Komfort-Zieltemperatur. Ohne Gerät bleiben Feuchte und andere konfigurierte Lüftungsziele vollständig nutzbar.",
               "target_temperature_mode": "Automatisch übernimmt den plausiblen Sollwert des Thermostats/Klimageräts. Manuell verwendet die unten eingestellte Komforttemperatur.",
               "target_temperature": "Nur bei manueller Zieltemperatur: gewünschte Komforttemperatur von 12–30 °C.",
@@ -947,7 +959,7 @@
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-              "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -971,7 +983,7 @@
             },
             "data_description": {
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-              "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
               "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
               "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -991,12 +1003,14 @@
             "data": {
               "name": "Raumname",
               "floor": "Stockwerk/Bereich",
-              "include_in_calculations": "In Berechnungen einbeziehen"
+              "include_in_calculations": "In Berechnungen einbeziehen",
+              "icon": "Raum-Icon"
             },
             "data_description": {
               "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
               "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+              "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
             }
           },
           "properties": {
@@ -1071,7 +1085,7 @@
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-              "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -1095,7 +1109,7 @@
             },
             "data_description": {
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-              "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
               "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
               "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -1639,10 +1653,12 @@
         "title": "Bereich hinzufügen",
         "description": "Name frei wählen, z. B. „Erdgeschoss“, „Kellergeschoss“, „Wintergarten“ oder „Anbau“. Standard: leer.",
         "data": {
-          "name": "Name des Stockwerks/Bereichs"
+          "name": "Name des Stockwerks/Bereichs",
+          "icon": "Raum-Icon"
         },
         "data_description": {
-          "name": "Frei wählbarer Anzeigename."
+          "name": "Frei wählbarer Anzeigename.",
+          "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
         }
       },
       "level_reorder": {
@@ -1659,10 +1675,12 @@
         "title": "Bereich entfernen",
         "description": "Nur Bereiche ohne zugeordnete Räume können entfernt werden. Standard: keine Vorauswahl.",
         "data": {
-          "name": "Bereich"
+          "name": "Bereich",
+          "icon": "Raum-Icon"
         },
         "data_description": {
-          "name": "Wähle einen unbenutzten Bereich. Bereiche mit noch zugeordneten Räumen müssen zuerst von diesen Räumen gelöst werden."
+          "name": "Wähle einen unbenutzten Bereich. Bereiche mit noch zugeordneten Räumen müssen zuerst von diesen Räumen gelöst werden.",
+          "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
         }
       },
       "home_setup": {
@@ -2199,7 +2217,8 @@
           "goal_priorities": "Lüftungsziele priorisieren",
           "target_temperature_mode": "Komfort-Zieltemperatur",
           "target_temperature": "Manuelle Zieltemperatur",
-          "target_temperature_fallback": "Fallback-Zieltemperatur"
+          "target_temperature_fallback": "Fallback-Zieltemperatur",
+          "icon": "Raum-Icon"
         },
         "data_description": {
           "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
@@ -2224,7 +2243,7 @@
           "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
           "covers": "Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion.",
           "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-          "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+          "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
           "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
           "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
           "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -2238,7 +2257,8 @@
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
           "target_temperature_mode": "Automatisch nutzt den letzten plausiblen Thermostat-Sollwert vor Lüftungsbeginn. Fensterautomationen mit Frostschutz oder Aus verfälschen die laufende Session nicht.",
           "target_temperature": "Optionaler manueller Komfort-Sollwert von 12–30 °C.",
-          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert."
+          "target_temperature_fallback": "Optionaler Sommer-/Fallback-Wert, wenn das Thermostat ausgeschaltet ist oder keinen plausiblen Sollwert liefert.",
+          "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
         },
         "sections": {
           "identity": {
@@ -2247,12 +2267,14 @@
             "data": {
               "name": "Raumname",
               "floor": "Stockwerk/Bereich",
-              "include_in_calculations": "In Berechnungen einbeziehen"
+              "include_in_calculations": "In Berechnungen einbeziehen",
+              "icon": "Raum-Icon"
             },
             "data_description": {
               "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
               "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+              "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
             }
           },
           "properties": {
@@ -2296,7 +2318,7 @@
               "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
               "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
               "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
-              "exhaust_fan": "Optional. Wähle einen Ablüfter oder eine mechanische Lüftung. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung, schaltet aber keine Stufe automatisch.",
               "climate": "Optional. Wähle den Thermostat oder das Klimagerät des Raums. Im Automatikmodus nutzt FreshAirIQ dessen letzten plausiblen Sollwert als Komfort-Zieltemperatur. Ohne Gerät bleiben Feuchte und andere konfigurierte Lüftungsziele vollständig nutzbar.",
               "target_temperature_mode": "Automatisch übernimmt den plausiblen Sollwert des Thermostats/Klimageräts. Manuell verwendet die unten eingestellte Komforttemperatur.",
               "target_temperature": "Nur bei manueller Zieltemperatur: gewünschte Komforttemperatur von 12–30 °C.",
@@ -2343,7 +2365,7 @@
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-              "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -2367,7 +2389,7 @@
             },
             "data_description": {
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-              "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
               "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
               "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -2387,12 +2409,14 @@
             "data": {
               "name": "Raumname",
               "floor": "Stockwerk/Bereich",
-              "include_in_calculations": "In Berechnungen einbeziehen"
+              "include_in_calculations": "In Berechnungen einbeziehen",
+              "icon": "Raum-Icon"
             },
             "data_description": {
               "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
               "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+              "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+              "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
             }
           },
           "properties": {
@@ -2467,7 +2491,7 @@
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-              "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -2491,7 +2515,7 @@
             },
             "data_description": {
               "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-              "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+              "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
               "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
               "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
               "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -2890,7 +2914,8 @@
             "humidity_aggregation": "Feuchte-Auswertung",
             "target_temperature_mode": "Komfort-Zieltemperatur",
             "target_temperature": "Manuelle Zieltemperatur",
-            "target_temperature_fallback": "Fallback-Zieltemperatur"
+            "target_temperature_fallback": "Fallback-Zieltemperatur",
+            "icon": "Raum-Icon"
           },
           "sections": {
             "identity": {
@@ -2899,12 +2924,14 @@
               "data": {
                 "name": "Raumname",
                 "floor": "Stockwerk/Bereich",
-                "include_in_calculations": "In Berechnungen einbeziehen"
+                "include_in_calculations": "In Berechnungen einbeziehen",
+                "icon": "Raum-Icon"
               },
               "data_description": {
                 "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
                 "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+                "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
               }
             },
             "properties": {
@@ -2948,7 +2975,7 @@
                 "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
                 "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
-                "exhaust_fan": "Optional. Wähle einen Ablüfter oder eine mechanische Lüftung. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung, schaltet aber keine Stufe automatisch.",
                 "climate": "Optional. Wähle den Thermostat oder das Klimagerät des Raums. Im Automatikmodus nutzt FreshAirIQ dessen letzten plausiblen Sollwert als Komfort-Zieltemperatur. Ohne Gerät bleiben Feuchte und andere konfigurierte Lüftungsziele vollständig nutzbar.",
                 "target_temperature_mode": "Automatisch übernimmt den plausiblen Sollwert des Thermostats/Klimageräts. Manuell verwendet die unten eingestellte Komforttemperatur.",
                 "target_temperature": "Nur bei manueller Zieltemperatur: gewünschte Komforttemperatur von 12–30 °C.",
@@ -2995,7 +3022,7 @@
                 "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
                 "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
                 "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-                "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
                 "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
                 "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
                 "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -3019,7 +3046,7 @@
               },
               "data_description": {
                 "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-                "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
                 "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
                 "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
                 "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -3055,7 +3082,7 @@
             "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
             "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
             "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-            "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+            "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
             "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
             "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
             "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -3065,7 +3092,8 @@
             "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
             "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
             "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
-            "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
+            "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert.",
+            "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
           }
         },
         "add_orientations": {
@@ -3192,7 +3220,8 @@
             "humidity_aggregation": "Feuchte-Auswertung",
             "target_temperature_mode": "Komfort-Zieltemperatur",
             "target_temperature": "Manuelle Zieltemperatur",
-            "target_temperature_fallback": "Fallback-Zieltemperatur"
+            "target_temperature_fallback": "Fallback-Zieltemperatur",
+            "icon": "Raum-Icon"
           },
           "sections": {
             "identity": {
@@ -3201,12 +3230,14 @@
               "data": {
                 "name": "Raumname",
                 "floor": "Stockwerk/Bereich",
-                "include_in_calculations": "In Berechnungen einbeziehen"
+                "include_in_calculations": "In Berechnungen einbeziehen",
+                "icon": "Raum-Icon"
               },
               "data_description": {
                 "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
                 "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+                "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
               }
             },
             "properties": {
@@ -3250,7 +3281,7 @@
                 "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
                 "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
-                "exhaust_fan": "Optional. Wähle einen Ablüfter oder eine mechanische Lüftung. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung, schaltet aber keine Stufe automatisch.",
                 "climate": "Optional. Wähle den Thermostat oder das Klimagerät des Raums. Im Automatikmodus nutzt FreshAirIQ dessen letzten plausiblen Sollwert als Komfort-Zieltemperatur. Ohne Gerät bleiben Feuchte und andere konfigurierte Lüftungsziele vollständig nutzbar.",
                 "target_temperature_mode": "Automatisch übernimmt den plausiblen Sollwert des Thermostats/Klimageräts. Manuell verwendet die unten eingestellte Komforttemperatur.",
                 "target_temperature": "Nur bei manueller Zieltemperatur: gewünschte Komforttemperatur von 12–30 °C.",
@@ -3297,7 +3328,7 @@
                 "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
                 "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
                 "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-                "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
                 "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
                 "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
                 "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -3321,7 +3352,7 @@
               },
               "data_description": {
                 "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-                "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
                 "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
                 "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
                 "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -3357,7 +3388,7 @@
             "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
             "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
             "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-            "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+            "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
             "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
             "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
             "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -3367,7 +3398,8 @@
             "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
             "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
             "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
-            "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
+            "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert.",
+            "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
           }
         },
         "import_ha_room": {
@@ -3416,7 +3448,8 @@
             "humidity_aggregation": "Feuchte-Auswertung",
             "target_temperature_mode": "Komfort-Zieltemperatur",
             "target_temperature": "Manuelle Zieltemperatur",
-            "target_temperature_fallback": "Fallback-Zieltemperatur"
+            "target_temperature_fallback": "Fallback-Zieltemperatur",
+            "icon": "Raum-Icon"
           },
           "sections": {
             "identity": {
@@ -3425,12 +3458,14 @@
               "data": {
                 "name": "Raumname",
                 "floor": "Stockwerk/Bereich",
-                "include_in_calculations": "In Berechnungen einbeziehen"
+                "include_in_calculations": "In Berechnungen einbeziehen",
+                "icon": "Raum-Icon"
               },
               "data_description": {
                 "name": "Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.",
                 "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
-                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht."
+                "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
+                "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
               }
             },
             "properties": {
@@ -3474,7 +3509,7 @@
                 "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
                 "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
-                "exhaust_fan": "Optional. Wähle einen Ablüfter oder eine mechanische Lüftung. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung, schaltet aber keine Stufe automatisch.",
                 "climate": "Optional. Wähle den Thermostat oder das Klimagerät des Raums. Im Automatikmodus nutzt FreshAirIQ dessen letzten plausiblen Sollwert als Komfort-Zieltemperatur. Ohne Gerät bleiben Feuchte und andere konfigurierte Lüftungsziele vollständig nutzbar.",
                 "target_temperature_mode": "Automatisch übernimmt den plausiblen Sollwert des Thermostats/Klimageräts. Manuell verwendet die unten eingestellte Komforttemperatur.",
                 "target_temperature": "Nur bei manueller Zieltemperatur: gewünschte Komforttemperatur von 12–30 °C.",
@@ -3521,7 +3556,7 @@
                 "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
                 "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
                 "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät bleibt der Raum konfigurierbar. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel.",
-                "exhaust_fan": "Optional. EIN startet eine mechanische Lüftung, AUS beendet sie. FreshAirIQ erkennt und lernt diese Lüftungsart; das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. FreshAirIQ schaltet keine Stufe automatisch.",
                 "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
                 "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
                 "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -3545,7 +3580,7 @@
               },
               "data_description": {
                 "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-                "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+                "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung und lernt sie getrennt von Fenster-/Kipplüftung. FreshAirIQ schaltet keine Stufe automatisch.",
                 "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
                 "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
                 "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -3581,7 +3616,7 @@
             "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
             "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
             "climate": "Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und vollständig für Feuchte und andere konfigurierte Ziele genutzt werden. Ist ein Gerät ausgewählt, nutzt FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel und merkt ihn sich für die laufende Lüftung; Frostschutz/Aus nach dem Öffnen ersetzt dieses Ziel nicht.",
-            "exhaust_fan": "Optional. EIN startet den Beginn einer mechanischen Lüftung, AUS beendet sie. FreshAirIQ wertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung. Das Gerät wird nicht automatisch geschaltet.",
+            "exhaust_fan": "Optional. Wähle einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Solange mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Die Geräte werden nicht automatisch geschaltet.",
             "supply_fan": "Optional. Zuluftgerät für Frischluft-/Luftqualitätskontext. Es ist kein eigenes Prioritätsziel und wird nicht automatisch geschaltet.",
             "ventilation_device": "Optional. Zentrale oder dezentrale Lüftungs-/WRG-Einheit als alternative mechanische Lüftung. Keine automatische Gerätesteuerung.",
             "dehumidifier": "Optional. Entfeuchter als alternative Maßnahme bei hoher Feuchte oder ungünstiger Außenluft. Keine automatische Gerätesteuerung.",
@@ -3591,7 +3626,8 @@
             "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
             "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
             "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
-            "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
+            "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert.",
+            "icon": "Optional. Wähle für diesen Raum ein beliebiges Material-Design-Icon. Ohne Auswahl verwendet FreshAirIQ weiterhin automatisch ein zum Raumnamen passendes Icon."
           }
         }
       },

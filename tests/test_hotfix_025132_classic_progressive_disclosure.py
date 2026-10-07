@@ -22,7 +22,7 @@ def test_classic_renderer_has_primary_progressive_disclosure():
 
 def test_classic_renderer_has_per_room_disclosure_from_canonical_reasons():
     block = classic_block()
-    assert '<details class="decision-room-disclosure"' in block
+    assert '<details class="decision-goal-room decision-room-disclosure"' in block
     assert 'r.recommendation_reasons' in block
     assert 'WARUM DIESER RAUM?' in block
     assert 'data-room="${esc(r.key)}"' in block
