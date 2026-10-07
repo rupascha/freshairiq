@@ -1,3 +1,6 @@
+## 0.26.2.7
+- Hotfix: Räume-Kachel nutzt wieder den zentralen Info-Overlay-Klickpfad.
+
 ## 0.26.2.6
 
 - Restores immediate tile-style room and ventilation-goal ordering in dashboard settings and keeps native priority sorting on the sorting step after a move.
