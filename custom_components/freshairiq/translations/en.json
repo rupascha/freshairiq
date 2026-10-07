@@ -1855,7 +1855,8 @@
           "orientation": "Compass orientation",
           "covers": "Blind/shutter",
           "passage_door": "Passage door – pulled shut from outside after passing through",
-          "cover_position_zero_means": "Blind/shutter position logic"
+          "cover_position_zero_means": "Blind/shutter position logic",
+          "wizard_back": "← Back to previous page"
         },
         "data_description": {
           "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
@@ -1864,7 +1865,8 @@
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
           "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
-          "cover_position_zero_means": "Choose whether 0% means fully closed or fully open. This setting applies to blinds/shutters assigned to this room."
+          "cover_position_zero_means": "Choose whether 0% means fully closed or fully open. This setting applies to blinds/shutters assigned to this room.",
+          "wizard_back": "Enable and confirm with OK to go back without changing this page."
         }
       },
       "building": {
@@ -2534,11 +2536,13 @@
         "description": "Select a goal and move it with ↑ or ↓. All available goals remain active; protection limits take priority.",
         "data": {
           "goal_to_move": "Ventilation goal",
-          "move_direction": "Move"
+          "move_direction": "Move",
+          "wizard_back": "← Back to previous page"
         },
         "data_description": {
           "goal_to_move": "Choose the ventilation goal whose priority you want to change.",
-          "move_direction": "↑ raises priority by one position, ↓ lowers it by one position. All goals remain active."
+          "move_direction": "↑ raises priority by one position, ↓ lowers it by one position. All goals remain active.",
+          "wizard_back": "Enable and confirm with OK to go back without changing this page."
         }
       },
       "recommendation_priorities": {

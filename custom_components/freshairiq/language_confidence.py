@@ -87,6 +87,154 @@ def _situation_confidence(recommendation: dict[str, Any], selected: list[dict[st
     return _clamp(base)
 
 
+def _variant_index(store: dict[str, Any], key: str, signature: str, count: int) -> int:
+    """Keep wording stable while a decision is unchanged and rotate on a later episode.
+
+    This is presentation state only. It never feeds the decision engine.
+    """
+    if count <= 1:
+        return 0
+    state = store.setdefault("narrative_variants", {})
+    if not isinstance(state, dict):
+        state = {}
+        store["narrative_variants"] = state
+    channel = "decision" if key.startswith(("lead:", "headline:")) else key
+    active_key = f"_active_signature:{channel}"
+    episode_key = f"_episode:{channel}"
+    active_signature = str(state.get(active_key) or "")
+    if active_signature != signature:
+        state[active_key] = signature
+        state[episode_key] = int(_f(state.get(episode_key))) + 1
+    episode = int(_f(state.get(episode_key)))
+    current = state.get(key) if isinstance(state.get(key), dict) else {}
+    if current.get("signature") == signature and int(_f(current.get("episode"))) == episode:
+        return int(_f(current.get("index"))) % count
+    previous = int(_f(current.get("index"), -1))
+    index = (previous + 1) % count
+    state[key] = {"signature": signature, "episode": episode, "index": index}
+    # Bounded persistent presentation metadata.
+    if len(state) > 40:
+        for old_key in list(state)[:-40]:
+            state.pop(old_key, None)
+    return index
+
+
+def _choose(store: dict[str, Any], key: str, signature: str, variants: list[str]) -> str:
+    clean = [str(v).strip() for v in variants if str(v).strip()]
+    return clean[_variant_index(store, key, signature, len(clean))] if clean else ""
+
+
+def _headline_variants(kind: str, band: str, fallback: str) -> list[str]:
+    cautious = band in {"grundmodell", "beobachtet"}
+    mapping = {
+        "ventilate": [
+            "Jetzt ist ein guter Zeitpunkt zum Lüften",
+            "Die aktuellen Bedingungen sprechen fürs Lüften" if cautious else "Das Lüftungsfenster passt jetzt gut",
+            "Jetzt lohnt sich der Luftaustausch",
+            "FreshAirIQ sieht jetzt einen sinnvollen Lüftungsmoment",
+        ],
+        "wait": [
+            "Noch etwas warten",
+            "Im Moment lohnt sich Lüften noch nicht",
+            "Ein günstigerer Zeitpunkt ist noch nicht erreicht",
+            "FreshAirIQ beobachtet die Bedingungen noch",
+        ],
+        "continue": [
+            "Die Lüftung wirkt – noch weiterlüften",
+            "Der Luftaustausch bringt noch Nutzen",
+            "Noch nicht schließen",
+            "FreshAirIQ verfolgt die laufende Lüftung",
+        ],
+        "close": [
+            "Jetzt ist ein guter Zeitpunkt zum Schließen",
+            "Der zusätzliche Lüftungsnutzen ist erreicht",
+            "Die Lüftung kann jetzt beendet werden",
+            "Jetzt schließen – der Zusatznutzen wird klein",
+        ],
+        "okay": [
+            "Aktuell ist keine Lüftungsaktion nötig",
+            "Das Raumklima braucht im Moment keinen Eingriff",
+            "FreshAirIQ sieht derzeit keinen Lüftungsbedarf",
+            "Im Moment reicht Beobachten aus",
+        ],
+        "prepare": ["Jetzt Feuchtepuffer schaffen", "Kurzes Vorlüften passt jetzt gut", "Jetzt für den erwarteten Feuchteanstieg vorlüften"],
+        "pollen_wait": ["Lüften wäre sinnvoll – Pollen sprechen dagegen", "Der Lüftungsnutzen ist da, die Pollenlage bremst", "Heute besser auf ein pollenärmeres Fenster warten"],
+        "sensor": ["FreshAirIQ kann aktuell nicht zuverlässig entscheiden", "Für eine sichere Empfehlung fehlen verlässliche Messwerte", "Messdaten zuerst prüfen"],
+    }
+    return mapping.get(kind, [fallback])
+
+
+def _lead_variants(band: str) -> list[str]:
+    return {
+        "grundmodell": [
+            "FreshAirIQ arbeitet hier noch überwiegend mit Gebäudephysik und aktuellen Messdaten.",
+            "Für diesen Bereich lernt FreshAirIQ noch; die Einschätzung basiert deshalb vor allem auf den aktuellen Messwerten.",
+            "Das persönliche Modell ist hier noch jung, deshalb bleibt die Bewertung bewusst nah an den Messdaten.",
+        ],
+        "beobachtet": [
+            "FreshAirIQ sammelt erste Erfahrungen und bleibt mit persönlichen Aussagen noch vorsichtig.",
+            "Erste Muster sind sichtbar, für belastbare persönliche Aussagen sammelt FreshAirIQ aber noch Daten.",
+            "Das Modell kennt bereits erste Verläufe, gewichtet die aktuelle Physik aber weiterhin stärker.",
+        ],
+        "muster_erkannt": [
+            "FreshAirIQ erkennt wiederkehrende Muster und prüft sie noch gegen weitere Lüftungen.",
+            "Das persönliche Raumverhalten zeichnet sich ab, wird aber noch weiter bestätigt.",
+            "Mehrere Verläufe ähneln sich bereits; FreshAirIQ bleibt bis zu weiteren Bestätigungen etwas vorsichtig.",
+        ],
+        "bestaetigt": [
+            "Mehrere unabhängige Beobachtungen bestätigen das erkannte Lüftungsverhalten dieser Räume.",
+            "Das bisher erkannte Raumverhalten hat sich mehrfach bestätigt und fließt jetzt stärker in die Formulierung ein.",
+            "FreshAirIQ kann sich hier bereits auf mehrfach bestätigte Erfahrungen stützen.",
+        ],
+        "eingelernt": [
+            "FreshAirIQ hat für diese Räume eine belastbare eigene Datenbasis und personalisiert die Einschätzung vorsichtig.",
+            "Das Raumverhalten ist inzwischen gut eingelernt; die Empfehlung berücksichtigt die bestätigten Erfahrungen.",
+            "Für diese Räume liegen genug eigene Erfahrungen vor, um die aktuelle Situation persönlicher einzuordnen.",
+        ],
+        "sehr_gut_eingelernt": [
+            "FreshAirIQ kennt das Lüftungsverhalten dieser Räume inzwischen sehr gut und prüft seine Anpassungen fortlaufend.",
+            "Die Reaktion dieser Räume ist sehr gut eingelernt; aktuelle Abweichungen werden gezielt gegen das bekannte Muster geprüft.",
+            "Hier kann FreshAirIQ auf eine sehr stabile persönliche Datenbasis zurückgreifen.",
+        ],
+        "auf_beduerfnisse_optimiert": [
+            "FreshAirIQ kennt Raumverhalten sowie bestätigte Nutzungs- und Komfortmuster sehr gut.",
+            "Die Empfehlung kann hier auf ein ausgereiftes persönliches Modell aus Raum-, Nutzungs- und Komfortdaten zurückgreifen.",
+            "Das Modell ist hier weit ausgereift und kann die Situation anhand deiner bestätigten Muster einordnen.",
+        ],
+    }.get(band, ["FreshAirIQ bewertet die aktuelle Situation anhand der verfügbaren Messwerte."])
+
+
+def room_notification_message(event: str, room: dict[str, Any], store_data: dict[str, Any] | None = None) -> str:
+    """Presentation-only varied copy for room-scoped notifications."""
+    store = store_data if isinstance(store_data, dict) else {}
+    name = str(room.get("name") or room.get("key") or "Raum")
+    samples = int(_f(room.get("learning_samples")))
+    band, _ = _band(min(samples / 80.0, 1.0) * 100.0)
+    signature = f"room-notify|{event}|{room.get('key') or name}|{band}"
+    variants = {
+        "ventilate": [
+            "Jetzt lüften.",
+            "Jetzt passt der Zeitpunkt zum Lüften.",
+            "Für diesen Raum lohnt sich der Luftaustausch jetzt.",
+        ],
+        "cool": [
+            "Sommerkühlung sinnvoll.",
+            "Jetzt lässt sich der Raum sinnvoll abkühlen.",
+            "Die Außenbedingungen passen jetzt zur Sommerkühlung.",
+        ],
+        "close": [
+            "Optimales Lüftungsziel erreicht. Empfehlung: jetzt schließen.",
+            "Die zusätzliche Lüftungswirkung wird klein. Jetzt schließen.",
+            "Für diesen Raum ist der passende Schließzeitpunkt erreicht.",
+        ],
+        "sensor": [
+            "Messwerte fehlen oder sind unplausibel. Sensoren prüfen.",
+            "Für eine verlässliche Empfehlung fehlen gültige Messwerte. Sensoren prüfen.",
+        ],
+    }.get(event, [""])
+    return _choose(store, f"room_notification:{event}:{room.get('key') or name}", signature, variants)
+
+
 def adapt_language_confidence(
     recommendation: dict[str, Any],
     rooms: dict[str, dict[str, Any]],
@@ -104,7 +252,7 @@ def adapt_language_confidence(
         selected = [r for r in rooms.values() if isinstance(r, dict) and r.get("active")]
 
     maturity, evidence_samples = _relevant_maturity(kind, selected)
-    store = store_data or {}
+    store = store_data if isinstance(store_data, dict) else {}
     # If the final recommendation is explicitly driven by a night or house
     # strategy, include that model's own evidence depth instead of pretending
     # the room model alone supports the wording.
@@ -121,23 +269,19 @@ def adapt_language_confidence(
     band_key, band_label = _band(maturity)
     original_summary = str(brain.get("summary") or out.get("summary") or "").strip()
 
-    # Evidence-calibrated voice.  The layer intentionally avoids claims such as
-    # "normally" or "comparable conditions" until the data depth supports them.
-    if band_key == "grundmodell":
-        lead = "FreshAirIQ arbeitet hier noch überwiegend mit Gebäudephysik und aktuellen Messdaten."
-    elif band_key == "beobachtet":
-        lead = "FreshAirIQ sammelt erste Erfahrungen, verändert das persönliche Modell aber noch bewusst vorsichtig."
-    elif band_key == "muster_erkannt":
-        lead = "FreshAirIQ erkennt wiederkehrende Muster, wartet aber auf weitere unabhängige Bestätigungen."
-    elif band_key == "bestaetigt":
-        lead = "Mehrere unabhängige Beobachtungen bestätigen das erkannte Lüftungsverhalten dieser Räume."
-    elif band_key == "eingelernt":
-        lead = "FreshAirIQ hat für diese Räume eine belastbare eigene Datenbasis und darf das Grundmodell vorsichtig personalisieren."
-    elif band_key == "sehr_gut_eingelernt":
-        lead = "FreshAirIQ kennt das Lüftungsverhalten dieser Räume inzwischen sehr gut und validiert seine Anpassungen fortlaufend an der Realität."
-    else:
-        lead = "FreshAirIQ kennt hier nicht nur das Raumverhalten sehr gut, sondern kann die Empfehlung zusätzlich an bestätigte Nutzungs- und Komfortmuster anpassen."
-
+    # Evidence-calibrated voice with stable, non-random variation. A wording
+    # remains stable for the same decision episode and rotates only after the
+    # canonical situation changes and later returns.
+    signature = "|".join([kind, str(out.get("status") or ""), ",".join(room_keys), band_key, str(out.get("presentation_scope") or "rooms")])
+    lead = _choose(store, f"lead:{kind}", signature, _lead_variants(band_key))
+    current_headline = str(brain.get("headline") or out.get("title") or "").strip()
+    # Preserve specialised primary stories (night strategy, passive-open monitor)
+    # instead of flattening them into a generic action phrase.
+    if not brain.get("night_strategy_primary") and str(out.get("status") or "") != "passive_open_monitor":
+        headline = _choose(store, f"headline:{kind}", signature, _headline_variants(kind, band_key, current_headline))
+        if headline:
+            brain["headline"] = headline
+            out["title"] = headline
     if situation < 45:
         qualifier = " Die aktuelle Situation ist jedoch ungewöhnlich oder messtechnisch unsicher, deshalb bleibt die Einschätzung bewusst vorsichtig."
     elif situation < 65:
@@ -196,6 +340,8 @@ def adapt_language_confidence(
         "evidence_samples": evidence_samples,
         "situation_confidence_percent": round(situation, 1),
         "calibrated_wording": True,
+        "narrative_variation": True,
+        "narrative_signature": signature,
     }
     out["summary"] = summary
     out["reasons"] = reasons

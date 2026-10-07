@@ -1855,7 +1855,8 @@
           "orientation": "Himmelsrichtung",
           "covers": "Rollo/Jalousie",
           "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
-          "cover_position_zero_means": "Rollo-Positionslogik"
+          "cover_position_zero_means": "Rollo-Positionslogik",
+          "wizard_back": "← Zurück zur vorherigen Seite"
         },
         "data_description": {
           "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
@@ -1864,7 +1865,8 @@
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
           "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
-          "cover_position_zero_means": "Lege fest, ob 0 % vollständig geschlossen oder vollständig geöffnet bedeutet. Diese Einstellung gilt für die diesem Raum zugeordneten Rollos/Jalousien."
+          "cover_position_zero_means": "Lege fest, ob 0 % vollständig geschlossen oder vollständig geöffnet bedeutet. Diese Einstellung gilt für die diesem Raum zugeordneten Rollos/Jalousien.",
+          "wizard_back": "Aktivieren und mit OK bestätigen, um ohne Änderung dieser Seite zurückzugehen."
         }
       },
       "building": {
@@ -2534,11 +2536,13 @@
         "description": "Wähle ein Ziel und verschiebe es mit ↑ oder ↓. Alle verfügbaren Ziele bleiben aktiv; Schutzgrenzen haben Vorrang.",
         "data": {
           "goal_to_move": "Lüftungsziel",
-          "move_direction": "Verschieben"
+          "move_direction": "Verschieben",
+          "wizard_back": "← Zurück zur vorherigen Seite"
         },
         "data_description": {
           "goal_to_move": "Wähle das Lüftungsziel, dessen Priorität du ändern möchtest.",
-          "move_direction": "↑ erhöht die Priorität um einen Platz, ↓ senkt sie um einen Platz. Alle Ziele bleiben aktiv."
+          "move_direction": "↑ erhöht die Priorität um einen Platz, ↓ senkt sie um einen Platz. Alle Ziele bleiben aktiv.",
+          "wizard_back": "Aktivieren und mit OK bestätigen, um ohne Änderung dieser Seite zurückzugehen."
         }
       },
       "recommendation_priorities": {

@@ -234,6 +234,140 @@ def build_recommendation(
                       "Eine belastbare Lüftungsentscheidung ist erst mit plausiblen Messwerten möglich.",
                       selected=bad[:3], reasons=["Messwerte fehlen oder sind unplausibel"], severity="danger")
 
+    # Protection-priority contract (v0.26.2.6)
+    # --------------------------------------------
+    # Critical health/protection limits must be resolved before normal comfort
+    # optimisation.  Importantly, "urgent" is not synonymous with "always
+    # open a window": critical CO2 needs an air exchange even when humidity or
+    # pollen conditions are unfavourable, while critical mould/surface moisture
+    # only benefits from outdoor ventilation when the reference air can actually
+    # remove moisture.  This keeps the safety reason authoritative without
+    # recommending a physically counterproductive action.
+    co2_critical = _f(options.get("co2_critical"), 1400.0)
+    mould_critical = _f(options.get("mould_critical_surface_rh"), 90.0)
+    close_delta = max(_f(options.get("close_delta"), 0.4), 0.0)
+    critical_co2_rooms = [
+        r for r in valid
+        if bool(r.get("co2_available", r.get("co2") is not None))
+        and _f(r.get("co2")) >= co2_critical
+        and not r.get("stabilizing", False)
+    ]
+    critical_mould_rooms = [
+        r for r in valid
+        if _f(r.get("surface_rh")) >= mould_critical
+        and not r.get("stabilizing", False)
+    ]
+
+    critical_room_keys = {str(r.get("key")) for r in (critical_co2_rooms + critical_mould_rooms)}
+    if len(critical_room_keys) > 1:
+        mould_actions, mould_blocked = [], []
+        for r in critical_mould_rooms:
+            delta = _f(r.get("delta_g_m3")); potential = _f(r.get("realistic_potential_ml", r.get("potential_ml")))
+            drying = delta > close_delta and potential > 0.0 and not _goal_state(r).get("hard_close")
+            (mould_actions if drying else mould_blocked).append(r)
+        # A CO2-critical room that already released an authoritative close
+        # signal has reached the configured hard session endpoint (under
+        # critical CO2, low-return and thermal-close are suppressed upstream).
+        # Close/reassess that room instead of contradicting the live coach.
+        co2_reassess = [r for r in critical_co2_rooms if r.get("active") and _goal_state(r).get("hard_close")]
+        co2_actionable = [r for r in critical_co2_rooms if r not in co2_reassess]
+        actionable = list(co2_actionable)
+        keys = {str(r.get("key")) for r in actionable}
+        actionable += [r for r in mould_actions if str(r.get("key")) not in keys]
+        if actionable:
+            conflict = pollen_blocked or any(_f(r.get("delta_g_m3")) <= 0.0 or _f(r.get("forecast_temperature_change_c")) <= -1.0 for r in critical_co2_rooms)
+            duration = min(float(recommended_duration_min), 5.0) if critical_co2_rooms and conflict else float(recommended_duration_min)
+            active_now = [r for r in actionable if r.get("active")]; to_open = [r for r in actionable if not r.get("active")]
+            reasons = [f"{r.get('name', r.get('key', 'Raum'))}: CO₂ {round(_f(r.get('co2')))} ppm ist stark erhöht" for r in critical_co2_rooms]
+            reasons += [f"{r.get('name', r.get('key', 'Raum'))}: maximale Schutzlüftungsphase erreicht – schließen und CO₂ unmittelbar neu bewerten" for r in co2_reassess]
+            reasons += [f"{r.get('name', r.get('key', 'Raum'))}: Oberflächenfeuchte {round(_f(r.get('surface_rh')))} %; trocknere Referenzluft kann jetzt entfeuchten" for r in mould_actions]
+            reasons += [f"{r.get('name', r.get('key', 'Raum'))}: kritische Oberflächenfeuchte; Lüften würde aktuell nicht zuverlässig entfeuchten – geschlossen lassen" for r in mould_blocked]
+            if pollen_blocked and critical_co2_rooms: reasons.append(f"Pollenindex {pollen_index:.1f}: Belastung beachten; kritische Luftqualität hat aktuell Vorrang")
+            parts=[]
+            if to_open: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in to_open)+f" öffnen · ca. {max(round(duration),1)} min")
+            if active_now: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in active_now)+" offen lassen")
+            if co2_reassess: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in co2_reassess)+" schließen · CO₂ neu bewerten")
+            if mould_blocked: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in mould_blocked)+" geschlossen lassen")
+            return result("ventilate" if to_open else "continue", "critical_multiroom", "Schutzlüftung empfohlen" if critical_co2_rooms else "Feuchte kritisch", " · ".join(parts), "FreshAirIQ bündelt gleichzeitig kritische Räume, wenn dieselbe Schutzmaßnahme hilft, und trennt gegensätzliche Maßnahmen raumweise.", selected=actionable, reasons=reasons, severity="danger", duration=duration, removed=sum(max(_f(r.get("realistic_potential_ml",r.get("potential_ml"))),0.0) for r in actionable), secondary="Nach dem Schutzluftwechsel werden alle kritischen Räume und Zielkonflikte neu bewertet.")
+        if co2_reassess:
+            names=", ".join(str(r.get("name",r.get("key","Raum"))) for r in co2_reassess)
+            reasons=[f"{r.get('name',r.get('key','Raum'))}: CO₂ {round(_f(r.get('co2')))} ppm bleibt kritisch; maximale Schutzlüftungsphase ist erreicht" for r in co2_reassess]
+            reasons += [f"{r.get('name',r.get('key','Raum'))}: kritische Oberflächenfeuchte; Außen-/Referenzluft bietet keinen ausreichenden Trocknungsvorteil" for r in mould_blocked]
+            return result("close", "critical_co2_reassess", "Schutzlüftung neu bewerten", names+" schließen · CO₂ unmittelbar neu bewerten", "Die maximale Schutzlüftungsphase ist erreicht. FreshAirIQ beendet den aktuellen Luftwechsel kontrolliert und bewertet die weiterhin kritische Luftqualität anschließend neu.", selected=co2_reassess, reasons=reasons, severity="danger", secondary="Bleibt CO₂ kritisch, wird nach der Neubewertung erneut ein kurzer Luftaustausch empfohlen.")
+        active_blocked=[r for r in mould_blocked if r.get("active")]
+        reasons=[f"{r.get('name',r.get('key','Raum'))}: Oberflächenfeuchte {round(_f(r.get('surface_rh')))} % kritisch; Außen-/Referenzluft bietet keinen ausreichenden Trocknungsvorteil" for r in mould_blocked]
+        return result("close" if active_blocked else "wait", "critical_mould_wait", "Feuchte kritisch – Lüften derzeit ungünstig", (", ".join(str(r.get("name",r.get("key","Raum"))) for r in active_blocked)+" schließen" if active_blocked else "Außenbedingungen abwarten · Feuchtequelle wenn möglich begrenzen"), "Mehrere Räume haben kritische Oberflächenfeuchte, aber Lüften würde sie aktuell nicht zuverlässig entfeuchten.", selected=mould_blocked, reasons=reasons, severity="danger", secondary="Sobald die Referenzluft wirksam entfeuchten kann, werden alle geeigneten kritischen Räume gemeinsam priorisiert.")
+
+    if critical_co2_rooms:
+        r = max(critical_co2_rooms, key=lambda x: _f(x.get("co2")))
+        name = str(r.get("name", r.get("key", "Raum")))
+        co2 = _f(r.get("co2"))
+        delta = _f(r.get("delta_g_m3"))
+        temp_change = _f(r.get("forecast_temperature_change_c"))
+        conflict = delta <= 0.0 or temp_change <= -1.0 or pollen_blocked
+        duration = min(float(recommended_duration_min), 5.0) if conflict else float(recommended_duration_min)
+        reasons = [f"{name}: CO₂ {round(co2)} ppm ist stark erhöht"]
+        if delta < 0.0:
+            reasons.append(f"Außen-/Referenzluft ist {abs(delta):.1f} g/m³ feuchter; der notwendige kurze Luftaustausch hat aktuell Vorrang")
+        if temp_change <= -1.0:
+            reasons.append(f"Temperaturprognose {temp_change:+.1f} °C; deshalb nur kurz und effizient lüften")
+        if pollen_blocked:
+            reasons.append(f"Pollenindex {pollen_index:.1f}: Belastung beachten; die kritische Luftqualität hat aktuell Vorrang")
+        is_active = bool(r.get("active"))
+        if is_active and _goal_state(r).get("hard_close"):
+            reasons.append("Die maximale Schutzlüftungsphase ist erreicht; schließen und CO₂ unmittelbar neu bewerten")
+            return result(
+                "close", "critical_co2_reassess", "Schutzlüftung neu bewerten", f"{name} schließen · CO₂ neu bewerten",
+                "Der notwendige Luftaustausch wurde bis zum konfigurierten Schutzendpunkt durchgeführt. FreshAirIQ beendet die aktuelle Phase kontrolliert und bewertet die weiterhin kritische Luftqualität anschließend neu.",
+                selected=[r], reasons=reasons, severity="danger",
+                secondary="Bleibt CO₂ kritisch, wird nach der Neubewertung erneut ein kurzer Luftaustausch empfohlen.",
+            )
+        return result(
+            "continue" if is_active else "ventilate", "critical_co2", "Luftqualität kritisch",
+            (f"{name} kurz offen lassen · ca. {max(round(duration), 1)} min" if conflict else f"{name} offen lassen · ca. {max(round(duration), 1)} min") if is_active else (f"{name} kurz lüften · ca. {max(round(duration), 1)} min" if conflict else f"{name} lüften · ca. {max(round(duration), 1)} min"),
+            "Der CO₂-Wert hat die kritische Schutzgrenze erreicht. FreshAirIQ priorisiert den notwendigen Luftaustausch und begrenzt Zielkonflikte soweit möglich.",
+            selected=[r], reasons=reasons, severity="danger", duration=duration,
+            removed=max(_f(r.get("realistic_potential_ml", r.get("potential_ml"))), 0.0),
+            secondary="Nach dem kurzen Luftaustausch werden CO₂, Feuchte und Temperatur neu bewertet.",
+        )
+
+    if critical_mould_rooms:
+        # For surface-moisture protection, choose the worst room. Outdoor
+        # ventilation is only a valid remedy when it has a real drying effect.
+        r = max(critical_mould_rooms, key=lambda x: _f(x.get("surface_rh")))
+        name = str(r.get("name", r.get("key", "Raum")))
+        surf = _f(r.get("surface_rh"))
+        delta = _f(r.get("delta_g_m3"))
+        potential = _f(r.get("realistic_potential_ml", r.get("potential_ml")))
+        drying_possible = delta > close_delta and potential > 0.0 and not _goal_state(r).get("hard_close")
+        if drying_possible:
+            reasons = [f"{name}: Oberflächenfeuchte {round(surf)} %: sehr hohes Schimmelrisiko",
+                       f"Außen-/Referenzluft ist {delta:.1f} g/m³ trockener"]
+            if pollen_blocked:
+                reasons.append(f"Pollenindex {pollen_index:.1f}; Schimmelschutz hat bei wirksamer Entfeuchtung aktuell Vorrang")
+            is_active = bool(r.get("active"))
+            return result(
+                "continue" if is_active else "ventilate", "critical_mould", "Feuchte kritisch", (f"{name} offen lassen · ca. {max(round(recommended_duration_min), 1)} min" if is_active else f"{name} jetzt lüften · ca. {max(round(recommended_duration_min), 1)} min"),
+                "Die kritische Oberflächenfeuchte kann mit der aktuell trockeneren Außen-/Referenzluft wirksam reduziert werden.",
+                selected=[r], reasons=reasons, severity="danger", duration=recommended_duration_min, removed=max(potential, 0.0),
+                secondary="FreshAirIQ bewertet die Oberflächenfeuchte und den Lüftungsnutzen währenddessen weiter.",
+            )
+        why = [f"{name}: Oberflächenfeuchte {round(surf)} %: sehr hohes Schimmelrisiko"]
+        if delta <= close_delta:
+            why.append(f"Außen-/Referenzluft bietet aktuell keinen ausreichenden Trocknungsvorteil ({delta:+.1f} g/m³)")
+        elif potential <= 0.0:
+            why.append("Die aktuelle Prognose zeigt keinen positiven Feuchteabbau durch Lüften")
+        if _goal_state(r).get("hard_close"):
+            why.append("Eine aktive Schutzgrenze verhindert derzeit weiteres Lüften")
+        is_active = bool(r.get("active"))
+        return result(
+            "close" if is_active else "wait", "critical_mould_wait", "Feuchte kritisch – Lüften derzeit ungünstig",
+            (f"{name} schließen · Feuchtequelle wenn möglich begrenzen" if is_active else "Außenbedingungen abwarten · Feuchtequelle wenn möglich begrenzen"),
+            "Die Oberflächenfeuchte ist kritisch, aber Lüften würde das Feuchteproblem aktuell nicht zuverlässig verbessern. FreshAirIQ hält die Schutzwarnung aktiv, statt eine kontraproduktive Lüftung zu empfehlen.",
+            selected=[r], reasons=why, severity="danger",
+            secondary="Sobald die Außen-/Referenzluft wirksam entfeuchten kann, wird Lüften zur höchsten Priorität.",
+        )
+
     # Moisture-source events outrank a normal close/continue message. During a
     # shower, bath or sauna event the measured room balance may rise even while
     # ventilation is physically removing water. FreshAirIQ therefore explains
@@ -365,13 +499,8 @@ def build_recommendation(
             pair_score = ca.score + cb.score + 18.0  # cross-flow bonus
             if best_pair is None or pair_score > best_pair[0]:
                 best_pair = (pair_score, ca, cb)
-    urgent_targeted = [c for c in targeted if c.urgent]
     if best_pair:
         chosen = [best_pair[1], best_pair[2]]
-    elif urgent_targeted:
-        # A genuine protection limit is deliberately room-specific and may
-        # override the normal house optimisation.
-        chosen = [max(urgent_targeted, key=lambda c: c.score)]
     elif house_ready and candidates:
         # Normal ventilation is a HOUSE decision first.  Do not let a merely
         # elevated single room pre-empt a useful whole-house opportunity.
@@ -435,11 +564,6 @@ def build_recommendation(
         if driest.delta > 0:
             reason_pool.append(f"Außen-/Referenzluft ist bis zu {driest.delta:.1f} g/m³ trockener")
             reason_pool.append(f"Erwartetes Entfeuchtungspotenzial etwa {round(removed)} ml")
-        elif any(c.urgent and any("CO₂" in reason for reason in c.reasons) for c in chosen):
-            reason_pool.append(
-                f"Außen-/Referenzluft ist bis zu {abs(driest.delta):.1f} g/m³ feuchter; "
-                "kritisches CO₂ hat dennoch Vorrang vor dem begrenzten Feuchtenachteil"
-            )
         if any(c.airflow >= 1.12 for c in chosen):
             reason_pool.append("Windrichtung unterstützt den Luftwechsel")
         secondary = "Danach neu bewerten; FreshAirIQ meldet, sobald Schließen sinnvoll ist."
@@ -464,8 +588,6 @@ def build_recommendation(
     # because it has the highest problem score.
     deferred_problem_rooms = []
     for r, urgent, reasons, severity in problem_rooms:
-        if urgent:
-            continue
         key = str(r.get("key", ""))
         cand = candidate_by_key.get(key)
         if cand and (
@@ -486,13 +608,12 @@ def build_recommendation(
             f"(Mindestnutzen {round(room_threshold(r))} ml)"
         )
         return result(
-            "wait", "wait", "Feuchteproblem beobachten", "Noch nicht lüften",
-            f"{name} benötigt Aufmerksamkeit, aber der aktuelle Lüftungsnutzen ist noch zu gering. "
-            "FreshAirIQ wartet auf ein besseres Außenluftfenster.",
+            "wait", "wait", "Aktuell keine Lüftungsaktion", "Keine Aktion erforderlich",
+            "Ein auffälliger Raum wird weiter überwacht; aktuell ist daraus noch keine sinnvolle Lüftungsaktion ableitbar.",
             selected=[],
             reasons=why,
             severity="warning",
-            secondary=f"{name} bleibt priorisiert und wird bei verbessertem Lüftungsnutzen erneut bewertet.",
+            secondary=f"{name} bleibt intern priorisiert und wird bei verbessertem Lüftungsnutzen erneut bewertet.",
         )
 
     # If reference/outdoor air is wetter than the monitored rooms and no room
@@ -509,18 +630,24 @@ def build_recommendation(
     # No useful action is possible. Explain the most important unresolved room
     # problem instead of dumping every room state into the main recommendation.
     if blocked_problem_rooms:
+        # While no ventilation session is running, an unavailable room goal is
+        # not an instruction to "avoid ventilating this room".  A room-specific
+        # negative recommendation is only actionable after an opening exists
+        # (handled by the active/closing branches above).  Keep the idle state
+        # house-scoped; genuine urgent limits already enter the candidate path
+        # above and may still produce a positive targeted ventilation action.
         r, urgent, problem_reasons, _ = max(blocked_problem_rooms, key=lambda x: x[3])
         more = max(len(blocked_problem_rooms) - 1, 0)
         delta = _f(r.get("delta_g_m3"))
         if delta <= 0:
-            why = "Außen-/Referenzluft ist gleich feucht oder feuchter; Entfeuchtung ist damit ungünstig und andere konfigurierte Lüftungsziele sind derzeit ebenfalls nicht sinnvoll erreichbar."
+            why = "Außen-/Referenzluft ist gleich feucht oder feuchter; aktuell ergibt sich daraus keine sinnvolle Lüftungsaktion."
         else:
-            why = f"Der Feuchteunterschied von {delta:.1f} g/m³ ist für wirksames Entfeuchten noch zu klein; andere konfigurierte Ziele rechtfertigen aktuell kein Öffnen."
-        extra = f" · {more} weitere Räume beobachten" if more else ""
-        return result("wait", "wait", "Noch nicht lüften", "Fenster geschlossen lassen",
-                      f"{r.get('name')}: {problem_reasons[0] if problem_reasons else 'Raumklima auffällig'}{extra}.",
-                      selected=[r], reasons=[why], severity="danger" if urgent else "warning",
-                      secondary="FreshAirIQ bewertet alle verfügbaren Ziele und Außenbedingungen laufend neu.")
+            why = f"Der Feuchteunterschied von {delta:.1f} g/m³ ist für eine sinnvolle Lüftungsaktion aktuell noch zu klein."
+        extra = f" {more + 1} auffällige Räume werden weiter überwacht." if more else " Der auffällige Raum wird weiter überwacht."
+        return result("wait", "wait", "Aktuell keine Lüftungsaktion", "Fenster geschlossen lassen",
+                      "FreshAirIQ erkennt derzeit keinen ausreichend sinnvollen Lüftungsschritt." + extra,
+                      selected=[], reasons=[why], severity="warning",
+                      secondary="Sobald ein Lüftungsziel sinnvoll erreichbar oder eine Schutzgrenze erreicht ist, meldet FreshAirIQ die passende Aktion.")
 
     # Night forecast is advisory: only mention it when there is no immediate action.
     if night_forecast_ml >= max(250.0, threshold_ml * 0.35) and total_potential_ml >= max(80.0, threshold_ml * 0.25):

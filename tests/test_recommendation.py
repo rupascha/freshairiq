@@ -60,8 +60,9 @@ def test_high_humidity_with_wetter_outside_waits_and_explains():
     }
     out = build_recommendation(rooms, base_options(), threshold_ml=700, total_potential_ml=0, recommended_duration_min=8)
     assert out["kind"] == "wait"
-    assert out["title"] == "Noch nicht lüften"
+    assert out["title"] == "Aktuell keine Lüftungsaktion"
     assert "gleich feucht oder feuchter" in out["reasons"][0]
+    assert out["room_names"] == []
 
 
 def test_cross_ventilation_pair_is_preferred_when_configured():

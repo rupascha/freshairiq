@@ -205,8 +205,9 @@ def test_deferred_nonurgent_problem_waits_for_better_outdoor_window():
     r = room("store", name="Lagerraum", action="Ventilate", humidity=72, realistic_potential_ml=40, delta_g_m3=1.0)
     out = build({"store": r}, total=40)
     assert out["kind"] == "wait"
-    assert out["title"] == "Feuchteproblem beobachten"
+    assert out["title"] == "Aktuell keine Lüftungsaktion"
     assert "Mindestnutzen" in " ".join(out["reasons"])
+    assert out["room_names"] == []
 
 
 def test_negative_house_airing_effect_is_reported_as_moisture_gain():

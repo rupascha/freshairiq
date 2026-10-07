@@ -581,6 +581,26 @@ class FreshAirIQSettingsView(HomeAssistantView):
                 # not add/remove entities and therefore does not need a config
                 # entry reload.
                 await _apply_runtime_update(hass, entry)
+            elif action == "reorder_room_goals":
+                room_key = str(payload.get("room_key") or "")
+                order = payload.get("order")
+                if not room_key or not isinstance(order, list):
+                    raise ValueError("Raum oder Zielreihenfolge fehlt.")
+                data = _normalise_legacy_entry_data(dict(entry.data))
+                rooms = list(data.get(CONF_ROOMS, []))
+                room = next((item for item in rooms if str(item.get("key")) == room_key), None)
+                if room is None:
+                    raise ValueError("Raum wurde nicht gefunden.")
+                from .config_flow import _available_room_goals, _filter_room_priorities
+                available = _available_room_goals(room)
+                requested = [str(item) for item in order]
+                if len(requested) != len(set(requested)) or set(requested) != set(available):
+                    raise ValueError("Zielreihenfolge ist unvollständig oder enthält ungültige Ziele.")
+                room["goal_priorities"] = _filter_room_priorities(requested, room)
+                data[CONF_ROOMS] = rooms
+                hass.config_entries.async_update_entry(entry, data=data)
+                _sync_room_subentries(hass, entry, rooms)
+                await _apply_runtime_update(hass, entry)
             elif action == "test_notification":
                 options = {**DEFAULT_OPTIONS, **dict(entry.options)}
                 targets = _all_notification_targets(options)

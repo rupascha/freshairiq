@@ -184,19 +184,20 @@ def _filter_room_priorities(value: Any, room: dict[str, Any]) -> list[str]:
     ordered = list(dict.fromkeys(str(x) for x in vals if str(x) in available))
     return ordered + [x for x in available if x not in ordered]
 
-def _goal_priority_schema(room: dict[str, Any]) -> vol.Schema:
+def _goal_priority_schema(room: dict[str, Any], *, include_back: bool = False) -> vol.Schema:
     """Move one ventilation goal up/down; avoids error-prone numeric ranks."""
     current = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
     if not current:
         return vol.Schema({})
-    return vol.Schema({
+    fields = {
         vol.Required("goal_to_move", default=current[0]): selector.SelectSelector(
             selector.SelectSelectorConfig(options=current, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="ventilation_goal")
         ),
         vol.Required("move_direction", default="up"): selector.SelectSelector(
             selector.SelectSelectorConfig(options=["up", "down"], mode=selector.SelectSelectorMode.LIST, translation_key="move_direction")
         ),
-    })
+    }
+    return vol.Schema(fields)
 
 def _ranked_goal_priorities(user_input: dict[str, Any], room: dict[str, Any]) -> list[str]:
     current = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
@@ -436,6 +437,15 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
         vol.Optional("passage_door", default=bool(passage_doors.get(contact, False))):
             selector.BooleanSelector(),
     }
+    if include_back:
+        fields[vol.Optional("wizard_back", default=False)] = selector.BooleanSelector()
+    return vol.Schema(fields)
+
+
+def _schema_with_wizard_back(schema: vol.Schema) -> vol.Schema:
+    """Add the explicit previous-page control only to the editable room wizard."""
+    fields = dict(schema.schema)
+    fields[vol.Optional("wizard_back", default=False)] = selector.BooleanSelector()
     return vol.Schema(fields)
 
 
@@ -2121,12 +2131,14 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             return await self.async_step_contact_references()
         errors = {}
         if user_input is not None:
+            if bool(user_input.get("wizard_back")):
+                return await self.async_step_edit_room()
             errors = _goal_priority_errors(user_input, room)
             if not errors:
                 room[CONF_ROOM_GOAL_PRIORITIES] = _ranked_goal_priorities(user_input, room)
                 self._persist_working_state(reload_entry=False)
                 return await self.async_step_contact_references()
-        return self.async_show_form(step_id="room_goals", data_schema=_goal_priority_schema(room), errors=errors)
+        return self.async_show_form(step_id="room_goals", data_schema=_goal_priority_schema(room, include_back=True), errors=errors)
 
     async def async_step_edit_room_select(self, user_input=None):
         if user_input is not None:
@@ -2308,6 +2320,11 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
         contact = str(contacts[index])
         errors = {}
         if user_input is not None:
+            if bool(user_input.get("wizard_back")):
+                if index > 0:
+                    self._contact_reference_index = index - 1
+                    return await self.async_step_contact_references()
+                return await self.async_step_room_goals()
             if _apply_single_contact_reference(room, contact, user_input):
                 self._persist_working_state(reload_entry=False)
                 self._contact_reference_index = index + 1
@@ -2315,7 +2332,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="contact_references",
-            data_schema=_single_contact_reference_schema(room, contact),
+            data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact)),
             errors=errors,
             description_placeholders={
                 "room_name": room.get(CONF_ROOM_NAME, room.get("key", "Raum")),
@@ -2549,7 +2566,7 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
             if not errors:
                 room[CONF_ROOM_GOAL_PRIORITIES] = _ranked_goal_priorities(user_input, room)
                 self._persist_working_state()
-                return await self.async_step_ventilation_settings()
+                return await self.async_step_recommendation_priority_order()
         return self.async_show_form(step_id="recommendation_priority_order", data_schema=_goal_priority_schema(room), errors=errors)
 
     async def async_step_cross_ventilation(self, user_input=None):

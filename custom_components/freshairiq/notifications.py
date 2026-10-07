@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import NOTIFY_SCOPE_BOTH, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_ROOM
 from .forecast import in_night_window, night_window_hours
+from .language_confidence import room_notification_message
 
 def _finite_float(value: Any, default: float = 0.0) -> float:
     """Return a finite float; corrupted/runtime values degrade to a safe default."""
@@ -383,19 +384,19 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
         if options.get("notify_ventilate"):
             for r in room_events["Ventilate"]:
                 reasons = ' · '.join(r.get('recommendation_reasons') or [])
-                await emit("ventilate", f"FreshAirIQ · {r['name']}", f"Jetzt lüften. {reasons}", r["key"])
+                await emit("ventilate", f"FreshAirIQ · {r['name']}", f"{room_notification_message('ventilate', r, store.data)} {reasons}", r["key"])
         if options.get("notify_cooling"):
             for r in room_events["Ventilate for cooling"]:
-                await emit("cool", f"FreshAirIQ · {r['name']}", f"Sommerkühlung sinnvoll. {_continuation(r)}", r["key"])
+                await emit("cool", f"FreshAirIQ · {r['name']}", f"{room_notification_message('cool', r, store.data)} {_continuation(r)}", r["key"])
         if options.get("notify_close"):
             for r in room_events["Close"]:
-                await emit("close", f"FreshAirIQ · {r['name']}", f"Optimales Lüftungsziel erreicht. {_continuation(r)} Empfehlung: jetzt schließen.", r["key"])
+                await emit("close", f"FreshAirIQ · {r['name']}", f"{room_notification_message('close', r, store.data)} {_continuation(r)}", r["key"])
         if options.get("notify_mould"):
             for r in room_events["mould"]:
                 await emit("mould", f"FreshAirIQ · {r['name']}", f"Schimmelrisiko {r['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(r['surface_rh'])} %.", r["key"])
         if options.get("notify_sensor") and not sensor_recovery_active:
             for r in room_events["sensor"]:
-                await emit("sensor", f"FreshAirIQ · {r['name']}", "Messwerte fehlen oder sind unplausibel. Sensoren prüfen.", r["key"])
+                await emit("sensor", f"FreshAirIQ · {r['name']}", room_notification_message("sensor", r, store.data), r["key"])
 
     # House-scope messages use Recommendation Engine v2. The user receives one
     # coherent action instead of a dump of competing room recommendations.

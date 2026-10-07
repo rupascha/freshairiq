@@ -1,3 +1,15 @@
+## 0.26.2.6
+
+- Restores immediate tile-style room and ventilation-goal ordering in dashboard settings and keeps native priority sorting on the sorting step after a move.
+- Room editing adds explicit previous-page navigation; room goal projections show humidity, temperature and CO₂ impact compactly with time information.
+- Idle blocked goals remain house-scoped instead of producing misleading room-specific “do not ventilate” recommendations; active ventilation can still issue targeted close recommendations.
+- Recommendation wording varies deterministically between comparable episodes and reflects learning maturity without changing the canonical action.
+- Adds explicit protection arbitration for critical CO₂ and critical surface-moisture/mould risk, including running ventilation sessions.
+- Coordinates simultaneous critical rooms instead of hiding actionable rooms behind the single worst room; compatible protection actions can be combined while conflicting room actions remain visible.
+- Critical CO₂ versus an authoritative session-end/close signal now follows a consistent close → immediate reassessment contract.
+- Dashboard text sizing is configured per Lovelace card, independently for recommendation, goals, rooms, metrics, details and supporting text. Sizes use fixed 10% steps from 80–150%; 100% preserves the established desktop/mobile baseline.
+- Completes Goals typography coverage so all visible goal text follows the selected per-card size without cross-category scaling.
+
 ## 0.26.2.5
 
 - Mechanical-exhaust recommendations now obey the canonical room decision: explicit Wait / Do not ventilate / Close decisions cannot be contradicted by an exhaust start suggestion.
