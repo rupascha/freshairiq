@@ -1,3 +1,0 @@
-# FreshAirIQ v0.25.1.39 — Contactless Indoor Room & Passive Learning Hotfix
-
-Calculated indoor rooms can now operate without an opening contact. Temperature and humidity remain required for active climate calculation. Assigned openings can still be located in another room. Contactless rooms are monitored as part of the house model, can participate in conservative passive-ventilation detection, and learn a separate indirect exchange coefficient without contaminating direct-opening learning. House-level actionable recommendations never invent an opening for these rooms. German and English guidance is included.
