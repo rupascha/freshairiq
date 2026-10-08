@@ -1,0 +1,47 @@
+from tests.release_version import CURRENT_RELEASE_VERSION
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+COMP = ROOT / "custom_components" / "freshairiq"
+COORD = (COMP / "coordinator.py").read_text(encoding="utf-8")
+JS = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
+
+
+def test_monitor_only_rooms_keep_real_sensor_values_without_entering_calculations():
+    assert '"monitor_only": True' in COORD
+    assert '"sensor_data_configured": sensor_configured' in COORD
+    assert '"sensor_data_available": monitor_valid' in COORD
+    assert '"temperature": round(float(monitor_t), 2) if monitor_valid else None' in COORD
+    assert '"humidity": round(float(monitor_rh), 2) if monitor_valid else None' in COORD
+    assert '"absolute_humidity": round(float(monitor_ah), 2)' in COORD
+    assert '"calculation_enabled": False' in COORD
+    assert 'continue' in COORD
+
+
+def test_monitor_only_room_detail_does_not_render_fake_forecast_or_learning_cards():
+    assert 'if (r.calculation_enabled === false)' in JS
+    assert 'Sensorwerte verfügbar' in JS
+    assert 'Der Raum ist bewusst von Empfehlungen, Prognosen, Hausbilanz und Lernen ausgeschlossen.' in JS
+    assert 'Keine Klimasensoren konfiguriert' in JS
+    assert 'Sensoren aktuell nicht verfügbar' in JS
+    assert 'RAUM-MONITORING' in JS
+
+
+def test_basics_icon_uses_broadly_supported_mdi_icon():
+    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
+    assert '["group_basics","mdi:home-cog","Grundlagen"' not in JS
+
+
+def test_resident_profile_is_prominently_exposed():
+    assert 'resident-profile-spotlight' in JS
+    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
+    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
+    assert 'resident-feature-badge' in JS
+    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
+
+
+def test_release_version_021002_everywhere():
+    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
+    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (COMP / "manifest.json").read_text(encoding="utf-8")
+    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS
+    assert 'Current release:' not in (ROOT / "README.md").read_text(encoding="utf-8")

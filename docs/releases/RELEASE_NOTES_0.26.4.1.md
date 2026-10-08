@@ -1,0 +1,13 @@
+# FreshAirIQ 0.26.4.1
+
+- Dashboard: the 0.26.4.0 Freshy dashboard was withdrawn on user feedback. The IQ view and the classic view are back exactly as in 0.26.3.2 (classic verified byte-identical in 10 situations). What stays from 0.26.4.0 is the new animated Freshy: the IQ hero now shows it at 112 px (96 px on phones) with eleven moods, each with its own face and animation (content, wants you to air, airing along with progress ring, goal reached, asleep, rain umbrella, cooling, mould worry, missing sensor, pollen sneeze, thinking). All motion stops under "reduce motion".
+- Room overview: the goal tiles under each room ("-6 ml · 9 min entfernbar", "-2,0 °C · 15 min kühler" and the CO₂ tile) were removed. The room detail and the IQ room explanation keep their goal information.
+- Support: the "Diagnosedaten an Support senden" / "exportieren" buttons have a clean layout (icon left, two text lines, equal width) instead of the bold and normal parts wrapping into each other.
+- Presence: head counts read "4 Personen" instead of "4,0 Personen" (also "1 Person"); a weighted share such as 2,5 keeps its decimal.
+- Fix (community report): personal notifications started with "Erwachsener 1/2/3" although names were configured. The dashboard stored the placeholder as the resident's name when a profile was saved before names were entered, and notifications preferred that stored value. Notifications now use the configured household name for the slot (still following a resident whose names were reordered), never a placeholder, and the dashboard no longer stores placeholders.
+- Devices & services → Residents now lists which numbered profile belongs to whom ("Erwachsener 1 = Anna · …"), because Home Assistant cannot show names in field labels. The help texts now explain the difference between household recipients (Notifications & energy → Messages: every message, neutral, all rooms) and personal devices (resident profile: only that person's rooms, addressed by name; a device in both places gets each message once).
+- Privacy (GitHub #10): the activity heartbeat is also skipped when automatic diagnostics are set to "off" (consent was already required since 0.26.3.1). This reverses the 0.25.4.1 decision to keep the heartbeat on opt-out.
+- GitHub #12 (`NameError: include_back` when adding a room): not present in this code line since 0.26.2.13, but a new permanent test now checks every integration module for names that are read without being defined; it fails if the reported line is reintroduced.
+
+## Known limits
+- Tested in Chromium (desktop and phone emulation), not yet on a real Home Assistant instance or in Safari.

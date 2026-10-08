@@ -1,0 +1,26 @@
+alias: FreshAirIQ - Benachrichtigungen
+mode: parallel
+triggers:
+  - trigger: state
+    entity_id: sensor.freshairiq_status
+    to: ventilate
+    id: open
+  - trigger: state
+    entity_id: binary_sensor.freshairiq_wohnzimmer_close_recommended
+    to: "on"
+    id: close
+conditions: []
+actions:
+  - choose:
+      - conditions: "{{ trigger.id == 'open' }}"
+        sequence:
+          - action: notify.mobile_app_YOUR_PHONE
+            data:
+              title: "🌬️ Lüften empfohlen"
+              message: "{{ state_attr('sensor.freshairiq_status','status_text') }}"
+      - conditions: "{{ trigger.id == 'close' }}"
+        sequence:
+          - action: notify.mobile_app_YOUR_PHONE
+            data:
+              title: "🪟 Fenster schließen"
+              message: "Wohnzimmer: zusätzlicher Lüftungsnutzen ist zu gering."

@@ -1,0 +1,70 @@
+{
+  "fixture_schema": 1,
+  "source": "legacy_dimensions_custom_threshold",
+  "input": {
+    "version": 7,
+    "data": {
+      "rooms": [
+        {
+          "name": "Wohnzimmer",
+          "length": 5.5,
+          "width": 6.0,
+          "height": 2.6,
+          "contacts": [
+            "binary_sensor.wz_1",
+            "binary_sensor.wz_2"
+          ],
+          "contact_mode": "all",
+          "floor": "EG",
+          "window_orientation": "south",
+          "contact_delays": {
+            "binary_sensor.wz_1": 30,
+            "binary_sensor.wz_2": 60
+          }
+        }
+      ]
+    },
+    "options": {
+      "threshold_mode": "absolute_ml",
+      "min_potential_percent_total_water": 7.0
+    }
+  },
+  "expected": {
+    "version": 8,
+    "data": {
+      "rooms": [
+        {
+          "name": "Wohnzimmer",
+          "length": 5.5,
+          "width": 6.0,
+          "height": 2.6,
+          "contacts": [
+            "binary_sensor.wz_1",
+            "binary_sensor.wz_2"
+          ],
+          "contact_mode": "all",
+          "floor": "EG",
+          "window_orientation": "south",
+          "contact_delays": {
+            "binary_sensor.wz_1": 30,
+            "binary_sensor.wz_2": 60
+          },
+          "volume_mode": "dimensions",
+          "sort_order": 0,
+          "include_in_calculations": true,
+          "contact_orientations": {
+            "binary_sensor.wz_1": "south",
+            "binary_sensor.wz_2": "south"
+          }
+        }
+      ],
+      "levels": [
+        "EG"
+      ]
+    },
+    "options": {
+      "threshold_mode": "absolute_ml",
+      "min_potential_percent_total_water": 7.0
+    }
+  }
+}

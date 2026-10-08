@@ -1,0 +1,33 @@
+{
+  "schema": 2,
+  "name": "FreshAirIQ Reliability Foundation v2",
+  "principles": {
+    "protect_behavior_not_source_lines": true,
+    "release_requires_green_mandatory_gates": true,
+    "sensorless_rooms_are_supported": true,
+    "historical_diagnostic_versions_may_remain_in_fixtures": true
+  },
+  "mandatory_contracts": [
+    "runtime_version_consistency",
+    "room_configuration_regressions",
+    "decision_and_forecast_regressions",
+    "golden_scenario_replay",
+    "diagnostics_privacy_and_transport",
+    "storage_and_upgrade_compatibility",
+    "frontend_contracts",
+    "release_hygiene"
+  ],
+  "future_layers": [
+    "upgrade_migration_matrix",
+    "diagnostics_error_fingerprinting",
+    "production_regression_detection"
+  ],
+  "golden_scenarios": {
+    "schema": 1,
+    "policy": "behavior_over_source",
+    "personal_data_allowed": false,
+    "numeric_comparison": "explicit_absolute_tolerance_only",
+    "release_blocking": true,
+    "suite": "quality/golden_scenarios/core_recommendations.json"
+  }
+}

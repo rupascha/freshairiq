@@ -1,0 +1,741 @@
+type: custom:button-card
+entity: sensor.freshairiq_status
+section_mode: true
+show_icon: false
+show_name: false
+show_state: false
+triggers_update: all
+update_timer: 30s
+
+grid_options:
+  columns: full
+  rows: auto
+
+tap_action:
+  action: fire-dom-event
+  browser_mod:
+    service: browser_mod.popup
+    data:
+      title: FreshAirIQ
+      initial_style: freshairiq
+      style_sequence:
+        - freshairiq
+      adaptive: false
+      popup_styles:
+        - style: freshairiq
+          include_styles:
+            - wide
+          styles: |
+            ha-dialog {
+              --popup-width: min(1240px, calc(100vw - 30px));
+              --popup-min-width: min(1240px, calc(100vw - 30px));
+              --popup-max-width: min(1240px, calc(100vw - 30px));
+              --popup-width-full: min(1240px, calc(100vw - 30px));
+              --popup-max-height: calc(100vh - 24px);
+              --padding-x: 10px;
+              --padding-y: 8px;
+              --dialog-content-padding: 0px;
+              --ha-dialog-border-radius: 26px;
+              --popup-border-radius: 26px;
+            }
+            .content,
+            .content .container {
+              width: 100% !important;
+              max-width: none !important;
+              min-width: 0 !important;
+            }
+            .content .container {
+              padding: 10px 12px 14px !important;
+            }
+
+      content:
+        type: custom:button-card
+        entity: sensor.freshairiq_status
+        show_icon: false
+        show_name: false
+        show_state: false
+        triggers_update: all
+        update_timer: 30s
+
+        styles:
+          card:
+            - background: transparent
+            - border: none
+            - box-shadow: none
+            - padding: 0
+            - overflow: visible
+          grid:
+            - grid-template-areas: '"content"'
+            - grid-template-columns: minmax(0,1fr)
+          custom_fields:
+            content:
+              - width: 100%
+              - min-width: 0
+
+        custom_fields:
+          content: |
+            [[[
+              const st = entity?.attributes || {};
+              const roomsObj = st.rooms || {};
+              const rooms = Object.values(roomsObj);
+
+              const num = (id, fallback = 0) => {
+                const n = Number(states[id]?.state);
+                return Number.isFinite(n) ? n : fallback;
+              };
+
+              const fmt = (v, d = 1) => {
+                const n = Number(v);
+                return Number.isFinite(n)
+                  ? n.toFixed(d).replace('.', ',')
+                  : '–';
+              };
+
+              const signed = (v, unit = '') => {
+                const n = Number(v || 0);
+                if (Math.abs(n) < 0.05) return `±0,0${unit ? ' '+unit : ''}`;
+                return `${n > 0 ? '+' : '−'}${fmt(Math.abs(n),1)}${unit ? ' '+unit : ''}`;
+              };
+
+              const actionDE = a => ({
+                'Ventilate':'Lüften',
+                'Continue ventilating':'Weiterlüften',
+                'Close':'Schließen',
+                'Do not ventilate':'Nicht lüften',
+                'Wait':'Warten',
+                'Okay':'Alles okay',
+                'Check sensor':'Sensor prüfen'
+              }[a] || a || '–');
+
+              const reasonDE = r => {
+                const s = String(r || '');
+                if (s.startsWith('Next 5 min are expected to remove')) {
+                  const n = s.match(/(\d+)\s*ml/)?.[1] || '–';
+                  return `Weitere 5 Minuten entfernen voraussichtlich ${n} ml`;
+                }
+                if (s.startsWith('About') && s.includes('moisture can be removed')) {
+                  const n = s.match(/About\s+(\d+)\s+ml/)?.[1] || '–';
+                  return `Etwa ${n} ml Feuchtigkeit können entfernt werden`;
+                }
+                return ({
+                  'Target reached or additional ventilation benefit is too low':
+                    'Ziel erreicht oder zusätzlicher Lüftungsnutzen zu gering',
+                  'Reference air would add moisture':
+                    'Referenzluft würde zusätzliche Feuchtigkeit eintragen',
+                  'Potential exists, but ventilation threshold is not reached':
+                    'Potenzial vorhanden, Lüftungsschwelle noch nicht erreicht',
+                  'No meaningful ventilation demand':
+                    'Kein sinnvoller Lüftungsbedarf',
+                  'Missing or implausible measurements':
+                    'Messwerte fehlen oder sind unplausibel'
+                }[s] || s);
+              };
+
+              const mouldDE = m => ({
+                'Very high':'Sehr hoch',
+                'High':'Hoch',
+                'Elevated':'Erhöht',
+                'Slightly elevated':'Leicht erhöht',
+                'Low':'Niedrig',
+                'Unknown':'Unbekannt'
+              }[m] || m || 'Unbekannt');
+
+              const learnDE = l => ({
+                'Very stable':'Sehr stabil',
+                'Stable':'Stabil',
+                'Usable':'Brauchbar',
+                'Learning':'Lernt',
+                'Base estimate':'Grundschätzung'
+              }[l] || l || '–');
+
+              const diagDE = d => {
+                const s = String(d || '');
+                if (!s) return 'Noch keine Lernmessung';
+                return s
+                  .replace(/^Learned:/,'✅ Gelernt:')
+                  .replace(/^Rejected:/,'❌ Verworfen:')
+                  .replace(/^Paused:/,'⏸ Pausiert:')
+                  .replace('learning disabled','Lernmodus deaktiviert')
+                  .replace('duration','Dauer')
+                  .replace('start delta','Startdifferenz')
+                  .replace('humidity reduction','Feuchteabbau')
+                  .replace('learning rate','Lernrate')
+                  .replace('sample','Probe')
+                  .replace('reduction','Abbau')
+                  .replace('rate','Rate');
+              };
+
+              const styleFor = a => {
+                switch(a) {
+                  case 'Close':
+                    return ['#ffb45f','rgba(255,180,95,.08)','rgba(255,180,95,.22)','mdi:window-closed-variant'];
+                  case 'Continue ventilating':
+                    return ['#5bcaff','rgba(70,190,235,.07)','rgba(91,202,255,.22)','mdi:weather-windy'];
+                  case 'Ventilate':
+                    return ['#62e889','rgba(80,210,125,.07)','rgba(98,232,137,.22)','mdi:weather-windy'];
+                  case 'Do not ventilate':
+                    return ['#ff7770','rgba(220,90,80,.07)','rgba(255,119,112,.22)','mdi:water-plus'];
+                  case 'Wait':
+                    return ['#e2bd69','rgba(210,175,95,.06)','rgba(226,189,105,.20)','mdi:progress-clock'];
+                  case 'Check sensor':
+                    return ['#ff7770','rgba(220,90,80,.07)','rgba(255,119,112,.22)','mdi:alert-circle-outline'];
+                  default:
+                    return ['#9aa7b3','rgba(255,255,255,.025)','rgba(255,255,255,.07)','mdi:check-circle-outline'];
+                }
+              };
+
+              const mouldColor = m => ({
+                'Very high':'#ff7770',
+                'High':'#ff9b66',
+                'Elevated':'#e5b75e',
+                'Slightly elevated':'#d7c77a',
+                'Low':'#76df98'
+              }[m] || '#9aa7b3');
+
+              const liveBalance = num('sensor.freshairiq_live_moisture_balance');
+              const potential = num('sensor.freshairiq_removable_moisture');
+              const next5 = num('sensor.freshairiq_next_5_minutes');
+              const duration = num('sensor.freshairiq_recommended_ventilation_duration');
+              const remaining = num('sensor.freshairiq_ventilation_time_remaining');
+              const tempChange = num('sensor.freshairiq_temperature_change_since_ventilation_start');
+              const water = num('sensor.freshairiq_water_vapor_in_monitored_air');
+              const confidence = num('sensor.freshairiq_learning_confidence');
+              const overnight = num('sensor.freshairiq_overnight_moisture_forecast');
+              const cost14 = num('sensor.freshairiq_estimated_ventilation_cost_last_14_days');
+              const surface = num('sensor.freshairiq_highest_estimated_surface_humidity');
+              const hist = st.history_14d || [];
+              const tempHist = st.temperature_history_14d || [];
+              const histSummary = st.history_summary || {};
+              const profile = st.operating_profile || 'comfort';
+              const cross = states['binary_sensor.freshairiq_cross_ventilation']?.state === 'on';
+
+              const activeRooms = rooms.filter(r => r.active);
+              const closeRooms = rooms.filter(r => r.action === 'Close');
+              const ventRooms = rooms.filter(r => r.action === 'Ventilate');
+              const badRooms = rooms.filter(r => r.data_quality !== 'ok');
+              const mouldRooms = rooms
+                .filter(r => Number(r.surface_rh || 0) >= 60)
+                .sort((a,b) => Number(b.surface_rh||0)-Number(a.surface_rh||0));
+
+              let heroColor = '#84a0b5';
+              let heroIcon = 'mdi:check-circle-outline';
+              let heroTitle = 'Alles okay';
+              let heroText = st.status_text || 'Fenster geschlossen lassen';
+
+              if (badRooms.length) {
+                heroColor = '#ff7770';
+                heroIcon = 'mdi:alert-circle-outline';
+                heroTitle = 'Sensoren prüfen';
+                heroText = `${badRooms.length} Raum/Räume mit ungültigen Messwerten`;
+              } else if (activeRooms.length) {
+                heroColor = '#5bcaff';
+                heroIcon = cross ? 'mdi:swap-horizontal-bold' : 'mdi:weather-windy';
+                heroTitle = 'Lüftung läuft';
+                heroText = `${activeRooms.length} Raum/Räume aktiv · ${Math.max(0,Math.round(liveBalance))} ml entfernt`;
+              } else if (closeRooms.length) {
+                heroColor = '#ffb45f';
+                heroIcon = 'mdi:window-closed-variant';
+                heroTitle = 'Jetzt schließen';
+                heroText = closeRooms.map(r => r.name).join(', ');
+              } else if (ventRooms.length || st.status === 'ventilate') {
+                heroColor = '#62e889';
+                heroIcon = 'mdi:weather-windy';
+                heroTitle = 'Jetzt lüften';
+                heroText = `${Math.round(potential)} ml Feuchtigkeit entfernbar`;
+              } else if (potential > 0) {
+                heroColor = '#e2bd69';
+                heroIcon = 'mdi:progress-clock';
+                heroTitle = 'Noch nicht nötig';
+                heroText = `${Math.round(potential)} ml Potenzial vorhanden`;
+              }
+
+              const roomCards = rooms.map(r => {
+                const [accent,bg,border,icon] = styleFor(r.action);
+                const mColor = mouldColor(r.mould_level);
+                const result = Number(r.result_ml || 0);
+                const resultText = r.active
+                  ? (result > 5 ? `−${Math.round(result)} ml` : result < -5 ? `+${Math.abs(Math.round(result))} ml` : '0 ml')
+                  : `${Math.round(Number(r.potential_ml || 0))} ml`;
+
+                return `
+                  <div class="room" style="--accent:${accent};--bg:${bg};--border:${border};">
+                    <div class="room-head">
+                      <div class="room-icon"><ha-icon icon="${icon}"></ha-icon></div>
+                      <div class="room-name-wrap">
+                        <div class="room-name">${r.name || r.key}</div>
+                        <div class="room-meta">
+                          ${fmt(r.volume_m3,1)} m³ · ${r.contact_count || 0} Kontakt${Number(r.contact_count||0)===1?'':'e'}
+                          ${r.contact_mode === 'all' ? ' · kompletter Lüftungsweg' : ''}
+                        </div>
+                      </div>
+                      <div class="action">${actionDE(r.action)}</div>
+                    </div>
+
+                    <div class="room-values">
+                      <div>
+                        <div class="small-label">RAUMKLIMA</div>
+                        <div class="value">${fmt(r.temperature,1)} °C · ${Math.round(Number(r.humidity||0))} %</div>
+                        <div class="sub">${fmt(r.absolute_humidity,1)} g/m³ absolut</div>
+                      </div>
+                      <div class="right">
+                        <div class="small-label">${r.active ? 'LIVE-BILANZ' : 'POTENZIAL'}</div>
+                        <div class="big-value" style="color:${accent}">${resultText}</div>
+                        <div class="sub">${r.active ? `${fmt(r.session_elapsed_min,1)} min gelüftet` : `${fmt(r.delta_g_m3,2)} g/m³ Differenz`}</div>
+                      </div>
+                    </div>
+
+                    <div class="microgrid">
+                      <div class="micro">
+                        <div class="small-label">WEITERE 5 MIN</div>
+                        <div class="micro-value">${Math.round(Number(r.next_5_min_ml||0))} ml</div>
+                        <div class="sub">${signed(r.temp_next_5_min_c,'°C')} · ${fmt(r.next_5_min_cost||0,2)} €</div>
+                      </div>
+                      <div class="micro">
+                        <div class="small-label">OBERFLÄCHE</div>
+                        <div class="micro-value" style="color:${mColor}">${Math.round(Number(r.surface_rh||0))} %</div>
+                        <div class="sub" style="color:${mColor}">Risiko ${mouldDE(r.mould_level).toLowerCase()}</div>
+                      </div>
+                      <div class="micro">
+                        <div class="small-label">LERNMODELL</div>
+                        <div class="micro-value">${learnDE(r.learning_status)}</div>
+                        <div class="sub">${r.learning_samples || 0} Proben</div>
+                      </div>
+                    </div>
+
+                    <div class="reason">${reasonDE(r.reason)}</div>
+
+                    <div class="diagnosis">
+                      <ha-icon icon="mdi:brain"></ha-icon>
+                      <div>
+                        <div class="small-label">LETZTE LERNMESSUNG</div>
+                        <div class="diag-text">${diagDE(r.learning_diagnosis)}</div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+
+              const mouldText = mouldRooms.length
+                ? mouldRooms.slice(0,4).map(r => `${r.name} ${Math.round(Number(r.surface_rh||0))}%`).join(' · ')
+                : 'Kein Raum auffällig';
+
+              return `
+                <style>
+                  *{box-sizing:border-box}
+                  .wrap{font-family:inherit;width:100%;padding:2px 0 8px;color:#eef4f8}
+                  .brand{
+                    display:grid;grid-template-columns:58px minmax(0,1fr) auto;
+                    gap:13px;align-items:center;padding:14px 15px;margin-bottom:10px;
+                    border-radius:20px;
+                    background:
+                      radial-gradient(circle at 92% 0%,rgba(40,206,255,.14),transparent 34%),
+                      radial-gradient(circle at 8% 100%,rgba(70,225,135,.08),transparent 32%),
+                      linear-gradient(135deg,rgba(18,28,40,.98),rgba(17,23,31,.98));
+                    border:1px solid rgba(97,213,255,.13);
+                    box-shadow:0 12px 34px rgba(0,0,0,.20)
+                  }
+                  .logo{
+                    width:58px;height:58px;border-radius:17px;
+                    display:flex;align-items:center;justify-content:center;
+                    background:linear-gradient(145deg,rgba(25,102,150,.35),rgba(15,44,67,.42));
+                    border:1px solid rgba(72,210,255,.25);
+                    box-shadow:inset 0 0 18px rgba(62,208,255,.07)
+                  }
+                  .logo img{
+                    width:46px;height:46px;object-fit:contain;border-radius:13px;
+                    filter:drop-shadow(0 0 8px rgba(74,210,255,.18))
+                  }
+                  .brand-name{font-size:25px;line-height:27px;font-weight:950;letter-spacing:-.8px}
+                  .brand-name .iq{color:#54d7ff}
+                  .tag{margin-top:3px;color:#91a2af;font-size:10.5px;line-height:13px;font-weight:700}
+                  .brand-badge{
+                    justify-self:end;color:#67df92;font-size:9px;font-weight:850;
+                    padding:5px 8px;border-radius:999px;
+                    background:rgba(75,211,124,.07);border:1px solid rgba(75,211,124,.18)
+                  }
+
+                  .hero{
+                    display:grid;grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,.8fr));
+                    gap:8px;margin-bottom:9px
+                  }
+                  .hero-main,.stat{
+                    min-width:0;border-radius:15px;padding:10px 12px;
+                    background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.07)
+                  }
+                  .hero-main{
+                    display:grid;grid-template-columns:39px minmax(0,1fr);gap:10px;align-items:center;
+                    background:rgba(70,190,235,.045);border-color:rgba(75,200,245,.12)
+                  }
+                  .hero-icon{
+                    width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+                    background:rgba(255,255,255,.035)
+                  }
+                  .hero-icon ha-icon{--mdc-icon-size:22px}
+                  .label,.small-label{font-size:8px;line-height:9px;font-weight:900;letter-spacing:.65px;color:#83939f}
+                  .hero-title{font-size:20px;line-height:22px;font-weight:900;margin-top:2px}
+                  .hero-sub{font-size:10px;line-height:12px;color:#9ba9b3;margin-top:2px;font-weight:650}
+                  .stat-value{font-size:19px;line-height:21px;font-weight:900;margin-top:3px}
+                  .stat-sub{font-size:9px;line-height:11px;color:#8b9aa5;margin-top:2px;font-weight:650}
+
+                  .livebar{
+                    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:9px
+                  }
+                  .liveitem{
+                    padding:8px 10px;border-radius:13px;
+                    background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.065)
+                  }
+                  .livevalue{font-size:16px;line-height:18px;font-weight:900;margin-top:2px}
+
+                  .riskbar{
+                    display:grid;grid-template-columns:35px minmax(0,1fr) auto;gap:9px;align-items:center;
+                    margin-bottom:10px;padding:8px 10px;border-radius:13px;
+                    background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.065)
+                  }
+                  .riskicon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);color:#d8c879}
+                  .riskicon ha-icon{--mdc-icon-size:19px}
+                  .risktext{font-size:10px;color:#b9c4cc;font-weight:700;margin-top:2px}
+                  .conf{font-size:11px;color:#7fe39c;font-weight:850;text-align:right}
+
+                  .analytics{display:grid;grid-template-columns:1.15fr .85fr;gap:8px;margin-bottom:10px}
+                  .analytics-card{padding:9px 10px;border-radius:13px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.065)}
+                  .bars{height:54px;display:flex;align-items:flex-end;gap:3px;margin-top:6px}
+                  .bar{flex:1;min-width:3px;border-radius:3px 3px 1px 1px;background:linear-gradient(180deg,rgba(92,211,255,.9),rgba(73,221,140,.55))}
+                  .spark{width:100%;height:54px;margin-top:6px}
+                  .rooms-title{display:flex;justify-content:space-between;gap:10px;padding:0 2px;margin:2px 0 7px}
+                  .rooms-title .righttxt{font-size:9px;color:#788893;font-weight:700}
+                  .rooms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+                  .room{
+                    min-width:0;padding:10px;border-radius:15px;
+                    background:var(--bg);border:1px solid var(--border)
+                  }
+                  .room-head{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:8px;align-items:center}
+                  .room-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--accent);background:rgba(255,255,255,.025)}
+                  .room-icon ha-icon{--mdc-icon-size:18px}
+                  .room-name{font-size:13px;line-height:15px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+                  .room-meta{font-size:8px;line-height:10px;color:#7d8c97;font-weight:650;margin-top:1px}
+                  .action{font-size:9px;font-weight:850;color:var(--accent);white-space:nowrap}
+
+                  .room-values{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:9px}
+                  .room-values .right{text-align:right}
+                  .value{font-size:12px;font-weight:850;margin-top:2px}
+                  .big-value{font-size:17px;line-height:18px;font-weight:950;margin-top:1px}
+                  .sub{font-size:8px;line-height:10px;color:#86959f;font-weight:650;margin-top:1px}
+
+                  .microgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+                  .micro{padding:6px 7px;border-radius:9px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);min-width:0}
+                  .micro-value{font-size:11px;line-height:13px;font-weight:900;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+                  .reason{height:25px;margin-top:7px;font-size:8.5px;line-height:12px;color:#909da6;font-weight:650;overflow:hidden}
+                  .diagnosis{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:center;margin-top:5px;padding:6px 7px;border-radius:9px;background:rgba(255,255,255,.022);border:1px solid rgba(255,255,255,.05)}
+                  .diagnosis ha-icon{--mdc-icon-size:14px;color:#7fd7f5}
+                  .diag-text{font-size:8px;line-height:10px;color:#9cabb5;font-weight:650;margin-top:2px;overflow-wrap:anywhere}
+
+                  @media(max-width:1000px){
+                    .hero{grid-template-columns:repeat(2,minmax(0,1fr))}
+                    .hero-main{grid-column:1/-1}
+                    .rooms{grid-template-columns:repeat(2,minmax(0,1fr))}
+                  }
+                  @media(max-width:650px){
+                    .brand{grid-template-columns:48px minmax(0,1fr)}
+                    .logo{width:48px;height:48px}
+                    .brand-badge{grid-column:2;justify-self:start}
+                    .hero,.livebar,.rooms{grid-template-columns:1fr}
+                    .hero-main{grid-column:auto}
+                    .rooms-title .righttxt{display:none}
+                  }
+                </style>
+
+                <div class="wrap">
+                  <div class="brand">
+                    <div class="logo"><img src="/local/freshairiq/freshairiq-icon.png" alt="FreshAirIQ"></div>
+                    <div>
+                      <div class="brand-name">FreshAir<span class="iq">IQ</span></div>
+                      <div class="tag">Intelligent lüften. Gesund wohnen. Energie sparen.</div>
+                    </div>
+                    <div class="brand-badge">V14.2.1 ENGINE</div>
+                  </div>
+
+                  <div class="hero">
+                    <div class="hero-main">
+                      <div class="hero-icon" style="color:${heroColor}"><ha-icon icon="${heroIcon}"></ha-icon></div>
+                      <div>
+                        <div class="label">AKTUELLE EMPFEHLUNG</div>
+                        <div class="hero-title" style="color:${heroColor}">${heroTitle}</div>
+                        <div class="hero-sub">${heroText}</div>
+                      </div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="label">ENTFERNBAR</div>
+                      <div class="stat-value" style="color:#6ddd96">${Math.round(potential)} ml</div>
+                      <div class="stat-sub">aktuell aus der Raumluft</div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="label">WASSERDAMPF</div>
+                      <div class="stat-value">${fmt(water/1000,2)} l</div>
+                      <div class="stat-sub">in überwachten Räumen</div>
+                    </div>
+
+                    <div class="stat">
+                      <div class="label">LERNMODELL</div>
+                      <div class="stat-value" style="color:#64d9ff">${Math.round(confidence)} %</div>
+                      <div class="stat-sub">Vertrauen aus Lernproben</div>
+                    </div>
+                  </div>
+
+                  <div class="livebar">
+                    <div class="liveitem">
+                      <div class="label">LIVE-BILANZ</div>
+                      <div class="livevalue" style="color:${liveBalance>5?'#62e889':liveBalance<-5?'#ff7770':'#dfe7ed'}">
+                        ${liveBalance>5?'−'+Math.round(liveBalance):liveBalance<-5?'+'+Math.abs(Math.round(liveBalance)):'0'} ml
+                      </div>
+                      <div class="stat-sub">${activeRooms.length ? 'seit Lüftungsbeginn' : 'letzter Stand'}</div>
+                    </div>
+
+                    <div class="liveitem">
+                      <div class="label">LÜFTUNGSZEIT</div>
+                      <div class="livevalue" style="color:${activeRooms.length ? (remaining<0?'#ffb45f':'#edcb78') : '#dfe7ed'}">
+                        ${activeRooms.length
+                          ? (remaining > 0.5 ? `noch ${Math.ceil(remaining)} min` : remaining >= -0.5 ? 'Zielzeit erreicht' : `${Math.max(1,Math.floor(Math.abs(remaining)))} min drüber`)
+                          : `${Math.round(duration)} min`}
+                      </div>
+                      <div class="stat-sub">empfohlen ${Math.round(duration)} min</div>
+                    </div>
+
+                    <div class="liveitem">
+                      <div class="label">TEMPERATURÄNDERUNG</div>
+                      <div class="livevalue">${signed(tempChange,'°C')}</div>
+                      <div class="stat-sub">${activeRooms.length ? 'seit Lüftungsbeginn' : 'keine aktive Session'}</div>
+                    </div>
+
+                    <div class="liveitem">
+                      <div class="label">WEITERE 5 MINUTEN</div>
+                      <div class="livevalue" style="color:#63d2f7">${Math.round(next5)} ml</div>
+                      <div class="stat-sub">${cross ? 'Querlüftung aktiv' : 'aktuelle Prognose'}</div>
+                    </div>
+                  </div>
+
+                  <div class="riskbar">
+                    <div class="riskicon"><ha-icon icon="mdi:wall"></ha-icon></div>
+                    <div>
+                      <div class="label">OBERFLÄCHENFEUCHTE / SCHIMMELRISIKO</div>
+                      <div class="risktext">${mouldText}</div>
+                    </div>
+                    <div class="conf">${Math.round(surface)} % max.</div>
+                  </div>
+
+                  <div class="analytics">
+                    <div class="analytics-card">
+                      <div class="label">14 TAGE · ENTFERNTE FEUCHTIGKEIT</div>
+                      <div class="stat-value" style="font-size:16px">${fmt((histSummary.removed_ml||0)/1000,2)} l · ${histSummary.sessions||0} Lüftungen · ${fmt(histSummary.cost||0,2)} € · Heute Bilanz ${Math.round(Number(st.moisture_balance_today_ml||0))} ml</div>
+                      <div class="bars">${(() => { const max=Math.max(1,...hist.map(x=>Number(x.removed_ml||0))); return hist.map(x=>`<div class="bar" title="${x.date}: ${Math.round(x.removed_ml||0)} ml" style="height:${Math.max(3,Math.round(Number(x.removed_ml||0)/max*100))}%"></div>`).join(''); })()}</div>
+                    </div>
+                    <div class="analytics-card">
+                      <div class="label">NACHTPROGNOSE · PROFIL ${profile.toUpperCase()}</div>
+                      <div class="stat-value" style="font-size:16px;color:#73dcff">+${Math.round(overnight)} ml</div>
+                      <div class="stat-sub">${st.night_recommendation||''}</div>
+                      ${(() => {
+                        if (!tempHist.length) return '<div class="stat-sub" style="margin-top:7px">Noch keine Temperaturhistorie</div>';
+                        const vals=tempHist.map(x=>Number(x.temperature_c||0)); const min=Math.min(...vals), max=Math.max(...vals);
+                        const pts=vals.map((v,i)=>`${(i/Math.max(vals.length-1,1)*100).toFixed(1)},${(50-((v-min)/Math.max(max-min,.1)*44)).toFixed(1)}`).join(' ');
+                        return `<svg class="spark" viewBox="0 0 100 54" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="rgba(102,215,255,.9)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="stat-sub">${fmt(min,1)}–${fmt(max,1)} °C in den letzten 14 Tagen</div>`;
+                      })()}
+                    </div>
+                  </div>
+
+                  <div class="rooms-title">
+                    <div class="label">EINGERICHTETE RÄUME · ${rooms.length}</div>
+                    <div class="righttxt">Klima · Potenzial · Prognose · Risiko · Lernmodell</div>
+                  </div>
+
+                  <div class="rooms">${roomCards}</div>
+                </div>
+              `;
+            ]]]
+
+styles:
+  grid:
+    - grid-template-areas: '"main"'
+    - grid-template-columns: minmax(0,1fr)
+    - grid-template-rows: auto
+
+  card:
+    - padding: 0
+    - border-radius: 22px
+    - overflow: hidden
+    - border: 1px solid rgba(80,205,245,.12)
+    - box-shadow: 0 10px 30px rgba(0,0,0,.20)
+    - background: |
+        [[[
+          const s = entity?.state || 'okay';
+          if (s === 'sensor_error')
+            return 'radial-gradient(circle at 88% 0%,rgba(255,90,90,.15),transparent 35%),linear-gradient(135deg,rgba(44,27,31,.98),rgba(18,24,31,.99))';
+          if (s === 'ventilation_running')
+            return 'radial-gradient(circle at 88% 0%,rgba(72,205,255,.18),transparent 36%),linear-gradient(135deg,rgba(19,34,45,.98),rgba(16,24,31,.99))';
+          if (s === 'close_windows')
+            return 'radial-gradient(circle at 88% 0%,rgba(255,180,95,.16),transparent 36%),linear-gradient(135deg,rgba(45,36,23,.98),rgba(18,24,30,.99))';
+          if (s === 'ventilate')
+            return 'radial-gradient(circle at 88% 0%,rgba(80,225,135,.16),transparent 36%),linear-gradient(135deg,rgba(22,42,31,.98),rgba(17,25,31,.99))';
+          return 'radial-gradient(circle at 88% 0%,rgba(60,205,255,.11),transparent 36%),radial-gradient(circle at 10% 100%,rgba(65,220,135,.06),transparent 30%),linear-gradient(135deg,rgba(22,29,38,.99),rgba(17,23,30,.99))';
+        ]]]
+
+custom_fields:
+  main: |
+    [[[
+      const st = entity?.attributes || {};
+      const rooms = Object.values(st.rooms || {});
+
+      const num = (id, fallback = 0) => {
+        const n = Number(states[id]?.state);
+        return Number.isFinite(n) ? n : fallback;
+      };
+
+      const fmt = (v,d=1) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n.toFixed(d).replace('.',',') : '–';
+      };
+
+      const signed = v => {
+        const n = Number(v||0);
+        if (Math.abs(n)<0.05) return '±0,0 °C';
+        return `${n>0?'+':'−'}${fmt(Math.abs(n),1)} °C`;
+      };
+
+      const potential = num('sensor.freshairiq_removable_moisture');
+      const live = num('sensor.freshairiq_live_moisture_balance');
+      const next5 = num('sensor.freshairiq_next_5_minutes');
+      const duration = num('sensor.freshairiq_recommended_ventilation_duration');
+      const remaining = num('sensor.freshairiq_ventilation_time_remaining');
+      const tempChange = num('sensor.freshairiq_temperature_change_since_ventilation_start');
+      const cross = states['binary_sensor.freshairiq_cross_ventilation']?.state === 'on';
+
+      const active = rooms.filter(r => r.active);
+      const close = rooms.filter(r => r.action === 'Close');
+      const bad = rooms.filter(r => r.data_quality !== 'ok');
+
+      let accent='#91a5b5';
+      let icon='mdi:check-circle-outline';
+      let title='Alles okay';
+      let sub='Fenster geschlossen lassen';
+
+      if (bad.length) {
+        accent='#ff7770';
+        icon='mdi:alert-circle-outline';
+        title='Sensoren prüfen';
+        sub=`${bad.length} Raum/Räume mit ungültigen Messwerten`;
+      } else if (active.length) {
+        accent='#5bcaff';
+        icon=cross?'mdi:swap-horizontal-bold':'mdi:weather-windy';
+        title='Lüftung läuft';
+        sub=`${active.length} Raum/Räume aktiv`;
+      } else if (close.length) {
+        accent='#ffb45f';
+        icon='mdi:window-closed-variant';
+        title='Jetzt schließen';
+        sub=close.map(r=>r.name).join(', ');
+      } else if (entity?.state === 'ventilate') {
+        accent='#62e889';
+        icon='mdi:weather-windy';
+        title='Jetzt lüften';
+        sub=`${Math.round(potential)} ml Feuchtigkeit entfernbar`;
+      } else if (potential > 0) {
+        accent='#dfbd69';
+        icon='mdi:progress-clock';
+        title='Noch nicht nötig';
+        sub=`${Math.round(potential)} ml Potenzial vorhanden`;
+      }
+
+      const timeText = active.length
+        ? (remaining > .5
+            ? `noch ${Math.ceil(remaining)} min`
+            : remaining >= -.5
+              ? 'Zielzeit'
+              : `${Math.max(1,Math.floor(Math.abs(remaining)))} min drüber`)
+        : `${Math.round(duration)} min`;
+
+      return `
+        <style>
+          *{box-sizing:border-box}
+          .card{width:100%;padding:11px 13px 12px;font-family:inherit;color:#f3f7fa}
+          .top{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center}
+          .brand-icon{
+            width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+            color:#58d5ff;background:linear-gradient(145deg,rgba(50,182,235,.13),rgba(40,220,145,.06));
+            border:1px solid rgba(80,210,250,.18)
+          }
+          .brand-icon img{
+            width:34px;height:34px;object-fit:contain;border-radius:10px;
+            filter:drop-shadow(0 0 7px rgba(74,210,255,.16))
+          }
+          .eyebrow{font-size:8px;line-height:9px;font-weight:900;letter-spacing:1px;color:#82929e}
+          .name{font-size:17px;line-height:19px;font-weight:950;margin-top:1px}
+          .name .iq{color:#56d5ff}
+          .state{font-size:10px;line-height:12px;font-weight:800;color:${accent};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .badge{
+            justify-self:end;padding:4px 7px;border-radius:999px;
+            font-size:8px;font-weight:850;color:${accent};background:${accent}12;border:1px solid ${accent}25;
+            white-space:nowrap
+          }
+          .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:9px}
+          .metric{
+            min-width:0;padding:7px 8px;border-radius:11px;background:rgba(255,255,255,.025);
+            border:1px solid rgba(255,255,255,.06)
+          }
+          .label{font-size:6.8px;line-height:8px;font-weight:900;letter-spacing:.4px;color:#788995;white-space:nowrap}
+          .value{font-size:14px;line-height:16px;font-weight:950;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .sub{font-size:7px;line-height:8px;color:#7f8f9a;font-weight:650;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          @media(max-width:500px){
+            .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+          }
+        </style>
+
+        <div class="card">
+          <div class="top">
+            <div class="brand-icon"><img src="/local/freshairiq/freshairiq-icon.png" alt="FreshAirIQ"></div>
+            <div>
+              <div class="eyebrow">INTELLIGENT VENTILATION · V14.2.1</div>
+              <div class="name">FreshAir<span class="iq">IQ</span></div>
+              <div class="state">${title} · ${sub}</div>
+            </div>
+            <div class="badge">${cross?'QUERLÜFTUNG':'LIVE'}</div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="label">${active.length?'ENTFERNT':'ENTFERNBAR'}</div>
+              <div class="value" style="color:#6ddd96">
+                ${active.length
+                  ? (live>5?'−'+Math.round(live):live<-5?'+'+Math.abs(Math.round(live)):'0')+' ml'
+                  : Math.round(potential)+' ml'}
+              </div>
+              <div class="sub">${active.length?'seit Lüftungsbeginn':'aktuelles Potenzial'}</div>
+            </div>
+
+            <div class="metric">
+              <div class="label">TEMPERATUR</div>
+              <div class="value">${signed(tempChange)}</div>
+              <div class="sub">${active.length?'seit Start':'keine aktive Session'}</div>
+            </div>
+
+            <div class="metric">
+              <div class="label">LÜFTUNGSZEIT</div>
+              <div class="value" style="color:${active.length&&remaining<-.5?'#ffb45f':'#edcb78'}">${timeText}</div>
+              <div class="sub">Ziel ${Math.round(duration)} min</div>
+            </div>
+
+            <div class="metric">
+              <div class="label">WEITERE 5 MIN</div>
+              <div class="value" style="color:#63d2f7">${Math.round(next5)} ml</div>
+              <div class="sub">Prognose</div>
+            </div>
+
+            <div class="metric">
+              <div class="label">NACHTPROGNOSE</div>
+              <div class="value" style="color:#73dcff">+${Math.round(Number(st.overnight_forecast_ml||0))} ml</div>
+              <div class="sub">bis morgen früh</div>
+            </div>
+          </div>
+        </div>
+      `;
+    ]]]

@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "approved_from_version": "0.26.2.14",
+  "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
+  "config_flow_sha256": "0c08e6e2349e39c1860bd9c294b6182761736ccbd811770b52736732969785ab",
+  "de_configuration_sha256": "67837e44e30370b623e48ace8ed4c292a92cb2bf128b29c3d3630c1b089bf1d0",
+  "en_configuration_sha256": "d09eafa2b6a00f0fc08cae940820b377f31a27f49a46fb6ddcd07e52c925572f",
+  "strings_configuration_sha256": "d09eafa2b6a00f0fc08cae940820b377f31a27f49a46fb6ddcd07e52c925572f"
+}

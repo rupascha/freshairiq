@@ -1,0 +1,14 @@
+# Recommended since FreshAirIQ 0.23.0.9: native HA launcher card.
+# Tap opens the full FreshAirIQ panel without Lovelace custom-card resolution.
+type: tile
+entity: sensor.freshairiq_status
+name: FreshAirIQ
+icon: mdi:home-air-filter
+tap_action:
+  action: navigate
+  navigation_path: /freshairiq-safe
+hold_action:
+  action: more-info
+
+# Legacy custom card (kept for backwards compatibility):
+# type: custom:freshairiq-card
