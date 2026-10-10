@@ -11,7 +11,7 @@ def test_room_humidity_history_contract_is_wired_end_to_end():
     assert 'record_room_humidity_point(key, now.replace(tzinfo=None), rh, days=30)' in coordinator
     assert '"humidity_history_14d": self.store.room_humidity_points' in coordinator
     assert 'RAUMLUFTFEUCHTE · ${Math.min(days, 30)} TAGE · %' in card
-    assert 'this._svgLine(r.humidity_history_14d || [], "humidity_percent")' in card
+    assert 'this._svgLine(this._roomChartHistory(r).humidity_history_14d || [], "humidity_percent")' in card  # 0.26.4.7: chart series served on demand (dashboard_transport)
     assert 'FEUCHTE · ${days} TAGE' not in card
 
 

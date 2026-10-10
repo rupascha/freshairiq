@@ -221,6 +221,7 @@ class RobustnessMonitor:
     source_events: int = 0
     coalesced_refreshes: int = 0
     weather_fetch_failures: int = 0
+    weather_last_failure_reason: str | None = None
     listener_sources: int = 0
     last_success_at: str | None = None
     last_failure_at: str | None = None
@@ -235,8 +236,10 @@ class RobustnessMonitor:
     def coalesced_refresh(self) -> None:
         self.coalesced_refreshes += 1
 
-    def weather_failure(self) -> None:
+    def weather_failure(self, reason: str | None = None) -> None:
         self.weather_fetch_failures += 1
+        if reason:
+            self.weather_last_failure_reason = str(reason)[:48]
 
     def success(self, started: datetime) -> None:
         now = datetime.now().astimezone()
@@ -261,6 +264,7 @@ class RobustnessMonitor:
             "source_events": self.source_events,
             "coalesced_refreshes": self.coalesced_refreshes,
             "weather_fetch_failures": self.weather_fetch_failures,
+            "weather_last_failure_reason": self.weather_last_failure_reason,
             "listener_sources": self.listener_sources,
             "last_success_at": self.last_success_at,
             "last_failure_at": self.last_failure_at,

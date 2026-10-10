@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.4.5";
+const FAIQ_VERSION = "0.26.4.9";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -19,8 +19,14 @@ const FAIQ_UI = Object.freeze({
   "iq.and": { de: " und ", en: " and " },
   "iq.active": { de: "aktiv", en: "active" },
   "iq.remaining": { de: "{count} min übrig", en: "{count} min remaining" },
-  "iq.more_rooms_ok": { de: "{count} weitere Räume ohne akuten Handlungsbedarf", en: "{count} more rooms without urgent action needed" },
-  "iq.all_rooms_ok": { de: "Alle {count} Räume ohne akuten Handlungsbedarf", en: "All {count} rooms without urgent action needed" },
+  "iq.more_rooms_ok": { de: "{count} weitere Räume ohne akuten Lüftungsbedarf", en: "{count} more rooms without an urgent need to air" },
+  "iq.all_rooms_ok": { de: "Alle {count} Räume ohne akuten Lüftungsbedarf", en: "All {count} rooms without an urgent need to air" },
+  "iq.mould_flagged_one": { de: "Schimmelrisiko: 1 Raum auffällig", en: "Mould risk: 1 room flagged" },
+  "iq.mould_flagged_many": { de: "Schimmelrisiko: {count} Räume auffällig", en: "Mould risk: {count} rooms flagged" },
+  "iq.priority_waiting_one": { de: "{rooms} könnte gelüftet werden – besser noch warten.", en: "{rooms} could be aired – better to wait for now." },
+  "iq.priority_waiting_many": { de: "{rooms} könnten gelüftet werden – besser noch warten.", en: "{rooms} could be aired – better to wait for now." },
+  "iq.room_waiting": { de: "Lüften möglich · noch warten", en: "Could air · wait for now" },
+  "iq.removable_possible": { de: "≈ {ml} ml möglich", en: "≈ {ml} ml possible" },
   "iq.night": { de: "Nacht", en: "Night" },
   "iq.notice": { de: "Hinweis", en: "Notice" },
   "iq.monitored": { de: "im Blick", en: "monitored" },
@@ -53,597 +59,52 @@ const FAIQ_UI = Object.freeze({
 // Frontend locale bridge: the historical dashboard copy is authored in German.
 // Keep that rendering path untouched and translate the rendered UI for English
 // Home Assistant profiles. English is also the fallback for non-German locales.
-const FAIQ_NATIVE_EN = [["Mittelwert (empfohlen): Durchschnitt aller gültigen Werte. Median: mittlerer Wert, robust gegen einzelne Ausreißer – besonders ab drei Sensoren. Minimum: niedrigste gemessene Temperatur. Maximum: höchste gemessene Temperatur.", "Mean (recommended): average of all valid values. Median: middle value, robust against individual outliers – especially with three or more sensors. Minimum: lowest measured temperature. Maximum: highest measured temperature."],["Mittelwert (empfohlen): Durchschnitt aller gültigen Werte. Median: mittlerer Wert, robust gegen einzelne Ausreißer – besonders ab drei Sensoren. Minimum: trockenste Messstelle. Maximum: feuchteste Messstelle.", "Mean (recommended): average of all valid values. Median: middle value, robust against individual outliers – especially with three or more sensors. Minimum: driest measurement point. Maximum: most humid measurement point."],["Mittelwert (empfohlen)", "Mean (recommended)"],["Median (robust)", "Median (robust)"],["Ein Sensor reicht vollständig aus. Bei mehreren Sensoren werden gültige Werte nach der gewählten Auswertung zusammengefasst. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter.", "One sensor is fully sufficient. With multiple sensors, valid values are combined using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors."],["Für eine Lüftungsauswertung muss mindestens ein Klimasensor genügend neue Messwerte liefern. Weitere Sensoren mit mindestens einem neuen Messwert dürfen danach mit einfließen.", "For ventilation-session evaluation, at least one climate sensor must provide enough new measurements. Additional sensors with at least one new measurement may then participate."],["Tür wird als Durchgang genutzt und von außen zugezogen","Door is used as a passage and pulled shut from outside"],["Nur aktivieren, wenn ein echter Drei-Zustands-Sensor am Türbeschlag die Griff- bzw. Beschlagstellung erkennt. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.","Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. Do not enable this option for three-state helpers created from multiple standard contact sensors."],["Diese Tür wird regelmäßig als Durchgang genutzt und von außen nur zugezogen","This door is regularly used as a passage and may only be pulled shut from outside"],["Temperatur und Luftfeuchte sind die Basis für berechnete Räume. Öffnungskontakte sind optional und können auch aus einem anderen Raum stammen. Ohne Kontakt bleibt der Raum klimatisch aktiv und FreshAirIQ kann indirekte Lüftungswirkung erkennen und lernen. Änderungen werden in dieselbe Home-Assistant-Konfiguration geschrieben.","Temperature and humidity are the basis for calculated rooms. Opening contacts are optional and may also be located in another room. Without a contact, the room remains climate-active and FreshAirIQ can detect and learn indirect ventilation effects. Changes are written to the same Home Assistant configuration."],["Optional und ohne Einfluss auf die bestehende Feuchte-, Lüftungs- oder ml-Prognoseberechnung: Referenzsensoren beschreiben besondere Zuluftbereiche. VOC/TVOC misst gasförmige Luftschadstoffe, PM2.5 misst sehr feinen Schwebstaub bis 2,5 µm und Helligkeitssensoren messen Beleuchtungsstärke in Lux. Diese Zusatzwerte können ergänzende Empfehlungen liefern und werden – wenn aktiviert – für die 30-Tage-Diagnostik gesammelt, damit spätere FreshAirIQ-Funktionserweiterungen darauf aufbauen können.","Optional and without affecting the existing humidity, ventilation or ml forecast calculations: reference sensors describe special incoming-air zones. VOC/TVOC measures gaseous air pollutants, PM2.5 measures very fine airborne particles up to 2.5 µm, and illuminance sensors measure light level in lux. These additional values can provide supplementary recommendations and, when enabled, are collected for the 30-day diagnostics so future FreshAirIQ features can build on them."],["Wähle, wie FreshAirIQ die Haus-Lüftungsschwelle bestimmt. Automatisch (empfohlen): FreshAirIQ teilt die erwartete tägliche Feuchteproduktion durch vier und begrenzt das Ergebnis auf 6–12 % der aktuell überwachten Wassermenge. Von Mai bis September wird die Schwelle morgens vor 09:00 Uhr bzw. abends ab 19:00 Uhr um 25 % gesenkt, wenn die Außenluft mindestens 2 °C kühler als die mittlere Raumtemperatur ist. Gesundheits-, Schimmel- und kritische CO₂-Regeln haben Vorrang.","Choose how FreshAirIQ determines the house ventilation threshold. Automatic (recommended): expected daily moisture generation is divided by four and constrained to 6–12% of currently monitored water. From May through September the threshold is reduced by 25% before 09:00 and from 19:00 when outside air is at least 2°C cooler than average indoor temperature. Health, mould and critical CO₂ rules take priority."],["Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.","Default: normal outdoor air. Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings."],["Optional je Öffnung: Ordne Temperatur-/Feuchtereferenz und bei Bedarf das zugehörige Rollo bzw. die Jalousie direkt diesem Fenster oder dieser Tür zu. Beispiel: Tür zum Wintergarten → beide Wintergarten-Sensoren; normales Außenfenster → Referenz leer lassen. Rollos/Jalousien werden immer kontaktbezogen zugeordnet. Die Zusatzzuordnung verändert die bestehende Feuchte-/Lüftungsphysik nicht eigenmächtig.","Optional: Assign a local temperature and humidity reference to openings that do not lead to normal outdoor air. Example: conservatory door → select both conservatory sensors. Outdoor windows → leave empty. Temperature and humidity must always be selected as a pair from the same air zone."],["Referenzsensoren beschreiben die Luft, die durch diese Lüftungsöffnung einströmt. Standard ist die normale Außenluft. Setze hier nur dann eine andere Temperatur, wenn der gesamte Raum in einen anderen Luftbereich lüftet, z. B. Wintergarten. Temperatur und Feuchte müssen denselben Luftbereich messen. Bei unterschiedlichen Fenstern/Türen erfolgt die genaue Zuordnung pro Kontakt im FreshAirIQ-Dashboard.","Reference sensors describe the air entering through this ventilation opening. The default is normal outdoor air. Set a different temperature here only if the entire room ventilates into another air zone, for example a conservatory. Temperature and humidity must measure the same air zone. If windows/doors lead to different air zones, assign the reference precisely per contact in the FreshAirIQ dashboard."],["Optional. PM2.5-Sensoren messen sehr feinen Schwebstaub mit Partikeln bis 2,5 µm, typischerweise in µg/m³; solche Sensoren stecken z. B. in Luftqualitätsmessgeräten und manchen Luftreinigern. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt.","Optional. PM2.5 sensors measure very fine airborne particles up to 2.5 µm, typically in µg/m³; such sensors are found, for example, in air-quality monitors and some air purifiers. They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions."],["Optionaler Ersatz für die Außenluft-Temperatur dieses Raums, z. B. wenn die Lüftungsöffnung in einen Wintergarten führt. Temperatur und Referenzfeuchte müssen denselben Luftbereich messen. Für Räume mit Öffnungen in unterschiedliche Luftbereiche die feinere Zuordnung pro Fenster/Tür verwenden; sie ist sowohl in Geräte & Dienste als auch in den FreshAirIQ-Einstellungen verfügbar.","Optional replacement for the outdoor-air temperature used for this room, for example when its ventilation opening leads into a conservatory. Temperature and reference humidity must measure the same air zone. For rooms with openings into different air zones, use the more precise assignment per window/door; it is available both under Devices & services and in the FreshAirIQ settings."],["FreshAirIQ kann sofort ohne Raumkonfiguration hinzugefügt werden. Außenluftquelle, Räume und alle weiteren Einstellungen sind hier optional und können anschließend über Geräte & Dienste oder das Dashboard-Zahnrad eingerichtet werden. Solange notwendige Klimaquellen fehlen, erstellt FreshAirIQ keine Lüftungsberechnungen – das Dashboard bleibt trotzdem verfügbar.","FreshAirIQ can be added immediately without configuring any rooms. The outdoor-air source, rooms and all other settings are optional here and can be configured later under Devices & services or via the dashboard settings button. Until the required climate sources are available, FreshAirIQ does not perform ventilation calculations, but the dashboard remains available."],["Optional. Ein Helligkeits-/Beleuchtungsstärkesensor misst Licht in Lux (lx), z. B. ein Zigbee-Helligkeitssensor oder der Lux-Sensor eines Präsenzmelders. Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Verschattungs-Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt.","Optional. An illuminance sensor measures light in lux (lx), for example a Zigbee light sensor or the lux sensor of an occupancy detector. It does not change the humidity/ventilation physics or the ml forecast. It can provide supplementary shading recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions."],["VOC/TVOC, PM2.5 und Helligkeit sind vollständig optional. Sie verändern weder Feuchte-/Lüftungsphysik, ml-Prognose noch das Lernmodell. Bei aktivierter Nutzung können sie Zusatzempfehlungen erzeugen und werden in der lokalen 30-Tage-Diagnostik für spätere Funktionserweiterungen mitgeführt. Pollen und Wind bleiben separate Außenluft-Einflüsse.","VOC/TVOC, PM2.5 and illuminance are fully optional. They do not change humidity/ventilation physics, the ml forecast or the learning model. When enabled, they may produce supplemental recommendations and are included in the local 30-day diagnostics for future feature development. Pollen and wind remain separate outdoor-air influences."],["Schrittweise FreshAirIQ-Konfiguration direkt in Home Assistant. Wie bei einer guten nativen Config-Flow-Einrichtung sind Grunddaten und erweiterte Einstellungen getrennt; jede Seite erklärt Zweck, Standardwert und – wo sinnvoll – ein Beispiel. Gespeicherte Änderungen gelten sofort und werden identisch im Dashboard-Zahnrad verwendet.","Step-by-step FreshAirIQ configuration directly in Home Assistant. As in a well-structured native config flow, basic data and advanced settings are separated; each page explains the purpose, default value and, where useful, an example. Saved changes take effect immediately and are used identically by the dashboard settings."],["Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen (gasförmige Stoffe z. B. aus Reinigern, Möbeln oder Kochdämpfen). Keine Änderung der Feuchte-/Lüftungsphysik oder ml-Prognose. Kann Zusatzempfehlungen liefern; aktivierte Werte werden für die 30-Tage-Diagnostik und spätere Funktionserweiterungen gesammelt.","Optional. VOC/TVOC sensors measure volatile organic compounds (gaseous substances, for example from cleaning products, furniture or cooking fumes). They do not change the humidity/ventilation physics or the ml forecast. They can provide supplementary recommendations; enabled values are collected for the 30-day diagnostics and future feature extensions."],["Außenluftquelle ändern oder bewusst leer lassen. FreshAirIQ kann auch ohne Außenquelle installiert bleiben; Lüftungsberechnungen starten erst, sobald eine gültige Quelle vorhanden ist. Ohne Wetter-Entität müssen Außentemperatur und Außenluftfeuchtigkeit immer gemeinsam gesetzt werden.","Change the outdoor-air source or deliberately leave it empty. FreshAirIQ can remain installed without an outdoor source; ventilation calculations start only when a valid source is available. Without a weather entity, outdoor temperature and outdoor humidity must always be configured together."],["Optional konfigurierbare Außenluft-Referenz. Ohne Quelle bleibt FreshAirIQ installiert und das Dashboard verfügbar, es werden aber keine verlässlichen Lüftungsberechnungen erzeugt. Ohne Wetter-Entität müssen Außen-Temperatur und Außen-Luftfeuchtigkeit gemeinsam gesetzt werden.","Optional outdoor-air reference. Without a source, FreshAirIQ remains installed and the dashboard stays available, but no reliable ventilation calculations are produced. Without a weather entity, outdoor temperature and outdoor humidity must be configured together."],["Referenztemperatur und Referenzfeuchte können bei besonderen Zuluftbereichen in die Berechnung eingehen. CO₂, VOC/TVOC, PM2.5 und Helligkeit werden derzeit nur protokolliert und für spätere Funktionen gesammelt; sie verändern die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.","Reference temperature and humidity can affect calculations for special supply-air zones. CO₂, VOC/TVOC, PM2.5 and illuminance are currently logged for future features and do not change the current moisture recommendation."],["Lege den Raum mit Sensoren, Größe und Eigenschaften an. Danach folgen Himmelsrichtungen und Kontaktverzögerungen. Standardwerte sind direkt an den Feldern erklärt. Änderungen werden in derselben Konfiguration gespeichert, die auch das Dashboard-Zahnrad verwendet.","Configure the room with its sensors, size and properties. Contact orientations and delays follow. Default values are explained directly at the fields. Changes are stored in the same configuration used by the dashboard settings."],["Wenn mindestens ein maßgeblicher Tracker sicher zuhause ist, können Bewohner ohne Tracker als anwesend angenommen werden. Sind alle maßgeblichen Tracker sicher außer Haus, können sie als abwesend angenommen werden. Unsichere Zustände werden vorsichtig behandelt.","If at least one relevant tracker is definitely home, residents without trackers may be assumed present. If all relevant trackers are definitely away, they may be assumed absent. Uncertain states are handled conservatively."],["Wähle den Bereich, den du ändern möchtest. Jede bestätigte Unterseite wird sofort gespeichert; „Fertig“ schließt nur noch die Raumeinstellungen. Änderungen werden in derselben Konfiguration gespeichert, die auch das Dashboard-Zahnrad verwendet.","Select the section you want to change. Each confirmed subpage is saved immediately; “Done” only closes the room settings. Changes are stored in the same configuration used by the dashboard settings."],["Ordne jedem Fenster-/Türkontakt bei Bedarf ein eigenes Temperatur-/Feuchte-Paar und das zugehörige Rollo bzw. die Jalousie zu. Beide Referenzsensoren müssen denselben Luftbereich messen. Änderungen werden nach Bestätigung sofort gespeichert.","Assign a temperature/humidity pair to individual window/door contacts when needed. Both sensors must measure the same air zone. Confirmed changes are saved immediately."],["Hier steuerst du, wie FreshAirIQ Lüftungen bewertet und Empfehlungen priorisiert. Jede Einstellung zeigt den dokumentierten Standardwert und eine Erklärung; für die meisten Haushalte sind die Standardwerte die richtige Ausgangsbasis.","Here you control how FreshAirIQ evaluates ventilation and prioritizes recommendations. The documented defaults are suitable for most households."],["Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner und/oder Bügelstation. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.","Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer and/or ironing station. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it."],["Standard: normale Außenluft. Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.","Default: normal outdoor air. Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air."],["Nur nötig, wenn ein Querlüftungspaar über verschiedene Stockwerke/Bereiche hinweg physisch verbunden ist. Gleiches Format. Beispiel: wohnzimmer+fitnessraum. Paare im gleichen Bereich brauchen hier keinen Eintrag. Beispiel: leer.","Only required when a cross-ventilation pair is physically connected across different floors/areas. Same format. Example: living_room+gym. Pairs within the same area need no entry here."],["Es wurde eine bestehende Ventilation-Assistant-Konfiguration gefunden. FreshAirIQ kann Außenluftquelle, Räume, Lüftungskontakte und Raumparameter übernehmen. Vorhandene Lernwerte werden beim ersten Start ebenfalls übernommen.","An existing Ventilation Assistant configuration was found. FreshAirIQ can import the outdoor reference, rooms, ventilation contacts and room parameters. Existing learning values are also migrated on first start."],["Optional. Die Gerätezuordnung wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Sie verändert die aktuelle Lüftungs-/ml-Empfehlung nicht und FreshAirIQ schaltet das Gerät nicht automatisch.","Optional. This value or device assignment is currently logged for future FreshAirIQ features. It does not change the current ventilation/moisture recommendation and no device is controlled automatically. Default: not set. Example: fan.air_purifier."],["Ordne jedem Kontakt die tatsächliche Himmelsrichtung zu. Standard: Unbekannt. Beispiel: Fenster zur Morgensonne = Ost; gegenüberliegendes Fenster = West. Diese Information verbessert Wind- und Querlüftungsbewertung.","Assign the actual compass orientation to each contact. Default: Unknown. Example: a window facing the morning sun = East; the opposite window = West. This information improves wind and cross-ventilation assessment."],["Für {entry_title} konfigurierte Pflicht-Entitäten existieren nicht mehr in Home Assistant: {entities}. Öffne die FreshAirIQ-Einstellungen und ersetze die fehlenden Außen-, Raumsensor- oder Fenster-/Tür-Referenzen.","Required entities configured for {entry_title} no longer exist in Home Assistant: {entities}. Open FreshAirIQ settings and replace the missing outdoor, room sensor, or window/door references."],["Definiere nur echte Luftwege, bei denen zwei Räume gleichzeitig geöffnet einen wirksamen Durchzug bilden können. Standard: leer, also kein zusätzlicher Querlüftungsbonus. Verfügbare Raumschlüssel: {room_keys}","Define only real airflow paths where two rooms opened at the same time can create effective cross ventilation. Default: empty, so no additional cross-ventilation bonus. Available room keys: {room_keys}"],["Diese Geräte werden derzeit nur protokolliert. Die Daten werden für spätere FreshAirIQ-Funktionen gesammelt; aktuell verändern sie die Lüftungs-/ml-Empfehlung nicht und werden nicht automatisch geschaltet.","These devices are currently logged for future FreshAirIQ features. They do not change the current ventilation/moisture recommendation and are not controlled automatically."],["Zeit, die ein Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftungssession startet. Standard: 0 s. Beispiel: 120 s ignoriert kurzes Türöffnen und zählt erst nach zwei Minuten als Lüftung.","Time a contact must remain continuously open before FreshAirIQ starts a ventilation session. Default: 0 s. Example: 120 s ignores brief door openings and counts the contact as ventilation only after two minutes."],["Dies ist dieselbe Profilstruktur wie im Dashboard-Zahnrad. Für komfortable Raum- und Endgeräte-Zuordnung ist das Dashboard-Zahnrad empfohlen; hier bleibt die vollständige native Bearbeitbarkeit erhalten.","This is the same profile structure used by the dashboard settings. The dashboard is recommended for convenient room and device assignment; full native editability remains available here."],["Optionaler Ersatz für die Außenluft-Feuchte. Nur zusammen mit der passenden Referenztemperatur desselben Luftbereichs verwenden. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.","Optional replacement for outdoor-air humidity. Use only together with the matching reference temperature from the same air zone. FreshAirIQ uses both values to calculate the absolute humidity of the incoming air."],["Technische native Darstellung derselben persönlichen Profile wie im Dashboard. Das Format bleibt lokal; einfacher ist die grafische Bearbeitung über das FreshAirIQ-Zahnrad. Beispiel: Paul → Wohnzimmer.","Native technical representation of the same personal profiles used by the dashboard. The data stays local; graphical editing in the FreshAirIQ dashboard settings is easier."],["Optional: Tür/Fenster zu einem anderen Luftbereich können ein eigenes Sensorpaar erhalten. Beispiel Wintergarten: Temperatur und Feuchte des Wintergartens gemeinsam auswählen. Außenfenster leer lassen.","Optional: Windows/doors into another air zone can use their own sensor pair. For a conservatory, select both its temperature and humidity sensors. Leave outdoor openings empty."],["Diese Angaben helfen bei Feuchteproduktion, Anwesenheit und Nachtprognosen. Standard: Haus, 2 Erwachsene, 0 Kinder, keine Tracker/Präsenzsensoren, keine Haustiere, Nacht 22:00–07:00, Nachtprognose an.","Household, presence and night model. Residents with a phone can be assigned through person/device_tracker entities; residents without phones remain supported."],["Du kannst alle verfügbaren geeigneten binary_sensor-Entitäten auswählen. Sie dienen als weiche Zusatzinformation; ein einzelnes Bewegungsereignis gilt nicht automatisch als sicherer Menschennachweis.","You can select any suitable available binary_sensor entities. They are soft supporting evidence; a single motion event is not automatically treated as confirmed human presence."],["Passt Sprache und Komfortkontext an deinen Haushalt an. Die physikalische Prognose sowie Gesundheits-, Schimmel- und CO₂-Grenzen bleiben unverändert. Standard: aktiv, ausgewogen, Nacht automatisch.","Adapts wording and comfort context to your household. Physical forecasts and health, mould and CO₂ safety limits remain unchanged. Defaults: enabled, balanced, automatic night handling."],["Optional: Für jede Öffnung in einen anderen Luftbereich ein vollständiges Temperatur-/Feuchte-Sensorpaar auswählen. Normale Außenfenster bleiben leer und verwenden die Außen- bzw. Raumreferenz.","Optional: For each opening into another air zone, select a complete temperature/humidity sensor pair. Outdoor windows stay empty and use the normal outdoor or room reference."],["Zentrale Stelle für Bewohner, Anwesenheit, Komfort und Nacht. Dieselben Werte werden auch im Dashboard-Zahnrad verwendet; Namen und Tracker werden nicht noch einmal an anderer Stelle gepflegt.","Central place for residents, presence, comfort and night settings. The same values are used by the dashboard settings; names and trackers are not maintained a second time elsewhere."],["Kommagetrennt in derselben Reihenfolge wie die Kinder-Tracker. Kinder ohne Tracker dürfen ebenfalls benannt werden. Namen werden nicht für direkte Handlungsaufforderungen an Kinder verwendet.","Comma-separated in the same order as child trackers. Children without trackers may also be named. Names are not used for direct action prompts to children."],["Diese Werte werden nur zur Kostenschätzung des durch Lüften verlorenen Wärmeinhalts verwendet. Die Standardwerte sind Näherungen und können an deinen Tarif bzw. deine Anlage angepasst werden.","These values are used only to estimate the cost of reheating the heat lost through ventilation. The default values are approximations and can be adjusted to your tariff or heating system."],["Grunddaten deines Zuhauses. Geräte & Dienste und das Dashboard-Zahnrad bearbeiten dieselbe FreshAirIQ-Konfiguration; eine Änderung an einer Stelle ist an der anderen Stelle ebenfalls aktiv.","Core home data. The structure mirrors the dashboard settings and both interfaces edit the same ConfigEntry values."],["Format: raum_a+raum_b. Mehrere Paare mit Komma trennen. Beispiel: wohnzimmer+schlafzimmer,arbeitszimmer+kinderzimmer. Ein Bonus gilt nur, wenn beide zugehörigen Lüftungskontakte aktiv sind.","Format: room_a+room_b. Separate multiple pairs with commas. Example: living_room+bedroom,office+child_room. A bonus applies only when both associated ventilation contacts are active."],["Kommagetrennt in derselben Reihenfolge wie die Erwachsenen-Tracker. Zusätzliche Namen dürfen Bewohner ohne eigenen Tracker benennen. Wird nur lokal für persönliche Ansprache verwendet.","Comma-separated in the same order as the adult trackers. Additional names may represent residents without their own tracker. Used locally for personal wording only."],["Aus = konfigurierte Helligkeitssensoren werden nicht eingelesen, nicht angezeigt und nicht zur Präzisierung von Verschattungs-Empfehlungen verwendet. Die Zuordnung bleibt gespeichert.","Off = configured illuminance sensors are not read, shown or used to refine shading recommendations. The room assignment remains stored."],["Standard: Benachrichtigungen aus, keine Empfänger, Ebene „Haus“, alle Räume, Lüften/Schließen/Abschluss/Kühlung/Schimmel/Sensorfehler an, Nacht/Lernen aus, Mindestabstand 90 Minuten.","Default: notifications off, no recipients, scope “House”, all rooms, ventilate/close/completion/cooling/mould/sensor-error notifications on, night/learning off, minimum interval 90 minutes."],["Technische Feineinstellungen der Lüftungslogik. Für die meisten Haushalte sollten die Standardwerte unverändert bleiben. Änderungen werden nach dem Speichern sofort übernommen.","Adaptive ventilation logic. By default the threshold scales with dwelling size and moisture generation, targeting roughly 3–5 meaningful ventilation cycles per day."],["Verzögerung je Fenster-/Türkontakt. Standard: 0 s. Beispiel: 120 s = erst nach zwei Minuten offen zählt der Kontakt als Lüftung. Die bestätigte Seite wird sofort gespeichert.","Delay per window/door contact. Default: 0 s. Example: 120 s means the contact counts as ventilation only after it has remained open for two minutes. The confirmed page is saved immediately."],["Eigene Stockwerke/Zonen anlegen, sortieren und verwalten. Standard: keine zusätzliche Vorauswahl; vorhandene Raumzuordnungen werden automatisch übernommen. Aktuell: {levels}","Create, sort and manage custom floors/zones. Default: no additional preset; existing room assignments are adopted automatically. Current: {levels}"],["Erlaubt sind 1–365 Tage. Lüftungs- und Klimaergebnisse werden langfristig als kompakte Tageswerte gespeichert; hochaufgelöste Temperaturpunkte bleiben auf 30 Tage begrenzt.","Allowed range: 1–365 days. Compact daily ventilation and climate aggregates are retained long term; high-resolution temperature points remain limited to 30 days."],["Konfiguriere Raum {room_count}. Nach dem Speichern folgen die Himmelsrichtungen der ausgewählten Fenster/Türen. Standardwerte und optionale Felder sind direkt beschrieben.","Configure room {room_count}. Enter either direct volume in m³ OR length × width × height. Rooms may also be shown while excluded from calculations."],["Aus = konfigurierte VOC-/TVOC-Sensoren werden nicht eingelesen, nicht angezeigt und nicht für Zusatzempfehlungen berücksichtigt. Die Zuordnung im Raum bleibt gespeichert.","Off = configured VOC/TVOC sensors are not read, shown or used for supplemental recommendations. The room assignment remains stored."],["Gib nur den Anteil der aktuell überwachten Gesamtwassermenge an, der als entfernbares Feuchtepotenzial erreicht werden muss, bevor die normale Hauslüftung empfohlen wird.","Set only the share of currently monitored total water that must be removable before normal whole-house ventilation is recommended."],["Aus, nur bei erkannten Problemen, täglich nachts oder wöchentlich. Ein künftiger Nachtversand wird pro Installation deterministisch zwischen 02:00 und 03:59 Uhr verteilt.","Off, only for detected problems, nightly, or weekly. A future nightly upload is deterministically distributed between 02:00 and 03:59 local time."],["Sensoren aus der Auswahl oben, die auch bei Haustieren zuverlässig echte menschliche Präsenz erkennen. Diese Signale dürfen im Haustiermodus stärker gewichtet werden.","Sensors from the selection above that reliably detect real human presence even with pets. These signals may be weighted more strongly in pet mode."],["Aktivieren, wenn Haustiere Bewegungsmelder auslösen können. Klassische Bewegungsmelder werden dann deutlich schwächer gewichtet, damit kein Phantom-Bewohner entsteht.","Enable when pets can trigger motion sensors. Conventional motion sensors are then weighted much less strongly to avoid phantom occupants."],["Aus = konfigurierte PM2.5-Sensoren werden nicht eingelesen, nicht angezeigt und nicht für Zusatzempfehlungen berücksichtigt. Die Zuordnung im Raum bleibt gespeichert.","Off = configured PM2.5 sensors are not read, shown or used for supplemental recommendations. The room assignment remains stored."],["Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.","Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority."],["Entfeuchten toleriert für wirksamen Feuchteabbau etwas mehr Temperaturverlust. Komfort balanciert Feuchte und Energie. Sommer kühlen verwendet nur die Kühlparameter.","Dehumidify tolerates somewhat more temperature loss for effective moisture removal. Comfort balances moisture and energy. Summer cooling uses cooling-specific parameters only."],["Zeitraum für die intelligente Live-Prognose im Dashboard und in Raumdetails. Standard: 5 Minuten. Größere Werte reagieren träger, zeigen aber längerfristige Effekte.","Choose the time horizon used by the intelligent short-term forecast. The same value is used by the dashboard, detail view and forecast values."],["Optional. Der Messwert wird derzeit protokolliert und für spätere FreshAirIQ-Funktionen gesammelt. Er verändert die aktuelle Feuchte-/ml-Lüftungsempfehlung nicht.","Optional. This sensor value is currently logged for future FreshAirIQ features and does not change the current ventilation/moisture recommendation. Default: not set. Example: sensor.living_room_illuminance."],["Bestimmt die grundsätzliche Priorität der Recommendation Engine. Standard: Komfort. Nach der Auswahl zeigt FreshAirIQ nur die dazu passenden Feineinstellungen.","Choose the priority. FreshAirIQ then shows only the fine-tuning inputs relevant to that profile."],["„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.","“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."],["Setzt alle globalen FreshAirIQ-Optionen auf die dokumentierten Standardwerte zurück. Räume, Sensorzuordnungen und gespeicherte Statistiken bleiben erhalten.","Restores all FreshAirIQ options to documented defaults. Rooms, sensors and statistics remain unchanged."],["Orientierungswert für das Ende einer erfolgreichen Entfeuchtung. FreshAirIQ berücksichtigt zusätzlich Restpotenzial, Prognose und Mindest-/Maximaldauer.","Guideline value for the end of successful dehumidification. FreshAirIQ also considers remaining potential, forecast and minimum/maximum duration."],["Wie lange muss ein Kontakt ununterbrochen offen sein, bevor FreshAirIQ eine Lüftung erkennt? Standard: 0 s. Beispiel: 120 s ignoriert kurzes Türöffnen.","Optional: time a contact must stay open before FreshAirIQ treats ventilation as active. 0 s reacts immediately."],["Beschreibt ausschließlich das Gebäude. Bewohner und Anwesenheit werden getrennt im Bewohnerprofil gepflegt – dadurch gibt es keine doppelten Angaben.","Describes the building only. Residents and presence are maintained separately in the resident profile so the same values are not entered twice."],["Ab diesem normalen Feuchteniveau wird ein Raum eher zum Lüftungskandidaten. Die absolute Feuchtedifferenz und das Potenzial müssen weiterhin passen.","Above this normal humidity level, a room is more likely to become a ventilation candidate. The absolute-humidity difference and potential must still be suitable."],["Lege den Raum vollständig an. Nach dem Speichern folgen Himmelsrichtungen und Kontaktverzögerungen. Jede bestätigte Seite wird sofort gespeichert.","Configure the room completely. After saving, contact orientations and contact delays follow. Each confirmed page is saved immediately."],["Wähle das Heizsystem für die Schätzung von Wiederaufheizkosten. Standard: Wärmepumpe. Im nächsten Schritt erscheinen nur passende Kostenparameter.","Select the heating system used to estimate reheating costs. Default: heat pump. The next step shows only the applicable cost parameters."],["Veraltetete Kompatibilitätsanzeige; Querlüftung wird vollständig auf der eigenen Seite „Querlüftung“ gepflegt. Beispiel: wohnzimmer+schlafzimmer.","Legacy compatibility display; cross ventilation is fully managed on the dedicated “Cross ventilation” page. Example: living_room+bedroom."],["Automatisch benötigt keinen weiteren Wert. Prozent und fester ml-Wert öffnen im nächsten Schritt ausschließlich das jeweils passende Eingabefeld.","Automatic needs no additional value. Percentage and fixed mL open only the relevant input on the next step."],["Optional. Nur zusammen mit einem Außen-Feuchtesensor verwenden. Dann ersetzt dieses Sensorpaar die Wetter-Entität für die aktuelle Außenluft.","Optional. Use only together with an outdoor humidity sensor. This sensor pair then replaces the weather entity for current outdoor air."],["Entfeuchten = Feuchteabbau hat Vorrang. Komfort = ausgewogene Entscheidung. Sommer kühlen = passive Abkühlung mit vertretbarem Feuchterisiko.","Dehumidify = moisture removal has priority. Comfort = balanced decision. Summer cooling = passive cooling with acceptable moisture risk."],["Räume anlegen, sortieren oder entfernen. Detailänderungen eines vorhandenen Raums sind zusätzlich direkt am jeweiligen Raum-Eintrag möglich.","Manage room structure here. Sensors, windows and other room details are edited directly on each room."],["Ab hier senkt FreshAirIQ die Anforderungen an die notwendige absolute Feuchtedifferenz, damit hohe Raumfeuchte schneller priorisiert wird.","Above this level, FreshAirIQ lowers the required absolute-humidity difference so high indoor humidity is prioritized sooner."],["Ordne jedem Kontakt die tatsächliche Himmelsrichtung zu. Standard: Unbekannt. Beispiel: Morgensonne = Ost, gegenüberliegende Seite = West.","Assign the actual compass orientation to each contact. Default: Unknown. Example: morning sun = East, opposite side = West."],["Wähle mindestens einen Kontakt, der diesen Raum tatsächlich belüftet. Das darf auch ein Fenster oder eine Tür in einem anderen Raum sein.","Select at least one contact that actually ventilates this room. It may also be a window or door located in another room."],["Nach dem Schließen wartet FreshAirIQ diese Zeit, damit sich Sensorwerte und Raumluft stabilisieren, bevor eine neue Empfehlung entsteht.","After closing, FreshAirIQ waits this long for sensor values and room air to stabilize before issuing a new recommendation."],["Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.","Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window."],["Für eine abweichende Fenster-/Tür-Referenz müssen Temperatur und Luftfeuchtigkeit gemeinsam aus demselben Luftbereich gewählt werden.","A local window/door reference requires both temperature and humidity from the same air zone."],["FreshAirIQ bewertet diese Geräte als zusätzliche Maßnahmen. Ohne explizite Home-Assistant-Aktion wird nichts automatisch geschaltet.","FreshAirIQ evaluates these devices as additional interventions. Nothing is controlled automatically without an explicit Home Assistant action."],["Nur bei aktivierter Helligkeitsnutzung. Präzisiert vorhandene Verschattungs-Empfehlungen; die Lüftungsberechnung bleibt unverändert.","Used only when illuminance input is enabled. It refines existing shading recommendations; ventilation calculations remain unchanged."],["Optional für Kompatibilitätsanalysen. Exakte Gerätenamen, Seriennummern und exakte Gerätemodelle werden nicht an den Hub übertragen.","Optional for compatibility analysis. Exact device names, serial numbers and exact device models are not sent to the Hub."],["Längere Sessions werden nicht als saubere Lernprobe verwendet, weil Wetter-, Heizungs- und Nutzungseinflüsse zunehmend dominieren.","Longer sessions are not used as clean learning samples because weather, heating and occupancy effects increasingly dominate."],["Selten benötigte Wartungsfunktionen. Raumzuordnungen und Sensoren werden nur dort verändert, wo dies ausdrücklich beschrieben ist.","Maintenance functions that are rarely needed. Room assignments and sensors are changed only where this is explicitly stated."],["Einstellungen für die lokale Auswertung. Lernwerte selbst werden automatisch von FreshAirIQ aufgebaut und persistent gespeichert.","Settings for local analysis. Learned values are built automatically by FreshAirIQ and stored persistently."],["Lege die Himmelsrichtung jedes Lüftungskontakts fest. Standard: Unbekannt. Beispiel: Morgensonne = Ost, gegenüberliegend = West.","Set the compass direction for each ventilation contact as part of room setup."],["Näherungsfaktor für kältere Innenoberflächen. Niedrigere Werte bedeuten stärkere angenommene Abkühlung Richtung Außentemperatur.","Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature."],["Unterscheidet u. a. freistehendes Haus, Doppelhaushälfte, Reihenmittel-/Reihenendhaus, Wohnung, Maisonette und Mehrfamilienhaus.","Distinguishes detached house, semi-detached house, mid/end-terrace house, apartment, maisonette and multi-family building, among others."],["Oberhalb dieses Index wird bei aktivem Veto eine normale Lüftung verschoben; kritisches Schimmel-/CO₂-Risiko bleibt priorisiert.","Above this index, normal ventilation is postponed when the veto is active; critical mould/CO₂ risk remains prioritized."],["Die Feuchtedifferenzen sind widersprüchlich: Schließ-Differenz ≤ Mindestdifferenz bei hoher Feuchte ≤ normale Mindestdifferenz.","Humidity differences are inconsistent: close difference ≤ high-humidity minimum difference ≤ normal minimum difference."],["Gib ausschließlich das entfernbare Feuchtepotenzial in ml an, ab dem FreshAirIQ eine normale Hauslüftung als sinnvoll bewertet.","Set only the removable moisture potential in mL from which FreshAirIQ considers normal whole-house ventilation worthwhile."],["Übernimmt die vorhandene ältere FreshAirIQ-Konfiguration, damit Räume und Sensorzuordnungen nicht neu angelegt werden müssen.","Default: on. Imports the existing legacy FreshAirIQ configuration so rooms and sensor assignments do not need to be recreated."],["Sendet eine Meldung, wenn weiterer Luftaustausch keinen ausreichenden Nutzen mehr bringt oder Komfortgrenzen erreicht werden.","Sends a notification when further air exchange no longer provides enough benefit or comfort limits are reached. Default: on."],["Ordne den erwachsenen Bewohnern ihre primären person/device_tracker-Entitäten zu. Mehrere Bewohner können ausgewählt werden.","Assign the primary person/device_tracker entities to adult residents. Multiple residents can be selected."],["Die persönlichen Bewohnerprofile enthalten ungültige Daten. Bitte die Zuordnung prüfen oder im Dashboard-Zahnrad bearbeiten.","The resident profile assignments are invalid. Use a JSON object or edit them from the FreshAirIQ dashboard settings."],["Aktivieren setzt nur globale Optionen auf dokumentierte Standardwerte zurück; Räume und Sensorzuordnungen bleiben erhalten.","Default: off. Enabling resets only global options to documented defaults; rooms and sensor assignments remain."],["Stockwerke und Zonen sind frei definierbar. Auch Zwischengeschosse, Anbauten, Wintergärten oder Außenbereiche sind möglich.","Floors and zones are user-defined, including mezzanines, annexes, conservatories or outdoor areas."],["Ordne jedem Kontakt die tatsächliche Himmelsrichtung zu. Standard: Unbekannt. Die bestätigte Seite wird sofort gespeichert.","Assign the actual compass orientation to each contact. Default: Unknown. The confirmed page is saved immediately."],["Ein einzelner problematischer Raum kann ab diesem entfernbaren Potenzial unabhängig von der Haussumme priorisiert werden.","A single problematic room can be prioritized from this removable potential onward, independently of the house total."],["Ändere Raumdaten, Sensoren und Eigenschaften. Sobald du diese Seite speicherst, werden die Änderungen sofort übernommen.","Replace temperature, humidity or CO₂ sensors, change room size/zone or adjust ventilation contacts."],["Löscht gelernte Raum-Luftwechsel, Routinen und Nachtmodell. Raumkonfiguration, Optionen und Statistik bleiben erhalten.","Deletes learned room air-exchange values, routines and the night model. Room configuration, options and statistics remain intact."],["Passt nur Komfortsprache und nicht sicherheitskritische Gewichtungen an. Die physikalische Prognose bleibt unverändert.","Adjusts comfort wording and non-safety-critical weighting only. The physical forecast remains unchanged."],["Vergib Positionsnummern. Standard: aktuelle Reihenfolge. Niedrigere Zahl = weiter oben im Dashboard und in Raumlisten.","Assign position numbers. Default: current order. A lower number places the room higher in the dashboard and room lists."],["Eine erneute Empfehlung innerhalb der Nachlaufphase benötigt mindestens diesen zusätzlichen erwarteten Feuchtenutzen.","A repeated recommendation during the cooldown period requires at least this much additional expected moisture benefit."],["Optional für Kinder mit eigenem Tracker. Kinder ohne Tracker werden weiterhin über die Haushaltslogik berücksichtigt.","Optional for children with their own tracker. Children without a tracker are still handled by household logic."],["Wähle einen unbenutzten Bereich. Bereiche mit noch zugeordneten Räumen müssen zuerst von diesen Räumen gelöst werden.","Select an unused area. Areas that still contain rooms must first be removed from those rooms."],["Ändere Raumdaten, Sensoren, Feuchtequellen und Berechnungsgrundlagen. Jede bestätigte Seite wird sofort gespeichert.","Change room data, sensors, moisture sources and calculation parameters. Each confirmed page is saved immediately."],["Vor diesem Zeitpunkt empfiehlt FreshAirIQ normalerweise nicht allein wegen nachlassendem Zusatznutzen das Schließen.","Before this point, FreshAirIQ normally does not recommend closing solely because additional benefit is declining."],["Optional. Empfohlene Quelle für Außenluft und Wetterprognose. Kann jederzeit nach der Installation ergänzt werden.","Optional. Recommended source for outdoor air and weather forecasts. It can be added at any time after installation."],["„Mindestens einer offen“ reagiert auf jeden gewählten Kontakt; „Alle offen“ erst auf den gemeinsamen Lüftungspfad.","“At least one open” reacts to any selected contact; “All open” only to the shared ventilation path."],["Ist die verbleibende absolute Feuchtedifferenz kleiner, bringt weiteres Lüften meist nur noch wenig Feuchteertrag.","If the remaining absolute-humidity difference is smaller, further ventilation usually provides little additional moisture removal."],["Empfohlen: automatisch nach Haus-/Wohnungsgröße. Prozent- und fester mL-Modus bleiben für Spezialfälle verfügbar.","Recommended: adaptive to dwelling size. FreshAirIQ targets about four meaningful ventilation cycles per day and uses cool morning/evening opportunities earlier on warm days."],["Frei wählbarer Anzeigename, z. B. „Wohnzimmer“. Daraus erzeugt FreshAirIQ einen stabilen internen Raumschlüssel.","Custom display name, for example “Living room”. FreshAirIQ derives a stable internal room key from it."],["Wann genügend entfernbares Wasser für eine Empfehlung vorhanden ist. Standard: automatische Hausgrößen-Schwelle.","Defines when enough removable water is available for a recommendation. Default: automatic home-size threshold."],["Grenze für optionale VOC-/TVOC-basierte Zusatzempfehlungen. Kein Einfluss auf die kanonische Lüftungsberechnung.","Threshold for optional VOC/TVOC-based supplemental recommendations. It does not change canonical ventilation calculations."],["Wähle den Raum. Anschließend bekommt jeder Lüftungskontakt seine eigene Himmelsrichtung, z. B. Süd oder Nordost.","Select the room. Each ventilation contact can then receive its own compass direction, for example South or North-East."],["Optional. FreshAirIQ kann bei Wärme Verschattung empfehlen; keine automatische Steuerung ohne explizite Aktion.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Obergrenze einer normalen Lüftungsempfehlung. Sicherheits-/Gesundheitslogik kann weiterhin gesondert reagieren.","Upper limit for a normal ventilation recommendation. Safety/health logic may still react separately."],["Kritische PM2.5-Grenze für Diagnose und spätere Priorisierung. Kein Einfluss auf die bestehende Lüftungsphysik.","Critical PM2.5 threshold for diagnostics and future prioritisation. It does not change the existing ventilation physics."],["Erlaubt sind 1–120 Minuten. Für spontane Lüftungsentscheidungen sind 5–20 Minuten meist am aussagekräftigsten.","Allowed range: 1–120 minutes. For immediate ventilation decisions, 5–20 minutes is usually the most informative range."],["Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.","Fixed mode only: removable moisture potential from which this room may be prioritized individually."],["Kritische VOC-Grenze für Diagnose und spätere Priorisierung. Kein Einfluss auf die bestehende Lüftungsphysik.","Critical VOC threshold for diagnostics and future prioritisation. It does not change the existing ventilation physics."],["Grenze für optionale PM2.5-basierte Zusatzempfehlungen. Kein Einfluss auf die kanonische Lüftungsberechnung.","Threshold for optional PM2.5-based supplemental recommendations. It does not change canonical ventilation calculations."],["Nutzt Haushaltskontext für passendere Empfehlungen; Gesundheits- und Sicherheitsgrenzen bleiben unverändert.","Uses household context for more suitable recommendations; health and safety limits remain unchanged."],["Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.","Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”."],["Jeder Bereich erhält eine Positionsnummer. Standard: aktuelle Reihenfolge. Niedrigere Zahl = weiter oben.","Each area receives a position number. Default: current order. A lower number places it higher."],["Außen-Temperatur und Außen-Luftfeuchtigkeit müssen gemeinsam ausgewählt oder beide leer gelassen werden.","Outdoor temperature and outdoor humidity must be selected together or both left empty."],["Weitere fünf Minuten sollen mindestens diese zusätzliche Wassermenge entfernen, sonst sinkt der Nutzen.","Another five minutes should remove at least this additional amount of water; otherwise the benefit is considered too low."],["Anteil der aktuellen Wassermenge in der Hausluft, ab dem eine Lüftungsempfehlung ausgelöst werden kann.","Example: 10% of 6,000 mL currently monitored water gives a 600 mL ventilation threshold."],["Optional. Wird als alternative Kühl-/Heizmaßnahme berücksichtigt, aber nicht selbstständig geschaltet.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Wähle den Raum. Im nächsten Schritt kannst du jedem Lüftungskontakt eine eigene Himmelsrichtung geben.","Choose the room. The next step lets you assign an individual orientation to each ventilation contact."],["Grundprofil für Gebäudehülle und Luftaustausch. Entspricht exakt der Einstellung im Dashboard-Zahnrad.","Base profile for the building envelope and air exchange. This is the same setting used by the dashboard settings."],["Aus = Raum bleibt sichtbar, fließt aber nicht in Empfehlungen, Hausbilanz, Statistik oder Lernen ein.","Off = the room remains visible but is excluded from recommendations, house balance, statistics and learning."],["Verhindert, dass kurz nach einer abgeschlossenen Lüftung sofort dieselbe Empfehlung erneut erscheint.","Prevents the same recommendation from reappearing immediately after completed ventilation."],["Name frei wählen, z. B. „Erdgeschoss“, „Kellergeschoss“, „Wintergarten“ oder „Anbau“. Standard: leer.","Choose any name, for example “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty."],["Die Feuchtewerte müssen logisch aufeinander folgen: Zielwert ≤ Lüftungsstartwert ≤ hohe Luftfeuchte.","Humidity values must be ordered logically: target ≤ ventilation start ≤ high humidity."],["Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.","Required for calculated rooms. Prefer a sensor that measures the actual room air."],["Besondere Eigenschaften wie Dusche, Badewanne oder Sauna. Standard: keine Feuchtequelle hinterlegt.","Special properties such as shower, bathtub or sauna. Default: no moisture source configured."],["Statistik und technische Modellparameter. Die Standardwerte sind für die meisten Haushalte passend.","Statistics and technical model parameters. Defaults suit most homes."],["Optionaler numerischer Pollenindex. Wird nur genutzt, wenn „Pollen berücksichtigen“ aktiviert ist.","Optional numeric pollen index. Used only when pollen consideration is enabled."],["Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.","Off = the room remains visible but does not affect recommendations, house balance, statistics or learning."],["Warnt, wenn für eine belastbare Empfehlung erforderliche Sensordaten fehlen oder unplausibel sind.","Warns when sensor data required for a reliable recommendation is missing or implausible. Default: on."],["Nur im Prozentmodus: Mindestanteil der aktuell überwachten Wassermenge, der entfernbar sein soll.","Percentage mode only: minimum share of the currently monitored water amount that should be removable."],["Lege fest, welche Meldungen FreshAirIQ senden darf und wie Wiederaufheizkosten geschätzt werden.","Define which notifications FreshAirIQ may send and how reheating costs are estimated."],["Schwächt klassische Bewegungssensoren, damit Haustiere nicht als Bewohner interpretiert werden.","Reduces the weight of conventional motion sensors so pets are not interpreted as residents."],["Mindestunterschied zwischen absoluter Feuchte innen und Referenzluft für normale Entfeuchtung.","Minimum difference between indoor absolute humidity and reference air for normal dehumidification."],["Optional. Alternative/Ergänzung bei Feinstaub, VOC oder pollenbedingt ungünstiger Außenluft.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Löscht nur gelernte Modelle; Räume, Sensorzuordnungen und globale Optionen bleiben erhalten.","Default: off. Deletes only learned models; rooms, sensor assignments and global options remain."],["Zusätzlicher Feuchteabbau, den FreshAirIQ für die nächsten fünf Minuten mindestens erwartet.","Minimum additional moisture removal FreshAirIQ expects over the next five minutes. Example: 25 ml in Comfort mode."],["Vorhandenen Raum mit denselben Sensor- und Eigenschaftenfeldern wie im Dashboard bearbeiten","Edit an existing room with the same sensor and property fields that are available in the dashboard."],["Oberhalb dieser Raumfeuchte wird Kühlung nicht auf Kosten zusätzlicher Feuchte priorisiert.","Above this indoor humidity, cooling is not prioritised at the cost of additional moisture. Default: 70%."],["Frei wählbarer Anzeigename. Daraus erzeugt FreshAirIQ intern einen stabilen Raumschlüssel.","Freely selectable display name. FreshAirIQ derives a stable internal room key from it."],["Grundgrenzen für relative und absolute Feuchte. Standard: 62/68/58 % und 2,5/1,5/0,4 g/m³.","Core limits for relative and absolute humidity. Default: 62/68/58% and 2.5/1.5/0.4 g/m³."],["Wähle den Raum, dessen Sensoren, Größe, Bereich oder optionale Geräte du ändern möchtest.","Select the room whose sensors, size, area or optional devices you want to edit. Example: “Living room”. No preselection."],["Wähle den zu entfernenden Raum. Räume werden erst nach zusätzlicher Bestätigung gelöscht.","Select the room to remove. Rooms are deleted only after an additional confirmation."],["Eher warm, ausgewogen oder eher kühl. Sicherheitsentscheidungen werden nie abgeschwächt.","Warm, balanced or cool. Safety decisions are never weakened."],["Temperatur-/Feuchtereferenz und Rollo/Jalousie separat für jede einzelne Lüftungsöffnung","Temperature and humidity reference for each individual ventilation opening"],["Empfohlen, wenn deine Wetter-Entität zuverlässige Temperatur- und Feuchtewerte liefert.","Recommended when your weather entity provides reliable temperature and humidity values."],["Wähle vorhandene notify.*-Dienste. Ohne Empfänger werden keine Pushmeldungen versendet.","Select existing notify.* services. No push notifications are sent without a recipient."],["Verwendet nur vorhandene lokale Winddaten; ohne Windrichtung bleibt der Faktor neutral.","Uses only available local wind data; without wind direction the factor remains neutral."],["Nur Bereiche ohne zugeordnete Räume können entfernt werden. Standard: keine Vorauswahl.","Only unused zones can be removed."],["Wähle alle Fenster/Türen, über die FreshAirIQ eine Lüftung dieses Raums erkennen soll.","Select all windows/doors through which FreshAirIQ should detect ventilation for this room."],["Optional. Mit CO₂-Sensor kann FreshAirIQ Luftqualität zusätzlich zur Feuchte bewerten.","Optional. With a CO₂ sensor, FreshAirIQ can assess air quality in addition to humidity."],["Leer bedeutet alle Räume. Auswahl begrenzt raumbezogene Meldungen auf bestimmte Räume.","Empty means all rooms. A selection limits room-specific messages to those rooms."],["Fester entfernbarer Feuchtewert, ab dem eine Lüftungsempfehlung ausgelöst werden kann.","Example: 500 mL means combined removable potential must reach at least 500 mL. Health, mould and critical CO₂ rules may intervene earlier."],["Ab diesem CO₂-Wert steigt die Lüftungspriorität, sofern ein CO₂-Sensor vorhanden ist.","Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available."],["Wähle den Raum, dessen Fenster-/Türkontakte eine Öffnungsverzögerung erhalten sollen.","Select the room whose window/door contacts should receive an opening delay. Example: count a basement door as ventilation only after 120 s."],["Maximal tolerierter zusätzlicher Raumtemperaturverlust in den nächsten fünf Minuten.","Maximum tolerated additional room-temperature loss over the next five minutes. Example: 0.6 °C in Comfort mode."],["Standard: keine Vorauswahl. Entweder Volumen direkt oder vollständige Maße angeben.","Enter either the volume directly or length, width and height."],["Ab dieser geschätzten Oberflächenfeuchte meldet FreshAirIQ erhöhtes Schimmelrisiko.","Above this estimated surface humidity, FreshAirIQ reports elevated mould risk."],["Aktiviert das persistente Lernen von Luftwechsel, Routinen und Prognosekorrekturen.","Enables persistent learning of air exchange, routines and forecast corrections. Default: on."],["Haus = zentrale Empfehlungen. Raum = raumbezogene Meldungen. Beides = beide Ebenen.","House = central recommendations. Room = room-specific messages. Both = both levels."],["Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.","Enter the volume directly in m³ OR use length, width and height."],["Je höher der COP/JAZ, desto weniger Strom muss zum Wiederaufheizen gekauft werden.","The higher the COP/seasonal performance factor, the less electricity is required for reheating."],["Maximal akzeptierter prognostizierter Feuchteeintrag während fünf Minuten Kühlung.","Maximum accepted predicted moisture gain during five minutes of cooling. Default: 60 ml."],["Personen, Tracker, Präsenz, Komfort, Nacht und persönliche Profile an einer Stelle","People, trackers, presence, comfort, night settings and personal profiles in one place"],["Automatisch, prozentual oder als fester ml-Wert – mit eindeutiger Eingabe je Modus","Automatic, percentage or fixed mL with one unambiguous input per mode"],["Zeitgrenzen, Stabilisierung und Schutz vor zu häufigen Wiederholungsempfehlungen.","Time limits, stabilization and protection against overly frequent repeated recommendations."],["Optional. Ohne Wetter-Entität nur gemeinsam mit Außenluftfeuchtigkeit verwenden.","Optional. Use only together with an outdoor humidity sensor."],["Optional. Alternative bei hoher Feuchte, ungünstiger Außenluft oder Pollen-Veto.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Wähle eine lokale Wetter-Entität oder sowohl Temperatur- als auch Feuchtesensor.","Select a local weather entity or both temperature and humidity sensors."],["Die Schimmelwarnschwelle muss niedriger als die kritische Schimmelschwelle sein.","The mould warning threshold must be lower than the critical mould threshold."],["Begrenzt den zusätzlich tolerierten Temperaturverlust der nächsten fünf Minuten.","Limits the additional temperature loss tolerated over the next five minutes."],["Optional. Kann Frischluftbedarf bei CO₂ oder Lüftungsempfehlungen unterstützen.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.","Percentage mode only: share of the current water content in this room air."],["Die Öffnungsverzögerung kann für jeden Kontaktsensor separat festgelegt werden.","Configure opening delay separately for every contact."],["Nutzt Haushaltskontext und gelerntes Verhalten nur für passendere Empfehlungen.","Uses household context and learned behaviour only for more suitable recommendations."],["Gib entweder das Raumvolumen in m³ oder vollständig Länge, Breite und Höhe an.","Enter either room volume or complete length, width and height."],["Einstellungsdialog schließen; bereits bestätigte Seiten sind schon gespeichert","Apply all changes and reload FreshAirIQ"],["Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als kritisch.","Above this estimated surface humidity, mould risk is considered critical."],["Optionale automatische, lokal pseudonymisierte Diagnoseübertragung vorbereiten","Prepare optional automatic, locally pseudonymised diagnostics sharing"],["Optional. Wird später nur bei aktivierter Pollenberücksichtigung ausgewertet.","Optional. Evaluated only when pollen consideration is enabled."],["Gib bei der Berechnung aus Abmessungen Länge, Breite und Höhe vollständig an.","For dimension-based volume, enter complete length, width and height."],["Temperatur, Feuchte und die Kontakte, mit denen FreshAirIQ Lüftungen erkennt.","Sensors and contacts FreshAirIQ uses for this room."],["Entfernt den Raum nach Bestätigung aus FreshAirIQ. Standard: Bestätigung aus.","The room will no longer be evaluated after saving."],["FreshAirIQ speichert lokal bis zu 30 Tage. Standard: 14 Tage Anzeigezeitraum.","FreshAirIQ can show 1–365 days of compact daily ventilation and climate aggregates. High-resolution temperature points remain limited to 30 days for performance."],["Berücksichtigt hausinterne Verteilverluste der Fernwärme. 1,00 = verlustfrei;","Accounts for distribution losses inside the home. 1.00 = no loss; default: 0.98."],["Optional, kommagetrennt. Kinder ohne Tracker dürfen ebenfalls benannt werden.","Optional, comma-separated. Children without trackers may also be named."],["Nur im Modus „Fester mL-Wert“: Mindestpotenzial über alle berechneten Räume.","Fixed mL mode only: minimum potential across all calculated rooms."],["Steuert, ob und wie lange FreshAirIQ gültige Lüftungen als Lernproben nutzt.","Controls whether and for how long FreshAirIQ uses valid ventilation sessions as learning samples."],["Ende des Zeitfensters, für das die Nachtprognose berechnet und gelernt wird.","End of the time window for which the overnight forecast is calculated and learned."],["Sendet eine Meldung, wenn FreshAirIQ einen sinnvollen Lüftungsstart erkennt.","Sends a notification when FreshAirIQ detects a useful time to start ventilation. Default: on."],["Gelernte Raum- und Nachtmodelle löschen; Räume und Optionen bleiben erhalten","Delete learned room and night models; rooms and options remain intact"],["Optional, kommagetrennt und passend zur Reihenfolge der Erwachsenen-Tracker.","Optional, comma-separated and matching the order of the adult trackers."],["Zusätzliche Präsenzsignale und Verhalten von Bewohnern ohne eigenen Tracker.","Additional presence signals and handling of residents without their own tracker."],["Sensoren, die auch bei Haustieren zuverlässig menschliche Präsenz anzeigen.","Sensors that reliably indicate human presence even when pets are present."],["Haushaltsweiter Komfortstandard. Einzelne Profile können ihn überschreiben.","Household comfort default. Individual profiles may override it."],["Optional. Ohne Wetter-Entität nur gemeinsam mit Außentemperatur verwenden.","Optional. Use only together with an outdoor temperature sensor."],["Für diesen Raum bzw. diese Anfrage gibt es keine ausführbare Intervention.","No executable intervention matches this room or request."],["Wird zusammen mit den Lernwerten für Tages- und Nachtprognosen verwendet.","Used together with learned values for daytime and overnight forecasts."],["Kinder erhalten im Startmodell einen eigenen, niedrigeren Feuchtebeitrag.","Children receive their own lower moisture contribution in the initial model."],["Für berechnete Räume ist mindestens ein Fenster-/Türkontakt erforderlich.","Calculated rooms need at least one window/door contact."],["Die ausgewählte Intervention enthält keine gültige Home-Assistant-Aktion.","The selected intervention does not contain a valid Home Assistant action."],["Die CO₂-Warnschwelle muss niedriger als die kritische CO₂-Schwelle sein.","The CO₂ warning threshold must be lower than the critical CO₂ threshold."],["Typischer Heizwert; kann an den verwendeten Brennstoff angepasst werden.","Typical heating value; can be adjusted to the fuel being used."],["Lege fest, wie FreshAirIQ Komfort, Feuchte, Pollen und Wind priorisiert.","Control how FreshAirIQ prioritizes comfort, humidity, pollen and wind."],["Gewichtet nur nicht sicherheitskritische Komfort-/Energieentscheidungen.","Weights only non-safety-critical comfort/energy decisions."],["Gib entweder das Raumvolumen oder Länge, Breite und Höhe vollständig an.","Enter either room volume or complete length, width and height."],["Die konfigurierte Interventions-Entität {entity_id} ist nicht verfügbar.","The configured intervention entity {entity_id} is unavailable."],["Verhindert wiederholte identische Meldungen innerhalb dieses Zeitraums.","Prevents repeated identical notifications within this period."],["Raumklima, ausgewogen oder Energie sparen. Wirkt nur im Komfortbereich.","Indoor climate, balanced or energy saving. Applies only within the comfort layer."],["Raumeinstellungen schließen; bereits bestätigte Seiten sind gespeichert","Close room settings; pages already confirmed are saved"],["Optional. Wird nur bei aktivierter Pollenberücksichtigung ausgewertet.","Optional. Evaluated only when pollen consideration is enabled."],["Optional. Besonders für Dusche, Bad, Küche oder andere Feuchtequellen.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Bewertet, wie viel Feuchte pro 0,1 °C Temperaturverlust entfernt wird.","Evaluates how much moisture is removed per 0.1 °C of temperature loss."],["Optional. Zentrale/dezentrale Lüftung, WRG oder vergleichbares Gerät.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Betriebsprofil, Prognosen, Pollen/Wind, Querlüftung und Modellgrenzen","Operating profile, forecasts, pollen/wind, cross ventilation and model limits"],["Wird nur verwendet, wenn im Raum ein Luftbefeuchter konfiguriert ist.","Only used when a room humidifier is configured."],["Wähle alle Kontakte, über die FreshAirIQ eine Lüftung erkennen soll.","Select all contacts through which FreshAirIQ should detect ventilation."],["Wird nur verwendet, wenn Rollos/Jalousien im Raum konfiguriert sind.","Only used when covers/blinds are configured."],["Querlüftungspaare (Raumschlüssel+Raumschlüssel, …) (Standard: leer)","Cross-ventilation pairs (room_key+room_key,...) (Default: empty)"],["Sommerkühlung wird erst oberhalb dieser Raumtemperatur priorisiert.","Summer cooling is prioritised only above this room temperature. Default: 24 °C."],["Die Home-Assistant-Aktion {service} konnte nicht ausgeführt werden.","The Home Assistant action {service} could not be executed."],["Optional. Nur zusammen mit einem Außen-Temperatursensor verwenden.","Optional. Use only together with an outdoor temperature sensor."],["Sendet nach einer abgeschlossenen Lüftung das ermittelte Ergebnis.","Sends the measured result after a completed ventilation session. Default: on."],["Alle globalen Optionen auf die dokumentierten Standardwerte setzen","Reset all global options to the documented defaults"],["Automatisch, nachts lieber geschlossen oder nachts offen ist okay.","Automatic, prefer closed at night, or open at night is acceptable."],["Schätzt Bewohner ohne Tracker anhand des sicheren Haushaltsstatus.","Estimates residents without trackers from the reliable household presence state."],["Aktiviert = weiteren Raum anlegen; aus = Einrichtung abschließen.","Default: on. Enabled = add another room; disabled = finish setup."],["Minimale Feuchte-/Temperatur-Effizienz (Standard: 8 ml je 0,1 °C)","Minimum efficiency (mL/0.1°C) (Default: 8.0)"],["Der Betriebsmodus {option} wird von FreshAirIQ nicht unterstützt.","The operating profile {option} is not supported by FreshAirIQ."],["Optional. Wird nur bei deutlich zu trockener Raumluft empfohlen.","Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action."],["Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.","Only required when no direct room volume is entered."],["Ab diesem CO₂-Wert wird die Luftqualität als kritisch behandelt.","Above this CO₂ value, air quality is treated as critical."],["Aus = Pollen werden angezeigt, blockieren aber keine Empfehlung.","Off = pollen is displayed but does not block a recommendation."],["Automatische Diagnoseübertragung (Beta-Standard: Täglich nachts)","Automatic diagnostics sharing (beta default: Nightly)"],["Luftfeuchtesensor des Raums. Für berechnete Räume erforderlich;","Humidity sensor for the room. Required for calculated rooms; default: no preselection."],["Optional. Nur zusammen mit einem Außen-Feuchtesensor verwenden.","Optional. Use only together with an outdoor humidity sensor."],["Grenzen für geschätzte Oberflächenfeuchte und CO₂-Luftqualität.","Limits for estimated surface humidity and CO₂ air quality."],["Bestimmt ausschließlich die Berechnung der Wiederaufheizkosten.","Used only for reheating-cost calculations. Example: for a heat pump, electricity price and COP/SCOP are used. Default: heat pump."],["Fensterausrichtung mit Winddaten berücksichtigen (Standard: an)","Use window orientation with wind data (Default: on)"],["Benachrichtigungen und die Kostenschätzung für dein Heizsystem.","Notifications and heating cost estimation."],["Festlegen, welche Räume gemeinsam einen Luftstrom bilden können","Define which rooms can form a shared airflow path"],["Temperatursensor des Raums. Für berechnete Räume erforderlich;","Temperature sensor for the room. Required for calculated rooms; default: no preselection."],["Abwägung zwischen zusätzlichem Feuchteertrag und Wärmeverlust.","Balances additional moisture removal against heat loss."],["Entweder Volumen direkt in m³ oder vollständige Maße angeben.","Enter either the volume directly in m³ or complete dimensions."],["Die Mindestdauer darf nicht größer als die Maximaldauer sein.","Minimum ventilation duration must not exceed maximum duration."],["Warnt bei relevantem geschätztem Oberflächen-/Schimmelrisiko.","Warns about relevant estimated surface/mould risk. Default: on."],["Quelle für Außen-Temperatur, Außenfeuchte und optional Pollen","Source for outdoor temperature, outdoor humidity and optional pollen"],["Maximal tolerierter Feuchteeintrag in 5 Min (Standard: 60,0)","Maximum tolerated moisture gain in 5 min (Default: 60.0)"],["Verbindungen zwischen Bereichen/Stockwerken (Standard: leer)","Connections between areas/floors (Default: empty)"],["Groben Geräte-/Browser-Kontext mitsenden (Beta-Standard: An)","Include coarse device/browser context (beta default: On)"],["Maximaler Temperaturverlust in 5 Minuten (Standard: 0,6 °C)","Maximum next-5-minute temperature loss (°C) (Default: 0.6)"],["Bewohner ohne Tracker folgen Haushaltsstatus (Standard: an)","Residents without trackers follow household status (Default: on)"],["Die Außenluft muss mindestens um diesen Betrag kühler sein.","Outdoor air must be at least this much cooler. Default: 2 °C."],["Gib entweder das Raumvolumen oder vollständige Raummaße an.","Enter either room volume or complete room dimensions."],["Für eine FreshAirIQ-Intervention ist room_key erforderlich.","A room_key is required to execute a FreshAirIQ intervention."],["Referenzluft & Rollo/Jalousie je Fenster/Tür · {room_name}","Reference air per window/door · {room_name}"],["Name, Stockwerk/Bereich und Teilnahme an den Berechnungen.","Name, level and whether the room participates in calculations."],["Reduzierte Mindestdifferenz bei bereits hoher Raumfeuchte.","Reduced minimum difference when room humidity is already high."],["Schwellen, Zeitgrenzen, Effizienz, Schimmel/CO₂ und Lernen","Thresholds, time limits, efficiency, mould/CO₂ and learning"],["Minimale Differenz bei hoher Feuchte (Standard: 1,5 g/m³)","Minimum difference at high RH (g/m³) (Default: 1.5)"],["Mindestpotenzial einzelner Problemraum (Standard: 100 ml)","Minimum critical-room potential (mL) (Default: 100.0)"],["Maximaler Temperaturverlust nächste 5 Min (Standard: 0,6)","Maximum temperature loss next 5 min (Default: 0.6)"],["Priorität zwischen Entfeuchten, Komfort und Sommerkühlung","Priority between dehumidification, comfort and summer cooling"],["Außenluftfeuchtigkeit (optional – später konfigurierbar)","Outdoor humidity sensor (optional)"],["Klimaanlage/Heizung (optional) (Standard: nicht gesetzt)","Climate/HVAC entity (optional)"],["Lüftungs-/WRG-Gerät (optional) (Standard: nicht gesetzt)","Ventilation/HRV device (optional)"],["Neuen Raum mit Sensoren, Größe und Eigenschaften anlegen","Create a new room with sensors, size and properties"],["Mindestpotenzial Haus bei festem Wert (Standard: 500 ml)","Minimum total potential (mL) (Default: 500.0)"],["Benötigt einen Pollenindex-Sensor unter Außenluftquelle.","Requires a pollen-index sensor under the outdoor-air source."],["Nutzbarer Anteil der im Heizöl enthaltenen Wärmeenergie.","Usable share of the heat energy contained in heating oil. Default: 0.88."],["Mindestverhältnis von Feuchteabbau zu Temperaturverlust.","Minimum ratio of moisture removal to temperature loss. Example: 8 ml per 0.1 °C."],["Verzögerung pro Kontakt, bevor eine Lüftung erkannt wird","Delay per contact before ventilation is detected"],["FreshAirIQ konnte die Statistikdaten nicht zurücksetzen.","FreshAirIQ could not reset the statistics data."],["Reihenfolge im Dashboard und in Auswahllisten festlegen","Set the order in the dashboard and selection lists"],["Minimale absolute Feuchtedifferenz (Standard: 2,5 g/m³)","Minimum humidity difference (g/m³) (Default: 2.5)"],["Mindesthelligkeit für Verschattung (Standard: 10000 lx)","Minimum illuminance for shading (Default: 10000 lx)"],["Angezeigten Zeitraum zwischen 1 und 365 Tagen festlegen","Set the displayed period between 1 and 365 days"],["Helligkeitssensor (optional) (Standard: nicht gesetzt)","Illuminance sensor (optional)"],["Empfohlene Standardquelle für aktuelle Außenluftdaten.","Recommended default source for current outdoor-air data."],["Schwellenart für Hauspotenzial (Standard: automatisch)","Ventilation threshold mode (Default: adaptive_home_size)"],["Mindestnutzen für erneute Empfehlung (Standard: 80 ml)","Minimum benefit for a repeated recommendation (Default: 80 ml)"],["Mindestertrag der nächsten 5 Minuten (Standard: 25 ml)","Minimum next-5-minute return (mL) (Default: 25.0)"],["Minimale Feuchte-/Temperatur-Effizienz (Standard: 8,0)","Minimum moisture/temperature efficiency (Default: 8.0)"],["Person- oder device_tracker-Entitäten der Erwachsenen.","Person or device_tracker entities for adult residents."],["{room_name} · Referenzluft & Rollo/Jalousie je Öffnung","{room_name} · Reference air per opening"],["VOC-/TVOC-Sensor (optional) (Standard: nicht gesetzt)","VOC/TVOC sensor (optional)"],["Rollos/Jalousien (optional) (Standard: nicht gesetzt)","Blinds/covers (optional)"],["Nur nötig, wenn kein direktes Volumen angegeben wird.","Only required when no direct room volume is entered."],["Lokale Wetter-Entität (Standard: weather.* verwenden)","Local weather entity"],["Lerndaten oder Einstellungswerte gezielt zurücksetzen","Reset learning data or defaults"],["Raumname, Bereich, Sensoren, Größe und Feuchtequellen","Room name, area, sensors, size and moisture sources"],["Mindestabstand gleicher Meldungen (Standard: 90 min)","Cooldown minutes (Default: 90)"],["Anzahl, Namen und zugehörige Person-/Geräte-Tracker.","Counts, names and associated person/device trackers."],["Luftbefeuchter (optional) (Standard: nicht gesetzt)","Humidifier (optional)"],["Individuelle Lüftungsgrenze (Standard: Automatisch)","Individual ventilation threshold"],["Vorhandene Konfiguration importieren (Standard: an)","Import existing configuration into FreshAirIQ"],["Bei Überschreitung Lüften verhindern (Standard: an)","Block normal ventilation above limit (Default: on)"],["Außenluft mindestens so viel kühler (Standard: 2,0)","Outdoor air at least this much cooler (Default: 2.0)"],["Maximale Raumfeuchte für Kühlmodus (Standard: 70,0)","Maximum indoor RH for cooling (Default: 70.0)"],["Standard-Temperaturempfinden (Standard: ausgewogen)","Default thermal preference (Default: balanced)"],["FreshAirIQ konnte die Lerndaten nicht zurücksetzen.","FreshAirIQ could not reset the learning data."],["Außentemperatur (optional – später konfigurierbar)","Outdoor temperature sensor (optional)"],["Stockwerk/Bereich für Gruppierung und Querlüftung.","Floor/area used for grouping and cross ventilation. Example: “Ground floor”. Default: not assigned."],["Außenluft, Gebäude, Bewohner, Stockwerke und Räume","Outdoor air, building, occupants, levels and rooms"],["Zu bearbeitender Raum (Standard: keine Vorauswahl)","Room to edit"],["Stabilisierungszeit nach Lüftung (Standard: 4 min)","Stabilization time after ventilation (Default: 4 min)"],["Maximale Dauer einer Lernprobe (Standard: 120 min)","Maximum learning sample duration (Default: 120.0)"],["Aktiviert Nachtprognose und adaptives Nachtmodell.","Enables the overnight forecast and adaptive night model."],["Meldet günstige Fenster für passive Sommerkühlung.","Reports favourable windows for passive summer cooling. Default: on."],["Wetter-Entität (optional – später konfigurierbar)","Local weather entity (recommended)"],["Kontaktlogik (Standard: „Mindestens einer offen“)","Contact logic"],["PM2.5-Sensor (optional) (Standard: nicht gesetzt)","PM2.5 sensor (optional)"],["Luftreiniger (optional) (Standard: nicht gesetzt)","Air purifier (optional)"],["Schimmel kritisch Oberflächen-RH (Standard: 90 %)","Critical mould surface RH (%) (Default: 90.0)"],["Abluftgerät (optional) (Standard: nicht gesetzt)","Exhaust device (optional)"],["Zuluftgerät (optional) (Standard: nicht gesetzt)","Supply-air device (optional)"],["Entfeuchter (optional) (Standard: nicht gesetzt)","Dehumidifier (optional)"],["Optional für zusätzliche Luftqualitätsbewertung.","Optional for additional air-quality assessment."],["Außenluftfeuchtesensor (Standard: nicht gesetzt)","Outdoor humidity sensor (optional)"],["Pause bis erneute Empfehlung (Standard: 120 min)","Delay before a repeated recommendation (Default: 20 min)"],["Haustiersichere Präsenzsensoren (Standard: leer)","Pet-safe presence sensors (Default: empty)"],["Hauptschalter für alle FreshAirIQ-Pushmeldungen.","Master switch for all FreshAirIQ push notifications."],["Verschattung ab Raumtemperatur (Standard: 24 °C)","Consider shading above room temperature (Default: 24 °C)"],["Sommerkühlung ab Raumtemperatur (Standard: 24,0)","Summer cooling from room temperature (Default: 24.0)"],["Heizsystem und Kostenparameter für Wärmeverluste","Heating system and cost parameters for heat losses"],["Außentemperatursensor (Standard: nicht gesetzt)","Outdoor temperature sensor (optional)"],["Lüftungsstart relative Feuchte (Standard: 62 %)","Ventilation start RH (%) (Default: 62.0)"],["Schimmelwarnung Oberflächen-RH (Standard: 80 %)","Mould warning surface RH (%) (Default: 80.0)"],["Lerndaten wirklich zurücksetzen (Standard: aus)","Really reset learning data"],["Der FreshAirIQ-Raum {room_key} existiert nicht.","The FreshAirIQ room {room_key} does not exist."],["Pollenindex (optional – später konfigurierbar)","Pollen index sensor (optional)"],["Stockwerk/Bereich (Standard: nicht zugeordnet)","Floor"],["FreshAirIQ – vorhandene Konfiguration gefunden","FreshAirIQ – existing configuration found"],["Das Raumvolumen muss mindestens 2 m³ betragen.","Room volume must be at least 2 m³."],["FreshAirIQ wurde erfolgreich neu konfiguriert.","FreshAirIQ was reconfigured successfully."],["Komfortable Uhrzeitauswahl statt Stunden-Zahl.","Convenient time selection instead of a numeric hour."],["Anlagenwirkungsgrad Fernwärme (Standard: 0,98)","System efficiency (Default: 0.98)"],["Zeitfenster und Aktivierung der Nachtprognose.","Time window and activation of the overnight forecast."],["Geschätzte Lüftungskosten im Statistikzeitraum","Estimated ventilation cost in statistics period"],["Temperatursensor (Standard: keine Vorauswahl)","Temperature sensor"],["Statistikzeitraum und gespeicherte Auswertung","Statistics period and stored analysis"],["„Lüftung abgeschlossen“ senden (Standard: an)","Completed sessions (Default: on)"],["Name des Stockwerks/Bereichs (Standard: leer)","Floor/zone name"],["Persönliche Präferenz für die Nachtstrategie.","Personal preference for overnight strategy."],["Persönliche Profil-Zuordnungen (Standard: {})","Personal profile assignments (Default: {})"],["Pollenindex-Sensor (Standard: nicht gesetzt)","Pollen index sensor (optional)"],["Mindestertrag nächste 5 Min (Standard: 25,0)","Minimum yield next 5 min (Default: 25.0)"],["Empfänger, Meldungstypen und Mindestabstände","Recipients, notification types and minimum intervals"],["Persönliche Priorität (Standard: ausgewogen)","Personal priority (Default: balanced)"],["Fenster in der Nacht (Standard: automatisch)","Windows at night (Default: automatic)"],["Referenzluft & Rollo/Jalousie je Fenster/Tür","Reference air per window/door"],["Präsenz-/Bewegungssensoren (Standard: leer)","Presence/motion sensors (Default: empty)"],["Informiert über relevante Lernfortschritte.","Reports relevant learning progress. Default: off."],["Energieinhalt Heizöl (Standard: 10,0 kWh/l)","Heating oil energy content (Default: 10.0)"],["Entfernte Feuchtigkeit im Statistikzeitraum","Removed moisture in statistics period"],["Feuchtesensor (Standard: keine Vorauswahl)","Humidity sensor"],["In Berechnungen einbeziehen (Standard: an)","Include in FreshAirIQ calculations"],["Meldungen und Kostenmodell des Heizsystems","Notifications and heating-system cost model"],["Nutzbarer Anteil der gekauften Gasenergie.","Usable share of the purchased gas energy."],["Temperaturempfinden (Standard: ausgewogen)","Thermal preference (Default: balanced)"],["Regelmäßig im Haushalt lebende Erwachsene.","Adults who regularly live in the household."],["Himmelsrichtung jedes Fenster-/Türkontakts","Compass direction of each window/door contact"],["Fenster-Himmelsrichtungen für {room_name}","Window orientations for {room_name}"],["Maximale Lüftungsdauer (Standard: 20 min)","Maximum ventilation duration (min) (Default: 20.0)"],["„Fenster schließen“ senden (Standard: an)","Close recommendations (Default: on)"],["Feuchtequellen im Raum (Standard: keine)","Moisture sources in the room (Default: none)"],["Minimale Lüftungsdauer (Standard: 3 min)","Minimum ventilation duration (min) (Default: 3.0)"],["Benachrichtigungen aktiv (Standard: aus)","Enable notifications (Default: off)"],["„Lüften empfohlen“ senden (Standard: an)","Ventilate recommendations (Default: on)"],["Angezeigter Zeitraum (Standard: 14 Tage)","Days (Default: 14)"],["Wirkungsgrad Gasheizung (Standard: 0,92)","Gas boiler efficiency (Default: 0.92)"],["Arbeitspreis deines Gastarifs. Beispiel/","Your gas energy price. Example/default: €0.11/kWh."],["Arbeitspreis deiner Fernwärme. Beispiel/","Your district-heating energy price. Example/default: €0.15/kWh."],["Eigene Stockwerke und Bereiche verwalten","Manage custom floors and areas"],["Gebäudetyp ohne doppelte Bewohnerangaben","Building type without duplicate resident settings"],["Pollen-Veto und Wind-/Fensterausrichtung","Pollen veto and wind/window orientation"],["Optional für Kinder mit eigenem Tracker.","Optional for children with their own tracker."],["Das berechnete Raumvolumen ist zu klein.","The calculated room volume is too small."],["Weiteren Raum hinzufügen (Standard: an)","Add another room (default: on)"],["Statistik und technische Feinabstimmung","Statistics and technical fine-tuning"],["Raum dauerhaft aus FreshAirIQ entfernen","Permanently remove a room from FreshAirIQ"],["Anteil der Wassermenge (Standard: 10 %)","Share of total water (Default: 10.0)"],["Tracker für Erwachsene (Standard: leer)","Adult phone/person entities (optional)"],["Nur diese Räume (Standard: leer = alle)","Only these rooms"],["PM2.5-Warnschwelle (Standard: 15 µg/m³)","PM2.5 warning threshold (Default: 15 µg/m³)"],["Wirkungsgrad Ölheizung (Standard: 0,88)","Oil boiler efficiency (Default: 0.88)"],["Zurücksetzen bestätigen (Standard: aus)","Reset all settings to defaults"],["Vergib je Bereich eine Positionsnummer.","Assign each area a position number. Example: Ground floor = 1, Upper floor = 2. Lower numbers appear first."],["Räume anlegen, sortieren oder entfernen","Create, sort or remove rooms"],["Persönliche Empfehlungen (Standard: an)","Personal recommendations (Default: on)"],["Wähle mindestens einen Lüftungskontakt.","Select at least one ventilation contact."],["Hohe relative Feuchte (Standard: 68 %)","High RH (%) (Default: 68.0)"],["Ziel relative Feuchte (Standard: 58 %)","Target RH (%) (Default: 58.0)"],["Schließ-Differenz (Standard: 0,4 g/m³)","Close difference (g/m³) (Default: 0.4)"],["Pollen berücksichtigen (Standard: aus)","Consider pollen (Default: off)"],["COP/JAZ der Wärmepumpe (Standard: 3,5)","COP / seasonal performance (Default: 3.5)"],["Regelmäßig im Haushalt lebende Kinder.","Children who regularly live in the household."],["Temperaturänderung seit Lüftungsbeginn","Temperature change since ventilation start"],["Raumname (Standard: keine Vorauswahl)","Room name"],["Fenster-/Türkontakte (Standard: leer)","Ventilation contacts"],["Raumgrenze in Prozent (Standard: 5 %)","Room threshold percentage (Default: 5%)"],["{room_count} Raum/Räume konfiguriert.","{room_count} room(s) configured."],["Optionale Zusatzsensoren & Referenzen","Optional additional sensors & references"],["CO₂-Warnschwelle (Standard: 1000 ppm)","CO₂ warning threshold (ppm) (Default: 1000.0)"],["Haustiere im Haushalt (Standard: aus)","Pets in household (Default: off)"],["Maximaler Pollenindex (Standard: 4,0)","Maximum pollen index (Default: 4.0)"],["Fernwärmepreis (Standard: 0,15 €/kWh)","District heat price (Default: 0.15)"],["Aktion (Standard: Bereich hinzufügen)","Action"],["Weiche Zusatzsignale für Anwesenheit.","Soft supporting signals for presence."],["Höchste geschätzte Oberflächenfeuchte","Highest estimated surface humidity"],["CO₂-Sensor (Standard: nicht gesetzt)","CO₂ sensor (optional)"],["Außenluft-Referenz neu konfigurieren","Reconfigure outdoor-air reference"],["Automatisch nach Hausgröße & Nutzung","Automatic by dwelling size & usage"],["Entfernen bestätigen (Standard: aus)","Confirm removal"],["Schimmelrisiko melden (Standard: an)","Mould risk (Default: on)"],["Nachtprognose senden (Standard: aus)","Night forecast (Default: off)"],["Lernmeldungen senden (Standard: aus)","Learning messages (Default: off)"],["Vergib je Raum eine Positionsnummer.","Assign each room a position number. Example: Living room = 1, Kitchen = 2. Lower numbers appear first."],["Befeuchten unter (Standard: 35 % rF)","Recommend humidification below (Default: 35% RH)"],["Bereich (Standard: keine Vorauswahl)","Zone"],["Zur Hauptübersicht der Einstellungen","Back to the main settings overview"],["Temperaturänderung seit Sessionstart","Temperature change since session start"],["Geschätzte Feuchteproduktion pro Tag","Estimated daily moisture generation"],["Raumvolumen direkt (Standard: leer)","Room volume"],["Feste Raumgrenze (Standard: 100 ml)","Fixed room threshold (Default: 100 mL)"],["Aus Länge × Breite × Höhe berechnen","Calculate from length × width × height"],["Tracker für Kinder (Standard: leer)","Child phone/person entities (optional)"],["Sommerkühlung melden (Standard: an)","Summer cooling (Default: on)"],["Sendet Hinweise zur Nachtstrategie.","Sends night-strategy hints. Default: off, so FreshAirIQ does not notify unexpectedly at night."],["Öffnungsverzögerungen · {room_name}","Opening delays · {room_name}"],["PM2.5 kritisch (Standard: 35 µg/m³)","Critical PM2.5 threshold (Default: 35 µg/m³)"],["VOC / TVOC verwenden (Standard: an)","Use VOC / TVOC (Default: on)"],["Helligkeit verwenden (Standard: an)","Use illuminance (Default: on)"],["Tracker Erwachsene (Standard: leer)","Adult trackers (Default: empty)"],["Geschätzte Kosten nächste 5 Minuten","Estimated cost next 5 minutes"],["Prognostizierte Wiederaufheizkosten","Forecast reheating cost"],["Auswertung & Experteneinstellungen","Insights & expert settings"],["Oberflächenfaktor (Standard: 0,25)","Estimated surface factor (Default: 0.25)"],["Betriebsprofil (Standard: Komfort)","Operating profile (Default: comfort)"],["Nachtprognose aktiv (Standard: an)","Overnight forecast enabled (Default: on)"],["Sensorfehler melden (Standard: an)","Sensor faults (Default: on)"],["Raum für Kontaktverzögerung wählen","Choose room"],["Prognosezeitraum (Standard: 5 min)","Forecast horizon"],["Querlüftungspaare (Standard: leer)","Cross-ventilation pairs (Default: empty)"],["Komfort & persönliche Empfehlungen","Comfort & personal recommendations"],["Persönliche IQ-Profile & Endgeräte","Personal IQ profiles & devices"],["Prognostizierte Temperaturänderung","Forecast temperature change"],["{room_name} · Kontaktverzögerungen","{room_name} · Contact delays"],["FreshAirIQ benötigt Aufmerksamkeit","FreshAirIQ needs attention"],["Benachrichtigungen und Heizkosten","Notifications and heating costs"],["Zur vorherigen Einstellungsgruppe","Back to the previous settings group"],["Raum (Standard: keine Vorauswahl)","Room"],["CO₂ kritisch (Standard: 1400 ppm)","Critical CO₂ threshold (ppm) (Default: 1400.0)"],["Namen Erwachsene (Standard: leer)","Adult names (Default: empty)"],["Heizsystem (Standard: Wärmepumpe)","Heating system (Default: heat_pump)"],["Strompreis (Standard: 0,30 €/kWh)","Electricity price (Default: 0.3)"],["Einstellungen auf Standard setzen","Restore default settings"],["Lüftungsschwelle · Fester ml-Wert","Ventilation threshold · Fixed mL"],["Wasserdampf in überwachten Räumen","Water vapor in monitored rooms"],["Prozent der gesamten Wassermenge","Percent of total water"],["Optionale Geräte – Datensammlung","Optional devices – data collection"],["VOC-Warnschwelle (Standard: 600)","VOC warning threshold (Default: 600)"],["Heizölpreis (Standard: 1,00 €/l)","Heating oil price (Default: 1.0)"],["Arbeitspreis deines Stromtarifs.","Your electricity energy price. Example: €0.30/kWh. Used for heat pumps and electric heating."],["Preis je Liter Heizöl. Beispiel/","Heating-oil price per litre. Example/default: €1.00/l."],["Feuchtewirkung nächste 5 Minuten","Moisture effect next 5 minutes"],["Betriebsprofil, Pollen und Wind","Operating profile, pollen and wind"],["Lernmodell aktiv (Standard: an)","Learning model enabled (Default: on)"],["Gaspreis (Standard: 0,11 €/kWh)","Gas price (Default: 0.11)"],["Tracker Kinder (Standard: leer)","Child trackers (Default: empty)"],["Nacht beginnt (Standard: 22:00)","Night starts (Default: 22:00)"],["{room_name} · Himmelsrichtungen","{room_name} · Orientations"],["Öffnungsverzögerung je Kontakt","Opening delay per contact"],["Meldungsebene (Standard: Haus)","Scope (Default: house)"],["Optionale Sensoren & Außenluft","Optional sensors & outdoor air"],["PM2.5 verwenden (Standard: an)","Use PM2.5 (Default: on)"],["Himmelsrichtung je Fenster/Tür","Orientation per window/door"],["Standardwerte wiederherstellen","Restore defaults"],["Zeitraum für die Live-Prognose","Time horizon for the live forecast"],["Fester Wert (Standard: 500 ml)","Fixed value (Default: 500 mL)"],["Geschätzte Feuchtebilanz heute","Estimated moisture balance today"],["Prognostizierte Feuchtewirkung","Forecast moisture effect"],["Raum, Sensoren & Eigenschaften","Room, sensors & size"],["Alle gewählten Kontakte offen","All selected contacts open"],["Fensterausrichtung je Kontakt","Window orientation per contact"],["Nachtbeginn (Standard: 22:00)","Night start (Default: 22:00)"],["Namen Kinder (Standard: leer)","Child names (Default: empty)"],["VOC kritisch (Standard: 1200)","Critical VOC threshold (Default: 1200)"],["Heizkosten · {heating_system}","Heating costs · {heating_system}"],["Nacht endet (Standard: 07:00)","Night ends (Default: 07:00)"],["Intelligente Lüftungsschwelle","Intelligent ventilation threshold"],["Modus (Standard: Automatisch)","Mode (Default: Automatic)"],["Geschätzte Oberflächenfeuchte","Estimated surface humidity"],["Übernachtungsgäste Erwachsene","Adult overnight guests"],["Bitte gib einen Raumnamen an.","Please enter a room name."],["FreshAirIQ ist nicht geladen.","FreshAirIQ is not loaded."],["Mindestens ein Kontakt offen","Any selected contact open"],["Prozent der Raum-Wassermenge","Percentage of room water content"],["Benachrichtigungen & Energie","Notifications & energy"],["Lüftungsdauer & Wiederholung","Ventilation duration & repetition"],["Bewohnerprofil & Anwesenheit","Resident profile & presence"],["Aktiviert die Nachtprognose.","Enables the overnight forecast."],["Prozentwert (Standard: 10 %)","Percentage (Default: 10%)"],["Temperatur nächste 5 Minuten","Temperature next 5 minutes"],["Raumbreite (Standard: leer)","Room width"],["← Zurück zu Zuhause & Räume","← Back to home & rooms"],["Gebäudetyp (Standard: Haus)","Building type (Default: house)"],["Nachtende (Standard: 07:00)","Night end (Default: 07:00)"],["Fenster/Türen · {room_name}","Windows/doors · {room_name}"],["Frei wählbarer Anzeigename.","Custom display name. Example: “Ground floor”, “Basement”, “Conservatory” or “Extension”. Default: empty."],["Raumlänge (Standard: leer)","Room length"],["FreshAirIQ – Einstellungen","Settings"],["Optionale Raumklima-Geräte","Optional room-climate devices"],["Erweiterte Modellparameter","Advanced model parameters"],["Nutzen & Temperaturverlust","Benefit & temperature loss"],["Empfänger (Standard: leer)","Recipients"],["Betriebsprofil · {profile}","Operating profile · {profile}"],["Auswertung & Expertenmodus","Insights & expert settings"],["Nur Lerndaten zurücksetzen","Reset learning data only"],["Beginn der Nachtbewertung.","Start of the overnight evaluation period."],["Lüftungsschwelle · Prozent","Ventilation threshold · Percentage"],["Nachtprognose Feuchtigkeit","Overnight moisture forecast"],["Gelernte Nacht-Feuchterate","Learned night moisture rate"],["Erwartete Personen zuhause","Expected people at home"],["Raumhöhe (Standard: leer)","Room height"],["Nachts lieber geschlossen","Prefer closed at night"],["← Zurück zu Einstellungen","← Back to settings"],["Verbleibende Lüftungszeit","Ventilation time remaining"],["Feuchtebilanz der Lüftung","Ventilation moisture balance"],["Übernachtungsgäste Kinder","Child overnight guests"],["Erwachsene (Standard: 2)","Adults (Default: 2)"],["Persönliche Empfehlungen","Personal recommendations"],["Ende der Nachtbewertung.","End of the overnight evaluation period."],["Entfernbare Feuchtigkeit","Removable moisture"],["Empfohlene Lüftungsdauer","Recommended ventilation duration"],["Gib einen Raumnamen an.","Enter a room name."],["Automatisch entscheiden","Automatic"],["Automatisch (empfohlen)","Automatic (recommended)"],["Heizung & Energiekosten","Heating & energy costs"],["Bisherige Lüftungsdauer","Ventilation session elapsed"],["Vertrauen Nachtprognose","Overnight forecast confidence"],["{room_name} · Raumdaten","{room_name} · Room details"],["Raum wurde gespeichert.","Room saved."],["Lüftung & Empfehlungen","Ventilation & recommendations"],["Wartung & Zurücksetzen","Maintenance & reset"],["Komfort & Luftqualität","Comfort & air quality"],["{room_name} bearbeiten","Edit {room_name}"],["Lerndaten zurücksetzen","Reset learning"],["Statistik zurücksetzen","Reset statistics"],["FreshAirIQ hinzufügen","Add FreshAirIQ"],["Nachts offen ist okay","Open at night is okay"],["Stockwerke & Bereiche","Levels & areas"],["Öffnungsverzögerungen","Opening delays"],["Volumen direkt in m³","Enter volume directly in m³"],["Empfehlungsschwellen","Recommendation thresholds"],["Kinder (Standard: 0)","Children (Default: 0)"],["Sicherheitsabfrage.","Safety confirmation. Default: off. Enable only when the selected room really should be removed."],["Statistik & Verlauf","Statistics & history"],["Meldungen & Energie","Notifications & energy"],["Letzte Lerndiagnose","Last learning diagnosis"],["Schließen empfohlen","Close recommended"],["Fenster-Ausrichtung","Window orientation"],["Freistehendes Haus","Detached house"],["Außenluft & Wetter","Outdoor air & weather"],["Sensoren & Fenster","Sensors & windows"],["Gebäude & Bewohner","Property & occupants"],["Benachrichtigungen","Notifications"],["Bereich hinzufügen","Add zone"],["Bereiche sortieren","Sort zones"],["Live-Feuchtebilanz","Live moisture balance"],["Für Kühlung lüften","Ventilate for cooling"],["Prognosesicherheit","Forecast confidence"],["Raum konfigurieren","Configure room"],["Raumeigenschaften","Room properties"],["Bereich entfernen","Remove zone"],["Diagnose-Freigabe","Diagnostics sharing"],["Nächste 5 Minuten","Next 5 minutes"],["Raum gespeichert","Room saved"],["Haus (allgemein)","House (general)"],["Doppelhaushälfte","Semi-detached house"],["Reihenmittelhaus","Mid-terrace house"],["Mehrfamilienhaus","Multi-family building"],["Raum & Zuordnung","Room"],["Feuchteschwellen","Humidity thresholds"],["Prognosezeitraum","Forecast horizon"],["Lüftungsschwelle","Ventilation threshold"],["Absolute Feuchte","Absolute humidity"],["Feuchtedifferenz","Humidity difference"],["Feuchtepotenzial","Moisture potential"],["Raum hinzufügen","Add room"],["Nicht angegeben","Not specified"],["Zuhause & Räume","Home & rooms"],["Räume verwalten","Manage rooms"],["Räume sortieren","Sort rooms"],["Raum bearbeiten","Edit room"],["Raumreihenfolge","Room order"],["Kellergeschoss","Basement"],["Fester mL-Wert","Fixed mL value"],["Energie sparen","Save energy"],["Fester ml-Wert","Fixed mL value"],["Daten & Lernen","Data & learning"],["Raum entfernen","Remove room"],["Raum auswählen","Select room"],["Schimmel & CO₂","Mould & CO₂"],["Betriebsprofil","Operating profile"],["Schimmelrisiko","Mould risk"],["Grundschätzung","Base estimate"],["Reihenendhaus","End-terrace house"],["Sommer kühlen","Summer cooling"],["Waschmaschine","Washing machine"],["Pollen & Wind","Pollen & wind"],["Lernvertrauen","Learning confidence"],["Sensor prüfen","Check sensor"],["Leicht erhöht","Slightly elevated"],["Betriebsmodus","Operating mode"],["Obergeschoss","Upper floor"],["Dachgeschoss","Attic"],["Haus/Wohnung","Whole home"],["Bügelstation","Ironing station"],["Weiterlüften","Continue ventilating"],["Nicht lüften","Do not ventilate"],["Nur anzeigen","Monitor only"],["Lerndiagnose","Learning diagnosis"],["Erdgeschoss","Ground floor"],["Entfeuchten","Dehumidify"],["Raumbezogen","Per room"],["Reihenfolge","Order"],["Querlüftung","Cross ventilation"],["Anwesenheit","Presence"],["Sehr stabil","Very stable"],["Nach unten","Move down"],["Wärmepumpe","Heat pump"],["Ausgewogen","Balanced"],["Lernmodell","Learning model"],["Heizsystem","Heating system"],["Alles okay","Okay"],["Lernstatus","Learning status"],["Lernproben","Learning samples"],["Sonstiges","Other"],["Nach oben","Move up"],["Fernwärme","District heating"],["Badewanne","Bath"],["Eher warm","Warm"],["Eher kühl","Cool"],["Raumklima","Indoor climate"],["Raumgröße","Room size"],["Schließen","Close"],["Unbekannt","Unknown"],["Sehr hoch","Very high"],["Brauchbar","Usable"],["Sonstige","Other"],["Nordwest","North-west"],["Trockner","Dryer"],["Bewohner","Residents"],["Nordost","North-east"],["Südwest","South-west"],["Wohnung","Apartment"],["Komfort","Comfort"],["Elektro","Electric"],["Gebäude","Building"],["Niedrig","Low"],["Südost","South-east"],["Beides","Both"],["Dusche","Shower"],["Kochen","Cooking"],["Fertig","Save changes"],["Zurück","Back"],["Aktion","Action"],["Lüften","Ventilate"],["Warten","Wait"],["Erhöht","Elevated"],["Stabil","Stable"],["Nacht","Night"],["Lernt","Learning"],["Nord","North"],["Haus","House"],["Hoch","High"],["Ost","East"],["Süd","South"],["Öl","Oil"]];
-const FAIQ_UI_EN = [
-  ["ROLLLÄDEN & JALOUSIEN", "BLINDS & SHUTTERS"],
-  ["FreshAirIQ normalisiert die Geräteposition auf einen eindeutigen geschlossenen Anteil. Ist die Beschattung stärker geschlossen als die Lern-Grenze, läuft die Lüftungsbilanz weiter, die Session wird aber nicht zum Lernen verwendet.", "FreshAirIQ normalizes device position to an unambiguous closed percentage. If shading is closed beyond the learning threshold, ventilation balancing continues but the session is excluded from learning."],
-  ["Positionslogik", "Position interpretation"],
-  ["Wähle, ob 0 % bei deinen Rollläden vollständig geschlossen oder vollständig geöffnet bedeutet.", "Choose whether 0% means your blinds/shutters are fully closed or fully open."],
-  ["0 % = vollständig geschlossen / 100 % = vollständig geöffnet", "0% = fully closed / 100% = fully open"],
-  ["0 % = vollständig geöffnet / 100 % = vollständig geschlossen", "0% = fully open / 100% = fully closed"],
-  ["Lern-Grenze geschlossen", "Closed threshold for learning"],
-  ["Nur bis einschließlich dieses geschlossenen Anteils wird eine Lüftung als unverfälschte Lernprobe verwendet. Standard: 20 %. Bei >20 % wird weiter bilanziert, aber nicht gelernt.", "A ventilation session is used as an unbiased learning sample only up to and including this closed percentage. Default: 20%. Above 20%, balancing continues but the session is excluded from learning."],
-  ["noch keine Messung", "no measurement yet"], ["Noch keine Messung", "No measurement yet"],
-  ["Lüften", "Ventilate"], ["Weiterlüften", "Continue ventilating"], ["Schließen", "Close"],
-  ["Nicht lüften", "Do not ventilate"], ["Warten", "Wait"], ["Alles okay", "Everything is okay"],
-  ["Sensor prüfen", "Check sensor"], ["Zum Kühlen lüften", "Ventilate for cooling"], ["Nur anzeigen", "Monitor only"],
-  ["Sehr hoch", "Very high"], ["Hoch", "High"], ["Erhöht", "Elevated"], ["Leicht erhöht", "Slightly elevated"],
-  ["Niedrig", "Low"], ["Unbekannt", "Unknown"], ["Sehr stabil", "Very stable"], ["Stabil", "Stable"],
-  ["Brauchbar", "Usable"], ["Lernt", "Learning"], ["Grundschätzung", "Base estimate"],
-  ["Entfeuchten", "Dehumidify"], ["Komfort", "Comfort"], ["Sommer kühlen", "Summer cooling"],
-  ["Kellergeschoss", "Basement"], ["Erdgeschoss", "Ground floor"], ["Obergeschoss", "Upper floor"], ["Dachgeschoss", "Attic"],
-  ["Unzugeordnet", "Unassigned"], ["Freistehendes Haus", "Detached house"], ["Doppelhaushälfte", "Semi-detached house"],
-  ["Reihenmittelhaus", "Mid-terrace house"], ["Reihenendhaus", "End-terrace house"], ["Wohnung", "Apartment"], ["Dachgeschosswohnung", "Top-floor apartment"],
-  ["Mehrfamilienhaus", "Multi-family house"], ["Sonstiges", "Other"], ["Haus", "House"],
-  ["Wärmepumpe", "Heat pump"], ["Fernwärme", "District heating"], ["Elektro", "Electric"], ["Öl", "Oil"],
-  ["Nordost", "Northeast"], ["Nordwest", "Northwest"], ["Südost", "Southeast"], ["Südwest", "Southwest"],
-  ["Nord", "North"], ["Süd", "South"], ["Ost", "East"], ["West", "West"],
-  ["Pollenbelastung liegt über dem eingestellten Grenzwert", "Pollen load is above the configured threshold"],
-  ["Ziel erreicht oder zusätzlicher Lüftungsnutzen zu gering", "Target reached or additional ventilation benefit is too low"],
-  ["Referenzluft würde zusätzliche Feuchtigkeit eintragen", "Reference air would add moisture"],
-  ["Potenzial vorhanden, Lüftungsschwelle noch nicht erreicht", "Potential exists, but the ventilation threshold has not been reached"],
-  ["Kein sinnvoller Lüftungsbedarf", "No meaningful ventilation demand"], ["Messwerte fehlen oder sind unplausibel", "Measurements are missing or implausible"],
-  ["Raum wird angezeigt, beeinflusst die Berechnungen aber nicht", "Room is displayed but excluded from FreshAirIQ calculations"],
-  ["Fenster geschlossen lassen", "Keep windows closed"], ["Fenster jetzt schließen", "Close windows now"], ["Raumsensoren prüfen", "Check room sensors"],
-  ["Pollenbelastung zu hoch · Lüften verschoben", "Pollen load too high · ventilation postponed"], ["Sommerkühlung sinnvoll", "Summer cooling is beneficial"],
-  ["Noch keine Lernmessung", "No learning measurement yet"], ["Noch keine Lernsession ausgewertet", "No learning session evaluated yet"],
-  ["Außenluft, Gebäude, Betriebsprofil und Prognose", "Outdoor air, building, operating profile and forecast"],
-  ["Bewohner", "Residents"], ["Anwesenheit, Namen, Räume, Komfort und persönliche Endgeräte", "Presence, names, rooms, comfort and personal devices"],
-  ["Räume & Stockwerke", "Rooms & floors"], ["Hausstruktur, Raumgrößen, Sensoren, Kontakte und Luftwege", "Building structure, room sizes, sensors, contacts and airflow paths"],
-  ["Lüftungslogik", "Ventilation logic"], ["Feuchte, Schimmel, Wind, Querlüftung und Lernmodell", "Humidity, mould, wind, cross-ventilation and learning model"],
-  ["Allgemeine Ziele, Ereignisse und Cooldown", "General targets, events and cooldown"], ["Energie & Daten", "Energy & data"],
-  ["Heizkosten, Statistik und Auswertung", "Heating costs, statistics and analysis"],
-  ["Bug beschreiben oder Verbesserungsvorschlag direkt an den Diagnose-Hub senden", "Describe a bug or send an improvement suggestion directly to the diagnostics hub"],
-  ["Lerndaten oder Einstellungen zurücksetzen", "Reset learning data or settings"], ["Außenluft & Wetter", "Outdoor air & weather"],
-  ["Gebäude", "Building"], ["Prognose", "Forecast"], ["Räume & Sensoren", "Rooms & sensors"], ["Luftwege & Querlüftung", "Airflow paths & cross-ventilation"],
-  ["Optionale Sensoren & Außenluft", "Optional sensors & outdoor air"], ["Lüftungsmodell", "Ventilation model"], ["Daten & Statistik", "Data & statistics"],
-  ["Personen, Anwesenheit, Räume, Komfort und Endgeräte an einer Stelle", "People, presence, rooms, comfort and devices in one place"],
-  ["Öffnen und direkt bearbeiten", "Open and edit directly"], ["Kühlung ab Innentemperatur", "Cooling from indoor temperature"],
-  ["Sommerkühlung wird erst oberhalb dieses Werts erwogen.", "Summer cooling is considered only above this value."],
-  ["Mindest-Temperaturvorteil außen", "Minimum outdoor temperature advantage"], ["Außenluft muss mindestens so viel kühler sein.", "Outdoor air must be at least this much cooler."],
-  ["Maximale Innenfeuchte für Kühlung", "Maximum indoor humidity for cooling"], ["Verhindert Kühlung durch zu feuchte Luft.", "Prevents cooling with air that is too humid."],
-  ["Zulässiger Feuchteeintrag im Prognosefenster.", "Allowed moisture gain during the forecast window."], ["Preis für die Wiederaufheizenergie.", "Price of reheating energy."],
-  ["Wärmepumpen-COP", "Heat-pump COP"], ["Verhältnis von Wärmeleistung zu Stromaufnahme.", "Ratio of heat output to electrical input."],
-  ["Ölpreis", "Oil price"], ["Preis je Liter Heizöl.", "Price per litre of heating oil."], ["Energiegehalt Heizöl", "Heating-oil energy content"],
-  ["Wirkungsgrad Ölheizung", "Oil-heating efficiency"], ["Fernwärmepreis", "District-heating price"], ["Arbeitspreis der gelieferten Wärme.", "Energy price of delivered heat."],
-  ["Berücksichtigt Verteilverluste im Haus.", "Accounts for distribution losses in the building."],
-  ["Sensorwerte verfügbar", "Sensor values available"], ["Sensoren aktuell nicht verfügbar", "Sensors currently unavailable"], ["Keine Klimasensoren konfiguriert", "No climate sensors configured"],
-  ["FreshAirIQ zeigt die echten Sensorwerte dieses Raums an. Der Raum ist bewusst von Empfehlungen, Prognosen, Hausbilanz und Lernen ausgeschlossen.", "FreshAirIQ shows the real sensor values for this room. The room is intentionally excluded from recommendations, forecasts, whole-home balance and learning."],
-  ["Der Raum ist auf „Nur anzeigen“ gestellt, aber mindestens ein zugeordneter Klimasensor liefert aktuell keinen gültigen Wert.", "The room is set to ‘Monitor only’, but at least one assigned climate sensor currently has no valid value."],
-  ["Dieser Strukturraum bleibt im Gebäudemodell erhalten. Es werden keine Klimawerte geschätzt oder erfunden.", "This structural room remains in the building model. No climate values are estimated or invented."],
-  ["keine Richtung hinterlegt", "no direction configured"], ["Daueröffnung überwachen", "Monitor long-term opening"],
-  ["MECHANISCHE LÜFTUNG AKTIV", "MECHANICAL VENTILATION ACTIVE"], ["LÜFTUNG AKTIV", "VENTILATION ACTIVE"], ["PASSIV MITGELÜFTET", "PASSIVELY VENTILATED"], ["GESCHLOSSEN", "CLOSED"],
-  ["würde Feuchtigkeit eintragen", "would add moisture"], ["Automatisch nach Hausgröße & Nutzung", "Automatic based on home size & usage"],
-  ["Intelligente Lüftungsschwelle", "Smart ventilation threshold"], ["Temperaturänderung", "Temperature change"], ["Lüftungszeit", "Ventilation time"],
-  ["Keine weiteren Details verfügbar.", "No further details available."], ["Feuchteabbau hat Vorrang; FreshAirIQ toleriert dafür etwas mehr Wärmeverlust.", "Moisture reduction has priority; FreshAirIQ accepts slightly more heat loss for it."],
-  ["Ausgewogene Entscheidung aus Feuchte, Temperatur, Luftqualität und Energie.", "Balanced decision based on humidity, temperature, air quality and energy."],
-  ["Kühle Außenluft wird gezielt zum Absenken der Raumtemperatur genutzt, solange der Feuchteeintrag vertretbar bleibt.", "Cool outdoor air is used specifically to lower room temperature as long as moisture gain remains acceptable."],
-  ["Prognosen & Lernen", "Forecasts & learning"], ["Prognosemodell, Feedback, Shadow-Lernen & Validierung", "Forecast model, feedback, shadow learning & validation"],
-  ["Tagesroutinen, Nutzerstrategie & persönlicher Kontext", "Daily routines, user strategy & personal context"], ["Lernt noch", "Still learning"],
-  ["Wird sicher an den Diagnose-Hub übertragen …", "Being securely transmitted to the diagnostics hub …"],
-  ["Diesen Raum wirklich aus FreshAirIQ entfernen?", "Really remove this room from FreshAirIQ?"], ["Alle gelernten FreshAirIQ-Daten wirklich löschen?", "Really delete all learned FreshAirIQ data?"],
-  ["Alle FreshAirIQ-Optionen wirklich auf Standardwerte zurücksetzen? Räume und Sensoren bleiben erhalten.", "Really reset all FreshAirIQ options to defaults? Rooms and sensors will be kept."],
-  ["Feuchte & Wasserbilanz", "Humidity & water balance"], ["Aktuelle Feuchte, entfernbares Potenzial und Live-Bilanz.", "Current humidity, removable potential and live balance."],
-  ["Temperaturänderungen", "Temperature changes"], ["Temperaturverlust oder -gewinn während und nach dem Lüften.", "Temperature loss or gain during and after ventilation."],
-  ["Empfohlene Dauer und verbleibende IQ-Zeit.", "Recommended duration and remaining IQ time."], ["Vorhersage für den gewählten Prognosezeitraum.", "Forecast for the selected forecast period."],
-  ["Nächtliche Entwicklung und empfohlene Fensterstrategie.", "Overnight development and recommended window strategy."], ["Oberflächen-RH und auffällige Räume.", "Surface RH and notable rooms."],
-  ["Wiederaufheizenergie und geschätzte Heizkosten.", "Reheating energy and estimated heating costs."], ["Pollen & Außenluft-Veto", "Pollen & outdoor-air veto"],
-  ["Querlüftung", "Cross-ventilation"], ["IQ-Aktiv / Analyseleiste", "IQ active / analysis bar"], ["Details-Schaltfläche", "Details button"],
-  ["Gäste-Schaltfläche", "Guests button"], ["Räume-Schaltfläche", "Rooms button"], ["VOC / TVOC berücksichtigen", "Consider VOC / TVOC"],
-  ["PM2.5 berücksichtigen", "Consider PM2.5"], ["Helligkeit berücksichtigen", "Consider illuminance"],
-  ["Intelligente Lüftungs-, Feuchte-, Energie- und Lernübersicht.", "Smart ventilation, humidity, energy and learning overview."],
-  ["Automatisch erzeugtes Live-Dashboard mit Detail-Popup, Räumen, Nachtprognose, Lernen und Energie.", "Automatically generated live dashboard with detail popup, rooms, night forecast, learning and energy."],
-  ["Details", "Details"], ["Gäste", "Guests"], ["Räume", "Rooms"], ["Raum", "Room"], ["Zurück", "Back"], ["Speichern", "Save"], ["Abbrechen", "Cancel"],
-  ["Einstellungen", "Settings"], ["Empfehlung", "Recommendation"], ["Empfehlungen", "Recommendations"], ["Warum diese Entscheidung?", "Why this decision?"],
-  ["WARUM DIESE ENTSCHEIDUNG?", "WHY THIS DECISION?"], ["HAUSLÜFTUNG", "WHOLE-HOME VENTILATION"], ["Hauslüftung", "Whole-home ventilation"],
-  ["FEUCHTE", "HUMIDITY"], ["TEMPERATUR", "TEMPERATURE"], ["SCHIMMEL", "MOULD"], ["NACHT", "NIGHT"], ["LERNEN", "LEARNING"],
-  ["Aktuell lernt FreshAirIQ", "FreshAirIQ is currently learning"], ["Lernfortschritt nach Bereichen", "Learning progress by area"],
-  ["Tippe auf einen Bereich, um Details zu sehen.", "Tap an area to see details."], ["Erfahrungsreife", "Experience maturity"], ["Prognosequalität", "Forecast quality"],
-  ["FreshAirIQ übernimmt", "FreshAirIQ is handling it"], ["Aktuell ist kein Eingreifen nötig.", "No action is currently needed."],
-  ["Fenster ist gekippt; vollständig öffnen erhöht den Luftwechsel für die aktuelle Empfehlung", "Window is tilted; opening it fully increases airflow for the current recommendation"],
-  ["Drei-Zustands-Sensor meldet Kipplüftung; FreshAirIQ empfiehlt für den aktuellen Bedarf vollständiges Öffnen", "Three-state sensor reports a tilted window; FreshAirIQ recommends opening it fully for the current ventilation demand"],
-  ["Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet", "Three-state sensor reports tilted ventilation; the selected ventilation mode is evaluated with the separate tilt model"],
-  ["Drei-Zustands-Sensor meldet Kipplüftung; der reduzierte Luftwechsel wird separat gelernt", "Three-state sensor reports a tilted window; the reduced airflow is learned separately"],
-  ["Vollständig öffnen", "Open fully"],
-  ["Nacht", "Night"], ["Hinweis", "Notice"], ["im Blick", "monitored"], ["Pollen", "Pollen"], ["beachten", "watch"], ["okay", "okay"], ["Lernen", "Learning"], ["aktiv", "active"],
-  ["Alles gut", "All good"], ["Raum/Räume werden automatisch verfolgt.", "room(s) are being tracked automatically."],
-  ["weitere Räume ohne akuten Handlungsbedarf", "more rooms without urgent action needed"], ["Räume ohne akuten Handlungsbedarf", "rooms without urgent action needed"],
-];
-FAIQ_NATIVE_EN.push(
-  ["RÄUME & SENSOREN", "ROOMS & SENSORS"],
-  ["Räume direkt im Dashboard verwalten", "Manage rooms directly in the dashboard"],
-  ["Noch keine Räume eingerichtet.", "No rooms configured yet."],
-  ["Raum hinzufügen", "Add room"],
-  ["Schlüssel", "Key"],
-  ["Kontakt(e)", "contact(s)"],
-  ["Noch kein Fenster-/Türkontakt ausgewählt.", "No window/door contact selected yet."],
-  ["Ausrichtung", "Orientation"],
-  ["Unbekannt", "Unknown"],
-  ["Öffnungsverzögerung", "Opening delay"],
-  ["Referenztemperatur dieser Öffnung", "Reference temperature for this opening"],
-  ["Referenzfeuchte dieser Öffnung", "Reference humidity for this opening"],
-  ["Rollo / Jalousie dieser Öffnung", "Blind / shutter for this opening"],
-  ["Tür wird als Durchgang genutzt und von außen zugezogen", "Door is used as a passage and pulled shut from outside"],
-  ["Kontakte im Detail", "Opening details"],
-  ["Abweichende Referenz nur paarweise (Temperatur + Feuchte) setzen.", "Set an alternative reference only as a pair (temperature + humidity)."],
-  ["Lüftungsziele priorisieren", "Prioritize ventilation goals"],
-  ["Entfeuchtung", "Dehumidification"],
-  ["CO₂ / Luftqualität", "CO₂ / air quality"],
-  ["Temperaturkomfort", "Temperature comfort"],
-  ["Für diesen Raum ist aktuell kein priorisierbares Lüftungsziel konfiguriert. Optionale Ziele erscheinen automatisch, sobald die benötigten Sensoren bzw. ein Komfortziel hinterlegt sind.", "No prioritizable ventilation goal is currently configured for this room. Optional goals appear automatically once the required sensors or a comfort target are configured."],
-  ["Es werden nur Ziele angezeigt, für die dieser Raum die nötigen Daten besitzt. CO₂ erscheint nur mit CO₂-Sensor; Temperaturkomfort nur mit Thermostat oder manuellem/Fallback-Ziel.", "Only goals for which this room has the required data are shown. CO₂ appears only with a CO₂ sensor; temperature comfort only with a thermostat or manual/fallback target."],
-  ["Priorität", "Priority"],
-  ["CO₂-Sensor", "CO₂ sensor"],
-  ["Ablüfter / mechanische Lüftung", "Exhaust fan / mechanical ventilation"],
-  ["Komfort-Zieltemperatur", "Comfort target temperature"],
-  ["Manuelle Zieltemperatur", "Manual target temperature"],
-  ["Fallback-Zieltemperatur", "Fallback target temperature"],
-  ["VOC-/TVOC-Sensor", "VOC/TVOC sensor"],
-  ["PM2.5-Sensor", "PM2.5 sensor"],
-  ["Helligkeitssensor", "Illuminance sensor"],
-  ["Thermostat / Klimagerät", "Thermostat / climate device"],
-  ["Zuluftgerät", "Supply-air device"],
-  ["Lüftungs-/WRG-Gerät", "Ventilation/HRV device"],
-  ["Entfeuchter", "Dehumidifier"],
-  ["Luftbefeuchter", "Humidifier"],
-  ["Luftreiniger", "Air purifier"],
-  ["Feuchtequellen", "Moisture sources"],
-  ["Dusche", "Shower"],
-  ["Badewanne", "Bathtub"],
-  ["Kochen", "Cooking"],
-  ["Wäsche trocknen", "Drying laundry"],
-  ["Raum speichern", "Save room"],
-  ["Raum löschen", "Delete room"],
-  ["Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.", "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without a sensor there is no CO₂ priority, CO₂ recommendation, ETA or goal display."],
-  ["Optional. EIN startet mechanische Lüftung, AUS beendet sie. FreshAirIQ bewertet und lernt diese Lüftungsart getrennt von Fenster-/Kipplüftung; das Gerät wird nicht automatisch geschaltet.", "Optional. ON starts mechanical ventilation and OFF ends it. FreshAirIQ evaluates and learns this ventilation type separately from window/tilt ventilation; the device is not switched automatically."],
-  ["Freiwillige Eingabe. Ohne Thermostat/Klimagerät kann der Raum gespeichert und weiter genutzt werden. Ist ein Gerät ausgewählt, verwendet FreshAirIQ im Automatikmodus dessen letzten plausiblen Sollwert als Temperatur-Komfortziel; Frostschutz/Aus nach Lüftungsbeginn ersetzt dieses Ziel nicht.", "Optional. Evaluated as an alternative cooling measure; FreshAirIQ does not invent a target temperature."],
-  ["Optional. Kann Frischluftbedarf bei erhöhtem CO₂ unterstützen.", "Optional. Can support fresh-air demand when CO₂ is elevated."],
-  ["Optional. Zentrale oder dezentrale mechanische Lüftung.", "Optional. Central or decentralized mechanical ventilation."],
-  ["Optional. Alternative bei hoher Feuchte oder ungünstiger Außenluft.", "Optional. Alternative when humidity is high or outdoor air is unsuitable."],
-  ["Optional. Wird nur bei deutlich trockener Raumluft empfohlen.", "Optional. Recommended only when room air is clearly too dry."],
-  ["Optional. Ergänzung bei Feinstaub, VOC oder Pollen-Veto.", "Optional. Additional measure for particulate matter, VOC or pollen veto."],
-  ["Markiere typische Feuchte- und Wärmequellen, die FreshAirIQ bei der Quellenanalyse berücksichtigen darf.", "Mark typical moisture and heat sources that FreshAirIQ may consider in source analysis."],
-  ["Außenluft / Raum-Referenz verwenden", "Use outdoor / room reference"],
-  ["Entitäten durchsuchen …", "Search entities …"],
-  ["Nicht gesetzt", "Not set"]
-);
-// 0.26.4.5: English for every remaining German UI text found by tools/i18n_audit (card + editor).
-FAIQ_NATIVE_EN.push(
-  ["WASSER IN DER LUFT", "WATER IN THE AIR"],
-  ["NACHTPROGNOSE", "NIGHT FORECAST"],
-  ["Nachtprognose", "Night forecast"],
-  ["ANWESENHEIT", "PRESENCE"],
-  ["Lernt dein Zuhause kennen", "Getting to know your home"],
-  ["Raumphysik · Prognosemodell", "Room physics · forecast model"],
-  ["Dein Zuhause", "Your home"],
-  ["Raum braucht Aufmerksamkeit", "room needs attention"],
-  ["Räume brauchen Aufmerksamkeit", "rooms need attention"],
-  ["in Ordnung", "fine"],
-  ["Nachricht an den Support (optional)", "Message to support (optional)"],
-  ["Beschreibung", "Description"],
-  ["Meldung senden", "Send report"],
-  ["Aktuell: ", "Current: "],
-  ["Pollenbewertung", "Pollen assessment"],
-  ["Betragsgenauigkeit", "Magnitude accuracy"],
-  ["Richtung", "Direction"],
-  ["Lernwirkung vs. Grundmodell", "Learning effect vs. basic model"],
-  ["Aktuell vs. vorherige Generation", "Current vs. previous generation"],
-  ["Welche Räume den Wert verursachen", "Which rooms cause the value"],
-  ["RAUM-INTELLIGENZ", "ROOM INTELLIGENCE"],
-  ["Daten plausibel", "Data plausible"],
-  ["Messwerte plausibel", "Readings plausible"],
-  ["Messwerte unplausibel", "Readings implausible"],
-  ["LETZTE LERNMESSUNG", "LAST LEARNING MEASUREMENT"],
-  ["RAUMLUFTFEUCHTE", "ROOM HUMIDITY"],
-  ["FRESHAIRIQ ENTSCHEIDUNG", "FRESHAIRIQ DECISION"],
-  ["LIVE-OPTIMIERUNG", "LIVE OPTIMISATION"],
-  ["JETZT ENTFERNBAR", "REMOVABLE NOW"],
-  ["berechnete Räume", "calculated rooms"],
-  ["bis Nachtende", "until end of night"],
-  ["Mehr zur Entscheidung", "More about the decision"],
-  ["Sicherheit", "confidence"],
-  ["Nachtprognose & Nachtstrategie", "Night forecast & night strategy"],
-  ["Helligkeit", "Brightness"],
-  ["Zeigt den aktuellen Modus als kompakte Kachel oben rechts.", "Shows the current mode as a compact tile at the top right."],
-  ["Wasser in der Hausluft", "Water in the indoor air"],
-  ["Letzte Messung", "Last measurement"],
-  ["Grenze", "Limit"],
-  ["Grundmodell", "Basic model"],
-  ["Deine Gewohnheiten", "Your habits"],
-  ["Langzeitlernen", "Long-term learning"],
-  ["Lokaler PDF-Nachweis", "Local PDF record"],
-  ["lokal", "local"],
-  ["VON", "FROM"],
-  ["BIS", "TO"],
-  ["PDF erstellen", "Create PDF"],
-  ["Aktuelle Raumwerte auf einen Blick", "Current room values at a glance"],
-  ["RAUMKLIMA", "INDOOR CLIMATE"],
-  ["g/m³ absolut", "g/m³ absolute"],
-  ["LERNSTATUS", "LEARNING STATUS"],
-  ["Proben", "samples"],
-  ["Fensternavigation", "Window navigation"],
-  ["Hilfe, Diagnose & Feedback", "Help, diagnostics & feedback"],
-  ["DIAGNOSE", "DIAGNOSTICS"],
-  ["Diagnosedaten", "Diagnostic data"],
-  ["exportieren", "export"],
-  ["an Support senden", "send to support"],
-  ["Fehler / Bug", "Error / bug"],
-  ["Verbesserungsvorschlag", "Suggestion"],
-  ["Support per E-Mail", "Support by email"],
-  ["Optional: Was ist passiert?", "Optional: What happened?"],
-  ["Paarvergleiche", "Pair comparisons"],
-  ["Generationenvergleiche", "Generation comparisons"],
-  ["Gelerntes Modell MAE", "Learned model MAE"],
-  ["Aktuelle Generation MAE", "Current generation MAE"],
-  ["Vorherige Generation MAE", "Previous generation MAE"],
-  ["95-%-Intervall Lerngewinn", "95 % interval learning gain"],
-  ["Sammelt Vergleichsdaten", "Collecting comparison data"],
-  ["Wo FreshAirIQ genauer hinschaut", "Where FreshAirIQ takes a closer look"],
-  ["FRESHAIRIQ EMPFIEHLT", "FRESHAIRIQ RECOMMENDS"],
-  ["Wasserdampf", "water vapour"],
-  ["RAUMMODELL", "ROOM MODEL"],
-  ["Systemcheck", "System check"],
-  ["IQ AKTIV", "IQ ACTIVE"],
-  ["BISHER", "SO FAR"],
-  ["IQ-ZEIT", "IQ TIME"],
-  ["bis Ziel", "to target"],
-  ["Ziel erreicht", "Target reached"],
-  ["Prognosegenauigkeit", "Forecast accuracy"],
-  ["Raumempfehlung(en) befolgt", "room recommendation(s) followed"],
-  ["Lernmessung(en) verwertbar", "learning measurement(s) usable"],
-  ["Feuchtigkeit erfolgreich reduziert", "Humidity successfully reduced"],
-  ["Vergleichsmessung", "Comparison measurement"],
-  ["Gesamtergebnis", "Overall result"],
-  ["IQ-AUSWERTUNG", "IQ EVALUATION"],
-  ["Abweichung", "Deviation"],
-  ["ABSCHLUSSMESSUNG", "FINAL MEASUREMENT"],
-  ["Abschlussauswertung", "Final evaluation"],
-  ["modellierte Wirkung", "modelled effect"],
-  ["Wird berechnet …", "Calculating …"],
-  ["MIT EMPFEHLUNG", "WITH RECOMMENDATION"],
-  ["ENTSCHEIDUNGSWIRKUNG", "DECISION IMPACT"],
-  ["NACHTSTRATEGIE", "NIGHT STRATEGY"],
-  ["Nachtstrategie", "Night strategy"],
-  ["JETZT", "NOW"],
-  ["LERNT JETZT: IQ lernt gerade den realen Luftaustausch", "LEARNING NOW: IQ is learning the real air exchange"],
-  ["Keine Klimasensoren erforderlich", "No climate sensors required"],
-  ["Letzte echte Sensormessung", "Last real sensor reading"],
-  ["RAUM-MONITORING", "ROOM MONITORING"],
-  ["AKTIVE FEUCHTEQUELLE", "ACTIVE MOISTURE SOURCE"],
-  ["SICHERHEIT", "CONFIDENCE"],
-  ["LIVE-FEUCHTEBILANZ · GANZES HAUS", "LIVE MOISTURE BALANCE · WHOLE HOUSE"],
-  ["IQ-ENTSCHEIDUNG", "IQ DECISION"],
-  ["Aktuelle Entscheidung", "Current decision"],
-  ["PROGNOSEZEITRAUM", "FORECAST HORIZON"],
-  ["Nachtmodell", "Night model"],
-  ["adaptiv · Ziel ca. 3–5×/Tag", "adaptive · target approx. 3–5×/day"],
-  ["Hauptempfehlung", "Main recommendation"],
-  ["Personen", "people"],
-  ["Schwelle", "Threshold"],
-  ["Kurzfristiger Schließcheck (5 min): voraussichtlich", "Short-term close check (5 min): expected"],
-  ["ml Feuchteabbau", "ml moisture reduction"],
-  ["ml Feuchtigkeit können entfernt werden", "ml of moisture can be removed"],
-  ["Jetzt lüften · etwa", "Ventilate now · about"],
-  ["Lüftung läuft ·", "Ventilation running ·"],
-  ["Freshy ist zufrieden", "Freshy is happy"],
-  ["Freshy möchte, dass du lüftest", "Freshy wants you to air the rooms"],
-  ["Freshy lüftet mit", "Freshy is airing with you"],
-  ["Freshy schläft", "Freshy is asleep"],
-  ["Freshy hält ein Blatt als Schirm", "Freshy holds a leaf as an umbrella"],
-  ["Freshy fächelt sich Luft zu", "Freshy fans itself"],
-  ["Freshy ist besorgt", "Freshy is worried"],
-  ["Einzelergebnis aus älterem Datenformat nicht verfügbar", "Single result not available from the older data format"],
-  ["Messwert nicht belastbar", "Reading not reliable"],
-  ["LETZTE LÜFTUNG", "LAST VENTILATION"],
-  ["Noch keine abgeschlossene Lüftung", "No completed ventilation yet"],
-  ["Sobald eine Lüftung abgeschlossen ist, bleibt ihr Ergebnis hier abrufbar.", "Once a ventilation is completed, its result stays available here."],
-  ["Feuchte nicht belastbar", "Humidity not reliable"],
-  ["· vollständiges Ergebnis öffnen", "· open full result"],
-  ["nicht belastbar", "not reliable"],
-  ["Für diese Lüftung konnte beim Start keine belastbar auswertbare Prognose eingefroren werden", "No reliable forecast could be frozen at the start of this ventilation"],
-  ["% · Startprognose gegen Ergebnis bei gleicher Messdauer", "% · start forecast vs. result over the same measuring time"],
-  ["Feuchteergebnis nicht in Lernen oder Feuchtestatistik übernommen · Sensorzeitstempel während der Lüftung nicht vollständig", "Humidity result not used for learning or humidity statistics · sensor timestamps during ventilation incomplete"],
-  ["Raum/Räume mit aktiver Feuchtequelle", "room(s) with an active moisture source"],
-  ["Raum/Räume mit zeitgleichem Startvergleich", "room(s) with a simultaneous start comparison"],
-  ["Raum/Räumen für Genauigkeitswertung verwertbar", "room(s) usable for accuracy scoring"],
-  ["Raum/Räume wegen nicht ausreichend synchroner Messdaten ausgeschlossen", "room(s) excluded because readings were not synchronous enough"],
-  ["Keine Genauigkeitswertung · Messdaten nicht streng genug synchronisiert", "No accuracy score · readings not synchronised closely enough"],
-  ["Raum/Räume für Genauigkeitswertung verwertbar", "room(s) usable for accuracy scoring"],
-  ["Ergebnis noch", "Result for"],
-  ["Lüftung beendet · Feuchteergebnis nicht belastbar", "Ventilation finished · humidity result not reliable"],
-  ["Feuchtigkeit ist angestiegen", "Humidity has increased"],
-  ["Lüftung ausgewertet", "Ventilation evaluated"],
-  ["nicht als Messwert gespeichert", "not stored as a reading"],
-  ["FreshAirIQ wartet bei zeitversetzt meldenden Sensoren auf einen belastbaren Messvergleich. Die Lern-Auswertung kann deshalb verzögert erscheinen. Dieser Vergleich wird wegen nicht ausreichend synchroner Messdaten nicht als Prognosegenauigkeit gewertet.", "FreshAirIQ waits for a reliable comparison when sensors report with a delay, so the learning evaluation may appear later. This comparison is not counted as forecast accuracy because the readings were not synchronous enough."],
-  ["Die Genauigkeit wird ausschließlich aus den streng vergleichbaren Raummessungen berechnet. Asynchrone Räume bleiben sichtbar, beeinflussen diese Wertung aber nicht.", "Accuracy is calculated only from strictly comparable room readings. Asynchronous rooms stay visible but do not affect this score."],
-  ["Feuchtevergleich nicht belastbar", "Humidity comparison not reliable"],
-  ["Vom Öffnen des ersten bis zum Schließen des letzten Lüftungsfensters zusammengefasst.", "Summarised from opening the first to closing the last window."],
-  ["LÜFTUNG ABGESCHLOSSEN", "VENTILATION COMPLETED"],
-  ["Ergebnis öffnen ›", "Open result ›"],
-  ["Vollständige Auswertung", "Full evaluation"],
-  ["Daueröffnung wird überwacht", "Long opening is being monitored"],
-  ["Fenster kann vorerst offen/gekippt bleiben", "Window can stay open/tilted for now"],
-  ["Sensoren prüfen", "Check sensors"],
-  ["Raum/Räume mit ungültigen Messwerten", "room(s) with invalid readings"],
-  ["Jetzt schließen", "Close now"],
-  ["Lüftung läuft", "Ventilation running"],
-  ["Kühlere Außenluft kann genutzt werden", "Cooler outdoor air can be used"],
-  ["Jetzt lüften", "Ventilate now"],
-  ["Hausweit", "Whole home"],
-  ["möglich", "possible"],
-  ["Raumweise lüften", "Ventilate room by room"],
-  ["Feuchteproblem · noch nicht lüften", "Humidity issue · do not ventilate yet"],
-  ["Feuchteproblem · abwarten", "Humidity issue · wait"],
-  ["Außenluft würde in", "Outdoor air would in"],
-  ["FreshAirIQ bewertet fortlaufend Raum-, Außen- und Prognosedaten.", "FreshAirIQ continuously evaluates room, outdoor and forecast data."],
-  ["Rückmeldung wird geprüft", "Checking feedback"],
-  ["Warte kurz auf die Klimasensoren", "Waiting briefly for the climate sensors"],
-  ["Fenster geschlossen ·", "Window closed ·"],
-  ["FreshAirIQ hat die Lüftung beendet und fordert jetzt noch einmal die bereits konfigurierten Temperatur- und Feuchtesensoren an. Erst danach wird das Ergebnis angezeigt.", "FreshAirIQ has finished the ventilation and is requesting the configured temperature and humidity sensors once more. The result is shown afterwards."],
-  ["frische Abschlusswerte werden eingesammelt", "collecting fresh final readings"],
-  ["Kein Stillstand: FreshAirIQ wartet bewusst kurz auf eine aktuelle Sensor-Rückmeldung. Antwortet ein Batteriesensor nicht, endet die Gnadenfrist automatisch und die Messqualität wird aus den tatsächlich während der Lüftung beobachteten Meldungen bewertet.", "Not stuck: FreshAirIQ deliberately waits briefly for a current sensor update. If a battery sensor does not respond, the grace period ends automatically and measurement quality is rated from the updates actually observed during ventilation."],
-  ["FreshAirIQ überwacht", "FreshAirIQ is monitoring"],
-  ["DAUER-/KIPPLÜFTUNG", "LONG/TILTED VENTILATION"],
-  ["Live-Messverlauf berücksichtigt", "live readings considered"],
-  ["am Feuchteziel begrenzt", "limited at the humidity target"],
-  ["optimal noch ca.", "optimal for about"],
-  ["seit Lüftungsbeginn", "since ventilation started"],
-  ["FreshAirIQ aktualisiert Feuchte, Temperatur und Kosten für den neuen Zeitraum.", "FreshAirIQ updates humidity, temperature and costs for the new period."],
-  ["seit Start", "since start"],
-  ["DAUERÖFFNUNG", "LONG OPENING"],
-  ["wird überwacht", "is being monitored"],
-  ["Temperatur & Feuchte werden laufend geprüft", "temperature & humidity are checked continuously"],
-  ["über Ziel", "above target"],
-  ["kontrolliert über Nacht lüften", "ventilate in a controlled way overnight"],
-  ["vor dem Schlafengehen kurz lüften, dann schließen", "air briefly before bed, then close"],
-  ["Mit der Empfehlung erwartet FreshAirIQ morgen rund", "With the recommendation FreshAirIQ expects tomorrow about"],
-  ["ml weniger Feuchte.", "ml less moisture."],
-  ["Die Empfehlung bringt voraussichtlich nur einen kleinen Vorteil von rund", "The recommendation probably brings only a small benefit of about"],
-  ["Für diese Nacht ist kein messbarer Feuchtevorteil durch zusätzliches Lüften zu erwarten.", "No measurable humidity benefit from extra ventilation is expected tonight."],
-  ["WAS BRINGT LÜFTEN VOR DEM SCHLAFEN?", "WHAT DOES AIRING BEFORE BED BRING?"],
-  ["OHNE ZUSÄTZLICHES LÜFTEN", "WITHOUT EXTRA VENTILATION"],
-  ["bis morgen früh", "until tomorrow morning"],
-  ["% Oberflächen-RH", "% surface RH"],
-  ["auffällig", "elevated"],
-  ["unauffällig", "unremarkable"],
-  ["geschlossen", "closed"],
-  ["teilweise offen", "partly open"],
-  ["kurz vorlüften", "air briefly beforehand"],
-  ["vorher lüften", "air beforehand"],
-  ["g/m³ außen", "g/m³ outdoors"],
-  ["Wetter wird bewertet", "weather is being evaluated"],
-  ["SPÄTER", "LATER"],
-  ["Feuchte & Temperatur", "Humidity & temperature"],
-  ["Feuchte", "Humidity"],
-  ["DAUER-/KIPPLÜFTUNG WIRD ÜBERWACHT: FreshAirIQ prüft Temperatur, Feuchtebilanz und Außenbedingungen fortlaufend und empfiehlt das Schließen, sobald die Daueröffnung ungünstig wird.", "LONG/TILTED VENTILATION MONITORED: FreshAirIQ continuously checks temperature, moisture balance and outdoor conditions and recommends closing as soon as the long opening becomes unfavourable."],
-  ["· Feuchtewirkung · Temperaturreaktion · optimale Schließzeit ·", "· moisture effect · temperature response · optimal closing time ·"],
-  ["Raum/Räume warten noch auf passende Sensordaten", "room(s) still waiting for matching sensor data"],
-  ["LÜFTUNG WIRD BEOBACHTET: FreshAirIQ sammelt aktuelle Temperatur- und Feuchtemeldungen · für eine Modellanpassung fehlen noch zeitlich passende Sensordaten", "VENTILATION OBSERVED: FreshAirIQ is collecting current temperature and humidity updates · matching sensor data is still missing for a model adjustment"],
-  ["Datenquelle(n) prüfen · verbleibende Daten werden weiter bewertet", "data source(s) to check · remaining data is still evaluated"],
-  ["FreshAirIQ erwartet mit der empfohlenen Nachtstrategie morgen früh etwa", "With the recommended night strategy FreshAirIQ expects tomorrow morning about"],
-  ["ml weniger Feuchte. Wetter, Außenluft und deine gelernten Raumverläufe fließen in diesen Vergleich ein.", "ml less moisture. Weather, outdoor air and your learned room behaviour are part of this comparison."],
-  ["FreshAirIQ vergleicht die erwartete Nachtentwicklung mit und ohne Eingriff. Aktuell ergibt sich kein belastbarer zusätzlicher Feuchtegewinn durch eine andere Strategie.", "FreshAirIQ compares the expected night development with and without intervention. Currently no reliable additional humidity gain results from a different strategy."],
-  ["Begründung & IQ-Analyse", "Reasoning & IQ analysis"],
-  ["Keine raumspezifische Maßnahme nötig", "No room-specific action needed"],
-  ["FreshAirIQ überwacht die Räume weiter. Die Hausschwelle entscheidet separat über eine allgemeine Lüftungsempfehlung.", "FreshAirIQ keeps monitoring the rooms. The house threshold separately decides on a general ventilation recommendation."],
-  ["wärmer", "warmer"],
-  ["kühler", "cooler"],
-  ["nahezu unverändert", "almost unchanged"],
-  ["Wird für Gebäude, Etage, Volumen und Bewohnerzuordnung geführt – ohne erfundene Klimawerte.", "Kept for building, floor, volume and resident assignment – without invented climate values."],
-  ["m³ · Fenster", "m³ · window"],
-  ["· nur Struktur", "· structure only"],
-  ["FreshAirIQ konnte die Aktion nicht abschließen.", "FreshAirIQ could not complete the action."],
-  ["Nur bei erkannten Problemen", "Only when problems are detected"],
-  ["Täglich nachts", "Daily at night"],
-  ["Wöchentlich", "Weekly"],
-  ["Alle Support-Funktionen sind hier zentral gebündelt.", "All support functions in one place."],
-  ["Diagnosedaten lokal exportieren oder direkt an den FreshAirIQ-Support senden.", "Export diagnostics locally or send them directly to FreshAirIQ support."],
-  ["Die Diagnose wird verschlüsselt über Home Assistant direkt an den FreshAirIQ-Diagnose-Server übertragen – nicht an die hier angezeigte lokale Home-Assistant-Adresse. Zugangsdaten und Tokens werden nicht übertragen.", "Diagnostics are sent encrypted through Home Assistant directly to the FreshAirIQ diagnostics server – not to the local Home Assistant address shown here. Credentials and tokens are not transmitted."],
-  ["Fehler und Verbesserungsvorschläge direkt melden.", "Report bugs and suggestions directly."],
-  ["Art der Meldung", "Type of report"],
-  ["Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.", "Please do not enter passwords, tokens or personal secrets."],
-  ["Automatische Diagnoseübertragung", "Automatic diagnostics upload"],
-  [". Ändern unter Geräte & Dienste → FreshAirIQ → Konfigurieren → Daten & Lernen → Diagnose-Freigabe.", ". Change under Devices & services → FreshAirIQ → Configure → Data & learning → Diagnostics sharing."],
-  ["Sensor aktuell nicht verfügbar", "Sensor currently unavailable"],
-  ["OPTIONALE ZUSATZSENSOREN · KEIN EINFLUSS AUF DIE LÜFTUNGSPHYSIK", "OPTIONAL EXTRA SENSORS · NO EFFECT ON VENTILATION PHYSICS"],
-  ["Bitte Verfügbarkeit und Zuordnung der Temperatur-/Feuchtesensoren prüfen.", "Please check availability and assignment of the temperature/humidity sensors."],
-  ["Bei Bedarf können unter Räume & Sensoren Temperatur- und Feuchtesensoren hinterlegt werden.", "If needed, temperature and humidity sensors can be added under Devices & services → FreshAirIQ → Configure."],
-  ["Fenster-/Türkontakt", "Window/door contact"],
-  ["FreshAirIQ behandelt die lange, stabile Öffnung als wahrscheinliche Dauer- oder Kipplüftung und überwacht sie weiter.", "FreshAirIQ treats the long, stable opening as likely long or tilted ventilation and keeps monitoring it."],
-  ["FreshAirIQ begleitet die laufende Lüftung in diesem Raum.", "FreshAirIQ is following the running ventilation in this room."],
-  ["FreshAirIQ bewertet diesen Raum fortlaufend aus Klima, Außenluft, Lernmodell und Gebäudeeigenschaften.", "FreshAirIQ continuously evaluates this room from climate, outdoor air, learned model and building properties."],
-  ["Oberflächen-RH ·", "surface RH ·"],
-  ["Lüftungen ·", "ventilations ·"],
-  ["geschätztes Wiederaufheizen", "estimated reheating"],
-  ["Fenster/Türen:", "Windows/doors:"],
-  ["Daten prüfen", "Check data"],
-  ["Bilanz seit Sessionstart", "Balance since session start"],
-  ["aktuell entfernbares Potenzial", "currently removable potential"],
-  ["Prognose ↔ Realität · Treffer", "Forecast ↔ reality · hits"],
-  ["% · Feuchtefaktor", "% · humidity factor"],
-  ["· Übernahmen", "· adoptions"],
-  ["Vergleicht Produktionsmodell mit Alternativen", "Compares the production model with alternatives"],
-  ["· aktuell erwartet", "· currently expected"],
-  ["Feuchtequelle", "Moisture source"],
-  ["· Schätzung", "· estimate"],
-  ["Räumen werden gelüftet", "rooms are being ventilated"],
-  ["Live-Bilanz für das ganze Haus", "Live balance for the whole home"],
-  ["LIVE-FEUCHTEBILANZ NACH RÄUMEN", "LIVE MOISTURE BALANCE BY ROOM"],
-  ["Hausweite Lüftung läuft", "Whole-home ventilation running"],
-  ["Wo Feuchtigkeit entweicht oder hinzukommt", "Where moisture escapes or is added"],
-  ["Bei einer großen Hauslüftung bewertet FreshAirIQ primär die gemeinsame Hauswirkung. Passiv mitgelüftete Räume werden aus ihrem eigenen Sensorverlauf erkannt und mit ≈ als Schätzung markiert; sie werden nicht doppelt zur Hausbilanz addiert.", "During a large whole-home ventilation FreshAirIQ mainly evaluates the combined effect on the home. Passively ventilated rooms are detected from their own sensor history and marked with ≈ as an estimate; they are not added to the home balance twice."],
-  ["Aktive Lüftungen sind deutlich hervorgehoben. Passiv mitgelüftete Räume werden aus ihrem Sensorverlauf erkannt und als Schätzung markiert. Minus = entfernt, Plus = hinzugekommen.", "Active ventilations are highlighted. Passively ventilated rooms are detected from their sensor history and marked as an estimate. Minus = removed, plus = added."],
-  ["aktuell entfernbar", "currently removable"],
-  ["kein relevantes Potenzial", "no relevant potential"],
-  ["FEUCHTEPOTENZIAL NACH RÄUMEN", "MOISTURE POTENTIAL BY ROOM"],
-  ["Ohne laufende Lüftung zeigt FreshAirIQ hier raumweise, wo aktuell Feuchtigkeit entfernt werden könnte oder wo Lüften Feuchtigkeit eintragen würde. Minus = entfernbar, Plus = möglicher Eintrag.", "Without a running ventilation FreshAirIQ shows per room where moisture could currently be removed or where ventilating would add moisture. Minus = removable, plus = possible gain."],
-  ["Keine gültigen Raumdaten vorhanden.", "No valid room data available."],
-  ["LÜFTUNGSERGEBNIS · DAUERHAFT GESPEICHERT", "VENTILATION RESULT · STORED PERMANENTLY"],
-  ["Letzte Lüftung im Detail", "Last ventilation in detail"],
-  ["Hier bleibt die zuletzt vollständig abgeschlossene Hauslüftung erhalten – auch nachdem die 5-Minuten-Ergebnisanzeige auf dem Hauptdashboard beendet ist.", "The last fully completed whole-home ventilation is kept here – even after the 5-minute result display on the main dashboard has ended."],
-  ["SCHIMMEL-IQ · RISIKO NACH RÄUMEN", "MOULD IQ · RISK BY ROOM"],
-  ["Die Räume sind nach Risiko sortiert.", "Rooms are sorted by risk."],
-  ["Wichtig: Das ist nur eine grobe Einschätzung.", "Important: this is only a rough estimate."],
-  ["FreshAirIQ leitet die Oberflächenfeuchte aus dem Raumklima ab. Ohne gemessene Oberflächentemperatur bzw. Taupunkt an der konkreten Bauteiloberfläche lässt sich ein tatsächliches Schimmelrisiko nicht sicher bestimmen. Tippe einen Raum an, um Ursache, Empfehlung und Lernwerte zu sehen.", "FreshAirIQ derives the surface humidity from the room climate. Without a measured surface temperature or dew point on the actual building surface, a real mould risk cannot be determined reliably. Tap a room to see cause, recommendation and learned values."],
-  ["Der Statussensor liefert aktuell keine Raumdaten. Bitte Home Assistant nach dem Update einmal neu starten; vorhandene Raumkonfigurationen werden dabei nicht gelöscht.", "The status sensor currently delivers no room data. Please restart Home Assistant once after the update; existing room configurations are not deleted."],
-  ["ml in der Luft", "ml in the air"],
-  ["RÄUME", "ROOMS"],
-  ["Raumübersicht", "Room overview"],
-  ["ANWESENHEIT & GÄSTEMODUS", "PRESENCE & GUEST MODE"],
-  ["Wer ist heute Nacht im Haus?", "Who is home tonight?"],
-  ["FreshAirIQ berücksichtigt aktuell", "FreshAirIQ currently considers"],
-  [". Davon sind", ". Of these,"],
-  ["über Home Assistant als zuhause erkannt,", "are detected as home via Home Assistant,"],
-  ["als abwesend und", "as away and"],
-  ["Übernachtungsgäste:", "Overnight guests:"],
-  ["Kinder. Jede Änderung kalkuliert Kurzzeit- und Nachtprognose sofort neu. Anwesenheits-IQ", "children. Every change immediately recalculates the short-term and night forecast. Presence IQ"],
-  ["ml über", "ml across"],
-  ["FreshAirIQ berechnet die Wasserdampfmenge je Raum aus absoluter Feuchte × Raumvolumen. So wird aus Prozent Luftfeuchte ein physikalisch vergleichbarer Wert.", "FreshAirIQ calculates the amount of water vapour per room from absolute humidity × room volume. This turns percent humidity into a physically comparable value."],
-  ["Die Entscheidung wird aus Gesundheit/Schimmel, Komfort, Feuchtewirkung, Temperatur und Energie priorisiert. Gelernte Gewohnheiten dürfen Sicherheitsentscheidungen nicht überstimmen.", "The decision is prioritised by health/mould, comfort, moisture effect, temperature and energy. Learned habits must not override safety decisions."],
-  ["FreshAirIQ kombiniert Raumdaten, Außenluft, Prognosen und Lernwerte.", "FreshAirIQ combines room data, outdoor air, forecasts and learned values."],
-  ["Die Lüftungsschwelle legt fest, ab welchem gesamten Feuchtepotenzial FreshAirIQ eine Hauslüftung als sinnvoll bewertet. Aktuell liegt sie bei", "The ventilation threshold defines from which total moisture potential FreshAirIQ rates a whole-home ventilation as worthwhile. It is currently"],
-  [". Die Raumempfehlungen können zusätzlich eigene Gesundheits- oder Schimmelgründe haben. Ändern kannst du die Schwelle unter Einstellungen → Geräte & Dienste → FreshAirIQ → Konfigurieren.", ". Room recommendations can additionally have their own health or mould reasons. You can change the threshold under Settings → Devices & services → FreshAirIQ → Configure."],
-  ["FreshAirIQ berücksichtigt die konfigurierte Pollenbelastung als möglichen Lüftungs-Veto-Faktor.", "FreshAirIQ considers the configured pollen load as a possible veto against ventilating."],
-  ["Lüftung aktuell eingeschränkt", "Ventilation currently restricted"],
-  ["kein Pollen-Veto", "no pollen veto"],
-  ["Feuchtebilanz / entfernbar", "Moisture balance / removable"],
-  ["Während einer Lüftung zeigt der Wert die seit Beginn berechnete Feuchteänderung. Ohne aktive Lüftung zeigt er das aktuell entfernbar geschätzte Potenzial. Die aktuelle Empfehlungsschwelle liegt bei", "During a ventilation the value shows the moisture change calculated since the start. Without an active ventilation it shows the currently estimated removable potential. The current recommendation threshold is"],
-  ["· Minus = Feuchte entfernt, Plus = Feuchte eingetragen.", "· Minus = moisture removed, plus = moisture added."],
-  ["Volumengewichtete Temperaturänderung der aktuell gelüfteten Räume seit dem jeweiligen Sessionstart.", "Volume-weighted temperature change of the currently ventilated rooms since their session start."],
-  ["Nach einem Neustart werden nur plausible, echte Sensorwerte als Startbasis akzeptiert.", "After a restart, only plausible, real sensor values are accepted as a starting point."],
-  ["Empfohlene Dauer aus Außentemperatur, Feuchtedifferenz und den eingestellten Mindest-/Maximalzeiten.", "Recommended duration from outdoor temperature, humidity difference and the configured minimum/maximum times."],
-  ["Bei aktiver Lüftung wird die verbleibende bzw. überschrittene Zeit live berechnet.", "During an active ventilation the remaining or exceeded time is calculated live."],
-  ["Minuten", "minutes"],
-  ["Rollierende Hybrid-Prognose aus gelerntem Luftwechsel, absoluter Feuchte innen/außen, zukünftiger Wetterentwicklung (falls verfügbar), aktuellem Feuchte- und Temperaturtrend, interner Feuchteproduktion, Wind/Fensterausrichtung und Querlüftung. Heizsystem und Energiepreis beeinflussen nicht die physikalische Feuchteprognose, sondern nur die separate Wärmeverlust- und Kostenschätzung.", "Rolling hybrid forecast from learned air exchange, absolute humidity indoors/outdoors, future weather development (if available), current humidity and temperature trend, internal moisture production, wind/window orientation and cross-ventilation. Heating system and energy price do not affect the physical humidity forecast, only the separate heat-loss and cost estimate."],
-  ["Bei Horizonten über 5 Minuten simuliert FreshAirIQ den Zustand in 5-Minuten-Schritten und schätzt zusätzlich den effizienten Endpunkt innerhalb des Prognosefensters. Minus = voraussichtlich Feuchte entfernt, Plus = Feuchte kommt hinzu. Modellvertrauen aktuell", "For horizons over 5 minutes FreshAirIQ simulates the state in 5-minute steps and additionally estimates the efficient end point within the forecast window. Minus = moisture expected to be removed, plus = moisture added. Current model confidence"],
-  ["Aktive Plausibilitäts- und Vollständigkeitsprüfung der konfigurierten Datenquellen.", "Active plausibility and completeness check of the configured data sources."],
-  ["Räume gültig ·", "rooms valid ·"],
-  ["auffällig · Wetter", "flagged · weather"],
-  ["Räumen ·", "rooms ·"],
-  ["verfügbar", "available"],
-  ["Intelligente Feuchteprognose bis zum relevanten Nachtende (", "Intelligent humidity forecast until the relevant end of night ("],
-  ["Sie kombiniert aktuell erwartete Bewohner (", "It combines the currently expected residents ("],
-  ["), Gäste, gelernte Nachtproben, aktuellen Feuchtetrend, absolute Außenfeuchte, offene Fenster, Wind, Fensterausrichtung und gelernten Luftwechsel. Wettereffekt", "), guests, learned night samples, current humidity trend, absolute outdoor humidity, open windows, wind, window orientation and learned air exchange. Weather effect"],
-  ["Entfeuchten priorisiert Feuchteabbau. Komfort balanciert Feuchte, Temperatur und Energie. Sommer kühlen nutzt kühle Außenluft, solange der Feuchteeintrag vertretbar bleibt.", "Dehumidify prioritises moisture removal. Comfort balances humidity, temperature and energy. Summer cooling uses cool outdoor air as long as the added moisture stays acceptable."],
-  ["ERKLÄRUNG", "EXPLANATION"],
-  ["oder", "or"],
-  ["Übernehmen", "Apply"],
-  ["Schnellwahl wird sofort übernommen. Für einen beliebigen Wert von 1 bis 120 Minuten Zahl eingeben und „Übernehmen“ wählen.", "Quick choices apply immediately. For any value from 1 to 120 minutes enter a number and choose “Apply”."],
-  ["ÜBERNACHTUNGSGÄSTE", "OVERNIGHT GUESTS"],
-  ["Die Anzeige reagiert sofort; FreshAirIQ berechnet die Nachtprognose anschließend mit der neuen Belegung neu.", "The display reacts immediately; FreshAirIQ then recalculates the night forecast with the new occupancy."],
-  ["Ich kenne inzwischen dein Zuhause und bestätigte Nutzungs- und Komfortmuster. Persönliche Optimierung ist aktiv.", "I now know your home and confirmed usage and comfort patterns. Personal optimisation is active."],
-  ["Ich arbeite zunächst mit Gebäudephysik und aktuellen Messwerten. Persönliches Lernen beginnt erst mit belastbaren Beobachtungen.", "For now I work with building physics and current readings. Personal learning only starts with reliable observations."],
-  ["FreshAirIQ sammelt unabhängige Erfahrungen und bestätigt erkannte Muster Schritt für Schritt an realen Ergebnissen.", "FreshAirIQ collects independent experience and confirms detected patterns step by step against real results."],
-  ["Lernlüftungen", "learning ventilations"],
-  ["unabhängige Lüftungen · Lernwirkung", "independent ventilations · learning effect"],
-  ["Tage ·", "days ·"],
-  ["Lüftungen", "ventilations"],
-  ["/120 Nächte", "/120 nights"],
-  ["Reife zeigt unabhängige Erfahrung. Prognosequalität zeigt getrennt davon, wie gut Vorhersagen bisher zur Realität passen.", "Maturity shows independent experience. Forecast quality shows separately how well predictions have matched reality so far."],
-  ["Raumphysik, Feuchtepuffer & Hausstrategie", "Room physics, moisture buffer & home strategy"],
-  ["MODELLQUALITÄT & DIAGNOSE", "MODEL QUALITY & DIAGNOSTICS"],
-  ["Wie gut FreshAirIQ aktuell vorhersagt", "How well FreshAirIQ currently predicts"],
-  ["Lernreife und Prognosequalität sind getrennt. Zusätzlich vergleicht FreshAirIQ jede neue geeignete Lüftung paarweise mit einem eingefrorenen, ungelernten Grundmodell. Sobald für denselben Raum eine ältere, abweichende Forecast-Generation existiert, wird außerdem die aktuelle Generation gegen diesen unmittelbaren beobachteten Vorgänger unter derselben Startlage und Messdauer replayt.", "Learning maturity and forecast quality are separate. In addition, FreshAirIQ compares every new suitable ventilation pairwise with a frozen, untrained base model. If an older, different forecast generation exists for the same room, the current generation is also replayed against this directly observed predecessor with the same starting situation and measuring time."],
-  ["Prognosegüte", "Forecast quality"],
-  ["Unabhängige Lüftungen", "Independent ventilations"],
-  ["Unterschiedliche Tage", "Different days"],
-  ["· Belegt wird eine Verbesserung erst nach mindestens", "· An improvement is only confirmed after at least"],
-  ["unabhängigen Lüftungen an", "independent ventilations on"],
-  ["unterschiedlichen Tagen und einem vollständig positiven, nach Lüftungen geclusterten Fehlerintervall. Der Generationenvergleich verwendet dieselben konservativen Evidenzregeln.", "different days and a fully positive error interval clustered by ventilation. The generation comparison uses the same conservative evidence rules."],
-  ["/ 60 Tage", "/ 60 days"],
-  ["Vollständig durchlaufen und ausreichend belegt", "Fully covered and sufficiently backed by data"],
-  ["Noch nicht vollständig beobachtet", "Not fully observed yet"],
-  ["Jahreszeiten werden mit den nächsten Beobachtungstagen aufgebaut.", "Seasons are built up over the next observation days."],
-  ["Saisonalität & Nachtmodell", "Seasonality & night model"],
-  ["Hier zählt Zeit als echte Erfahrung: jede Nacht höchstens einmal und jede Jahreszeit erst, wenn sie vollständig durchlaufen und ausreichend mit brauchbaren Messwerten belegt wurde.", "Time counts here as real experience: each night at most once, and each season only when it has been fully covered and sufficiently backed by usable readings."],
-  ["Tage Kalenderabdeckung", "days of calendar coverage"],
-  ["Saisonalität", "Seasonality"],
-  ["Gesamtmodell Saisonalität", "Overall seasonality model"],
-  ["/ 365 Tage", "/ 365 days"],
-  ["Nächte gelernt", "nights learned"],
-  ["Hohe Pollingraten beschleunigen die Reife nicht. Entscheidend sind unterschiedliche Nächte, Tage und vollständig beobachtete Jahreszeiten.", "High polling rates do not speed up maturity. What counts are different nights, days and fully observed seasons."],
-  ["Unterschiedliche Nächte bestimmen die Reife.", "Different nights determine maturity."],
-  ["Noch keine Lerndaten verfügbar.", "No learning data available yet."],
-  ["Hausklima & Lüftungsintelligenz", "Home climate & ventilation intelligence"],
-  ["über berechnete Räume", "across calculated rooms"],
-  ["LÜFTUNGSSCHWELLE", "VENTILATION THRESHOLD"],
-  ["Wasser in der Hausluft · Tagesmittel", "Water in the indoor air · daily average"],
-  ["Absolute Feuchte × Raumvolumen, über alle überwachten Räume aggregiert. Tageswert = Mittel aller gültigen Messungen; Trend:", "Absolute humidity × room volume, aggregated over all monitored rooms. Daily value = average of all valid readings; trend:"],
-  ["aktuell zuhause/erwartet ·", "currently home/expected ·"],
-  ["FreshAirIQ nutzt die Anwesenheit für Nachtprognose und Belegungsmodell.", "FreshAirIQ uses presence for the night forecast and occupancy model."],
-  ["% der Wassermenge", "% of the water amount"],
-  ["nicht berücksichtigt", "not considered"],
-  ["noch unsicher", "still uncertain"],
-  ["Haustiermodus ist aktiv; reine Bewegung wird vorsichtiger bewertet.", "Pet mode is active; motion alone is rated more cautiously."],
-  ["LÜFTUNGSPROTOKOLL", "VENTILATION LOG"],
-  ["FreshAirIQ protokolliert abgeschlossene Lüftungen lokal in Home Assistant. Wähle einen Zeitraum und erstelle eine übersichtliche PDF mit Raum, Zeit, Dauer und – soweit durch die Sensoren belastbar erfasst – Klima- und Feuchtewirkung. Die PDF ist eine Sensordokumentation und keine rechtliche Bewertung.", "FreshAirIQ logs completed ventilations locally in Home Assistant. Choose a period and create a clear PDF with room, time, duration and – where reliably captured by the sensors – climate and moisture effect. The PDF is sensor documentation, not a legal assessment."],
-  ["Lüftungsprotokoll", "Ventilation log"],
-  ["FreshAirIQ-Konfiguration nicht gefunden", "FreshAirIQ configuration not found"],
-  ["PDF wird erstellt", "Creating PDF"],
-  ["bitte warten", "please wait"],
-  ["Export wird erstellt", "Creating export"],
-  ["Datei ist bereit", "File is ready"],
-  ["FreshAirIQ wartet auf die Status-Entität.", "FreshAirIQ is waiting for the status entity."],
-  ["min übrig", "min remaining"],
-  ["min drüber", "min over"],
-  ["Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben.", "Please enter a description with at least 3 characters."],
-  ["Bitte Verbindung zum Diagnose-Hub prüfen.", "Please check the connection to the diagnostics hub."],
-  ["Polleninformationen als ergänzende Analyse; kritische Warnungen bleiben sicherheitsbedingt möglich.", "Pollen information as additional analysis; critical warnings remain possible for safety reasons."],
-  ["Zeigt konfigurierte VOC-/TVOC-Zusatzwerte in Raumdetails. Die globale Berücksichtigung wird unter Geräte & Dienste → FreshAirIQ → Konfigurieren gesteuert.", "Shows configured VOC/TVOC values in room details. Whether they are considered globally is set under Devices & services → FreshAirIQ → Configure."],
-  ["Zeigt konfigurierte PM2.5-Zusatzwerte in Raumdetails. Die globale Berücksichtigung wird unter Geräte & Dienste → FreshAirIQ → Konfigurieren gesteuert.", "Shows configured PM2.5 values in room details. Whether they are considered globally is set under Devices & services → FreshAirIQ → Configure."],
-  ["Zeigt konfigurierte Helligkeitswerte in Raumdetails. Die globale Berücksichtigung wird unter Geräte & Dienste → FreshAirIQ → Konfigurieren gesteuert.", "Shows configured illuminance values in room details. Whether they are considered globally is set under Devices & services → FreshAirIQ → Configure."],
-  ["Zeigt Querlüftung als ergänzende Analyseinformation, wenn sie erkannt wird.", "Shows cross-ventilation as additional analysis information when it is detected."],
-  ["Zeigt Empfehlungen zum Starten oder Fortsetzen einer Lüftung.", "Shows recommendations to start or continue ventilating."],
-  ["Zeigt Empfehlungen zum Beenden einer Lüftung.", "Shows recommendations to stop ventilating."],
-  ["Zeigt raumspezifische Hinweise, wenn Lüften aktuell nicht sinnvoll ist.", "Shows room-specific notes when ventilating is currently not useful."],
-  ["Sommerkühlung", "Summer cooling"],
-  ["Zeigt Empfehlungen zum Lüften für Kühlung.", "Shows recommendations to ventilate for cooling."],
-  ["Zeigt Empfehlungen bei fehlenden oder unplausiblen Messwerten.", "Shows recommendations for missing or implausible readings."],
-  ["Ausblenden macht die Karte kompakter.", "Hiding makes the card more compact."],
-  ["Zeigt, was FreshAirIQ gerade analysiert und wie sicher die Prognose ist.", "Shows what FreshAirIQ is analysing right now and how certain the forecast is."],
-  ["Blendet den direkten Details-Button ein oder aus.", "Shows or hides the direct Details button."],
-  ["Blendet die Schnellsteuerung für Gäste ein oder aus.", "Shows or hides the quick controls for guests."],
-  ["Blendet den direkten Zugriff auf die Raumübersicht ein oder aus.", "Shows or hides direct access to the room overview."],
-  ["Support-Schaltfläche", "Support button"],
-  ["Blendet den zentralen Zugriff auf Diagnose, Feedback und Support ein oder aus.", "Shows or hides central access to diagnostics, feedback and support."],
-  ["Überschrift, Aktion und Zusammenfassung der aktuellen Empfehlung.", "Heading, action and summary of the current recommendation."],
-  ["Feuchte-, Temperatur- und CO₂-Ziele sowie deren Wirkung und Zeit.", "Humidity, temperature and CO₂ goals with their effect and time."],
-  ["Raumnamen, Raumstatus und raumbezogene Hinweise.", "Room names, room status and room notes."],
-  ["Werte in Kennzahlen- und Informationskacheln.", "Values in key-figure and information tiles."],
-  ["Begründungen & Details", "Reasons & details"],
-  ["Begründungen, Alternativen und ausführliche Entscheidungstexte.", "Reasons, alternatives and detailed decision texts."],
-  ["Labels, Hinweise und andere kleine Metatexte.", "Labels, notes and other small meta texts."],
-  ["Standardmäßig bleibt das vollständige Dashboard sichtbar. Hier kannst du Zusatzbereiche einzeln ausblenden. Wenn du alle Informationen und festen Bedienelemente deaktivierst, bleibt eine kompakte Ansicht mit der zentralen FreshAirIQ-Empfehlung.", "By default the full dashboard stays visible. Here you can hide additional areas individually. If you turn off all information and fixed controls, a compact view with the central FreshAirIQ recommendation remains."],
-  ["Wähle, welche Arten von raumspezifischen Empfehlungen diese Karte wiedergibt.", "Choose which kinds of room-specific recommendations this card shows."],
-  ["Diese Schalter ändern nur die Darstellung dieser einzelnen Dashboard-Karte. Globale FreshAirIQ-Einstellungen werden ausschließlich unter Geräte & Dienste → FreshAirIQ → Konfigurieren verwaltet.", "These switches only change how this single dashboard card looks. Global FreshAirIQ settings are managed exclusively under Devices & services → FreshAirIQ → Configure."],
-  ["Blende feste Bereiche und Schnellzugriffe aus, bis nur noch die Empfehlung übrig bleibt.", "Hide fixed areas and shortcuts until only the recommendation is left."],
-  ["INFORMATIONEN DIESER KARTE", "INFORMATION ON THIS CARD"],
-  ["DARSTELLUNG & KOMPAKTHEIT", "LAYOUT & COMPACTNESS"],
-  ["EMPFEHLUNGEN", "RECOMMENDATIONS"],
-  ["WASSER IN DER HAUSLUFT", "WATER IN THE INDOOR AIR"],
-  ["FEUCHTEPOTENZIAL", "MOISTURE POTENTIAL"],
-  ["Oberflächen-RH", "surface RH"],
-  ["Personen aktuell zuhause/erwartet", "people currently home/expected"],
-  ["Person aktuell zuhause/erwartet", "person currently home/expected"],
-  ["Erwachsene", "adults"],
-  ["Kinder", "children"],
-  ["Gäste", "Guests"],
-  ["Wetter fehlt", "weather missing"],
-  ["Fenster", "Window"],
-  ["Lernmodell", "learned model"],
-  ["sicher erkannt", "reliably detected"],
-  ["wahrscheinlich", "likely"],
-  ["unauffällig", "unremarkable"],
-  ["Hausweite", "Whole-home"]
-);
-// 0.26.4.5: longest phrases first; single words only as whole words. Plain substring
-// replacement turned "Hausklima" into "Houseklima" and "Raumübersicht" into "Roomübersicht".
-const FAIQ_EN_RULES = [...FAIQ_NATIVE_EN, ...FAIQ_UI_EN]
-  .filter(([de]) => de)
-  .sort((a, b) => b[0].length - a[0].length)
-  .map(([de, en]) => /^[\p{L}\p{N}₂.\-]+$/u.test(de)
-    ? [new RegExp(`(?<![\\p{L}\\p{N}])${de.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "gu"), en]
-    : [de, en]);
+// 0.26.4.8: the English phrase tables (about 165 kB, a third of the card) live in
+// freshairiq-card-i18n-en.js and are loaded only when a dashboard is shown in
+// English. German dashboards never download or parse them.
+const FAIQ_EN_MODULE = "freshairiq-card-i18n-en.js";
+const FAIQ_EN_READY_EVENT = "freshairiq-i18n-en-ready";
+let FAIQ_EN_RULES = null;
+let faiqEnglishPromise = null;
+let faiqEnglishFailedAt = 0;
+const FAIQ_EN_RETRY_MS = 60000;
+const FAIQ_EN_FIRST_PAINT_WAIT_MS = 2500;
+const faiqEnglishReady = () => Array.isArray(FAIQ_EN_RULES);
+const faiqLoadEnglish = () => {
+  if (faiqEnglishReady()) return Promise.resolve(FAIQ_EN_RULES);
+  // After a failed download wait a minute before trying again (no retry storm per render).
+  if (!faiqEnglishPromise && faiqEnglishFailedAt && Date.now() - faiqEnglishFailedAt < FAIQ_EN_RETRY_MS)
+    return Promise.reject(new Error("FreshAirIQ English texts unavailable"));
+  if (!faiqEnglishPromise) {
+    const url = new URL(`./${FAIQ_EN_MODULE}?v=${FAIQ_VERSION}`, import.meta.url).href;
+    faiqEnglishPromise = import(url).then(mod => {
+      FAIQ_EN_RULES = Array.isArray(mod.FAIQ_EN_RULES) ? mod.FAIQ_EN_RULES : [];
+      faiqEnglishFailedAt = 0;
+      try { window.dispatchEvent(new CustomEvent(FAIQ_EN_READY_EVENT)); } catch (_) { /* ignore */ }
+      return FAIQ_EN_RULES;
+    }).catch(error => {
+      faiqEnglishPromise = null;
+      faiqEnglishFailedAt = Date.now();
+      console.warn("FreshAirIQ English texts could not be loaded", error);
+      throw error;
+    });
+  }
+  return faiqEnglishPromise;
+};
+// First paint waits for the English texts at most this long, then renders anyway.
+const faiqWaitForEnglish = () => Promise.race([
+  faiqLoadEnglish(),
+  new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), FAIQ_EN_FIRST_PAINT_WAIT_MS)),
+]);
+// Start early when the browser or the Home Assistant profile is not German.
+const faiqLikelyEnglish = () => {
+  try {
+    const stored = String(window.localStorage.getItem("selectedLanguage") || "").replace(/"/g, "").toLowerCase();
+    if (stored) return !stored.startsWith("de");
+  } catch (_) { /* ignore */ }
+  return !String(navigator.language || "en").toLowerCase().startsWith("de");
+};
+if (faiqLikelyEnglish()) faiqLoadEnglish().catch(() => {});
 const faiqEnglishText = value => {
   let out = String(value == null ? "" : value);
   // Sentence patterns with numbers first, before word/phrase rules split them up.
@@ -666,6 +127,8 @@ const faiqEnglishText = value => {
     .replace(/(\d+) Raum\/Räume werden automatisch verfolgt\./g, "$1 room(s) are being tracked automatically.")
     .replace(/(\d+) weitere Räume ohne akuten Handlungsbedarf/g, "$1 more rooms without urgent action needed")
     .replace(/Alle (\d+) Räume ohne akuten Handlungsbedarf/g, "All $1 rooms without urgent action needed")
+    .replace(/(\d+) weitere Räume ohne akuten Lüftungsbedarf/g, "$1 more rooms without an urgent need to air")
+    .replace(/Alle (\d+) Räume ohne akuten Lüftungsbedarf/g, "All $1 rooms without an urgent need to air")
     .replace(/(\d+) min übrig/g, "$1 min remaining")
     .replace(/LETZTE (\d+) TAGE/g, "LAST $1 DAYS")
     .replace(/WEITERE (\d+) MIN/g, "NEXT $1 MIN")
@@ -676,7 +139,8 @@ const faiqEnglishText = value => {
     .replace(/(\d+) TAGE\b/g, "$1 DAYS")
     .replace(/(\d+) Raum braucht Aufmerksamkeit/g, "$1 room needs attention")
     .replace(/(\d+) Räume brauchen Aufmerksamkeit/g, "$1 rooms need attention");
-  for (const [de, en] of FAIQ_EN_RULES) out = typeof de === "string" ? out.split(de).join(en) : out.replace(de, () => en);
+  if (!faiqEnglishReady()) faiqLoadEnglish().catch(() => {});
+  for (const [de, en] of (FAIQ_EN_RULES || [])) out = typeof de === "string" ? out.split(de).join(en) : out.replace(de, () => en);
 
   return out;
 };
@@ -702,7 +166,7 @@ const faiqLocalizeTree = root => {
 };
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
 const lastItem = arr => (arr && arr.length ? arr[arr.length - 1] : undefined);
-// 0.26.4.5: number/date format follows the dashboard language (set at the start of _render).
+// 0.26.4.6: number/date format follows the dashboard language (set at the start of _render).
 let FAIQ_NUMBER_LOCALE = "de";
 const fmt = (v, d = 1) => { const n = Number(v); if (!Number.isFinite(n)) return "–"; const s = n.toFixed(d); return FAIQ_NUMBER_LOCALE === "de" ? s.replace(".", ",") : s; };
 // 0.26.4.1: head counts read "4 Personen", not "4,0"; a weighted share (e.g. 2,5) keeps one decimal.
@@ -719,6 +183,10 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
         ? { text: `−${Math.abs(Math.round(n))} ml`, color: "#67df92", kind: "removed" }
         : { text: `+${Math.abs(Math.round(n))} ml`, color: "#ff7770", kind: "added" };
 };
+// 0.26.4.7: rooms the whole-house decision deliberately holds back.
+const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
+const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : actionDE(r && r.action);
+const roomStyleAction = r => houseHeldRoom(r) ? "Wait" : (r && r.action);
 const actionDE = v => ({ "Ventilate": "Lüften", "Continue ventilating": "Weiterlüften", "Close": "Schließen", "Do not ventilate": "Nicht lüften", "Wait": "Warten", "Okay": "Alles okay", "Check sensor": "Sensor prüfen", "Ventilate for cooling": "Zum Kühlen lüften", "Monitor only": "Nur anzeigen", "Open fully": "Vollständig öffnen" }[v] || v || "–");
 const mouldDE = v => ({ "Very high": "Sehr hoch", "High": "Hoch", "Elevated": "Erhöht", "Slightly elevated": "Leicht erhöht", "Low": "Niedrig", "Unknown": "Unbekannt" }[v] || v || "Unbekannt");
 const learnDE = v => ({ "Very stable": "Sehr stabil", "Stable": "Stabil", "Usable": "Brauchbar", "Learning": "Lernt", "Base estimate": "Grundschätzung" }[v] || v || "–");
@@ -953,7 +421,8 @@ const FAIQ_AI_COMPACT_CSS = `
 
 /* v0.25.1.40 compact readability + progressive disclosure */
 const FAIQ_COMPACT_DISCLOSURE_CSS = `
-.ai-copy h2{font-size:21px;line-height:24px}.ai-copy p{font-size:11px;line-height:15px;-webkit-line-clamp:2}.ai-kicker{font-size:8px}.ai-facts span{font-size:9.5px}.ai-attention{grid-template-columns:1fr}.ai-room-wrap{min-width:0}.ai-room{grid-template-columns:32px minmax(0,1fr) 20px;padding:9px 10px}.ai-room b{font-size:11.5px}.ai-room small{font-size:9.5px;line-height:13px}.ai-all-good{font-size:9.5px}.ai-context b{font-size:9.5px}.ai-context small{font-size:8px}.compact-actions .details-btn{font-size:9.5px}.ai-inline-detail{margin-top:-3px;padding:10px 11px;border-radius:0 0 12px 12px;background:color-mix(in srgb,var(--detail) 5%,rgba(255,255,255,.018));border:1px solid color-mix(in srgb,var(--detail) 22%,transparent);border-top:0;display:grid;gap:6px;min-width:0}.ai-inline-detail>div:not(.ai-inline-title):not(.ai-inline-values){display:grid;grid-template-columns:17px minmax(0,1fr);gap:6px;align-items:start}.ai-inline-detail>div>ha-icon{--mdc-icon-size:15px;color:var(--detail)}.ai-inline-detail>div>span{font-size:11px;line-height:15px;color:#c7d1d7;overflow-wrap:anywhere}.ai-inline-title{font-size:8.5px;font-weight:950;letter-spacing:.65px;color:var(--detail)}.ai-inline-values{display:flex!important;grid-template-columns:none!important;gap:6px!important;flex-wrap:wrap;margin-top:2px}.ai-inline-values span{font-size:9.5px!important;font-weight:800;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.04);color:#b9c7ce!important}.ai-more{appearance:none;border:0;background:transparent;color:var(--detail);padding:5px 0 1px;font:inherit;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:flex-end;gap:3px;cursor:pointer}.ai-more ha-icon{--mdc-icon-size:15px}.ai-expand-chevron{transition:transform .15s ease}.decision-inline-detail{margin-top:-12px;padding-top:17px}.ai-assistant,.ai-room{min-width:0;overflow:hidden}.ai-copy,.ai-room>div{min-width:0}@media(max-width:520px){.ai-copy h2{font-size:19px;line-height:22px}.ai-copy p{font-size:10.5px;line-height:14px}.ai-context small{display:block;font-size:7.5px}.ai-context button{grid-template-columns:16px minmax(0,1fr);padding:7px 5px}.ai-context b{font-size:9px}.ai-inline-detail>div>span{font-size:10.5px;line-height:14px}}
+.ai-copy h2{font-size:21px;line-height:24px}.ai-copy p{font-size:11px;line-height:15px;-webkit-line-clamp:2}.ai-kicker{font-size:8px}.ai-facts span{font-size:9.5px}.ai-attention{grid-template-columns:1fr}.ai-room-wrap{min-width:0}.ai-room{grid-template-columns:32px minmax(0,1fr) 20px;padding:9px 10px}.ai-room b{font-size:11.5px}.ai-room small{font-size:9.5px;line-height:13px}.ai-all-good{font-size:9.5px}.ai-context b{font-size:9.5px}.ai-context small{font-size:8px}.compact-actions .details-btn{font-size:9.5px}.ai-inline-detail{margin-top:-3px;padding:10px 11px;border-radius:0 0 12px 12px;background:color-mix(in srgb,var(--detail) 5%,rgba(255,255,255,.018));border:1px solid color-mix(in srgb,var(--detail) 22%,transparent);border-top:0;display:grid;gap:6px;min-width:0}.ai-inline-detail>div:not(.ai-inline-title):not(.ai-inline-values):not(.goal-tracker){display:grid;grid-template-columns:17px minmax(0,1fr);gap:6px;align-items:start}.ai-inline-detail>div>ha-icon{--mdc-icon-size:15px;color:var(--detail)}.ai-inline-detail>div>span{font-size:11px;line-height:15px;color:#c7d1d7;overflow-wrap:anywhere}.ai-inline-title{font-size:8.5px;font-weight:950;letter-spacing:.65px;color:var(--detail)}.ai-inline-detail>.goal-tracker{margin:4px 0 2px;grid-template-columns:repeat(var(--goal-count,2),minmax(0,1fr))}.ai-inline-detail>.goal-tracker .goal-pill{align-items:flex-start}
+.ai-inline-values{display:flex!important;grid-template-columns:none!important;gap:6px!important;flex-wrap:wrap;margin-top:2px}.ai-inline-values span{font-size:9.5px!important;font-weight:800;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.04);color:#b9c7ce!important}.ai-more{appearance:none;border:0;background:transparent;color:var(--detail);padding:5px 0 1px;font:inherit;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:flex-end;gap:3px;cursor:pointer}.ai-more ha-icon{--mdc-icon-size:15px}.ai-expand-chevron{transition:transform .15s ease}.decision-inline-detail{margin-top:-12px;padding-top:17px}.ai-assistant,.ai-room{min-width:0;overflow:hidden}.ai-copy,.ai-room>div{min-width:0}@media(max-width:520px){.ai-copy h2{font-size:19px;line-height:22px}.ai-copy p{font-size:10.5px;line-height:14px}.ai-context small{display:block;font-size:7.5px}.ai-context button{grid-template-columns:16px minmax(0,1fr);padding:7px 5px}.ai-context b{font-size:9px}.ai-inline-detail>div>span{font-size:10.5px;line-height:14px}}
 
 /* v0.25.1.40 classic dashboard progressive disclosure */
 .decision-card{padding:14px}.decision-kicker{font-size:9.5px;line-height:13px}.decision-main h2{font-size:20px;line-height:24px}.decision-action{font-size:13px;line-height:17px}.decision-impact span{font-size:8.5px;line-height:11px}.decision-impact b{font-size:13px;line-height:17px}.decision-impact small{font-size:10.5px;line-height:14px}.decision-room-disclosures{display:grid;gap:7px;margin-top:10px}.decision-room-disclosure,.decision-more{border:1px solid rgba(255,255,255,.075);border-radius:12px;background:rgba(255,255,255,.025);overflow:hidden}.decision-room-disclosure{border-color:color-mix(in srgb,var(--room-detail) 28%,rgba(255,255,255,.075));background:color-mix(in srgb,var(--room-detail) 5%,rgba(255,255,255,.025))}.decision-room-disclosure>summary,.decision-more>summary{list-style:none;display:grid;align-items:center;cursor:pointer;min-width:0}.decision-room-disclosure>summary::-webkit-details-marker,.decision-more>summary::-webkit-details-marker{display:none}.decision-room-disclosure>summary{grid-template-columns:minmax(0,1fr) auto 20px;gap:8px;padding:10px 11px;color:var(--primary-text-color,#fff)}.decision-room-disclosure>summary span{font-size:12.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--primary-text-color,#fff)}.decision-room-disclosure>summary strong{font-size:10.5px;color:var(--room-detail);white-space:nowrap}.decision-room-disclosure>summary ha-icon,.decision-more>summary ha-icon{--mdc-icon-size:18px;transition:transform .16s ease}.decision-room-disclosure[open]>summary ha-icon,.decision-more[open]>summary ha-icon{transform:rotate(180deg)}.decision-room-detail{padding:0 11px 11px;border-top:1px solid rgba(255,255,255,.055)}.decision-room-detail .decision-section-title{font-size:8.5px!important;margin-top:10px}.decision-room-reason{display:grid;grid-template-columns:18px minmax(0,1fr);gap:7px;align-items:start;margin-top:7px}.decision-room-reason ha-icon{--mdc-icon-size:16px;color:var(--room-detail)}.decision-room-reason span{font-size:11.5px;line-height:16px;color:#c7d1d7;overflow-wrap:anywhere}.decision-room-values{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.decision-room-values span{font-size:10px;font-weight:800;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.045)}.decision-room-open{appearance:none;border:0;background:transparent;color:var(--room-detail);padding:9px 0 0;font:inherit;font-size:10.5px;font-weight:900;cursor:pointer}.decision-more{margin-top:11px}.decision-more>summary{grid-template-columns:minmax(0,1fr) auto 20px;gap:8px;padding:10px 11px}.decision-more>summary>span:first-child{font-size:12px;font-weight:900}.decision-more-hint{font-size:9.5px;color:#8798a3;white-space:nowrap}.decision-more-content{padding:0 11px 11px;border-top:1px solid rgba(255,255,255,.055)}.decision-more-content .decision-summary{font-size:11.5px;line-height:16px;margin-top:10px}.decision-more-content .decision-section-title{font-size:8.5px!important}.decision-more-content .decision-why span{font-size:11.5px;line-height:16px}.decision-more-content .decision-alternative{font-size:10.5px;line-height:15px}.decision-more-content .iq-process-head{font-size:10.5px}.decision-more-content .iq-process-text{font-size:11.5px;line-height:16px}@media(max-width:520px){.decision-main h2{font-size:19px;line-height:23px}.decision-action{font-size:12.5px;line-height:17px}.decision-impact span{font-size:8px}.decision-impact b{font-size:12.5px}.decision-impact small{font-size:10px}.decision-more-hint{display:none}.decision-more>summary{grid-template-columns:minmax(0,1fr) 20px}.decision-room-disclosure>summary span{font-size:12px}.decision-room-reason span,.decision-more-content .decision-summary,.decision-more-content .decision-why span,.decision-more-content .iq-process-text{font-size:11px;line-height:15px}}
@@ -1112,87 +581,152 @@ button,summary,.clickable,[data-info],[data-room]{touch-action:manipulation;-web
 @media(max-width:380px){.settings-room-actions:has(#diagnostics-send){flex-direction:column}}
 `;
 const FAIQ_FRESHY_CSS = `
-/* ---- Freshy character (0.26.4) ---- */
-.fr{display:block;overflow:visible}
+/* ---- Freshy character (0.26.4.8) ----
+   Every loop ends exactly like it starts (0% == 100%, or "alternate"), particles
+   fade in and out, and every animation is anchored to one shared clock (--frp):
+   a live re-render continues the motion instead of jumping back to frame 0. */
+.fr{display:block;overflow:visible;--frp:0s;--frin:-9s;animation:frIn .55s ease-out var(--frin) both}
 .fr .fr-face,.fr .frx,.fr .fr-halo-run{display:none}
-.fr .fr-whole{transform-box:view-box;transform-origin:96px 70px}
-.fr .fr-body{transform-box:view-box;transform-origin:96px 70px;animation:frBreathe 4.2s ease-in-out infinite}
-.fr .fr-leaves{transform-box:view-box;transform-origin:54px 72px;animation:frSway 3.4s ease-in-out infinite alternate}
-.fr .fr-eye{transform-box:fill-box;transform-origin:center;animation:frBlink 5.5s infinite}
+.fr .fr-whole{transform-box:view-box;transform-origin:96px 112px}
+.fr .fr-body{transform-box:view-box;transform-origin:96px 70px;animation:frBreathe 4.2s ease-in-out var(--frp) infinite}
+.fr .fr-leaves{transform-box:view-box;transform-origin:54px 72px;animation:frSway 3.4s ease-in-out var(--frp) infinite alternate}
+.fr .fr-eye{transform-box:fill-box;transform-origin:center;animation:frBlink 5.5s linear var(--frp) infinite}
 .fr .fr-halo{stroke:#7FE3FF}
 .fr text{font-family:inherit}
+@keyframes frIn{0%{opacity:0;transform:scale(.94)}100%{opacity:1;transform:scale(1)}}
 @keyframes frBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 @keyframes frSway{0%{transform:rotate(-5deg)}100%{transform:rotate(5deg)}}
 @keyframes frFlutter{0%{transform:rotate(-12deg)}100%{transform:rotate(10deg)}}
 @keyframes frFan{0%{transform:rotate(-24deg)}100%{transform:rotate(14deg)}}
+@keyframes frStretch{0%{transform:rotate(4deg)}100%{transform:rotate(-26deg)}}
 @keyframes frBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.12)}}
+@keyframes frDroop{0%,100%{transform:scaleY(.22)}30%,46%{transform:scaleY(.85)}62%{transform:scaleY(.22)}}
+@keyframes frYawn{0%,55%,100%{transform:scale(1,.55)}70%,82%{transform:scale(1.15,1.7)}}
 @keyframes frPulse{0%,100%{stroke-opacity:1;stroke-width:3.4}50%{stroke-opacity:.45;stroke-width:5.5}}
+@keyframes frFade{0%,100%{opacity:0}20%,70%{opacity:.9}}
 @keyframes frWind{0%{transform:translateX(16px);opacity:0}30%{opacity:.9}100%{transform:translateX(-26px);opacity:0}}
 @keyframes frOut{0%{transform:translate(0,0) scale(.6);opacity:0}25%{opacity:1}100%{transform:translate(26px,-30px) scale(1);opacity:0}}
 @keyframes frNod{0%,60%,100%{transform:translateY(0)}70%{transform:translateY(5px)}80%{transform:translateY(0)}88%{transform:translateY(3px)}}
-@keyframes frDraw{0%,20%{stroke-dashoffset:40}60%,100%{stroke-dashoffset:0}}
+@keyframes frPop{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
 @keyframes frZ{0%{transform:translate(0,6px);opacity:0}30%{opacity:1}100%{transform:translate(8px,-18px);opacity:0}}
-@keyframes frRain{0%{transform:translateY(-30px);opacity:0}15%{opacity:.9}100%{transform:translateY(120px);opacity:0}}
+@keyframes frRain{0%{transform:translateY(-30px);opacity:0}15%{opacity:.9}85%{opacity:.9}100%{transform:translateY(120px);opacity:0}}
+@keyframes frSnow{0%{transform:translate(0,-24px) rotate(0deg);opacity:0}15%{opacity:1}50%{transform:translate(6px,40px) rotate(180deg)}85%{opacity:1}100%{transform:translate(0,110px) rotate(360deg);opacity:0}}
+@keyframes frCloudDrift{0%{transform:translateX(-4px)}100%{transform:translateX(4px)}}
+@keyframes frDrop{0%,55%{transform:translateY(0);opacity:0}62%{opacity:1}92%{opacity:.85}100%{transform:translateY(34px);opacity:0}}
+@keyframes frGlance{0%,20%,100%{transform:translate(0,0)}35%,75%{transform:translate(1.4px,-2px)}}
 @keyframes frSweat{0%,30%{transform:translateY(0);opacity:0}45%{opacity:1}100%{transform:translateY(18px);opacity:0}}
 @keyframes frWobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+@keyframes frShiver{0%,58%,100%{transform:translateX(0)}61%{transform:translateX(-1.6px)}64%{transform:translateX(1.6px)}67%{transform:translateX(-1.4px)}70%{transform:translateX(1.4px)}73%{transform:translateX(-1px)}76%{transform:translateX(1px)}79%{transform:translateX(0)}}
 @keyframes frFlicker{0%,100%{stroke-opacity:.9}40%{stroke-opacity:.25}45%{stroke-opacity:.8}60%{stroke-opacity:.3}}
 @keyframes frBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes frSneeze{0%,70%,100%{transform:translate(0,0) scale(1)}76%{transform:translate(-3px,2px) scale(1.04,.96)}82%{transform:translate(5px,-2px) scale(.97,1.03)}90%{transform:translate(0,0)}}
 @keyframes frFloat{0%{transform:translate(0,0);opacity:0}30%{opacity:1}100%{transform:translate(-14px,-22px);opacity:0}}
+@keyframes frDust{0%{transform:translate(10px,0);opacity:0}25%{opacity:.75}75%{opacity:.75}100%{transform:translate(-30px,-6px);opacity:0}}
+@keyframes frPuff{0%{transform:translate(0,0) scale(.5);opacity:0}25%{opacity:.85}100%{transform:translate(18px,-8px) scale(1.3);opacity:0}}
 @keyframes frThink{0%,10%{opacity:0;transform:scale(.4)}25%,85%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
-.fr-ok .fr-face-happy,.fr-done .fr-face-happy,.fr-rain .fr-face-happy,.fr-cool .fr-face-happy,.fr-learn .fr-face-happy{display:inline}
-.fr-act .fr-face-awake,.fr-run .fr-face-awake{display:inline}
-.fr-night .fr-face-sleep{display:inline}
-.fr-mould .fr-face-worry,.fr-sensor .fr-face-worry{display:inline}
-.fr-pollen .fr-face-squint{display:inline}
-.fr-act .fr-halo{stroke:#F0B357;animation:frPulse 1.6s ease-in-out infinite}
-.fr-act .fr-leaves{animation:frFlutter .7s ease-in-out infinite alternate}
+@keyframes frSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes frSwing{0%{transform:rotate(-4deg)}100%{transform:rotate(4deg)}}
+@keyframes frShimmer{0%{transform:translateY(2px);opacity:.25}100%{transform:translateY(-3px);opacity:.8}}
+/* faces – both eyes always share one shape */
+.fr-ok .fr-face-happy,.fr-done .fr-face-happy,.fr-rain .fr-face-happy,.fr-cool .fr-face-happy,.fr-learn .fr-face-happy,.fr-snow .fr-face-happy{display:inline}
+.fr-act .fr-face-awake,.fr-run .fr-face-awake,.fr-morning .fr-face-morning{display:inline}
+.fr-night .fr-face-sleep,.fr-sleepy .fr-face-sleepy{display:inline}
+.fr-mould .fr-face-worry,.fr-sensor .fr-face-worry,.fr-dust .fr-face-worry{display:inline}
+.fr-pollen .fr-face-squint,.fr-rain_soon .fr-face-lookup,.fr-heat .fr-face-shades,.fr-wait .fr-face-side,.fr-frost .fr-face-cold{display:inline}
+/* moods */
+.fr-act .fr-halo{stroke:#F0B357;animation:frPulse 1.6s ease-in-out var(--frp) infinite}
+.fr-act .fr-leaves{animation:frFlutter .7s ease-in-out var(--frp) infinite alternate}
 .fr-act .frx-wind,.fr-run .frx-wind{display:inline}
 .fr-run .fr-halo{display:none}
 .fr-run .fr-halo-run{display:inline}
-.fr-run .fr-leaves{animation:frFlutter .9s ease-in-out infinite alternate}
+.fr-run .fr-leaves{animation:frFlutter .9s ease-in-out var(--frp) infinite alternate}
 .fr-run .frx-out{display:inline}
 .fr-done .fr-halo{stroke:#8FD8A6}
-.fr-done .fr-whole{animation:frNod 2.6s ease-in-out infinite}
+.fr-done .fr-whole{animation:frNod 2.6s ease-in-out var(--frp) infinite}
 .fr-done .frx-check{display:inline}
 .fr-night .fr-body{animation-duration:6.5s}
-.fr-night .fr-halo{stroke:#4C79A8;stroke-opacity:.8}
+.fr-night .fr-halo,.fr-sleepy .fr-halo{stroke:#7C8CFF;stroke-opacity:.85}
 .fr-night .fr-leaves{animation-duration:6s}
 .fr-night .frx-z{display:inline}
+.fr-sleepy .fr-body{animation-duration:5.6s}
+.fr-sleepy .fr-leaves{animation-duration:5.2s}
+.fr-sleepy .fr-sleepy-lid{transform-box:fill-box;transform-origin:50% 0;animation:frDroop 7s ease-in-out var(--frp) infinite}
+.fr-sleepy .fr-yawn{transform-box:fill-box;transform-origin:center;animation:frYawn 7s ease-in-out var(--frp) infinite}
+.fr-morning .fr-halo{stroke:#FFD27A}
+.fr-morning .fr-leaves{animation:frStretch 3.6s ease-in-out var(--frp) infinite alternate}
+.fr-morning .frx-sun{display:inline}
 .fr-rain .fr-leaf-big{display:none}
 .fr-rain .frx-rain,.fr-rain .frx-umbrella{display:inline}
-.fr-cool .fr-leaves{animation:frFan .45s ease-in-out infinite alternate}
+.fr-rain_soon .frx-cloud{display:inline}
+.fr-rain_soon .fr-pupils{animation:frGlance 6s ease-in-out var(--frp) infinite}
+.fr-snow .fr-halo{stroke:#CFE9FF}
+.fr-snow .frx-snow,.fr-snow .frx-scarf,.fr-frost .frx-scarf{display:inline}
+.fr-frost .fr-halo{stroke:#9CD7FF}
+.fr-frost .fr-whole,.fr-snow .fr-whole{animation:frShiver 4.8s linear var(--frp) infinite}
+.fr-frost .frx-breath{display:inline}
+.fr-heat .fr-halo{stroke:#FFB45F}
+.fr-heat .frx-sun,.fr-heat .frx-heatwave{display:inline}
+.fr-wait .frx-clock{display:inline}
+.fr-wait .fr-halo{stroke:#F0B357;stroke-opacity:.8}
+.fr-cool .fr-leaves{animation:frFan .45s ease-in-out var(--frp) infinite alternate}
 .fr-cool .frx-sweat{display:inline}
 .fr-mould .fr-halo{stroke:#F0B357}
-.fr-mould .fr-whole{animation:frWobble 1.8s ease-in-out infinite}
-.fr-sensor .fr-halo{stroke:#9AA9B5;animation:frFlicker 2.4s linear infinite}
+.fr-mould .fr-whole{animation:frWobble 1.8s ease-in-out var(--frp) infinite}
+.fr-sensor .fr-halo{stroke:#9AA9B5;animation:frFlicker 2.4s linear var(--frp) infinite}
 .fr-sensor .frx-q{display:inline}
-.fr-pollen .fr-whole{animation:frSneeze 3.2s ease-in-out infinite}
+.fr-pollen .fr-whole{animation:frSneeze 3.2s ease-in-out var(--frp) infinite}
 .fr-pollen .frx-pollen{display:inline}
+.fr-dust .frx-dust,.fr-dust .frx-mask{display:inline}
+.fr-dust .fr-halo{stroke:#B7C3CC}
 .fr-learn .frx-think{display:inline}
-.fr .frx-wind path{animation:frWind 1.6s linear infinite}
-.fr .frx-wind path:nth-child(2){animation-delay:.5s}
-.fr .frx-wind path:nth-child(3){animation-delay:1s}
-.fr .frx-out path{transform-box:fill-box;animation:frOut 2.2s ease-out infinite}
-.fr .frx-out path:nth-child(2){animation-delay:.7s}
-.fr .frx-out path:nth-child(3){animation-delay:1.4s}
-.fr .frx-check path{stroke-dasharray:40;animation:frDraw 2.6s ease-out infinite}
-.fr .frx-z text{animation:frZ 3s ease-out infinite}
-.fr .frx-z text:nth-child(2){animation-delay:1.5s}
-.fr .frx-rain path{animation:frRain 1.1s linear infinite}
-.fr .frx-rain path:nth-child(2){animation-delay:.3s}
-.fr .frx-rain path:nth-child(3){animation-delay:.65s}
-.fr .frx-rain path:nth-child(4){animation-delay:.85s}
-.fr .frx-rain path:nth-child(5){animation-delay:.15s}
-.fr .frx-sweat path{animation:frSweat 2.4s ease-in infinite}
-.fr .frx-q text{animation:frBob 1.6s ease-in-out infinite}
-.fr .frx-pollen circle{animation:frFloat 3s ease-out infinite}
-.fr .frx-pollen circle:nth-child(2){animation-delay:1s}
-.fr .frx-pollen circle:nth-child(3){animation-delay:2s}
-.fr .frx-think circle{transform-box:fill-box;transform-origin:center;animation:frThink 3s ease-out infinite}
-.fr .frx-think circle:nth-child(2){animation-delay:.4s}
-.fr .frx-think circle:nth-child(3){animation-delay:.8s}
-@media (prefers-reduced-motion: reduce){.fr *{animation:none!important}}
+/* accessories that combine with every mood */
+.fr.fr-cap .frx-cap{display:inline}
+.fr.fr-cap.fr-rain .frx-cap{display:none}
+/* particles and props (negative delays: no element waits visibly before it starts) */
+.fr .frx-wind path{animation:frWind 1.6s linear var(--frp) infinite}
+.fr .frx-wind path:nth-child(2){animation-delay:calc(var(--frp) - .53s)}
+.fr .frx-wind path:nth-child(3){animation-delay:calc(var(--frp) - 1.07s)}
+.fr .frx-out path{transform-box:fill-box;animation:frOut 2.2s ease-out var(--frp) infinite}
+.fr .frx-out path:nth-child(2){animation-delay:calc(var(--frp) - .73s)}
+.fr .frx-out path:nth-child(3){animation-delay:calc(var(--frp) - 1.47s)}
+.fr .frx-check{transform-box:view-box;transform-origin:140px 28px;animation:frPop 2.6s ease-in-out var(--frp) infinite}
+.fr .frx-z text{animation:frZ 3s ease-out var(--frp) infinite}
+.fr .frx-z text:nth-child(2){animation-delay:calc(var(--frp) - 1.5s)}
+.fr .frx-rain path{animation:frRain 1.2s linear var(--frp) infinite}
+.fr .frx-rain path:nth-child(2){animation-delay:calc(var(--frp) - .3s)}
+.fr .frx-rain path:nth-child(3){animation-delay:calc(var(--frp) - .65s)}
+.fr .frx-rain path:nth-child(4){animation-delay:calc(var(--frp) - .9s)}
+.fr .frx-rain path:nth-child(5){animation-delay:calc(var(--frp) - .15s)}
+.fr .frx-rain path:nth-child(6){animation-delay:calc(var(--frp) - .45s)}
+.fr .frx-snow g{transform-box:fill-box;transform-origin:center;animation:frSnow 5s linear var(--frp) infinite}
+.fr .frx-snow g:nth-child(2){animation-delay:calc(var(--frp) - 1.25s)}
+.fr .frx-snow g:nth-child(3){animation-delay:calc(var(--frp) - 2.5s)}
+.fr .frx-snow g:nth-child(4){animation-delay:calc(var(--frp) - 3.75s)}
+.fr .frx-cloud-body{animation:frCloudDrift 4s ease-in-out var(--frp) infinite alternate}
+.fr .frx-cloud-drop{animation:frDrop 4s ease-in var(--frp) infinite}
+.fr .frx-sun-rays{transform-box:fill-box;transform-origin:center;animation:frSpin 24s linear var(--frp) infinite}
+.fr .frx-heatwave path{animation:frShimmer 1.8s ease-in-out var(--frp) infinite alternate}
+.fr .frx-heatwave path:nth-child(2){animation-delay:calc(var(--frp) - .9s)}
+.fr .frx-clock-hand{transform-box:view-box;transform-origin:140px 27px;animation:frSpin 6s linear var(--frp) infinite}
+.fr .frx-clock-hand-slow{transform-box:view-box;transform-origin:140px 27px;animation:frSpin 72s linear var(--frp) infinite}
+.fr .frx-sweat path{animation:frSweat 2.4s ease-in var(--frp) infinite}
+.fr .frx-breath circle{transform-box:fill-box;transform-origin:center;animation:frPuff 3.2s ease-out var(--frp) infinite}
+.fr .frx-breath circle:nth-child(2){animation-delay:calc(var(--frp) - 1.6s)}
+.fr .frx-q text{animation:frBob 1.6s ease-in-out var(--frp) infinite}
+.fr .frx-pollen circle{animation:frFloat 3s ease-out var(--frp) infinite}
+.fr .frx-pollen circle:nth-child(2){animation-delay:calc(var(--frp) - 1s)}
+.fr .frx-pollen circle:nth-child(3){animation-delay:calc(var(--frp) - 2s)}
+.fr .frx-dust circle{animation:frDust 4.5s linear var(--frp) infinite}
+.fr .frx-dust circle:nth-child(2){animation-delay:calc(var(--frp) - .9s)}
+.fr .frx-dust circle:nth-child(3){animation-delay:calc(var(--frp) - 1.8s)}
+.fr .frx-dust circle:nth-child(4){animation-delay:calc(var(--frp) - 2.7s)}
+.fr .frx-dust circle:nth-child(5){animation-delay:calc(var(--frp) - 3.6s)}
+.fr .frx-think circle{transform-box:fill-box;transform-origin:center;animation:frThink 3s ease-out var(--frp) infinite}
+.fr .frx-think circle:nth-child(2){animation-delay:calc(var(--frp) - .4s)}
+.fr .frx-think circle:nth-child(3){animation-delay:calc(var(--frp) - .8s)}
+.fr .frx-cap-tip{transform-box:view-box;transform-origin:100px 36px;animation:frSwing 3.2s ease-in-out var(--frp) infinite alternate}
+.fr .frx-scarf-end{transform-box:view-box;transform-origin:118px 106px;animation:frSwing 2.6s ease-in-out var(--frp) infinite alternate}
+@media (prefers-reduced-motion: reduce){.fr,.fr *{animation:none!important}}
 
 /* 0.26.4.1: the animated Freshy lives in the IQ hero, sized so it never becomes tiny. */
 .ai-assistant{grid-template-columns:112px minmax(0,1fr) 28px}
@@ -1200,30 +734,77 @@ const FAIQ_FRESHY_CSS = `
 .ai-mascot-wrap.fr-wrap .fr{width:112px;height:98px}
 @media(max-width:520px){.ai-assistant{grid-template-columns:96px minmax(0,1fr) 22px}.ai-mascot-wrap.fr-wrap,.ai-mascot-wrap.fr-wrap .fr{width:96px;height:84px}}
 `;
+// 0.26.4.9: larger room view text and the per-tile explanation window.
+const FAIQ_ROOM_VIEW_CSS = `
+.room-detail h3{font-size:19px}
+.room-detail .tiny{font-size:calc(9.5px * var(--faiq-font-meta,1));line-height:calc(12px * var(--faiq-font-meta,1));white-space:normal}
+.room-detail .room-iq-hero strong{font-size:calc(18px * var(--faiq-font-recommendation,1))}
+.room-detail .room-iq-hero span{font-size:calc(11.5px * var(--faiq-font-details,1));line-height:1.4}
+.room-detail .room-iq-quality{font-size:calc(10px * var(--faiq-font-meta,1))}
+.room-detail .room-iq-why>div:not(.tiny){font-size:calc(11.5px * var(--faiq-font-details,1));line-height:1.4}
+.room-detail .info-grid{gap:7px}
+.room-detail .info-grid>div{padding:9px 10px}
+.room-detail .info-grid b{font-size:calc(15px * var(--faiq-font-metrics,1));line-height:1.25}
+.room-detail .info-grid span{font-size:calc(10.5px * var(--faiq-font-meta,1));line-height:1.35;margin-top:3px}
+.room-detail .last-learning b{font-size:calc(11.5px * var(--faiq-font-details,1));line-height:1.35}
+.room-detail .room-iq-context span{font-size:calc(11px * var(--faiq-font-meta,1));line-height:1.4}
+@media(max-width:620px){.room-detail .info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.room-detail .info-grid b{font-size:calc(14px * var(--faiq-font-metrics,1))}.room-detail .info-grid span{font-size:calc(10px * var(--faiq-font-meta,1))}}
+.room-detail [data-explain]{position:relative;cursor:pointer;transition:background .15s,box-shadow .15s}
+.room-detail .info-grid>[data-explain]{padding-right:20px}
+.room-detail .info-grid>[data-explain]::after{content:"i";position:absolute;top:7px;right:7px;width:13px;height:13px;border-radius:50%;border:1px solid rgba(160,185,200,.35);color:#9fb0bb;font:700 9px/12px system-ui,sans-serif;text-align:center;opacity:.75}
+.room-detail [data-explain]:hover{background:rgba(255,255,255,.055)}
+.room-detail [data-explain]:focus-visible{outline:2px solid #63d2f7;outline-offset:1px}
+.explain-backdrop{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(3,10,16,.62)}
+.explain-sheet{width:min(440px,100%);max-height:min(80vh,620px);overflow:auto;padding:16px 16px 14px;border-radius:18px;background:#13212c;border:1px solid rgba(99,210,247,.28);box-shadow:0 18px 50px rgba(0,0,0,.45);color:#e4edf2}
+.explain-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.explain-head b{display:block;margin-top:3px;font-size:17px;line-height:1.3}
+.explain-close{flex:0 0 34px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.07);color:#e4edf2;font-size:20px;line-height:1;cursor:pointer}
+.explain-value{display:inline-block;margin:10px 0 2px;padding:5px 10px;border-radius:999px;background:rgba(99,210,247,.10);color:#8fdcf7;font-weight:800;font-size:13px}
+.explain-sheet p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:#c3d0d8}
+@media(max-width:520px){.explain-backdrop{align-items:flex-end;padding:0}.explain-sheet{width:100%;max-height:78vh;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}}
+`;
 // ---------------------------------------------------------------------------
-// Freshy (0.26.4): the FreshAirIQ mascot as an animated vector character.
-// One drawing, eleven moods. The mood only switches CSS classes; every motion
-// lives in FAIQ_FRESHY_CSS and stops under prefers-reduced-motion.
+// Freshy (0.26.4.8): the FreshAirIQ mascot as an animated vector character.
+// One drawing, nineteen moods plus a night cap that combines with any mood.
+// The mood only switches CSS classes; every motion lives in FAIQ_FRESHY_CSS,
+// loops seamlessly and stops under prefers-reduced-motion.
 // ---------------------------------------------------------------------------
-const FRESHY_MOODS = ["ok", "act", "run", "done", "night", "rain", "cool", "mould", "sensor", "pollen", "learn"];
+const FRESHY_MOODS = ["ok", "act", "run", "done", "night", "sleepy", "morning", "rain", "rain_soon", "snow", "frost", "heat", "wait", "cool", "mould", "sensor", "pollen", "dust", "learn"];
+const FRESHY_EPOCH = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+const freshyClock = () => ((typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now());
 const FRESHY_LABELS = {
-    de: { ok: "Freshy ist zufrieden", act: "Freshy möchte, dass du lüftest", run: "Freshy lüftet mit", done: "Freshy nickt: Ziel erreicht", night: "Freshy schläft", rain: "Freshy hält ein Blatt als Schirm", cool: "Freshy fächelt sich Luft zu", mould: "Freshy ist besorgt", sensor: "Freshy vermisst einen Sensor", pollen: "Freshy niest", learn: "Freshy denkt nach" },
-    en: { ok: "Freshy is happy", act: "Freshy wants you to air the rooms", run: "Freshy is airing with you", done: "Freshy nods: goal reached", night: "Freshy is asleep", rain: "Freshy holds a leaf as an umbrella", cool: "Freshy fans itself", mould: "Freshy is worried", sensor: "Freshy misses a sensor", pollen: "Freshy sneezes", learn: "Freshy is thinking" },
+    de: { ok: "Freshy ist zufrieden", act: "Freshy möchte, dass du lüftest", run: "Freshy lüftet mit", done: "Freshy nickt: Ziel erreicht", night: "Freshy schläft", sleepy: "Freshy wird müde – bald ist Nacht", morning: "Freshy wacht auf: Guten Morgen", rain: "Freshy hält ein Blatt als Schirm: es regnet", rain_soon: "Freshy sieht Regen kommen", snow: "Freshy schaut dem Schnee zu", frost: "Freshy friert – kurz lüften reicht", heat: "Freshy trägt Sonnenbrille: draußen ist es heiß", wait: "Freshy wartet auf den besseren Zeitpunkt", cool: "Freshy fächelt sich Luft zu", mould: "Freshy ist besorgt", sensor: "Freshy vermisst einen Sensor", pollen: "Freshy niest", dust: "Freshy trägt eine Maske: Feinstaub draußen", learn: "Freshy denkt nach" },
+    en: { ok: "Freshy is happy", act: "Freshy wants you to air the rooms", run: "Freshy is airing with you", done: "Freshy nods: goal reached", night: "Freshy is asleep", sleepy: "Freshy is getting sleepy – night is coming", morning: "Freshy wakes up: good morning", rain: "Freshy holds a leaf as an umbrella: it is raining", rain_soon: "Freshy sees rain coming", snow: "Freshy watches the snow", frost: "Freshy is cold – a short airing is enough", heat: "Freshy wears sunglasses: it is hot outside", wait: "Freshy waits for a better moment", cool: "Freshy fans itself", mould: "Freshy is worried", sensor: "Freshy misses a sensor", pollen: "Freshy sneezes", dust: "Freshy wears a mask: fine dust outside", learn: "Freshy is thinking" },
 };
-function freshySvg(mood, size = 150, lang = "de", progress = null) {
+// Both eyes of one face always use the same drawing (left at x=89, right at x=111).
+const freshyEyes = (left, right = left) => left + right;
+const freshyEyePair = draw => freshyEyes(draw(89), draw(111));
+function freshySvg(mood, size = 150, lang = "de", progress = null, options = {}) {
     const m = FRESHY_MOODS.includes(mood) ? mood : "ok";
     const w = Math.round(size), h = Math.round(size * 140 / 160);
     const label = (FRESHY_LABELS[lang] || FRESHY_LABELS.de)[m];
     // Progress ring (mood "run"): circumference of r=49 is ~308.
     const p = Math.max(0, Math.min(1, Number.isFinite(Number(progress)) ? Number(progress) : 0.6));
     const dash = `${Math.round(308 * p)} 308`;
-    return `<svg class="fr fr-${m}" width="${w}" height="${h}" viewBox="0 0 160 140" role="img" aria-label="${esc(label)}">
+    const sec = value => `${(Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(2)}s`;
+    // --frp: shared animation clock; --frin: fade-in only right after a mood change.
+    const style = `--frp:${sec(options.phase)};--frin:${sec(options.since == null ? -9 : options.since)}`;
+    const cap = options.cap ? " fr-cap" : "";
+    const smile = `<path d="M93 81 C 97 86.5, 103 86.5, 107 81" fill="none" stroke="#9FEFFF" stroke-width="2.5" stroke-linecap="round"></path>`;
+    const pupil = (x, dx = 1.6, dy = -2.6, r = 1.7) => `<circle cx="${x + dx}" cy="${66 + dy}" r="${r}" fill="#06141E"></circle>`;
+    // One eye = white + pupil (+ extra) in one blinking group, so the pupil blinks too.
+    const awakeEye = (x, inner = pupil(x)) => `<g class="fr-eye"><ellipse cx="${x}" cy="66" rx="5.2" ry="7" fill="#CFF8FF"></ellipse>${inner}</g>`;
+    return `<svg class="fr fr-${m}${cap}" style="${style}" width="${w}" height="${h}" viewBox="0 0 160 140" role="img" aria-label="${esc(label)}">
 <defs>
 <radialGradient id="frBody" cx="38%" cy="32%" r="75%"><stop offset="0%" stop-color="#123447"></stop><stop offset="45%" stop-color="#06141E"></stop><stop offset="100%" stop-color="#020609"></stop></radialGradient>
 <filter id="frGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4.2" result="b"></feGaussianBlur><feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
 <filter id="frSoft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4" result="b"></feGaussianBlur><feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
 </defs>
-<g class="frx frx-rain" stroke="#7DD3E8" stroke-width="2" stroke-linecap="round" opacity=".85"><path d="M18 10v9"></path><path d="M38 0v9"></path><path d="M148 6v9"></path><path d="M134 0v9"></path><path d="M8 30v9"></path></g>
+<g class="frx frx-sun"><g class="frx-sun-rays" stroke="#FFD27A" stroke-width="2.4" stroke-linecap="round"><path d="M142 4 V 0"></path><path d="M142 36 V 40"></path><path d="M126 20 H 122"></path><path d="M158 20 H 162"></path><path d="M131 9 L 128 6"></path><path d="M153 31 L 156 34"></path><path d="M153 9 L 156 6"></path><path d="M131 31 L 128 34"></path></g><circle cx="142" cy="20" r="10" fill="#FFD27A"></circle><circle cx="142" cy="20" r="10" fill="none" stroke="#FFF1C9" stroke-opacity=".7" stroke-width="1.5"></circle></g>
+<g class="frx frx-heatwave" fill="none" stroke="#FFB45F" stroke-width="1.8" stroke-linecap="round"><path d="M128 50 C 132 46, 136 54, 140 50 C 144 46, 148 54, 152 50"></path><path d="M126 62 C 130 58, 134 66, 138 62 C 142 58, 146 66, 150 62"></path></g>
+<g class="frx frx-rain" stroke="#7DD3E8" stroke-width="2" stroke-linecap="round" opacity=".85"><path d="M14 14v9"></path><path d="M30 2v9"></path><path d="M150 10v9"></path><path d="M140 0v9"></path><path d="M6 34v9"></path><path d="M156 34v9"></path></g>
+<g class="frx frx-snow" fill="none" stroke="#EAF6FF" stroke-width="1.6" stroke-linecap="round"><g><path d="M18 8 v8 M14 12 h8 M15.2 9.2 l5.6 5.6 M20.8 9.2 l-5.6 5.6"></path></g><g><path d="M146 4 v8 M142 8 h8 M143.2 5.2 l5.6 5.6 M148.8 5.2 l-5.6 5.6"></path></g><g><path d="M36 0 v6 M33 3 h6"></path></g><g><path d="M128 14 v6 M125 17 h6"></path></g></g>
+<g class="frx frx-cloud"><g class="frx-cloud-body"><path d="M122 26 C 116 26, 114 18, 120 16 C 120 9, 130 7, 133 12 C 136 6, 147 8, 146 15 C 153 15, 154 26, 147 26 Z" fill="#C9D9E4"></path><path d="M124 23 H 145" stroke="#AFC3D0" stroke-width="1.4" stroke-linecap="round"></path></g><path class="frx-cloud-drop" d="M134 29 C 134 29, 131 33, 131 35 a3 3 0 0 0 6 0 C 137 33, 134 29, 134 29 Z" fill="#7DD3E8"></path></g>
 <g class="fr-whole">
 <g class="fr-leaves">
 <path d="M55 76 C 46 82, 38 92, 29 104" fill="none" stroke="#6EE7B7" stroke-width="3" stroke-linecap="round"></path>
@@ -1238,28 +819,40 @@ function freshySvg(mood, size = 150, lang = "de", progress = null) {
 <circle cx="96" cy="70" r="45" fill="url(#frBody)"></circle>
 <circle cx="96" cy="70" r="44" fill="none" stroke="#7FE3FF" stroke-opacity=".22" stroke-width="1.5"></circle>
 <path d="M66 44 C 74 34, 88 29, 100 29" fill="none" stroke="#BFF3FF" stroke-opacity=".18" stroke-width="3" stroke-linecap="round"></path>
-<g class="fr-face fr-face-happy" filter="url(#frSoft)"><path class="fr-eye" d="M77 72 C 77 58, 99 58, 99 72 C 92 68.5, 84 68.5, 77 72 Z" fill="#D6FAFF"></path><path class="fr-eye" d="M106 68 C 108 59, 121 59, 123 68" fill="none" stroke="#A6F1FF" stroke-width="3.2" stroke-linecap="round"></path><path d="M100 82 C 104 87, 110 87, 114 82" fill="none" stroke="#9FEFFF" stroke-width="2.4" stroke-linecap="round"></path></g>
-<g class="fr-face fr-face-awake" filter="url(#frSoft)"><ellipse class="fr-eye" cx="91" cy="66" rx="5.5" ry="7.5" fill="#CFF8FF"></ellipse><ellipse class="fr-eye" cx="113" cy="64" rx="5" ry="7" fill="#CFF8FF"></ellipse><circle cx="93" cy="63" r="1.6" fill="#06141E"></circle><circle cx="115" cy="61" r="1.5" fill="#06141E"></circle><path d="M100 82 C 104 87, 110 87, 114 82" fill="none" stroke="#9FEFFF" stroke-width="2.4" stroke-linecap="round"></path></g>
-<g class="fr-face fr-face-sleep" filter="url(#frSoft)"><path d="M81 67 C 85 72, 92 72, 96 67" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round"></path><path d="M106 65 C 110 70, 116 70, 120 65" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round"></path><circle cx="106" cy="83" r="2.6" fill="none" stroke="#9FEFFF" stroke-width="2"></circle></g>
-<g class="fr-face fr-face-worry" filter="url(#frSoft)"><path d="M81 58 L 94 54" stroke="#9FEFFF" stroke-width="2.2" stroke-linecap="round"></path><path d="M106 54 L 119 58" stroke="#9FEFFF" stroke-width="2.2" stroke-linecap="round"></path><ellipse class="fr-eye" cx="89" cy="67" rx="4.5" ry="5.5" fill="#CFF8FF"></ellipse><ellipse class="fr-eye" cx="113" cy="67" rx="4.5" ry="5.5" fill="#CFF8FF"></ellipse><path d="M98 85 C 101 82, 104 82, 107 85 C 110 88, 113 88, 116 85" fill="none" stroke="#9FEFFF" stroke-width="2.2" stroke-linecap="round"></path></g>
-<g class="fr-face fr-face-squint" filter="url(#frSoft)"><path d="M82 61 L 94 66 L 82 71" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M121 59 L 109 64 L 121 69" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><ellipse cx="106" cy="84" rx="4" ry="3.4" fill="#9FEFFF"></ellipse></g>
+<g class="fr-face fr-face-happy" filter="url(#frSoft)">${freshyEyePair(x => `<path class="fr-eye" d="M${x - 6} 69 C ${x - 6} 60.5, ${x + 6} 60.5, ${x + 6} 69" fill="none" stroke="#D6FAFF" stroke-width="3.4" stroke-linecap="round"></path>`)}${smile}</g>
+<g class="fr-face fr-face-awake" filter="url(#frSoft)">${freshyEyePair(x => awakeEye(x))}${smile}</g>
+<g class="fr-face fr-face-morning" filter="url(#frSoft)">${freshyEyePair(x => awakeEye(x, pupil(x, 1.4, -2.8, 1.5) + `<circle cx="${x - 1.8}" cy="62.4" r="1.1" fill="#FFFFFF"></circle>`))}<path d="M92 80 C 95 89, 105 89, 108 80 Z" fill="#9FEFFF" fill-opacity=".85" stroke="#9FEFFF" stroke-width="1.6" stroke-linejoin="round"></path></g>
+<g class="fr-face fr-face-sleep" filter="url(#frSoft)">${freshyEyePair(x => `<path d="M${x - 6} 66 C ${x - 3} 71, ${x + 3} 71, ${x + 6} 66" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round"></path>`)}<circle cx="100" cy="83" r="2.4" fill="none" stroke="#9FEFFF" stroke-width="2"></circle></g>
+<g class="fr-face fr-face-sleepy" filter="url(#frSoft)">${freshyEyePair(x => `<g class="fr-sleepy-lid"><path d="M${x - 5.8} 65.2 a5.8 5.2 0 0 0 11.6 0 Z" fill="#CFF8FF"></path></g><path d="M${x - 6.6} 64.4 Q ${x} 67.4, ${x + 6.6} 64.4" fill="none" stroke="#9FEFFF" stroke-width="2.4" stroke-linecap="round"></path>`)}<ellipse class="fr-yawn" cx="100" cy="84" rx="3.2" ry="2.6" fill="#0A2230" stroke="#9FEFFF" stroke-width="2"></ellipse></g>
+<g class="fr-face fr-face-worry" filter="url(#frSoft)"><path d="M82 57 L 95 54" stroke="#9FEFFF" stroke-width="2.2" stroke-linecap="round"></path><path d="M105 54 L 118 57" stroke="#9FEFFF" stroke-width="2.2" stroke-linecap="round"></path>${freshyEyePair(x => `<g class="fr-eye"><ellipse cx="${x}" cy="67" rx="4.5" ry="5.5" fill="#CFF8FF"></ellipse></g>`)}<path d="M92 85 C 95 82, 98 82, 100 85 C 102 88, 105 88, 108 85" fill="none" stroke="#9FEFFF" stroke-width="2.2" stroke-linecap="round"></path></g>
+<g class="fr-face fr-face-squint" filter="url(#frSoft)"><path d="M83 61 L 94 66 L 83 71" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M117 61 L 106 66 L 117 71" fill="none" stroke="#9FEFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><ellipse cx="100" cy="84" rx="4" ry="3.4" fill="#9FEFFF"></ellipse></g>
+<g class="fr-face fr-face-lookup" filter="url(#frSoft)">${freshyEyePair(x => awakeEye(x, `<g class="fr-pupils">${pupil(x, 1.2, -3.6, 2)}</g>`))}<path d="M96 83 C 98 85, 102 85, 104 83" fill="none" stroke="#9FEFFF" stroke-width="2.3" stroke-linecap="round"></path></g>
+<g class="fr-face fr-face-side" filter="url(#frSoft)">${freshyEyePair(x => awakeEye(x, pupil(x, 2.4, -1.4, 1.9)))}<path d="M94 83 L 106 83" stroke="#9FEFFF" stroke-width="2.4" stroke-linecap="round"></path></g>
+<g class="fr-face fr-face-shades" filter="url(#frSoft)">${freshyEyePair(x => `<rect x="${x - 8}" y="59.5" width="16" height="11" rx="4.5" fill="#0B1820" stroke="#9FEFFF" stroke-width="1.6"></rect><path d="M${x - 5} 62.5 L ${x - 1} 62.5" stroke="#9FEFFF" stroke-opacity=".7" stroke-width="1.3" stroke-linecap="round"></path>`)}<path d="M97 63 L 103 63" stroke="#9FEFFF" stroke-width="1.6"></path><path d="M92 81 C 96 87.5, 104 87.5, 108 81" fill="none" stroke="#9FEFFF" stroke-width="2.5" stroke-linecap="round"></path></g>
+<g class="fr-face fr-face-cold" filter="url(#frSoft)">${freshyEyePair(x => `<g class="fr-eye"><ellipse cx="${x}" cy="66" rx="4.6" ry="5.4" fill="#CFF8FF"></ellipse></g>`)}<path d="M91 84 L 94 82 L 97 84 L 100 82 L 103 84 L 106 82 L 109 84" fill="none" stroke="#9FEFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g>
+<g class="frx frx-mask"><path d="M79 78 L 58 72" stroke="#DDF6FA" stroke-width="1.6" stroke-linecap="round"></path><path d="M121 78 L 140 72" stroke="#DDF6FA" stroke-width="1.6" stroke-linecap="round"></path><path d="M80 76 C 87 72, 113 72, 120 76 L 118 89 C 110 95, 90 95, 82 89 Z" fill="#DDF6FA"></path><path d="M84 81 H 116 M85 86 H 115" stroke="#AFCBD3" stroke-width="1.2" stroke-linecap="round"></path></g>
 </g>
-<g class="frx frx-umbrella"><path d="M96 22 L 96 12" stroke="#6EE7B7" stroke-width="2.6" stroke-linecap="round"></path><path d="M58 22 C 72 0, 120 0, 134 22 C 118 16, 74 16, 58 22 Z" fill="#6EE7B7"></path><path d="M62 20 C 80 10, 112 10, 130 20" fill="none" stroke="#A8F5D6" stroke-width="1.4" stroke-linecap="round"></path></g>
+<g class="frx frx-scarf"><path d="M60 98 C 78 112, 114 112, 132 98 L 135 106 C 116 121, 76 121, 57 106 Z" fill="#FF7A7A"></path><path d="M70 106 L 74 114 M84 110 L 86 118 M100 111 L 100 119 M114 110 L 112 118" stroke="#FFD0D0" stroke-width="2" stroke-linecap="round"></path><g class="frx-scarf-end"><path d="M114 108 L 124 108 L 128 132 L 114 132 Z" fill="#FF6464"></path><path d="M116 132 V 136 M120 132 V 136 M124 132 V 136" stroke="#FF7A7A" stroke-width="1.6" stroke-linecap="round"></path></g></g>
+<g class="frx frx-cap"><g class="frx-cap-tip"><path d="M70 38 C 74 16, 96 4, 116 6 C 134 8, 148 24, 152 46 C 153 52, 152 58, 150 62 C 146 50, 138 40, 128 35 C 110 33, 90 35, 70 38 Z" fill="#6F63FF"></path><path d="M84 30 C 94 16, 112 11, 128 16 M100 33 C 112 24, 128 24, 140 34" fill="none" stroke="#9D95FF" stroke-width="2" stroke-linecap="round"></path><circle cx="150" cy="64" r="6.2" fill="#F4F6FF"></circle></g><path d="M64 44 C 74 30, 118 26, 132 38 L 130 45 C 116 35, 80 36, 66 50 Z" fill="#EEF2FF"></path></g>
+<g class="frx frx-umbrella"><path d="M96 10 C 76 12, 60 30, 54 64" fill="none" stroke="#6EE7B7" stroke-width="2.6" stroke-linecap="round"></path><path d="M56 24 C 68 2, 124 2, 136 24 C 120 17, 72 17, 56 24 Z" fill="#6EE7B7"></path><path d="M60 22 C 78 11, 114 11, 132 22" fill="none" stroke="#A8F5D6" stroke-width="1.4" stroke-linecap="round"></path></g>
 </g>
 <g class="frx frx-wind" fill="none" stroke="#B9EEFA" stroke-width="2.2" stroke-linecap="round"><path d="M158 40 C 150 36, 144 44, 136 40"></path><path d="M160 70 C 152 66, 146 74, 140 70"></path><path d="M156 100 C 148 96, 142 104, 134 100"></path></g>
 <g class="frx frx-out" fill="#7DD3E8"><path d="M128 46 C 128 46, 123 52, 123 55 a5 5 0 0 0 10 0 C 133 52, 128 46, 128 46 Z"></path><path d="M134 64 C 134 64, 130 69, 130 71 a4 4 0 0 0 8 0 C 138 69, 134 64, 134 64 Z"></path><path d="M124 30 C 124 30, 120 35, 120 37 a4 4 0 0 0 8 0 C 128 35, 124 30, 124 30 Z"></path></g>
 <g class="frx frx-check"><circle cx="140" cy="28" r="13" fill="#173A2A" stroke="#8FD8A6" stroke-width="2"></circle><path d="M134 28 L 139 33 L 147 23" fill="none" stroke="#8FD8A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></g>
+<g class="frx frx-clock"><circle cx="140" cy="27" r="13" fill="#2A2112" stroke="#F0B357" stroke-width="2"></circle><path d="M140 16.5 V 18.5 M140 35.5 V 37.5 M129.5 27 H 131.5 M148.5 27 H 150.5" stroke="#F0B357" stroke-width="1.6" stroke-linecap="round"></path><path class="frx-clock-hand-slow" d="M140 27 L 145 27" stroke="#F7D69A" stroke-width="2" stroke-linecap="round"></path><path class="frx-clock-hand" d="M140 27 L 140 19" stroke="#F7D69A" stroke-width="2" stroke-linecap="round"></path><circle cx="140" cy="27" r="1.6" fill="#F7D69A"></circle></g>
 <g class="frx frx-z" fill="#9FC3E6" font-weight="800"><text x="132" y="34" font-size="15">z</text><text x="142" y="22" font-size="11">z</text></g>
 <g class="frx frx-sweat"><path d="M140 46 C 140 46, 136 51, 136 54 a4 4 0 0 0 8 0 C 144 51, 140 46, 140 46 Z" fill="#7DD3E8"></path></g>
+<g class="frx frx-breath" fill="#E6F4FF"><circle cx="114" cy="86" r="3.2"></circle><circle cx="117" cy="84" r="2.6"></circle></g>
 <g class="frx frx-q" fill="#C9D6DE" font-weight="800"><text x="134" y="34" font-size="24">?</text></g>
 <g class="frx frx-pollen" fill="#F0D36B"><circle cx="146" cy="78" r="3"></circle><circle cx="138" cy="94" r="2.4"></circle><circle cx="150" cy="56" r="2.2"></circle></g>
+<g class="frx frx-dust" fill="#9AA7B0"><circle cx="144" cy="40" r="2.6"></circle><circle cx="152" cy="62" r="2"></circle><circle cx="140" cy="84" r="2.8"></circle><circle cx="150" cy="104" r="2.2"></circle><circle cx="146" cy="22" r="1.8"></circle></g>
 <g class="frx frx-think" fill="#BFF3FF"><circle cx="132" cy="36" r="3"></circle><circle cx="141" cy="25" r="4"></circle><circle cx="152" cy="12" r="5"></circle></g>
 </svg>`;
 }
 
 class FreshAirIQCard extends HTMLElement {
     static getStubConfig() { return { dashboard_variant: "classic" }; }
-    constructor() { super(); this.attachShadow({ mode: "open" }); this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._lastSupportError = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; this._compactExpanded = null; this._classicDisclosureOpen = new Set(); }
+    constructor() { super(); this.attachShadow({ mode: "open" }); this._onEnglishReady = () => { this._englishFailed = false; if (this._hass && this.isConnected && this._uiLanguage() === "en") this._render(); }; try { window.addEventListener(FAIQ_EN_READY_EVENT, this._onEnglishReady); } catch (_) { /* ignore */ } this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._lastSupportError = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; this._compactExpanded = null; this._classicDisclosureOpen = new Set(); }
     _uiLanguage() {
         const raw = String((this._hass && (this._hass.language || this._hass.locale?.language)) || navigator.language || "en").toLowerCase();
         return raw.startsWith("de") ? "de" : "en";
@@ -1392,7 +985,7 @@ class FreshAirIQCard extends HTMLElement {
         if (!style) {
             style = document.createElement("style");
             style.id = "faiq-static-style";
-            style.textContent = FAIQ_CARD_CSS + FAIQ_AI_COMPACT_CSS + FAIQ_COMPACT_DISCLOSURE_CSS + FAIQ_DESIGN_CSS + FAIQ_FRESHY_CSS;
+            style.textContent = FAIQ_CARD_CSS + FAIQ_AI_COMPACT_CSS + FAIQ_COMPACT_DISCLOSURE_CSS + FAIQ_DESIGN_CSS + FAIQ_FRESHY_CSS + FAIQ_ROOM_VIEW_CSS;
             this.shadowRoot.prepend(style);
         }
         return style;
@@ -1410,6 +1003,133 @@ class FreshAirIQCard extends HTMLElement {
         template.innerHTML = html;
         this._localizeLegacyFragment(template.content);
         this.shadowRoot.appendChild(template.content);
+        this._syncExplainSheet();
+    }
+    // 0.26.4.9: tap a tile in the room view → a small window explains the value.
+    _bindExplainOnce() {
+        if (this._explainBound || !this.shadowRoot) return;
+        this._explainBound = true;
+        const open = target => {
+            const tile = target && target.closest ? target.closest("[data-explain]") : null;
+            if (!tile || !String(this._info || "").startsWith("room:")) return false;
+            this._explain = { key: String(tile.dataset.explain || ""), room: String(this._info).slice(5) };
+            this._syncExplainSheet();
+            return true;
+        };
+        this.shadowRoot.addEventListener("click", e => {
+            const t = e.target;
+            if (t && t.closest && (t.closest("[data-explain-close]") || (t.classList && t.classList.contains("explain-backdrop")))) { e.stopPropagation(); this._closeExplain(); return; }
+            if (t && t.closest && t.closest(".explain-sheet")) { e.stopPropagation(); return; }
+            if (open(t)) e.stopPropagation();
+        });
+        this.shadowRoot.addEventListener("keydown", e => {
+            if (e.key === "Escape" && this._explain) { e.stopPropagation(); this._closeExplain(); return; }
+            if ((e.key === "Enter" || e.key === " ") && open(e.target)) { e.preventDefault(); e.stopPropagation(); }
+        });
+    }
+    _closeExplain() {
+        this._explain = null;
+        this.shadowRoot?.querySelector(".explain-backdrop")?.remove();
+        const tile = this.shadowRoot?.querySelector("[data-explain-focus]");
+        if (tile) { tile.removeAttribute("data-explain-focus"); try { tile.focus({ preventScroll: true }); } catch (_) { /* ignore */ } }
+    }
+    _syncExplainSheet() {
+        if (!this.shadowRoot) return;
+        this._bindExplainOnce();
+        this.shadowRoot.querySelectorAll("[data-explain]").forEach(el => { if (!el.hasAttribute("tabindex")) { el.setAttribute("tabindex", "0"); el.setAttribute("role", "button"); } });
+        const ex = this._explain;
+        const old = this.shadowRoot.querySelector(".explain-backdrop");
+        if (!ex || String(this._info || "") !== `room:${ex.room}`) { if (old) old.remove(); if (ex) this._explain = null; return; }
+        const data = this._collectLiveViewData();
+        const room = data ? data.rooms.find(r => String(r.key) === ex.room) : null;
+        const text = room ? this._explainText(ex.key, room, data.st) : null;
+        if (!text) { if (old) old.remove(); this._explain = null; return; }
+        const de = this._uiLanguage() === "de";
+        const html = `<div class="explain-backdrop"><div class="explain-sheet" role="dialog" aria-modal="true" aria-labelledby="explain-title"><div class="explain-head"><div><div class="tiny">${esc(de ? "ERKLÄRUNG" : "EXPLANATION")} · ${esc(room.name || room.key)}</div><b id="explain-title">${esc(text.title)}</b></div><button type="button" class="explain-close" data-explain-close aria-label="${de ? "Schließen" : "Close"}">×</button></div>${text.value ? `<div class="explain-value">${esc(text.value)}</div>` : ""}${text.body.map(p => `<p>${esc(p)}</p>`).join("")}</div></div>`;
+        const template = document.createElement("template");
+        template.innerHTML = html;
+        const node = template.content.firstElementChild;
+        if (old) old.replaceWith(node); else this.shadowRoot.appendChild(node);
+        const tile = this.shadowRoot.querySelector(`[data-explain="${ex.key}"]`);
+        if (tile) tile.setAttribute("data-explain-focus", "");
+        if (!old) { try { node.querySelector(".explain-close").focus({ preventScroll: true }); } catch (_) { /* ignore */ } }
+    }
+    _explainText(key, r, st) {
+        const de = this._uiLanguage() === "de";
+        const t = (a, b) => (de ? a : b);
+        const n0 = v => fmt(v, 0), rh = Math.round(Number(r.humidity || 0)), srh = Math.round(Number(r.surface_rh || 0));
+        const warn = Math.round(Number(st.mould_warn_surface_rh || 80)), crit = Math.round(Number(st.mould_critical_surface_rh || 90));
+        const days = Number(st.statistics_days || 14), horizon = Number(r.forecast_horizon_min || st.forecast_horizon_min || 5);
+        const notLearned = t("Nicht gelernt wird z. B., wenn die Außenluft während der Lüftung zeitweise nicht mehr trockener war als die Raumluft, die Lüftung sehr lang dauerte (Dauer- oder Kipplüftung über Stunden) oder Sensorwerte fehlten. Die Lüftung zählt trotzdem für die Feuchtebilanz.",
+            "A session is not learned e.g. when the outdoor air was at times no longer drier than the room air, the airing lasted very long (hours of tilted/continuous airing) or sensor values were missing. It still counts for the moisture balance.");
+        const texts = {
+            climate: [t("Temperatur & Luftfeuchte", "Temperature & humidity"), `${fmt(r.temperature, 1)} °C · ${rh} % · ${fmt(r.absolute_humidity, 2)} g/m³`, [
+                t(`${fmt(r.temperature, 1)} °C ist die Raumtemperatur. ${rh} % ist die relative Luftfeuchte (RH, englisch „relative humidity“): Sie sagt, wie viel Prozent der Wassermenge, die die Luft bei dieser Temperatur höchstens aufnehmen kann, gerade in ihr steckt.`,
+                  `${fmt(r.temperature, 1)} °C is the room temperature. ${rh} % is the relative humidity (RH): how much water the air holds compared with the maximum it could hold at this temperature.`),
+                t(`${fmt(r.absolute_humidity, 2)} g/m³ ist die absolute Feuchte – die tatsächliche Wassermenge pro Kubikmeter Luft. Sie entscheidet, ob Lüften trocknet: Nur wenn die Außenluft absolut trockener ist, wird es drinnen trockener – auch wenn draußen die relative Feuchte hoch wirkt.`,
+                  `${fmt(r.absolute_humidity, 2)} g/m³ is the absolute humidity – the actual amount of water per cubic metre. It decides whether airing dries: only if the outdoor air is absolutely drier does the room get drier, even if the outdoor RH looks high.`),
+                t(`${n0(r.water_in_air_ml)} ml Wasserdampf ist die gesamte Wassermenge in der Raumluft (absolute Feuchte × Raumvolumen).`, `${n0(r.water_in_air_ml)} ml of water vapour is the total water in the room air (absolute humidity × room volume).`),
+            ]],
+            measurement: [t("Letzte Messung", "Last measurement"), whenDE(r.last_measurement_at), [
+                t("Zeitpunkt, zu dem deine Temperatur- und Feuchtesensoren zuletzt einen neuen Wert gemeldet haben.", "When your temperature and humidity sensors last reported a new value."),
+                t("„Messwerte plausibel“ heißt: Die Werte sind aktuell und passen zueinander. Sind sie zu alt oder unplausibel, rechnet FreshAirIQ vorsichtig weiter, gibt keine neuen Lüftempfehlungen auf dieser Basis und lernt nichts aus diesem Zeitraum.",
+                  "“Plausible” means the values are recent and consistent. If they are too old or implausible, FreshAirIQ keeps calculating cautiously, bases no new recommendation on them and learns nothing from that period."),
+            ]],
+            potential: [t("Aktuell entfernbares Potenzial", "Removable potential now"), null, [
+                t("So viel Wasserdampf ließe sich jetzt durch Lüften aus diesem Raum entfernen – berechnet aus Raum- und Außenluft, Raumvolumen und dem gelernten Luftwechsel.", "How much water vapour airing could remove from this room right now – calculated from room and outdoor air, room volume and the learned air exchange."),
+                t("Minus (grün) heißt: Lüften trocknet. Plus heißt: Die Außenluft ist gerade absolut feuchter – Lüften würde Feuchtigkeit hereinbringen. Eine Empfehlung gibt es erst, wenn sich das Lüften wirklich lohnt.", "Minus (green) means airing dries. Plus means the outdoor air is absolutely more humid right now – airing would bring moisture in. A recommendation only appears when airing is really worth it."),
+            ]],
+            balance: [t("Bilanz seit Lüftungsbeginn", "Balance since airing started"), null, [
+                t("So viel Feuchtigkeit ist seit dem Öffnen tatsächlich hinausgegangen (Minus) oder hereingekommen (Plus) – gemessen, nicht geschätzt.", "How much moisture has actually left (minus) or come in (plus) since the window was opened – measured, not estimated."),
+            ]],
+            forecast: [t(`Weitere ${horizon} Minuten`, `Next ${horizon} minutes`), null, [
+                t(`Prognose für die nächsten ${horizon} Minuten, wenn du jetzt lüftest oder weiterlüftest: Feuchteänderung im Raum, Temperaturänderung und was das Nachheizen ungefähr kostet.`, `Forecast for the next ${horizon} minutes if you air now or keep airing: moisture change in the room, temperature change and roughly what reheating costs.`),
+            ]],
+            surface_rh: [t("Oberflächen-RH", "Surface RH"), `${srh} % · ${t(mouldDE(r.mould_level), String(r.mould_level || "–"))}`, [
+                t("RH steht für relative Luftfeuchte (englisch „relative humidity“). Die Oberflächen-RH ist die geschätzte relative Feuchte direkt an der kühlsten Wandfläche des Raums – etwa in Außenecken, an Fensterlaibungen oder hinter Schränken.",
+                  "RH stands for relative humidity. Surface RH is the estimated relative humidity right at the coolest wall surface of the room – outer corners, window reveals or behind wardrobes."),
+                t(`Weil die Wand kälter ist als die Raumluft, ist die Feuchte dort höher als am Sensor: ${rh} % in der Raumluft entsprechen hier etwa ${srh} % an der Wand.`, `Because the wall is cooler than the room air, the humidity there is higher than at the sensor: ${rh} % in the room air means about ${srh} % at the wall.`),
+                t(`Schimmel braucht dauerhaft feuchte Oberflächen. Ab etwa ${warn} % über längere Zeit steigt das Risiko, ab ${crit} % ist es kritisch (Standardwerte, in den FreshAirIQ-Einstellungen anpassbar). Kurze Spitzen, z. B. beim Duschen oder Kochen, sind unproblematisch.`, `Mould needs surfaces that stay damp. From about ${warn} % over a longer time the risk rises, from ${crit} % it is critical (defaults, adjustable in the FreshAirIQ settings). Short peaks, e.g. while showering or cooking, are harmless.`),
+            ]],
+            balance_days: [t(`Bilanz in ${days} Tagen`, `Balance over ${days} days`), null, [
+                t(`Summe aller Lüftungen in diesem Raum in den letzten ${days} Tagen. Minus: So viel Wasser wurde insgesamt hinausgelüftet. Plus: Beim Lüften kam insgesamt mehr Feuchte herein als hinaus.`, `Sum of all airings in this room over the last ${days} days. Minus: this much water was aired out in total. Plus: more moisture came in than went out.`),
+            ]],
+            sessions: [t("Lüftungen", "Airings"), null, [
+                t(`Anzahl der erkannten Lüftungen (Fenster oder Tür offen, bzw. Lüfter an) in den letzten ${days} Tagen und ihre gesamte Dauer.`, `Number of detected airings (window or door open, or fan running) in the last ${days} days and their total duration.`),
+            ]],
+            cost: [t("Geschätztes Wiederaufheizen", "Estimated reheating"), null, [
+                t("Was das Nachheizen der beim Lüften abgekühlten Raumluft ungefähr gekostet hat – berechnet mit deiner Heizungsart und deinem Energiepreis aus den FreshAirIQ-Einstellungen.", "Roughly what reheating the air cooled by airing cost – based on your heating type and energy price from the FreshAirIQ settings."),
+            ]],
+            learning: [t("Lernproben", "Learning samples"), `${Number(r.learning_samples || 0)} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min`, [
+                t("So viele gültige Lüftungen hat FreshAirIQ in diesem Raum schon ausgewertet. Daraus lernt es, wie schnell die Luft hier ausgetauscht wird (%/min = Anteil der Raumluft pro Minute). Mehr Proben bedeuten genauere Lüftdauern und Prognosen.",
+                  "How many valid airings FreshAirIQ has evaluated in this room. From them it learns how fast the air is exchanged here (%/min = share of the room air per minute). More samples mean more accurate durations and forecasts."),
+                t(`Status: ${learnDE(r.learning_status)}. Bis zur ersten Probe nutzt FreshAirIQ eine Grundschätzung.`, `Status: ${r.learning_status || "–"}. Until the first sample FreshAirIQ uses a base estimate.`),
+                notLearned,
+            ]],
+            feedback: [t("Feedback-Proben", "Feedback samples"), null, [
+                t("Nach jeder Lüftung vergleicht FreshAirIQ seine Prognose mit dem gemessenen Ergebnis. „Treffer“ ist der Anteil der Lüftungen, bei denen die Prognose passte; der Feuchtefaktor gleicht systematische Abweichungen aus.", "After every airing FreshAirIQ compares its forecast with the measured result. “Hit rate” is the share of airings where the forecast was right; the moisture factor corrects systematic deviations."),
+            ]],
+            shadow: [t("Learning 3.0", "Learning 3.0"), null, [
+                t("FreshAirIQ testet im Hintergrund alternative Rechenmodelle gegen das aktuelle. Ein nachweislich besseres wird übernommen; wird etwas schlechter, greift automatisch ein Rollback.", "FreshAirIQ tests alternative models against the current one in the background. A provably better one is adopted; if something gets worse, an automatic rollback kicks in."),
+            ]],
+            routine: [t("Routine-IQ", "Routine IQ"), null, [
+                t("Erkennt wiederkehrende Feuchtequellen zu bestimmten Tageszeiten, z. B. Duschen, Kochen oder Schlafen. Der Prozentwert zeigt, wie ausgereift dieses Zeitmuster ist; „aktuell erwartet“ ist die Feuchte, die um diese Uhrzeit typischerweise entsteht.", "Recognises recurring moisture sources at certain times of day, e.g. showering, cooking or sleeping. The percentage shows how mature this pattern is; “currently expected” is the moisture that typically arises at this time."),
+            ]],
+            strategy: [t("Strategie-IQ", "Strategy IQ"), null, [
+                t("Bewertet, wie gut frühere Empfehlungen in diesem Raum funktioniert haben, und richtet künftige Empfehlungen danach aus.", "Rates how well earlier recommendations worked in this room and adjusts future recommendations accordingly."),
+            ]],
+            last_learning: [t("Letzte Lernmessung", "Last learning measurement"), whenDE(r.last_learning_at), [
+                t("Ergebnis der letzten Lüftung, die FreshAirIQ als Lernprobe geprüft hat. Grün: gelernt. Rot: übersprungen – der Grund steht dabei.", "Result of the last airing FreshAirIQ checked as a learning sample. Green: learned. Red: skipped – the reason is shown."),
+                t("„Referenzluft wurde während der Lüftung zu feucht“ heißt: Die Außenluft (bzw. die Referenzluft) war zwischendurch nicht mehr trockener als die Raumluft. Dann ist die Messung keine faire Lernprobe für den Luftwechsel.", "“Reference air became too humid during airing” means the outdoor (reference) air was at times no longer drier than the room air, so the measurement is not a fair learning sample for the air exchange."),
+                notLearned,
+            ]],
+            data_quality: [t("Datenqualität", "Data quality"), null, [
+                t("„Daten plausibel“: Temperatur, Feuchte und Außenluft sind aktuell und passen zueinander – Empfehlung und Prognose beruhen auf echten Messwerten.", "“Data plausible”: temperature, humidity and outdoor air are recent and consistent – recommendation and forecast are based on real measurements."),
+                t("„Daten prüfen“: Ein Sensor meldet zu alte, fehlende oder widersprüchliche Werte. Bitte Verfügbarkeit und Zuordnung der Sensoren prüfen.", "“Check data”: a sensor reports values that are too old, missing or contradictory. Please check the sensors’ availability and assignment."),
+            ]],
+        };
+        const row = texts[key];
+        return row ? { title: row[0], value: row[1], body: row[2] } : null;
     }
     disconnectedCallback() { if (this._postResultTimer) clearTimeout(this._postResultTimer); this._postResultTimer = null; this._cancelQueuedRender(); this._cancelQueuedLiveRefresh(); }
     _fieldTestClientId() {
@@ -1993,6 +1713,41 @@ class FreshAirIQCard extends HTMLElement {
         if (cache) cache.set(rows, html);
         return html;
     }
+    // 0.26.4.7: hourly chart series are no longer pushed through the entity
+    // attributes every cycle; they are loaded once per room detail view and
+    // refreshed every 5 minutes. Older backends still deliver them inline.
+    _roomChartHistory(r) {
+        if (!r) return {};
+        if (Array.isArray(r.humidity_history_14d) || Array.isArray(r.temperature_history_14d)) return r;
+        const key = String(r.key || "");
+        if (!key) return {};
+        const cache = this._roomHistoryCache || {};
+        const cached = cache[key];
+        if (!cached || Date.now() - cached.at > 300000) this._loadRoomHistory(key);
+        return cached ? cached.data : {};
+    }
+    async _loadRoomHistory(key) {
+        if (!this._hass || typeof this._hass.callApi !== "function") return;
+        this._roomHistoryLoading = this._roomHistoryLoading || {};
+        if (this._roomHistoryLoading[key]) return;
+        const entryId = this._settingsEntryId();
+        if (!entryId) return;
+        this._roomHistoryLoading[key] = true;
+        const previous = (this._roomHistoryCache || {})[key];
+        try {
+            const payload = await this._hass.callApi("GET", `freshairiq/room-history/${entryId}?room=${encodeURIComponent(key)}`);
+            const row = payload && payload.rooms && payload.rooms[key] ? payload.rooms[key] : {};
+            this._roomHistoryCache = Object.assign({}, this._roomHistoryCache || {}, { [key]: { at: Date.now(), data: row } });
+            this._render();
+        }
+        catch (_err) {
+            // Retry after about one minute; keep any earlier series visible.
+            this._roomHistoryCache = Object.assign({}, this._roomHistoryCache || {}, { [key]: { at: Date.now() - 240000, data: previous ? previous.data : {} } });
+        }
+        finally {
+            delete this._roomHistoryLoading[key];
+        }
+    }
     _svgLine(points, field = "temperature_c") {
         const rows = Array.isArray(points) ? points : [];
         if (!rows.length) return "";
@@ -2123,8 +1878,15 @@ class FreshAirIQCard extends HTMLElement {
             const m = moisture(live);
             return { color: m.color, title: "Lüftung läuft", sub: `${active.length} Raum/Räume aktiv · ${m.text}` };
         }
-        if (st.status === "pollen_warning")
+        if (st.status === "pollen_warning") {
+            // 0.26.4.7: the outdoor-air veto can come from fine dust (PM2.5) as well.
+            const cause = String(st.outdoor_air_veto_cause || "pollen");
+            if (cause === "pm25")
+                return { color: "#ffb45f", title: "Feinstaub draußen beachten", sub: `PM2.5 ${fmt(st.outdoor_pm25, 0)} µg/m³ · Grenzwert ${fmt(st.outdoor_pm25_limit, 0)} µg/m³` };
+            if (cause === "pollen_and_pm25")
+                return { color: "#ffb45f", title: "Pollen und Feinstaub beachten", sub: `Pollenindex ${fmt(st.pollen_index, 1)} · PM2.5 ${fmt(st.outdoor_pm25, 0)} µg/m³` };
             return { color: "#ffb45f", title: "Pollen beachten", sub: `Index ${fmt(st.pollen_index, 1)} · Grenzwert ${fmt(st.pollen_limit, 1)}` };
+        }
         if (st.status === "cooling_recommended")
             return { color: "#63d2f7", title: "Sommerkühlung sinnvoll", sub: "Kühlere Außenluft kann genutzt werden" };
         if (st.status === "ventilate")
@@ -2157,7 +1919,47 @@ class FreshAirIQCard extends HTMLElement {
         const inPreNight = preStart < start
             ? current >= preStart && current < start
             : current >= preStart || current < start;
-        return inPreNight ? "pre-night" : "good";
+        if (inPreNight) return "pre-night";
+        // 0.26.4.8: the first hour after the night ends is Freshy's "good morning".
+        const inMorning = end + 60 <= 1440 ? current >= end && current < end + 60 : current >= end || current < (end + 60) % 1440;
+        return inMorning ? "morning" : "good";
+    }
+    _freshyMood(st, ctx) {
+        const { kind, close, nightRecommendation, nightStrategy, isNight, isPreNight, timeKind, calc } = ctx;
+        const weather = st.weather_now && typeof st.weather_now === "object" ? st.weather_now : {};
+        const nightAction = ["pre_ventilate", "open_selected"].includes(String(nightStrategy.action || ""));
+        const pm25Blocked = Boolean(st.outdoor_pm25_blocked);
+        const mouldSerious = calc.some(r => ["High", "Very high"].includes(r.mould_level));
+        if (kind === "live" && close.some(r => r.active)) return "done";
+        if (kind === "continuous" || kind === "live") return "run";
+        if (kind === "sensor") return "sensor";
+        if (kind === "close" || kind === "success") return "done";
+        if (kind === "pollen") return pm25Blocked ? "dust" : "pollen";
+        if (kind === "cooling") return "cool";
+        if (kind === "recommend" || (kind === "night" && nightRecommendation && nightAction)) return "act";
+        // Weather that is happening right now.
+        if (weather.raining) return weather.snowing ? "snow" : "rain";
+        if (weather.snowing) return "snow";
+        if (kind === "wait") return weather.rain_soon ? "rain_soon" : isNight ? "night" : isPreNight ? "sleepy" : "wait";
+        if (kind === "night" || isNight) return "night";
+        if (mouldSerious) return "mould";
+        if (isPreNight) return "sleepy";
+        if (weather.frost) return "frost";
+        if (weather.heat) return "heat";
+        if (timeKind === "morning") return "morning";
+        return "ok";
+    }
+    _freshyMotion(mood, timeKind) {
+        // One shared clock for all Freshy loops: a live re-render continues the motion
+        // instead of restarting it. The fade-in plays only when the mood changes.
+        const now = freshyClock();
+        if (this._freshyLastMood !== mood) { this._freshyLastMood = mood; this._freshyMoodAt = now; }
+        return {
+            phase: -(now - FRESHY_EPOCH) / 1000,
+            since: -(now - (this._freshyMoodAt ?? now)) / 1000,
+            // The night cap belongs to the evening and the night, whatever Freshy does.
+            cap: ["pre-night", "night"].includes(timeKind) && mood !== "rain",
+        };
     }
     _compactAIPanel(st, rooms = []) {
         const calc = rooms.filter(r => r.calculation_enabled !== false);
@@ -2186,6 +1988,9 @@ class FreshAirIQCard extends HTMLElement {
             Boolean(nightStrategy.primary || st.night_strategy_primary) ||
             heroTitle.includes("nacht") || heroTitle.includes("night")
         );
+        const houseDecision = st.intelligent_recommendation || {};
+        const houseWaits = ["wait", "pollen_wait"].includes(String(houseDecision.kind || "").toLowerCase())
+            || String(houseDecision.status || "").toLowerCase() === "wait";
         const kind = active.length && passiveOpenMonitor ? "continuous"
             : active.length ? "live"
             : bad.length && status !== "sensor_recovering" ? "sensor"
@@ -2195,37 +2000,38 @@ class FreshAirIQCard extends HTMLElement {
             : heroTitle.includes("abwarten") || heroTitle.includes("nicht lüften") || heroTitle.includes("wait for") || heroTitle.includes("do not ventilate") ? "wait"
             : ["completed", "complete", "success", "ventilation_completed"].includes(status) ? "success"
             : nightRecommendation ? "night"
+            // 0.26.4.6 (GitHub #14): the headline wording varies ("Ein günstigerer
+            // Zeitpunkt ist noch nicht erreicht" …), so detecting "wait" from the
+            // title failed and the card fell through to "recommend". The canonical
+            // house decision kind/status is authoritative.
+            : houseWaits ? "wait"
             : vent.length || status === "ventilate" ? "recommend"
             : isNight ? "night"
             : isPreNight ? "pre-night"
             : "good";
-        // 0.26.4.1: Freshy's mood (11 animated states) follows the same situation logic.
-        const freshyMouldSerious = calc.some(r => ["High", "Very high"].includes(r.mould_level));
-        const freshyRainClose = nightStrategy.action === "close" && Boolean(nightStrategy.rain_expected);
+        // 0.26.4.8: Freshy's mood follows the same situation logic, but the rain
+        // picture only appears when it really rains (weather_now) – before, any
+        // rain expected during the coming night showed the umbrella.
         const freshyNightAction = ["pre_ventilate", "open_selected"].includes(String(nightStrategy.action || ""));
-        const freshyMood = kind === "live" && close.some(r => r.active) ? "done"
-            : kind === "continuous" || kind === "live" ? "run"
-            : kind === "sensor" ? "sensor"
-            : kind === "close" || kind === "success" ? "done"
-            : kind === "pollen" ? "pollen"
-            : kind === "cooling" ? "cool"
-            : kind === "recommend" ? "act"
-            : kind === "night" ? (nightRecommendation && freshyNightAction ? "act" : freshyRainClose ? "rain" : "night")
-            : kind === "wait" ? (freshyRainClose || nightStrategy.rain_expected ? "rain" : isNight ? "night" : "ok")
-            : freshyMouldSerious ? "mould"
-            : isNight ? "night"
-            : "ok";
+        const freshyMood = this._freshyMood(st, { kind, close, nightRecommendation, nightStrategy, isNight, isPreNight, timeKind: freshyTimeKind, calc });
         const freshyProgress = active.length && Number(st.recommended_duration_min || 0) > 0 ? 1 - Math.max(0, Number(st.remaining_duration_min || 0)) / Number(st.recommended_duration_min) : null;
         const color = kind === "sensor" ? "#ff7770" : ["close", "wait", "pollen"].includes(kind) ? "#ffb45f" : ["good", "success", "recommend"].includes(kind) ? "#62e889" : ["live", "continuous", "cooling"].includes(kind) ? "#63d2f7" : ["night", "pre-night"].includes(kind) ? "#8796ff" : (hero.color || "#63d2f7");
         const roomNames = priority.slice(0, 2).map(r => r.name).filter(Boolean);
-        const summary = active.length ? this._t("iq.room_tracking", { count: active.length }) : roomNames.length ? this._t(roomNames.length > 1 ? "iq.priority_many" : "iq.priority_one", { rooms: roomNames.join(this._t("iq.and")) }) : (hero.sub || this._t("iq.no_action"));
-        const factTime = Number.isFinite(duration) && Math.abs(duration) >= .5 ? `<span><ha-icon icon="mdi:clock-outline"></ha-icon>${active.length && duration >= 0 ? this._t("iq.remaining", { count: Math.ceil(duration) }) : `${Math.max(1, Math.round(Math.abs(duration)))} min`}</span>` : "";
-        const factMoisture = amount >= 1 ? `<span><ha-icon icon="mdi:water-outline"></ha-icon>≈ ${Math.round(amount)} ml</span>` : "";
+        // House says "not now" (wait, or keep closed at night) while single rooms still
+        // carry the physical Ventilate action: present those rooms as "possible, but wait"
+        // instead of a conflicting "Lüften · 9 min" call to action (GitHub #14).
+        const houseHolds = !active.length && (kind === "wait" || (kind === "night" && !freshyNightAction));
+        const waitingVent = r => (houseHolds && ["Ventilate", "Ventilate for cooling"].includes(r.action) && !r.active) || houseHeldRoom(r);
+        const prioritySummaryKey = priority.some(waitingVent) ? (roomNames.length > 1 ? "iq.priority_waiting_many" : "iq.priority_waiting_one") : (roomNames.length > 1 ? "iq.priority_many" : "iq.priority_one");
+        const summary = active.length ? this._t("iq.room_tracking", { count: active.length }) : roomNames.length ? this._t(prioritySummaryKey, { rooms: roomNames.join(this._t("iq.and")) }) : (hero.sub || this._t("iq.no_action"));
+        const factTime = !houseHolds && Number.isFinite(duration) && Math.abs(duration) >= .5 ? `<span><ha-icon icon="mdi:clock-outline"></ha-icon>${active.length && duration >= 0 ? this._t("iq.remaining", { count: Math.ceil(duration) }) : `${Math.max(1, Math.round(Math.abs(duration)))} min`}</span>` : "";
+        const factMoisture = amount >= 1 ? `<span><ha-icon icon="mdi:water-outline"></ha-icon>${houseHolds ? esc(this._t("iq.removable_possible", { ml: Math.round(amount) })) : `≈ ${Math.round(amount)} ml`}</span>` : "";
         const roomCards = priority.slice(0, 2).map(r => {
             const canonicalMonitor = isCanonicalMonitorRoom(r);
-            const [accent,,icon] = canonicalMonitor ? ["#63d2f7", "", "mdi:window-open"] : styleFor(r.action);
-            const label = canonicalMonitor ? (this._uiLanguage() === "de" ? "Daueröffnung überwachen" : "Monitor long-term opening") : (r.active ? this._t("iq.active") : (this._uiLanguage() === "de" ? actionDE(r.action) : faiqEnglishText(actionDE(r.action))));
-            const mins = Number(r.recommended_duration_min || r.remaining_duration_min || 0);
+            const roomWaits = waitingVent(r);
+            const [accent,,icon] = canonicalMonitor ? ["#63d2f7", "", "mdi:window-open"] : styleFor(roomWaits ? "Wait" : r.action);
+            const label = canonicalMonitor ? (this._uiLanguage() === "de" ? "Daueröffnung überwachen" : "Monitor long-term opening") : (r.active ? this._t("iq.active") : roomWaits ? this._t("iq.room_waiting") : (this._uiLanguage() === "de" ? actionDE(r.action) : faiqEnglishText(actionDE(r.action))));
+            const mins = roomWaits ? 0 : Number(r.recommended_duration_min || r.remaining_duration_min || 0);
             const expanded = this._compactExpanded === `room:${r.key}`;
             const rawReasons = (r.recommendation_reasons || []).filter(Boolean);
             const reasons = rawReasons.length ? rawReasons : [reasonDE(r.reason)].filter(Boolean);
@@ -2234,9 +2040,9 @@ class FreshAirIQCard extends HTMLElement {
             return `<div class="ai-room-wrap"><div class="ai-room" role="button" tabindex="0" data-compact-toggle="room:${esc(r.key)}" aria-expanded="${expanded ? "true" : "false"}" style="--room:${accent}"><ha-icon icon="${icon}"></ha-icon><div><b>${esc(r.name || r.key)}</b><small>${esc(label)}${mins > 0 ? ` · ${Math.round(mins)} min` : ""}</small></div><ha-icon class="ai-expand-chevron" icon="${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></div>${details}</div>`;
         }).join("");
         const healthyCount = Math.max(0, calc.length - priority.length);
-        const nightImportant = Boolean((st.night_strategy || {}).primary || st.night_strategy_primary || Number(st.overnight_forecast_ml || 0) > 0);
-        const pollenBlocked = Boolean(st.pollen_blocked);
-        const learningText = String(st.learning_status || st.learning_stage || this._t("iq.learning_active")).replaceAll("_", " ");
+        // Same criterion as the classic mould tile, so both views agree (GitHub #14).
+        const mouldFlagged = calc.filter(r => ["Elevated", "High", "Very high"].includes(r.mould_level)).length;
+        const mouldNote = mouldFlagged ? ` · ${this._t(mouldFlagged === 1 ? "iq.mould_flagged_one" : "iq.mould_flagged_many", { count: mouldFlagged })}` : "";
         const decisionExpanded = this._compactExpanded === "decision";
         const decisionReasons = (st.intelligent_recommendation?.reasons || st.intelligent_recommendation?.why || []).filter(Boolean).slice(0, 4);
         const freshyBrain = st.intelligent_recommendation || {};
@@ -2247,18 +2053,13 @@ class FreshAirIQCard extends HTMLElement {
         const decisionDetail = decisionExpanded ? `<div class="ai-inline-detail decision-inline-detail" style="--detail:${color}"><div class="ai-inline-title">${this._uiLanguage() === "de" ? "WARUM DIESE EMPFEHLUNG?" : "WHY THIS RECOMMENDATION?"}</div>${decisionReasons.map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(this._uiLanguage() === "de" ? x : faiqEnglishText(x))}</span></div>`).join("") || `<div><ha-icon icon="mdi:information-outline"></ha-icon><span>${esc(this._uiLanguage() === "de" ? (hero.sub || "FreshAirIQ bewertet fortlaufend Raum-, Außen- und Prognosedaten.") : faiqEnglishText(hero.sub || "FreshAirIQ continuously evaluates room, outdoor and forecast data."))}</span></div>`}<button class="ai-more" data-info="decision">${this._uiLanguage() === "de" ? "Vollständige Entscheidung" : "Full decision"}<ha-icon icon="mdi:chevron-right"></ha-icon></button></div>` : "";
         return `<section class="ai-compact ${kind}" style="--ai:${color}">
           <div class="ai-assistant" role="button" tabindex="0" data-compact-toggle="decision" aria-expanded="${decisionExpanded ? "true" : "false"}">
-            <div class="ai-mascot-wrap fr-wrap">${freshySvg(freshyMood, 112, this._uiLanguage(), freshyProgress)}</div>
+            <div class="ai-mascot-wrap fr-wrap">${freshySvg(freshyMood, 112, this._uiLanguage(), freshyProgress, this._freshyMotion(freshyMood, freshyTimeKind))}</div>
             <div class="ai-copy"><div class="ai-scope${["RÄUME","ROOMS"].includes(freshyScope) ? " clickable" : ""}"${["RÄUME","ROOMS"].includes(freshyScope) ? ' data-info="rooms" role="button" tabindex="0" aria-label="' + esc(this._t("shell.rooms")) + '"' : ""}>${esc(freshyScope)}</div><div class="ai-kicker">${esc(this._t("iq.handling"))}</div><h2>${esc(this._uiLanguage() === "de" ? (hero.title || this._t("iq.all_good")) : faiqEnglishText(hero.title || this._t("iq.all_good")))}</h2><p>${esc(summary)}</p>${freshyGoalChips}<div class="ai-facts">${factTime}${factMoisture}</div></div>
             <ha-icon class="ai-chevron" icon="${decisionExpanded ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon>
           </div>
           ${decisionDetail}
           ${roomCards ? `<div class="ai-attention">${roomCards}</div>` : ""}
-          <div class="ai-all-good clickable" data-info="rooms"><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${priority.length ? this._t("iq.more_rooms_ok", { count: healthyCount }) : this._t("iq.all_rooms_ok", { count: calc.length })}</span><ha-icon icon="mdi:chevron-right"></ha-icon></div>
-          <div class="ai-context">
-            <button data-info="night" style="--ctx:${nightImportant ? "#e2bd69" : "#7ec8ff"}"><ha-icon icon="mdi:weather-night"></ha-icon><span><b>${esc(this._t("iq.night"))}</b><small>${esc(this._t(nightImportant ? "iq.notice" : "iq.monitored"))}</small></span></button>
-            <button data-info="pollen" style="--ctx:${pollenBlocked ? "#e2bd69" : "#62e889"}"><ha-icon icon="mdi:leaf"></ha-icon><span><b>${esc(this._t("iq.pollen"))}</b><small>${esc(this._t(pollenBlocked ? "iq.watch" : "iq.okay"))}</small></span></button>
-            <button data-info="learning:quality" style="--ctx:#b68cff"><ha-icon icon="mdi:brain"></ha-icon><span><b>${esc(this._t("iq.learning"))}</b><small>${esc(this._uiLanguage() === "de" ? learningText : faiqEnglishText(learningText))}</small></span></button>
-          </div>
+          <div class="ai-all-good clickable" data-info="rooms"><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${priority.length ? this._t("iq.more_rooms_ok", { count: healthyCount }) : this._t("iq.all_rooms_ok", { count: calc.length })}${esc(mouldNote)}</span><ha-icon icon="mdi:chevron-right"></ha-icon></div>
         </section>`;
     }
     _intelligentPanel(st, rooms = []) {
@@ -2588,7 +2389,7 @@ class FreshAirIQCard extends HTMLElement {
             }
             const details = roomReasons.length ? roomReasons : [fallbackReason].filter(Boolean);
             const canonicalMonitor = passiveOpenMonitor && r.active;
-            const displayAction = canonicalMonitor ? "Daueröffnung überwachen" : actionDE(r.action);
+            const displayAction = canonicalMonitor ? "Daueröffnung überwachen" : roomActionLabel(r);
             return `<details class="decision-goal-room decision-room-disclosure"><summary data-classic-disclosure="room:${esc(r.key)}"><span class="decision-goal-room-name">${esc(r.name||r.key)}</span><span class="goal-room-status ${statusClass}">${esc(statusText)}</span><ha-icon class="decision-goal-chevron" icon="mdi:chevron-down"></ha-icon>${note}</summary><div class="decision-goal-room-detail"><div class="decision-goal-action"><strong>${esc(displayAction)}</strong></div><div class="goal-room-goals">${goalList}</div>${priorityLine}${protection}${openBlocked?`<div class="decision-goal-explain"><ha-icon icon="mdi:information-outline"></ha-icon><span>${de?`${goalLabels[openBlocked.id]||openBlocked.id} ist gerade nicht durch Lüften erreichbar – FreshAirIQ verfolgt zuerst die anderen Ziele.`:`${goalLabels[openBlocked.id]||openBlocked.id} cannot be reached by ventilating right now – FreshAirIQ pursues the other goals first.`}</span></div>`:""}<div class="decision-section-title">${de?"WARUM DIESER RAUM?":"WHY THIS ROOM?"}</div>${details.map(x=>`<div class="decision-room-reason"><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}<button class="decision-room-open" type="button" data-room="${esc(r.key)}">${de?"Raumdetails öffnen ›":"Open room details ›"}</button></div></details>`;
         }).filter(Boolean).join("");
         if (!houseGoals && !roomRows) return "";
@@ -2615,11 +2416,11 @@ class FreshAirIQCard extends HTMLElement {
         });
         if (!important.length)
             return `<div class="recommendation-empty"><ha-icon icon="mdi:check-circle-outline"></ha-icon><div><b>Keine raumspezifische Maßnahme nötig</b><span>FreshAirIQ überwacht die Räume weiter. Die Hausschwelle entscheidet separat über eine allgemeine Lüftungsempfehlung.</span></div></div>`;
-        return important.map(r => { const [accent, , icon] = styleFor(r.action); const reasons = (r.recommendation_reasons || []).filter(Boolean); return `<article class="recommendation-row clickable" data-room="${esc(r.key)}" style="--rec:${accent}"><div class="rec-icon"><ha-icon icon="${icon}"></ha-icon></div><div class="rec-body"><div class="rec-head"><b>${esc(r.name)}</b><strong>${esc(actionDE(r.action))}</strong></div><div class="rec-reasons">${reasons.map(x => `<span>${esc(x)}</span>`).join("") || `<span>${esc(reasonDE(r.reason))}</span>`}</div></div></article>`; }).join("");
+        return important.map(r => { const [accent, , icon] = styleFor(r.action); const reasons = (r.recommendation_reasons || []).filter(Boolean); return `<article class="recommendation-row clickable" data-room="${esc(r.key)}" style="--rec:${accent}"><div class="rec-icon"><ha-icon icon="${icon}"></ha-icon></div><div class="rec-body"><div class="rec-head"><b>${esc(r.name)}</b><strong>${esc(roomActionLabel(r))}</strong></div><div class="rec-reasons">${reasons.map(x => `<span>${esc(x)}</span>`).join("") || `<span>${esc(reasonDE(r.reason))}</span>`}</div></div></article>`; }).join("");
     }
     _goalTracker(r, compact=false) {
         const goals=((r.goal_state||{}).goals||[]).filter(g=>g.active);if(!goals.length)return "";const de=this._uiLanguage()!=="en",names={humidity:de?"Feuchte":"Humidity",co2:"CO₂",temperature:de?"Temperatur":"Temperature"},icons={humidity:"mdi:water-outline",co2:"mdi:molecule-co2",temperature:"mdi:thermometer"};const horizon=Math.max(1,Number(r.forecast_horizon_min||5)),effect=Number(r.forecast_physical_moisture_effect_ml??r.forecast_moisture_effect_ml??0),tempEffect=Number(r.forecast_temperature_change_c??r.forecast_5_min_temperature_change_c??0);
-        const impact=g=>{if(g.id==="humidity"){const potential=Number(r.realistic_potential_ml??r.potential_ml??0);if(potential>.5&&effect>.5){const rate=effect/horizon,mins=rate>.01?Math.max(1,Math.ceil(potential/rate)):horizon;return{text:`−${Math.round(potential)} ml`,cls:"removed",time:`${mins} min`,note:de?"entfernbar":"removable"}}if(effect<-.5)return{text:`+${Math.abs(Math.round(effect))} ml`,cls:"added",time:`${Math.round(horizon)} min`,note:de?"würde hinzukommen":"would be added"};return{text:"±0 ml",cls:"neutral",time:`${Math.round(horizon)} min`,note:de?"kein relevanter Effekt":"no relevant effect"}}if(g.id==="temperature"){const sign=tempEffect>0?"+":tempEffect<0?"−":"±";return{text:`${sign}${fmt(Math.abs(tempEffect),1)} °C`,cls:tempEffect>0?"warmer":tempEffect<0?"cooler":"neutral",time:`${Math.round(horizon)} min`,note:de?(tempEffect>0?"wärmer":tempEffect<0?"kühler":"nahezu unverändert"):(tempEffect>0?"warmer":tempEffect<0?"cooler":"nearly unchanged")}}if(g.id==="co2"){const value=Number(g.value),target=Number(g.target),delta=Number.isFinite(value)&&Number.isFinite(target)?value-target:NaN;if(delta>0)return{text:`−${Math.round(delta)} ppm`,cls:"lower",time:g.eta_min!=null&&Number(g.eta_min)>0?`${Math.max(1,Math.round(Number(g.eta_min)))} min`:"–",note:de?(g.eta_min!=null?"bis Ziel":"bis Ziel · Zeit lernt"):(g.eta_min!=null?"to target":"to target · time learning")};return{text:"±0 ppm",cls:"neutral",time:"–",note:de?"Ziel bereits erreicht":"target already reached"}}return{text:"–",cls:"neutral",time:"–",note:""}};return `<div class="goal-tracker ${compact?"compact":""}">${goals.map(g=>{const x=impact(g);return `<div class="goal-pill ${g.reached?"reached":"open"}"><ha-icon icon="${icons[g.id]||"mdi:target"}"></ha-icon><span><b>${names[g.id]||g.id}</b>${compact?"":`<small class="goal-impact ${x.cls}">${x.text}<span class="goal-impact-time"><i class="goal-sep">· </i>${x.time}</span></small><small class="goal-impact-note">${x.note}</small>`}</span></div>`}).join("")}</div>`;
+        const impact=g=>{if(g.id==="humidity"){const potential=Number(r.realistic_potential_ml??r.potential_ml??0);if(potential>.5&&effect>.5){const rate=effect/horizon,mins=rate>.01?Math.max(1,Math.ceil(potential/rate)):horizon;return{text:`−${Math.round(potential)} ml`,cls:"removed",time:`${mins} min`,note:de?"entfernbar":"removable"}}if(effect<-.5)return{text:`+${Math.abs(Math.round(effect))} ml`,cls:"added",time:`${Math.round(horizon)} min`,note:de?"würde hinzukommen":"would be added"};return{text:"±0 ml",cls:"neutral",time:`${Math.round(horizon)} min`,note:de?"kein relevanter Effekt":"no relevant effect"}}if(g.id==="temperature"){const sign=tempEffect>0?"+":tempEffect<0?"−":"±";return{text:`${sign}${fmt(Math.abs(tempEffect),1)} °C`,cls:tempEffect>0?"warmer":tempEffect<0?"cooler":"neutral",time:`${Math.round(horizon)} min`,note:de?(tempEffect>0?"wärmer":tempEffect<0?"kühler":"nahezu unverändert"):(tempEffect>0?"warmer":tempEffect<0?"cooler":"nearly unchanged")}}if(g.id==="co2"){const value=Number(g.value),target=Number(g.target),delta=Number.isFinite(value)&&Number.isFinite(target)?value-target:NaN;if(delta>0)return{text:`−${Math.round(delta)} ppm`,cls:"lower",time:g.eta_min!=null&&Number(g.eta_min)>0?`${Math.max(1,Math.round(Number(g.eta_min)))} min`:"–",note:de?(g.eta_min!=null?"bis Ziel":"bis Ziel · Zeit lernt"):(g.eta_min!=null?"to target":"to target · time learning")};return{text:"±0 ppm",cls:"neutral",time:"–",note:de?"Ziel bereits erreicht":"target already reached"}}return{text:"–",cls:"neutral",time:"–",note:""}};return `<div class="goal-tracker ${compact?"compact":""}" style="--goal-count:${goals.length}">${goals.map(g=>{const x=impact(g);return `<div class="goal-pill ${g.reached?"reached":"open"}"><ha-icon icon="${icons[g.id]||"mdi:target"}"></ha-icon><span><b>${names[g.id]||g.id}</b>${compact?"":`<small class="goal-impact ${x.cls}">${x.text}<span class="goal-impact-time"><i class="goal-sep">· </i>${x.time}</span></small><small class="goal-impact-note">${x.note}</small>`}</span></div>`}).join("")}</div>`;
     }
     _roomCard(r) {
         try {
@@ -2641,8 +2442,8 @@ class FreshAirIQCard extends HTMLElement {
         const summary = structureOnly
             ? `<div class="room-summary-grid"><div class="room-stat" style="grid-column:1/-1"><ha-icon class="stat-icon" icon="mdi:home-floor-0"></ha-icon><div><div class="tiny">STRUKTURRAUM</div><div class="room-value">Keine Klimasensoren erforderlich</div><div class="muted">Wird für Gebäude, Etage, Volumen und Bewohnerzuordnung geführt – ohne erfundene Klimawerte.</div></div></div></div>`
             : `<div class="room-summary-grid"><div class="room-stat"><ha-icon class="stat-icon" icon="mdi:thermometer"></ha-icon><div><div class="tiny">RAUMKLIMA</div><div class="room-value">${fmt(r.temperature, 1)} °C · ${Math.round(Number(r.humidity || 0))} %</div><div class="muted">${fmt(r.absolute_humidity, 1)} g/m³ absolut</div></div></div><div class="room-stat mould-mini" style="border-color:${mouldColor}55;background:${mouldBg}"><ha-icon class="stat-icon" icon="mdi:shield-outline" style="color:${mouldColor}"></ha-icon><div><div class="tiny">SCHIMMEL</div><div class="room-value" style="color:${mouldColor}">${Math.round(Number(r.surface_rh || 0))} %</div><div class="muted" style="color:${mouldColor}">${esc(mouldDE(r.mould_level))}</div></div></div><div class="room-stat"><ha-icon class="stat-icon learning-bars" icon="mdi:chart-bar"></ha-icon><div><div class="tiny">LERNSTATUS</div><div class="room-value">${esc(learnDE(r.learning_status))}</div><div class="muted">${samples} ${samples === 1 ? "Probe" : "Proben"} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min</div></div></div></div>`;
-        const statusColor = structureOnly ? "#9aa7b3" : (r.action === "Okay" ? "#67df92" : styleFor(r.action)[0]);
-        const statusChip = structureOnly ? "" : `<span class="room-status">${esc(actionDE(r.action))}</span>`;
+        const statusColor = structureOnly ? "#9aa7b3" : (r.action === "Okay" ? "#67df92" : styleFor(roomStyleAction(r))[0]);
+        const statusChip = structureOnly ? "" : `<span class="room-status">${esc(roomActionLabel(r))}</span>`;
         return `<article class="room clickable" role="button" tabindex="0" data-room="${esc(r.key)}" style="--accent:${accent};--icon-bg:${iconBg};--status:${statusColor}"><div class="room-head"><div class="room-icon"><ha-icon icon="${icon}"></ha-icon></div><div class="room-ident"><div class="room-title">${esc(r.name || r.key)}</div><div class="muted">${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³ · Fenster ${esc(dirText)}${structureOnly ? " · nur Struktur" : ""}</div>${statusChip}</div>${structureOnly ? "" : `<div class="room-water"><ha-icon icon="mdi:water"></ha-icon><strong>${Math.round(waterMl)} ml</strong></div>`}<ha-icon class="room-chevron" icon="mdi:chevron-right"></ha-icon></div>${summary}</article>`;
     }
     _infoBackButton() {
@@ -2781,13 +2582,16 @@ class FreshAirIQCard extends HTMLElement {
             const days = Number(st.statistics_days || 14), hist = r.history_14d || [], sum = hist.reduce((a, x) => ({ removed: a.removed + Number(x.removed_ml || 0), sessions: a.sessions + Number(x.sessions || 0), mins: a.mins + Number(x.ventilation_minutes || 0), cost: a.cost + Number(x.cost || 0) }), { removed: 0, sessions: 0, mins: 0, cost: 0 });
             const monitoredRoomKeys = new Set((st.intelligent_recommendation?.room_keys || []).map(String));
             const passiveOpenRoom = String(st.intelligent_recommendation?.status || st.status || "") === "passive_open_monitor" && r.active && monitoredRoomKeys.has(String(r.key));
-            const actionStyle = passiveOpenRoom ? ["#63d2f7", "rgba(99,210,247,.08)", "mdi:window-open"] : styleFor(r.action), roomReasons = (r.recommendation_reasons || []).filter(Boolean);
+            // 0.26.4.7: follow the whole-house decision (house_aligned_action).
+            const houseHoldsRoom = !passiveOpenRoom && String(r.house_aligned_action || "") === "ventilate_later";
+            const actionStyle = passiveOpenRoom ? ["#63d2f7", "rgba(99,210,247,.08)", "mdi:window-open"] : houseHoldsRoom ? styleFor("Wait") : styleFor(r.action), roomReasons = (r.recommendation_reasons || []).filter(Boolean);
             const qualityOk = r.data_quality === "ok" && r.last_measurement_valid !== false;
             const roomLead = passiveOpenRoom
                 ? `FreshAirIQ behandelt die lange, stabile Öffnung als wahrscheinliche Dauer- oder Kipplüftung und überwacht sie weiter.`
+                : houseHoldsRoom ? `Lüften wäre hier möglich, aber FreshAirIQ wartet hausweit auf ein günstigeres Fenster (später trockenere Luft, Pollen/Feinstaub oder Nachtstrategie).`
                 : r.active ? `FreshAirIQ begleitet die laufende Lüftung in diesem Raum.` : `FreshAirIQ bewertet diesen Raum fortlaufend aus Klima, Außenluft, Lernmodell und Gebäudeeigenschaften.`;
-            const roomAction = passiveOpenRoom ? "Daueröffnung überwachen" : actionDE(r.action);
-            return `<section class="info-panel room-detail"><div class="tiny room-detail-label">RAUM-INTELLIGENZ · ${days} TAGE</div><h3>${esc(r.name)}</h3><div class="room-iq-hero" style="--room-iq:${actionStyle[0]}"><div class="room-iq-icon"><ha-icon icon="${actionStyle[2]}"></ha-icon></div><div><div class="tiny">FRESHAIRIQ EMPFIEHLT</div><strong>${esc(roomAction)}</strong><span>${esc(roomLead)}</span></div><div class="room-iq-quality ${qualityOk ? "ok" : "warn"}">${qualityOk ? "Daten plausibel" : "Daten prüfen"}</div></div>${roomReasons.length ? `<div class="room-iq-why"><div class="tiny">WARUM?</div>${roomReasons.slice(0,4).map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}</div>` : ""}<div class="info-grid"><div><b>${fmt(r.temperature, 1)} °C / ${Math.round(Number(r.humidity || 0))} %</b><span>${fmt(r.absolute_humidity, 2)} g/m³ absolut · ${Math.round(Number(r.water_in_air_ml || 0))} ml Wasserdampf</span></div><div><b>${esc(whenDE(r.last_measurement_at))}</b><span>Letzte Messung · ${r.last_measurement_valid === false ? "Messwerte unplausibel" : "Messwerte plausibel"}</span></div><div><b style="color:${r.active ? bal.color : pot.color}">${r.active ? bal.text : pot.text}</b><span>${r.active ? "Bilanz seit Sessionstart" : "aktuell entfernbares Potenzial"}</span></div><div><b>${eff.text}</b><span>weitere ${Number(r.forecast_horizon_min || st.forecast_horizon_min || 5)} min · ${signed((_c = r.forecast_temperature_change_c) !== null && _c !== void 0 ? _c : r.temp_next_5_min_c, "°C")} · ${fmt(r.forecast_cost || 0, 2)} €</span></div><div><b>${Math.round(Number(r.surface_rh || 0))} %</b><span>Oberflächen-RH · ${esc(mouldDE(r.mould_level))}</span></div><div><b style="color:${moisture(sum.removed).color}">${sum.removed > 0 ? "−" : sum.removed < 0 ? "+" : "±"}${fmt(Math.abs(sum.removed) / 1000, 2)} l</b><span>Bilanz in ${days} Tagen</span></div><div><b>${sum.sessions}</b><span>Lüftungen · ${fmt(sum.mins, 0)} min</span></div><div><b>${fmt(sum.cost, 2)} €</b><span>geschätztes Wiederaufheizen</span></div><div><b>${Number(r.learning_samples || 0)} Proben</b><span>${esc(learnDE(r.learning_status))} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min</span></div>${Number(r.outcome_feedback_samples || 0) > 0 ? `<div><b>${Number(r.outcome_feedback_samples || 0)} Feedback-Proben</b><span>Prognose ↔ Realität · Treffer ${fmt(r.outcome_success_rate || 0, 0)} % · Feuchtefaktor ${fmt(r.outcome_removed_factor || 1, 2)}</span></div>` : ""}${Number(r.outcome_feedback_samples || 0) > 0 ? `<div><b>Learning 3.0 · ${r.shadow_rollback_active ? "Rollback-Schutz" : "Shadow-Modelle"}</b><span>${esc(r.shadow_learning_status || "Vergleicht Produktionsmodell mit Alternativen")} · Übernahmen ${Number(r.shadow_learning_promotions || 0)} · Rollbacks ${Number(r.shadow_learning_rollbacks || 0)}</span></div>` : ""}${Number(r.routine_source_samples || 0) > 0 ? `<div><b>Routine-IQ ${fmt(r.routine_maturity || 0, 0)} %</b><span>${Number(r.routine_source_samples || 0)} Zeitmuster-Proben${r.routine_expected_source_ml_min != null ? ` · aktuell erwartet ${signed(Number(r.routine_expected_source_ml_min || 0) * 60, " ml/h")}` : ""}</span></div>` : ""}${Number(r.strategy_samples || 0) > 0 ? `<div><b>Strategie-IQ ${fmt(r.strategy_maturity || 0, 0)} %</b><span>${Number(r.strategy_samples || 0)} Empfehlungen ausgewertet · ${Number(r.strategy_outcome_samples || 0)} Ergebnisproben</span></div>` : ""}</div>${optionalSensorHtml}<div class="last-learning" style="--learn:${r.last_learning_valid === false ? "#c97878" : r.last_learning_valid === true ? "#6fbd88" : "#82929e"}"><ha-icon icon="${r.last_learning_valid === false ? "mdi:alert-circle-outline" : r.last_learning_valid === true ? "mdi:check-circle-outline" : "mdi:brain"}"></ha-icon><div><div class="tiny">LETZTE LERNMESSUNG · ${esc(whenDE(r.last_learning_at))}</div><b>${esc(diagnosisDE(r.learning_diagnosis))}</b></div></div><div class="history-grid"><div class="history"><div class="tiny">RAUMLUFTFEUCHTE · ${Math.min(days, 30)} TAGE · %</div><div class="chart">${this._svgLine(r.humidity_history_14d || [], "humidity_percent")}</div></div><div class="history"><div class="tiny">TEMPERATUR · ${Math.min(days, 30)} TAGE · °C</div><div class="chart">${this._svgLine(r.temperature_history_14d || [])}</div></div></div>${r.moisture_source_active ? `<div class="last-learning" style="--learn:#e6be62"><ha-icon icon="mdi:water-plus-outline"></ha-icon><div><div class="tiny">AKTIVE FEUCHTEQUELLE · ${Math.round(Number(r.moisture_source_confidence || 0))} % SICHERHEIT</div><b>${esc(r.moisture_source_message || `${r.moisture_source_label || "Feuchtequelle"} erkannt.`)} · ca. +${Math.round(Number(r.moisture_source_rate_ml_min || 0) * 60)} ml/h</b></div></div>` : ""}<div class="room-iq-context"><div class="tiny">RAUMMODELL</div><span>Fenster/Türen: ${esc(dirs)} · Luftstromfaktor ${fmt(r.airflow_factor, 2)} · ${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³</span></div></section>`;
+            const roomAction = passiveOpenRoom ? "Daueröffnung überwachen" : houseHoldsRoom ? "Lüften möglich · noch warten" : actionDE(r.action);
+            return `<section class="info-panel room-detail"><div class="tiny room-detail-label">RAUM-INTELLIGENZ · ${days} TAGE</div><h3>${esc(r.name)}</h3><div class="room-iq-hero" style="--room-iq:${actionStyle[0]}"><div class="room-iq-icon"><ha-icon icon="${actionStyle[2]}"></ha-icon></div><div><div class="tiny">FRESHAIRIQ EMPFIEHLT</div><strong>${esc(roomAction)}</strong><span>${esc(roomLead)}</span></div><div class="room-iq-quality ${qualityOk ? "ok" : "warn"}" data-explain="data_quality">${qualityOk ? "Daten plausibel" : "Daten prüfen"}</div></div>${roomReasons.length ? `<div class="room-iq-why"><div class="tiny">WARUM?</div>${roomReasons.slice(0,4).map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}</div>` : ""}<div class="info-grid room-tiles"><div data-explain="climate"><b>${fmt(r.temperature, 1)} °C / ${Math.round(Number(r.humidity || 0))} %</b><span>${fmt(r.absolute_humidity, 2)} g/m³ absolut · ${Math.round(Number(r.water_in_air_ml || 0))} ml Wasserdampf</span></div><div data-explain="measurement"><b>${esc(whenDE(r.last_measurement_at))}</b><span>Letzte Messung · ${r.last_measurement_valid === false ? "Messwerte unplausibel" : "Messwerte plausibel"}</span></div><div data-explain="${r.active ? "balance" : "potential"}"><b style="color:${r.active ? bal.color : pot.color}">${r.active ? bal.text : pot.text}</b><span>${r.active ? "Bilanz seit Sessionstart" : "aktuell entfernbares Potenzial"}</span></div><div data-explain="forecast"><b>${eff.text}</b><span>weitere ${Number(r.forecast_horizon_min || st.forecast_horizon_min || 5)} min · ${signed((_c = r.forecast_temperature_change_c) !== null && _c !== void 0 ? _c : r.temp_next_5_min_c, "°C")} · ${fmt(r.forecast_cost || 0, 2)} €</span></div><div data-explain="surface_rh"><b>${Math.round(Number(r.surface_rh || 0))} %</b><span>Oberflächen-RH · ${esc(mouldDE(r.mould_level))}</span></div><div data-explain="balance_days"><b style="color:${moisture(sum.removed).color}">${sum.removed > 0 ? "−" : sum.removed < 0 ? "+" : "±"}${fmt(Math.abs(sum.removed) / 1000, 2)} l</b><span>Bilanz in ${days} Tagen</span></div><div data-explain="sessions"><b>${sum.sessions}</b><span>Lüftungen · ${fmt(sum.mins, 0)} min</span></div><div data-explain="cost"><b>${fmt(sum.cost, 2)} €</b><span>geschätztes Wiederaufheizen</span></div><div data-explain="learning"><b>${Number(r.learning_samples || 0)} Proben</b><span>${esc(learnDE(r.learning_status))} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min</span></div>${Number(r.outcome_feedback_samples || 0) > 0 ? `<div data-explain="feedback"><b>${Number(r.outcome_feedback_samples || 0)} Feedback-Proben</b><span>Prognose ↔ Realität · Treffer ${fmt(r.outcome_success_rate || 0, 0)} % · Feuchtefaktor ${fmt(r.outcome_removed_factor || 1, 2)}</span></div>` : ""}${Number(r.outcome_feedback_samples || 0) > 0 ? `<div data-explain="shadow"><b>Learning 3.0 · ${r.shadow_rollback_active ? "Rollback-Schutz" : "Shadow-Modelle"}</b><span>${esc(r.shadow_learning_status || "Vergleicht Produktionsmodell mit Alternativen")} · Übernahmen ${Number(r.shadow_learning_promotions || 0)} · Rollbacks ${Number(r.shadow_learning_rollbacks || 0)}</span></div>` : ""}${Number(r.routine_source_samples || 0) > 0 ? `<div data-explain="routine"><b>Routine-IQ ${fmt(r.routine_maturity || 0, 0)} %</b><span>${Number(r.routine_source_samples || 0)} Zeitmuster-Proben${r.routine_expected_source_ml_min != null ? ` · aktuell erwartet ${signed(Number(r.routine_expected_source_ml_min || 0) * 60, " ml/h")}` : ""}</span></div>` : ""}${Number(r.strategy_samples || 0) > 0 ? `<div data-explain="strategy"><b>Strategie-IQ ${fmt(r.strategy_maturity || 0, 0)} %</b><span>${Number(r.strategy_samples || 0)} Empfehlungen ausgewertet · ${Number(r.strategy_outcome_samples || 0)} Ergebnisproben</span></div>` : ""}</div>${optionalSensorHtml}<div class="last-learning" data-explain="last_learning" style="--learn:${r.last_learning_valid === false ? "#c97878" : r.last_learning_valid === true ? "#6fbd88" : "#82929e"}"><ha-icon icon="${r.last_learning_valid === false ? "mdi:alert-circle-outline" : r.last_learning_valid === true ? "mdi:check-circle-outline" : "mdi:brain"}"></ha-icon><div><div class="tiny">LETZTE LERNMESSUNG · ${esc(whenDE(r.last_learning_at))}</div><b>${esc(diagnosisDE(r.learning_diagnosis))}</b></div></div><div class="history-grid"><div class="history"><div class="tiny">RAUMLUFTFEUCHTE · ${Math.min(days, 30)} TAGE · %</div><div class="chart">${this._svgLine(this._roomChartHistory(r).humidity_history_14d || [], "humidity_percent")}</div></div><div class="history"><div class="tiny">TEMPERATUR · ${Math.min(days, 30)} TAGE · °C</div><div class="chart">${this._svgLine(this._roomChartHistory(r).temperature_history_14d || [])}</div></div></div>${r.moisture_source_active ? `<div class="last-learning" style="--learn:#e6be62"><ha-icon icon="mdi:water-plus-outline"></ha-icon><div><div class="tiny">AKTIVE FEUCHTEQUELLE · ${Math.round(Number(r.moisture_source_confidence || 0))} % SICHERHEIT</div><b>${esc(r.moisture_source_message || `${r.moisture_source_label || "Feuchtequelle"} erkannt.`)} · ca. +${Math.round(Number(r.moisture_source_rate_ml_min || 0) * 60)} ml/h</b></div></div>` : ""}<div class="room-iq-context"><div class="tiny">RAUMMODELL</div><span>Fenster/Türen: ${esc(dirs)} · Luftstromfaktor ${fmt(r.airflow_factor, 2)} · ${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³</span></div></section>`;
         }
         if (this._info === "moisture" && rooms.some(x => x.active)) {
             const activeRooms = rooms.filter(r => r.active);
@@ -3019,13 +2823,23 @@ class FreshAirIQCard extends HTMLElement {
             if (button)
                 button.innerHTML = '<ha-icon icon="mdi:progress-clock"></ha-icon><b>Export wird erstellt</b><span>bitte warten</span>';
             await this._registerFieldTestClient(true);
-            const payload = await this._hass.callApi("GET", "freshairiq/diagnostics");
             const stamp = new Date().toISOString().split(":").join("-").replace(/\.\d{3}Z$/, "Z");
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+            let blob, filename;
+            // 0.26.4.9: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
+            // the browser no longer parses and re-indents tens of MiB.
+            const zipResponse = typeof this._hass.callApiRaw === "function" ? await this._hass.callApiRaw("GET", "freshairiq/diagnostics?format=zip") : null;
+            if (zipResponse && zipResponse.ok && String(zipResponse.headers?.get?.("Content-Type") || "").includes("zip")) {
+                blob = await zipResponse.blob();
+                filename = `FreshAirIQ-diagnostics-${stamp}.zip`;
+            } else {
+                const payload = await this._hass.callApi("GET", "freshairiq/diagnostics");
+                blob = new Blob([JSON.stringify(payload)], { type: "application/json;charset=utf-8" });
+                filename = `FreshAirIQ-diagnostics-${stamp}.json`;
+            }
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `FreshAirIQ-diagnostics-${stamp}.json`;
+            a.download = filename;
             a.style.display = "none";
             document.body.appendChild(a);
             a.click();
@@ -3049,6 +2863,18 @@ class FreshAirIQCard extends HTMLElement {
 
     _render() {
         FAIQ_NUMBER_LOCALE = this._uiLanguage();
+        // 0.26.4.8: English texts are a separate module. The very first paint of an
+        // English dashboard waits for it (no German flash); if it cannot be loaded
+        // the card still renders.
+        if (FAIQ_NUMBER_LOCALE === "en" && !faiqEnglishReady() && !this._englishFailed) {
+            if (!this._englishWaiting) {
+                this._englishWaiting = true;
+                faiqWaitForEnglish()
+                    .catch(() => { this._englishFailed = true; })
+                    .finally(() => { this._englishWaiting = false; if (this._hass) this._render(); });
+            }
+            if (!this._hasRendered) return;
+        }
         // Error boundary (0.26.3.2): a render exception must never leave the
         // person on an unresponsive card. Tapping Rooms/Details/etc. only changes
         // state and re-renders, so an exception here used to look like "nothing
@@ -3056,6 +2882,7 @@ class FreshAirIQCard extends HTMLElement {
         // error code instead.
         try {
             this._renderImpl();
+            this._hasRendered = true;
         } catch (error) {
             this._handleRenderFailure(error, "render");
         }
@@ -3463,8 +3290,12 @@ class FreshAirIQCardEditor extends HTMLElement {
             <section class="section"><div class="section-head"><b>DARSTELLUNG & KOMPAKTHEIT</b><span>Blende feste Bereiche und Schnellzugriffe aus, bis nur noch die Empfehlung übrig bleibt.</span></div>${layoutFields.map(row).join("")}</section>
             <section class="section"><div class="section-head"><b>${this._editorDE() ? "SCHRIFTGRÖSSEN DIESER KARTE" : "TEXT SIZES FOR THIS CARD"}</b><span>${this._editorDE() ? "Jeder Bereich lässt sich unabhängig in festen 10-%-Stufen von 80 bis 150 % einstellen. Die Einstellung gilt nur für diese Dashboard-Karte; 100 % entspricht exakt der bisherigen Größe." : "Set each area independently in fixed 10% steps from 80 to 150%. These settings apply only to this dashboard card; 100% exactly matches the previous size."}</span></div>${scaleFields.map(scaleRow).join("")}</section>
           </div>`;
-        // 0.26.4.5: the editor had German-only sections; translate its text in English.
-        if (!this._editorDE()) faiqLocalizeTree(this.shadowRoot);
+        // 0.26.4.6: the editor had German-only sections; translate its text in English.
+        if (!this._editorDE()) {
+            // 0.26.4.8: English texts load on demand; translate again once they arrive.
+            if (faiqEnglishReady()) faiqLocalizeTree(this.shadowRoot);
+            else faiqLoadEnglish().then(() => faiqLocalizeTree(this.shadowRoot)).catch(() => {});
+        }
         this.shadowRoot.getElementById("dashboard-variant")?.addEventListener("change", e => {
             const nextConfig = Object.assign({}, this._config, {dashboard_variant: e.target.value === "classic" ? "classic" : "iq"});
             this._pendingDashboardVariant = nextConfig.dashboard_variant;

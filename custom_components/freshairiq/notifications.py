@@ -9,6 +9,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .automation_events import ventilation_measures_active
 from .const import NOTIFY_SCOPE_BOTH, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_ROOM
 from .forecast import in_night_window, night_window_hours
 from .intelligence import mark_recommendation_notified
@@ -201,23 +202,52 @@ def _has_notification_targets(options: dict[str, Any]) -> bool:
 
 
 _RECOMMENDATION_EVENTS = {"ventilate", "cool", "iq_ventilate", "iq_continue", "iq_wait", "iq_pollen_wait", "iq_prepare"}
+# Repeated suppressions / undeliverable attempts are folded into one trace row.
+_FOLDABLE_TRACE_STATUSES = {"suppressed", "not_sent"}
+TRACE_FOLD_WINDOW_SECONDS = 30 * 60
 
 
 def _record_notification_diagnostic(
     store, *, now: datetime, event: str, scope: str, status: str,
     target_count: int, available_service_count: int, reason: str | None = None,
     exception_type: str | None = None,
-) -> None:
+) -> bool:
     """Persist a bounded privacy-safe notification delivery trace.
 
     Never stores notify entity IDs, service names, titles, messages, resident names
     or other user content. The trace exists so a later manual diagnostic export can
     distinguish suppression/configuration problems from HA notify-service failures.
+
+    0.26.4.7 (support exports): a suppressed or undeliverable message is retried
+    every coordinator cycle. Repeats of the same row are folded into the previous
+    row (``repeat_count``/``last_seen_at``) instead of appending a new row every
+    10 seconds, which pushed real deliveries out of the 50-row window and forced
+    an immediate storage write on every cycle. Returns ``True`` only when a new
+    row was added (the caller then persists immediately).
     """
     trace = store.data.setdefault("notification_diagnostics", [])
     if not isinstance(trace, list):
         trace = []
         store.data["notification_diagnostics"] = trace
+    if status in _FOLDABLE_TRACE_STATUSES and not exception_type:
+        signature = (str(event)[:48], str(scope)[:16], str(status)[:24], str(reason)[:64] if reason else None)
+        for previous in reversed(trace[-10:]):
+            if not isinstance(previous, dict):
+                continue
+            if (previous.get("event"), previous.get("scope"), previous.get("status"), previous.get("reason")) != signature:
+                continue
+            try:
+                last_seen = datetime.fromisoformat(str(previous.get("last_seen_at") or previous.get("timestamp")))
+                age_s = (now - last_seen).total_seconds()
+            except (TypeError, ValueError):
+                break
+            if 0 <= age_s <= TRACE_FOLD_WINDOW_SECONDS:
+                previous["repeat_count"] = int(previous.get("repeat_count", 0) or 0) + 1
+                previous["last_seen_at"] = now.isoformat()
+                previous["target_count"] = max(int(target_count), 0)
+                previous["available_service_count"] = max(int(available_service_count), 0)
+                return False
+            break
     row = {
         "timestamp": now.isoformat(),
         "event": str(event)[:48],
@@ -236,6 +266,20 @@ def _record_notification_diagnostic(
     # rate can be split into "notified" and "only shown on the dashboard".
     if row["status"] == "sent" and row["event"] in _RECOMMENDATION_EVENTS:
         mark_recommendation_notified(store.data, now)
+    return True
+
+
+def _room_can_raise_sensor_alerts(room: dict[str, Any]) -> bool:
+    """Only rooms FreshAirIQ actually calculates can have a sensor problem.
+
+    0.26.4.7 (support case "Benachrichtigungen für Räume ohne Berechnung und
+    Sensoren"): rooms kept only as building structure or as live-value displays
+    report ``data_quality`` "not_configured"/"monitor_only". That is their
+    intended state, not a fault, so they must never trigger "Sensoren prüfen".
+    """
+    if room.get("calculation_enabled") is False or room.get("monitor_only"):
+        return False
+    return str(room.get("action") or "") != "Monitor only"
 
 
 def _notification_service_counts(hass: HomeAssistant, options: dict[str, Any]) -> tuple[int, int]:
@@ -348,6 +392,64 @@ def _continuation(room: dict[str, Any]) -> str:
     return f"Weitere {horizon} Min: {moisture} · Temperatur {temp} · Energiekosten ca. {cost:.2f} €"
 
 
+EVENT_NOTIFICATION = "freshairiq_notification"
+
+
+def _fan_hint(room: dict[str, Any]) -> str:
+    """0.26.4.9: rooms with an exhaust fan can also be aired by the fan."""
+    actuators = room.get("configured_actuators") if isinstance(room.get("configured_actuators"), dict) else {}
+    if not actuators.get("exhaust_fan") or actuators.get("mechanical_exhaust_active"):
+        return ""
+    return " Alternativ den Lüfter einschalten."
+
+
+def _house_message(iq: dict[str, Any], rooms: dict[str, Any]) -> tuple[str, str]:
+    """Title and text of a whole-house recommendation (push and event)."""
+    title = f"FreshAirIQ · {iq.get('title', 'Empfehlung')}"
+    message_parts = [str(iq.get("instruction") or "").strip(), str(iq.get("summary") or "").strip()]
+    reasons = [str(x).strip() for x in (iq.get("reasons") or []) if str(x).strip()]
+    if reasons:
+        message_parts.append("Warum: " + " · ".join(reasons[:3]))
+    if iq.get("secondary"):
+        message_parts.append(str(iq.get("secondary")))
+    if str(iq.get("kind") or "") == "ventilate":
+        fan_rooms = [str(r.get("name") or k) for k, r in rooms.items() if isinstance(r, dict) and str(k) in {str(x) for x in (iq.get("room_keys") or [])} and _fan_hint(r)]
+        if fan_rooms:
+            message_parts.append(f"Alternativ den Lüfter einschalten ({', '.join(fan_rooms)}).")
+    return title, " ".join(x for x in message_parts if x)
+
+
+def _publish_event(
+    hass: HomeAssistant, store, now: datetime, cooldown: float, event: str, title: str, message: str,
+    room_key: str | None, rooms: dict[str, Any], night_quiet: bool, extra: dict[str, Any] | None = None,
+) -> bool:
+    """Fire ``freshairiq_notification`` once per message (same cooldown as push)."""
+    key = f"event:{event}:{room_key or 'house'}"
+    if not _due(store, key, now, cooldown):
+        return False
+    title_out, message_out = _localized(title, message)
+    room = rooms.get(room_key) if room_key and isinstance(rooms.get(room_key), dict) else {}
+    payload: dict[str, Any] = {
+        "type": event,
+        "room_key": room_key,
+        "room_name": room.get("name") if room else None,
+        "title": title_out,
+        "message": message_out,
+        # Speech-friendly text for Alexa & co.: without the "FreshAirIQ ·" prefix.
+        "speech": message_out if not room else f"{room.get('name')}: {message_out}",
+        "night_quiet_hours": bool(night_quiet),
+        "created_at": now.isoformat(),
+    }
+    if extra:
+        payload.update(extra)
+    try:
+        hass.bus.async_fire(EVENT_NOTIFICATION, payload)
+    except Exception:  # noqa: BLE001 - an event listener must never break the coordinator
+        return False
+    _mark_sent(store, key, now)
+    return True
+
+
 def notification_translator(hass: HomeAssistant, data: dict[str, Any], options: dict[str, Any]) -> Translator | None:
     """English output for every Home Assistant language except German."""
     language = getattr(getattr(hass, "config", None), "language", None)
@@ -370,8 +472,11 @@ async def process_notifications(hass: HomeAssistant, store, data: dict[str, Any]
 
 
 async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any], options: dict[str, Any], now: datetime, completed_sessions: list[dict[str, Any]]) -> bool:
-    if not options.get("notifications_enabled") or not _has_notification_targets(options):
-        return False
+    # 0.26.4.9: every message is also published as Home Assistant event
+    # ``freshairiq_notification`` (Node-RED, Alexa announcements, own
+    # automations) – even when phone notifications are off or no notify
+    # service is configured. Phone delivery itself is unchanged.
+    push_enabled = bool(options.get("notifications_enabled")) and _has_notification_targets(options)
     changed = False
     cooldown = max(_finite_float(options.get("notification_cooldown_min", 90), 90.0), 0.0)
     scope = options.get("notification_scope", NOTIFY_SCOPE_HOUSE)
@@ -403,26 +508,37 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             changed = True
             if action in room_events:
                 room_events[action].append(room)
-        if room.get("data_quality") != "ok":
+        if room.get("data_quality") != "ok" and _room_can_raise_sensor_alerts(room):
             room_events["sensor"].append(room)
-        if room.get("mould_level") in {"High", "Very high"}:
+        # 0.26.4.6 (user feedback): no mould alarm while something already works
+        # against the humidity (shower with running fan, open window, recovery).
+        # The warning follows once windows are closed and the fan is off again.
+        if room.get("mould_level") in {"High", "Very high"} and not ventilation_measures_active(room):
             room_events["mould"].append(room)
 
-    async def emit(event: str, title: str, message: str, room_key: str | None = None) -> bool:
+    def publish(event: str, title: str, message: str, room_key: str | None = None, extra: dict[str, Any] | None = None) -> None:
         nonlocal changed
+        if _publish_event(hass, store, now, cooldown, event, title, message, room_key, rooms, suppress_at_night, extra):
+            changed = True
+
+    async def emit(event: str, title: str, message: str, room_key: str | None = None, *, push: bool = True) -> bool:
+        nonlocal changed
+        publish(event, title, message, room_key)
+        if not push_enabled or not push:
+            return True
         target_count, available_count = _notification_service_counts(hass, options)
         if suppress_at_night:
-            _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="night_suppression")
-            changed = True
+            if _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="night_suppression"):
+                changed = True
             return True
         if room_key and not _allowed_room(room_key, options):
-            _record_notification_diagnostic(store, now=now, event=event, scope="room", status="suppressed", target_count=target_count, available_service_count=available_count, reason="room_not_selected")
-            changed = True
+            if _record_notification_diagnostic(store, now=now, event=event, scope="room", status="suppressed", target_count=target_count, available_service_count=available_count, reason="room_not_selected"):
+                changed = True
             return True
         key = f"{event}:{room_key or 'house'}"
         if not _due(store, key, now, cooldown):
-            _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown")
-            changed = True
+            if _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown"):
+                changed = True
             return True
         try:
             sender_ok = (
@@ -438,56 +554,58 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             )
             changed = True
             return False
-        _record_notification_diagnostic(
+        if _record_notification_diagnostic(
             store, now=now, event=event, scope="room" if room_key else "house",
             status="sent" if sender_ok else "not_sent", target_count=target_count,
             available_service_count=available_count,
             reason=None if sender_ok else "no_available_notify_service",
-        )
-        changed = True
+        ):
+            changed = True
         if sender_ok:
             _mark_sent(store, key, now)
             changed = True
             return True
         return False
 
-    # Room-scope messages
-    if scope in {NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_BOTH}:
-        if options.get("notify_ventilate"):
-            for r in room_events["Ventilate"]:
-                reasons = ' · '.join(r.get('recommendation_reasons') or [])
-                await emit("ventilate", f"FreshAirIQ · {r['name']}", f"{room_notification_message('ventilate', r, store.data)} {reasons}", r["key"])
-        if options.get("notify_cooling"):
-            for r in room_events["Ventilate for cooling"]:
-                await emit("cool", f"FreshAirIQ · {r['name']}", f"{room_notification_message('cool', r, store.data)} {_continuation(r)}", r["key"])
-        if options.get("notify_close"):
-            for r in room_events["Close"]:
-                await emit("close", f"FreshAirIQ · {r['name']}", f"{room_notification_message('close', r, store.data)} {_continuation(r)}", r["key"])
-        if options.get("notify_mould"):
-            for r in room_events["mould"]:
-                await emit("mould", f"FreshAirIQ · {r['name']}", f"Schimmelrisiko {r['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(r['surface_rh'])} %.", r["key"])
-        if options.get("notify_sensor") and not sensor_recovery_active:
-            for r in room_events["sensor"]:
-                await emit("sensor", f"FreshAirIQ · {r['name']}", room_notification_message("sensor", r, store.data), r["key"])
+    # Room-scope messages (events always; phone push per scope and toggle)
+    room_push = scope in {NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_BOTH}
+    for r in room_events["Ventilate"]:
+        reasons = ' · '.join(r.get('recommendation_reasons') or [])
+        await emit("ventilate", f"FreshAirIQ · {r['name']}", f"{room_notification_message('ventilate', r, store.data)}{_fan_hint(r)} {reasons}".strip(), r["key"], push=room_push and bool(options.get("notify_ventilate")))
+    for r in room_events["Ventilate for cooling"]:
+        await emit("cool", f"FreshAirIQ · {r['name']}", f"{room_notification_message('cool', r, store.data)} {_continuation(r)}", r["key"], push=room_push and bool(options.get("notify_cooling")))
+    for r in room_events["Close"]:
+        await emit("close", f"FreshAirIQ · {r['name']}", f"{room_notification_message('close', r, store.data)} {_continuation(r)}", r["key"], push=room_push and bool(options.get("notify_close")))
+    for r in room_events["mould"]:
+        await emit("mould", f"FreshAirIQ · {r['name']}", f"Schimmelrisiko {r['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(r['surface_rh'])} %.{_fan_hint(r)}", r["key"], push=room_push and bool(options.get("notify_mould")))
+    if not sensor_recovery_active:
+        for r in room_events["sensor"]:
+            await emit("sensor", f"FreshAirIQ · {r['name']}", room_notification_message("sensor", r, store.data), r["key"], push=room_push and bool(options.get("notify_sensor")))
 
     # House-scope messages use Recommendation Engine v2. The user receives one
     # coherent action instead of a dump of competing room recommendations.
-    if scope in {NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_BOTH}:
+    house_iq = data.get("intelligent_recommendation") if isinstance(data.get("intelligent_recommendation"), dict) else {}
+    house_kind = str(house_iq.get("kind") or "")
+    # Language-neutral (German and English installations keep identical state).
+    house_signature = f"{house_kind}:{','.join(str(k) for k in (house_iq.get('room_keys') or []))}:{house_iq.get('status') or ''}"
+    # A sensor recommendation during the start-up recovery grace is not stored, so it
+    # is still published if the recovery really fails.
+    if house_kind and house_signature != store.data.get("last_house_event_signature") and not (house_kind == "sensor" and sensor_recovery_active):
+        store.data["last_house_event_signature"] = house_signature
+        changed = True
+        title_text, message_text = _house_message(house_iq, rooms)
+        publish(f"house_{house_kind}", title_text, message_text, None, {"kind": house_kind, "room_keys": [str(k) for k in (house_iq.get("room_keys") or [])]})
+    if push_enabled and scope in {NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_BOTH}:
         iq_raw = data.get("intelligent_recommendation") or {}
         iq = iq_raw if isinstance(iq_raw, dict) else {}
         kind = str(iq.get("kind") or "")
         signature = f"{kind}:{','.join(iq.get('room_keys') or [])}:{iq.get('instruction','')}"
         previous_signature = store.data.get("last_house_recommendation_signature")
         if signature != previous_signature:
-            title = f"FreshAirIQ · {iq.get('title', 'Empfehlung')}"
-            message_parts = [str(iq.get("instruction") or "").strip(), str(iq.get("summary") or "").strip()]
-            reasons = [str(x).strip() for x in (iq.get("reasons") or []) if str(x).strip()]
-            if reasons:
-                message_parts.append("Warum: " + " · ".join(reasons[:3]))
-            if iq.get("secondary"):
-                message_parts.append(str(iq.get("secondary")))
-            message = " ".join(x for x in message_parts if x)
-            enabled = ((kind in {"ventilate", "continue", "pollen_wait"} and options.get("notify_ventilate")) or (kind == "close" and options.get("notify_close")) or (kind == "sensor" and options.get("notify_sensor")))
+            title, message = _house_message(iq, rooms)
+            # 0.26.4.9 (user feedback): "Lüftung läuft · Lüftung weiter beobachten"
+            # asks nothing of the user, so a running airing is no longer pushed.
+            enabled = ((kind in {"ventilate", "pollen_wait"} and options.get("notify_ventilate")) or (kind == "close" and options.get("notify_close")) or (kind == "sensor" and options.get("notify_sensor")))
             handled = True
             event_key = f"iq_{kind}:house"
             target_count, available_count = _notification_service_counts(hass, options)
@@ -496,17 +614,17 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
                 # beyond the coordinator grace period, the unchanged recommendation
                 # is then still eligible for delivery on the next cycle.
                 handled = False
-                _record_notification_diagnostic(store, now=now, event="iq_sensor", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="sensor_recovery_grace")
-                changed = True
+                if _record_notification_diagnostic(store, now=now, event="iq_sensor", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="sensor_recovery_grace"):
+                    changed = True
             elif not enabled:
-                _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="event_type_disabled")
-                changed = True
+                if _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="event_type_disabled"):
+                    changed = True
             elif suppress_at_night:
-                _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="night_suppression")
-                changed = True
+                if _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="night_suppression"):
+                    changed = True
             elif not _due(store, event_key, now, cooldown):
-                _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown")
-                changed = True
+                if _record_notification_diagnostic(store, now=now, event=f"iq_{kind}", scope="house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown"):
+                    changed = True
             if enabled and not suppress_at_night and not (kind == "sensor" and sensor_recovery_active) and _due(store, event_key, now, cooldown):
                 try:
                     handled = await _send_personalised(hass, options, title, message, iq)
@@ -517,53 +635,50 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
                         target_count=target_count, available_service_count=available_count,
                         reason="notify_service_exception", exception_type=type(err).__name__,
                     )
+                    changed = True
                 else:
-                    _record_notification_diagnostic(
+                    if _record_notification_diagnostic(
                         store, now=now, event=f"iq_{kind}", scope="house",
                         status="sent" if handled else "not_sent", target_count=target_count,
                         available_service_count=available_count,
                         reason=None if handled else "no_available_notify_service",
-                    )
-                changed = True
+                    ):
+                        changed = True
                 if handled:
                     _mark_sent(store, event_key, now)
             if handled:
                 store.data["last_house_recommendation_signature"] = signature
                 changed = True
 
-    if options.get("notify_learning"):
-        for event in completed_sessions:
-            if not isinstance(event, dict) or not event.get("key"):
-                continue
-            if event.get("learning_valid") and _allowed_room(str(event["key"]), options):
-                await emit("learning", f"FreshAirIQ · {event['name']}", "Neue gültige Lernprobe übernommen. Das Raum-Modell wurde aktualisiert.", event["key"])
+    for event in completed_sessions:
+        if not isinstance(event, dict) or not event.get("key"):
+            continue
+        if event.get("learning_valid"):
+            await emit("learning", f"FreshAirIQ · {event['name']}", "Neue gültige Lernprobe übernommen. Das Raum-Modell wurde aktualisiert.", event["key"], push=bool(options.get("notify_learning")) and _allowed_room(str(event["key"]), options))
 
-    if options.get("notify_complete"):
-        for event in completed_sessions:
-            if not isinstance(event, dict) or not event.get("key"):
-                continue
-            room_key = str(event["key"])
-            if not _allowed_room(room_key, options):
-                continue
-            moisture_valid = bool(
-                event.get("moisture_measurement_valid", event.get("removed_ml") is not None)
-                and event.get("removed_ml") is not None
+    for event in completed_sessions:
+        if not isinstance(event, dict) or not event.get("key"):
+            continue
+        room_key = str(event["key"])
+        moisture_valid = bool(
+            event.get("moisture_measurement_valid", event.get("removed_ml") is not None)
+            and event.get("removed_ml") is not None
+        )
+        name = str(event.get("name") or room_key)
+        if not moisture_valid:
+            message = (
+                "Lüftung beendet. Die Feuchtemessung war für eine belastbare Abschlussauswertung nicht ausreichend; "
+                "der Vorgang wird nicht für Feuchte-Lernen oder Prognosekalibrierung verwendet."
             )
-            name = str(event.get("name") or room_key)
-            if not moisture_valid:
-                message = (
-                    "Lüftung beendet. Die Feuchtemessung war für eine belastbare Abschlussauswertung nicht ausreichend; "
-                    "der Vorgang wird nicht für Feuchte-Lernen oder Prognosekalibrierung verwendet."
-                )
-            else:
-                removed_ml = _finite_float(event.get("removed_ml"), 0.0)
-                temp_delta = _finite_float(event.get("temp_delta_c"), 0.0)
-                cost = max(_finite_float(event.get("cost"), 0.0), 0.0)
-                message = (
-                    (f"Lüftung beendet: {round(removed_ml)} ml entfernt" if removed_ml >= 0 else f"Lüftung beendet: {round(abs(removed_ml))} ml eingetragen")
-                    + f" · Temperatur {temp_delta:+.1f} °C · geschätzte Energiekosten {cost:.2f} €."
-                )
-            await emit("complete", f"FreshAirIQ · {name}", message, room_key)
+        else:
+            removed_ml = _finite_float(event.get("removed_ml"), 0.0)
+            temp_delta = _finite_float(event.get("temp_delta_c"), 0.0)
+            cost = max(_finite_float(event.get("cost"), 0.0), 0.0)
+            message = (
+                (f"Lüftung beendet: {round(removed_ml)} ml entfernt" if removed_ml >= 0 else f"Lüftung beendet: {round(abs(removed_ml))} ml eingetragen")
+                + f" · Temperatur {temp_delta:+.1f} °C · geschätzte Energiekosten {cost:.2f} €."
+            )
+        await emit("complete", f"FreshAirIQ · {name}", message, room_key, push=bool(options.get("notify_complete")) and _allowed_room(room_key, options))
 
     # One optional evening forecast per date.
     start_raw = options.get("night_start_hour", "22:00")
@@ -581,9 +696,9 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
     night_window_enabled = night_window_hours(
         options.get("night_start_hour", "22:00"), options.get("night_end_hour", "07:00")
     ) > 0.0
-    if options.get("notify_night") and night_window_enabled and hours_to_night <= 3.0:
+    if night_window_enabled and hours_to_night <= 3.0:
         today=now.date().isoformat()
-        if store.data.get("last_night_notification_date") != today:
+        if store.data.get("last_night_notification_date") != today and (options.get("notify_night") or store.data.get("last_night_event_date") != today):
             ns = data.get("night_strategy") if isinstance(data.get("night_strategy"), dict) else {}
             detail = str(ns.get("summary") or "").strip()
             instruction = str(ns.get("instruction") or data.get("night_recommendation", "")).strip()
@@ -600,7 +715,11 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
                 message = f"Bis morgen früh werden voraussichtlich etwa {round(_finite_float(data.get('overnight_forecast_ml', 0), 0.0))} ml Feuchtigkeit hinzukommen. {instruction}"
             if detail and detail not in message:
                 message += f" {detail}"
-            if not suppress_at_night and await _send(hass, options, "FreshAirIQ · Nachtstrategie", message):
+            if store.data.get("last_night_event_date") != today:
+                store.data["last_night_event_date"] = today
+                publish("night", "FreshAirIQ · Nachtstrategie", message, None, {"kind": str(ns.get("action") or "")})
+                changed = True
+            if push_enabled and options.get("notify_night") and not suppress_at_night and await _send(hass, options, "FreshAirIQ · Nachtstrategie", message):
                 store.data["last_night_notification_date"] = today
                 changed=True
 

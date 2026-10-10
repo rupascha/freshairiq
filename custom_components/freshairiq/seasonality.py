@@ -7,6 +7,7 @@ the same influence forever.
 from __future__ import annotations
 
 from datetime import datetime
+from functools import lru_cache
 from math import exp, isfinite, log
 from typing import Any
 
@@ -35,7 +36,26 @@ def season_key(when: datetime) -> str:
     return "autumn"
 
 
+_SEASONAL_DEFAULT_KEYS = (
+    "seasonal_source_profiles",
+    "seasonal_samples",
+    "long_term_source_ml_min",
+    "long_term_source_samples",
+    "long_term_updated_at",
+    "seasonal_observation_days",
+)
+
+
+@lru_cache(maxsize=512)
+def _parse_iso(value: str) -> datetime:
+    """Cached ISO parser for hot forecast loops (datetimes are immutable)."""
+    return datetime.fromisoformat(value)
+
+
 def ensure_seasonal_defaults(room: dict[str, Any]) -> None:
+    # Hot path: identical to the setdefault loop below when keys already exist.
+    if all(key in room for key in _SEASONAL_DEFAULT_KEYS):
+        return
     defaults = {
         "seasonal_source_profiles": {},
         "seasonal_samples": 0,
@@ -106,7 +126,7 @@ def _age_weight(last_seen: Any, now: datetime, half_life_days: float = 120.0) ->
     if not last_seen:
         return 0.0
     try:
-        seen = datetime.fromisoformat(str(last_seen))
+        seen = _parse_iso(str(last_seen))
         age_days = max((now - seen).total_seconds() / 86400.0, 0.0)
     except (TypeError, ValueError):
         return 0.0
@@ -116,6 +136,11 @@ def _age_weight(last_seen: Any, now: datetime, half_life_days: float = 120.0) ->
 def seasonal_context(room: dict[str, Any], now: datetime) -> dict[str, Any]:
     """Return bounded seasonal factor and maturity for the current season."""
     ensure_seasonal_defaults(room)
+    return _seasonal_context_prepared(room, now)
+
+
+def _seasonal_context_prepared(room: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """seasonal_context() body; the caller guarantees seasonal defaults."""
     key = season_key(now)
     profiles = room.get("seasonal_source_profiles")
     row = profiles.get(key) if isinstance(profiles, dict) else None
@@ -153,6 +178,13 @@ def seasonal_context(room: dict[str, Any], now: datetime) -> dict[str, Any]:
 
 def seasonal_adjust_rate(room: dict[str, Any], now: datetime, base_rate: float) -> tuple[float, dict[str, Any]]:
     context = seasonal_context(room, now)
+    factor = _f(context.get("factor"), 1.0)
+    return float(base_rate) * factor, context
+
+
+def seasonal_adjust_rate_prepared(room: dict[str, Any], now: datetime, base_rate: float) -> tuple[float, dict[str, Any]]:
+    """seasonal_adjust_rate() for hot loops that already ensured the defaults."""
+    context = _seasonal_context_prepared(room, now)
     factor = _f(context.get("factor"), 1.0)
     return float(base_rate) * factor, context
 

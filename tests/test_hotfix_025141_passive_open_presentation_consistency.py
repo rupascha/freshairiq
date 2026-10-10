@@ -8,7 +8,7 @@ CARD = ROOT / "custom_components" / "freshairiq" / "frontend" / "freshairiq-card
 def test_passive_open_classic_disclosure_uses_canonical_display_action():
     js = CARD.read_text(encoding="utf-8")
     assert 'const canonicalMonitor = passiveOpenMonitor && r.active' in js
-    assert 'const displayAction = canonicalMonitor ? "Daueröffnung überwachen" : actionDE(r.action)' in js
+    assert 'const displayAction = canonicalMonitor ? "Daueröffnung überwachen" : roomActionLabel(r)' in js
     assert '<strong>${esc(displayAction)}</strong>' in js
 
 

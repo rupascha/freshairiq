@@ -11,6 +11,13 @@ from datetime import datetime
 from typing import Any
 
 from .consolidation import aggregate_close_allowed, aggregate_close_gate_ready
+from .model import min_return_volume_factor
+
+
+def _mean_volume_factor(rooms: list[dict[str, Any]]) -> float:
+    """Average room-volume factor for aggregate close thresholds (GitHub #15)."""
+    factors = [min_return_volume_factor(room.get("volume_m3") if isinstance(room, dict) else None) for room in rooms]
+    return sum(factors) / len(factors) if factors else 1.0
 
 def ventilation_threshold_decision(
     *,
@@ -167,7 +174,7 @@ def floor_ventilation_decision(
             max(-float(r.get("forecast_5_min_temperature_change_c", 0.0)), 0.0) * float(r.get("volume_m3", 0.0))
             for r in active
         ) / max(sum(float(r.get("volume_m3", 0.0)) for r in active), 1.0)
-        house_min_return = float(options.get("min_return_next_5_min_ml", 25.0)) * max(len(active) ** 0.5, 1.0)
+        house_min_return = float(options.get("min_return_next_5_min_ml", 25.0)) * max(len(active) ** 0.5, 1.0) * _mean_volume_factor(active)
         house_efficiency = 999.0 if house_next5_temp_loss <= 0.05 else house_next5_removed / (house_next5_temp_loss * 10.0)
         house_thermal_bad = (
             str(options.get("operating_profile", "comfort")) != "summer_cooling"
@@ -177,7 +184,8 @@ def floor_ventilation_decision(
         house_low_return = house_next5_removed < house_min_return
         house_close_gate_ready = aggregate_close_gate_ready(active)
         house_should_close = aggregate_close_allowed(
-            active, low_return=house_low_return, thermal_bad=house_thermal_bad
+            active, low_return=house_low_return, thermal_bad=house_thermal_bad,
+            min_duration_min=float(options.get("min_duration_min", 3.0)),
         )
         active_room_keys = [str(r.get("key")) for r in active]
 
@@ -251,13 +259,14 @@ def floor_ventilation_decision(
     elif floor_ventilation_mode:
         floor_next5_removed = sum(float(r.get("forecast_5_min_net_moisture_change_ml", r.get("forecast_5_min_moisture_effect_ml", 0.0)) or 0.0) for r in floor_active)
         floor_temp_loss = sum(max(-float(r.get("forecast_5_min_temperature_change_c", 0.0)), 0.0) * float(r.get("volume_m3", 0.0)) for r in floor_active) / max(sum(float(r.get("volume_m3", 0.0)) for r in floor_active), 1.0)
-        floor_threshold = float(options.get("min_return_next_5_min_ml", 25.0)) * max(len(floor_active) ** 0.5, 1.0)
+        floor_threshold = float(options.get("min_return_next_5_min_ml", 25.0)) * max(len(floor_active) ** 0.5, 1.0) * _mean_volume_factor(floor_active)
         floor_efficiency = 999.0 if floor_temp_loss <= 0.05 else floor_next5_removed / (floor_temp_loss * 10.0)
         floor_thermal_bad = (str(options.get("operating_profile", "comfort")) != "summer_cooling" and floor_temp_loss >= float(options.get("max_temp_loss_next_5_min_c", 0.6)) and floor_efficiency < float(options.get("min_efficiency_ml_per_01c", 8.0)))
         floor_low_return = floor_next5_removed < floor_threshold
         floor_close_gate_ready = aggregate_close_gate_ready(floor_active)
         floor_should_close = aggregate_close_allowed(
-            floor_active, low_return=floor_low_return, thermal_bad=floor_thermal_bad
+            floor_active, low_return=floor_low_return, thermal_bad=floor_thermal_bad,
+            min_duration_min=float(options.get("min_duration_min", 3.0)),
         )
         intelligent_recommendation["presentation_scope"] = "floor"
         intelligent_recommendation["presentation_floor"] = floor_display_name

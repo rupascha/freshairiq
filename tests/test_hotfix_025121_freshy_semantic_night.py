@@ -7,7 +7,10 @@ CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_
 def test_primary_night_recommendation_precedes_generic_ventilate_animation():
     assert 'const nightRecommendation = !active.length' in CARD
     assert 'Boolean(nightStrategy.primary || st.night_strategy_primary)' in CARD
-    assert ': nightRecommendation ? "night"\n            : vent.length || status === "ventilate" ? "recommend"' in CARD
+    # 0.26.4.6 (GitHub #14) inserts the canonical "wait" between night and recommend;
+    # night must still win over the generic ventilate animation.
+    night = CARD.index(': nightRecommendation ? "night"')
+    assert night < CARD.index(': houseWaits ? "wait"') < CARD.index(': vent.length || status === "ventilate" ? "recommend"')
 
 
 def test_running_ventilation_keeps_live_animation_priority():

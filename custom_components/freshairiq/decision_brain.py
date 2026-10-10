@@ -110,7 +110,21 @@ def build_unified_decision(
     headline = str(out.get("title") or "")
     summary = str(out.get("summary") or "")
 
-    if kind == "ventilate":
+    if kind == "ventilate" and str(out.get("status")) == "moisture_source_active":
+        # 0.26.4.7 (support case): a moisture source (shower, bath, cooking …)
+        # is a local event, not "the best ventilation window" for the house.
+        # Shown right after a whole-house airing, the generic headline read as a
+        # contradiction ("I have just aired").
+        headline = str(out.get("title") or "Feuchtequelle erkannt")
+        decision_label = "KURZ LÜFTEN"
+        duration = _f(out.get("duration_min"))
+        target = ' + '.join(names) if names else 'Betroffener Raum'
+        action_line = f"{target} · etwa {round(duration)} min" if duration > 0 else target
+        summary = (
+            "In diesem Raum steigt die Luftfeuchte gerade durch eine Feuchtequelle (z. B. Duschen oder Kochen). "
+            "Die Empfehlung gilt nur für diesen Raum – das restliche Haus muss nicht erneut gelüftet werden."
+        )
+    elif kind == "ventilate":
         headline = "Jetzt ist das beste Lüftungsfenster"
         if cross_active and len(names) >= 2:
             decision_label = "JETZT QUERLÜFTEN"
@@ -196,7 +210,11 @@ def build_unified_decision(
         summary = "Die zusätzliche Wirkung nimmt gegenüber Temperaturverlust und Feuchteziel nicht mehr ausreichend zu."
 
     elif kind == "pollen_wait":
-        headline = "Lüften wäre sinnvoll – Pollen sprechen dagegen"
+        cause = str(out.get("outdoor_veto_cause") or "pollen")
+        headline = {
+            "pm25": "Lüften wäre sinnvoll – Feinstaub draußen spricht dagegen",
+            "pollen_and_pm25": "Lüften wäre sinnvoll – Pollen und Feinstaub sprechen dagegen",
+        }.get(cause, "Lüften wäre sinnvoll – Pollen sprechen dagegen")
         decision_label = "VERSCHIEBEN"
         summary = str(out.get("summary") or "Die Pollenregel hat die ansonsten sinnvolle Lüftung aktuell überstimmt.")
 

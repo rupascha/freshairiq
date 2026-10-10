@@ -41,7 +41,11 @@ def test_weather_failure_preserves_cache_and_retries_soon():
     assert 'fetched_forecast = await async_hourly_forecast' in COORDINATOR
     assert 'if fetched_forecast:' in COORDINATOR
     assert 'self._hourly_forecast_cache = fetched_forecast' in COORDINATOR
-    assert 'now - timedelta(seconds=540)' in COORDINATOR
+    # 0.26.4.7: the first retry still follows after one minute; repeated
+    # failures back off (see test_support_cases_026407).
+    assert 'now - timedelta(seconds=FORECAST_REFRESH_SECONDS - delay)' in COORDINATOR
+    from custom_components.freshairiq.weather_future import forecast_retry_delay_seconds
+    assert forecast_retry_delay_seconds(1) == 60
 
 
 def test_event_bursts_and_water_history_are_rate_limited():

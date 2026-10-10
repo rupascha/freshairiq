@@ -142,4 +142,6 @@ def test_equal_night_window_also_disables_evening_notification_path():
     from pathlib import Path
     text = Path("custom_components/freshairiq/notifications.py").read_text(encoding="utf-8")
     assert 'night_window_enabled = night_window_hours(' in text
-    assert 'options.get("notify_night") and night_window_enabled and hours_to_night <= 3.0' in text
+    # 0.26.4.9: the evening message is also published as event; the window check still gates both.
+    assert 'if night_window_enabled and hours_to_night <= 3.0:' in text
+    assert 'push_enabled and options.get("notify_night") and not suppress_at_night' in text

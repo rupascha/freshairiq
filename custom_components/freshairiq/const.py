@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.4.5"
+VERSION = "0.26.4.9"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -27,7 +27,12 @@ CONF_OUTDOOR_WEATHER = "outdoor_weather"
 CONF_OUTDOOR_TEMPERATURE = "outdoor_temperature"
 CONF_OUTDOOR_HUMIDITY = "outdoor_humidity"
 CONF_POLLEN_ENTITY = "pollen_entity"
+# 0.26.4.7 (user feedback): outdoor PM2.5 sensors (e.g. Sensor.Community); highest value counts.
+CONF_OUTDOOR_PM25_ENTITY = "outdoor_pm25_entity"
 CONF_ROOMS = "rooms"
+# Room subentries FreshAirIQ has mirrored; used to detect rooms the user deleted
+# directly in Devices & services (0.26.4.6).
+CONF_ROOM_SUBENTRY_KEYS = "room_subentry_keys"
 CONF_LEVELS = "levels"
 CONF_ROOM_NAME = "name"
 CONF_ROOM_ICON = "icon"
@@ -236,6 +241,9 @@ DEFAULT_OPTIONS = {
     # Example: {"adult:0":{"room_keys":["office"],"thermal_preference":"warm"}}
     "resident_room_profiles": "{}",
     "untracked_follow_household": True,
+    # 0.26.4.6 (user feedback): phones switched off at night make router-based
+    # trackers report "away"; optionally keep those residents at home overnight.
+    "presence_night_hold": False,
     # Optional soft presence evidence. Motion is deliberately weak; true
     # presence sensors can be marked pet-safe and receive more weight.
     "presence_sensor_entities": [],
@@ -260,6 +268,9 @@ DEFAULT_OPTIONS = {
     "pollen_enabled": False,
     "pollen_max": 4.0,
     "pollen_strict_veto": True,
+    # 0.26.4.7: outdoor fine dust protection (only active with an outdoor PM2.5 sensor).
+    "outdoor_pm25_enabled": True,
+    "outdoor_pm25_max": 35.0,
     "wind_orientation_enabled": True,
 
     # Energy model. System-specific prices avoid presenting heat-pump-only

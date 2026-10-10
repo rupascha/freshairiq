@@ -33,6 +33,7 @@ from custom_components.freshairiq.localize import Translator, is_german, protect
 from custom_components.freshairiq.notifications import notification_translator, process_notifications
 from custom_components.freshairiq.text_en import EXACT, TEMPLATES
 from custom_components.freshairiq.ventilation_log import build_ventilation_pdf
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -344,7 +345,7 @@ def test_select_options_use_translated_selectors_instead_of_german_labels():
 # --------------------------------------------------------------------------- dashboard card
 
 def test_card_understands_english_backend_texts_and_room_names():
-    card = (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    card = card_text()
     assert '/Raumluftfeuchte|Oberflächenfeuchte|Room humidity|Surface humidity|CO₂/.test' in card
     assert 'heroTitle.includes("long opening")' in card and 'heroTitle.includes("do not ventilate")' in card
     for word in ("bedroom", "bath", "hall", "office", "guest", "nursery"):

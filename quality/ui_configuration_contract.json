@@ -2,8 +2,12 @@
   "schema": 1,
   "approved_from_version": "0.26.2.14",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
-  "config_flow_sha256": "0c08e6e2349e39c1860bd9c294b6182761736ccbd811770b52736732969785ab",
-  "de_configuration_sha256": "67837e44e30370b623e48ace8ed4c292a92cb2bf128b29c3d3630c1b089bf1d0",
-  "en_configuration_sha256": "d09eafa2b6a00f0fc08cae940820b377f31a27f49a46fb6ddcd07e52c925572f",
-  "strings_configuration_sha256": "d09eafa2b6a00f0fc08cae940820b377f31a27f49a46fb6ddcd07e52c925572f"
+  "config_flow_sha256": "0a98f045d20fe936b981a8351444c26ffc9a2b55d342df56fe48224d424e1e86",
+  "de_configuration_sha256": "44388e79929c69894de5d256c76adeb74495c23ec34c7bfa346cf60d74dc7086",
+  "en_configuration_sha256": "38751c879d953b2c2d3a7d19a674606de4c7956220cb06e71a1c7a557f5af0a8",
+  "strings_configuration_sha256": "38751c879d953b2c2d3a7d19a674606de4c7956220cb06e71a1c7a557f5af0a8",
+  "approved_changes": [
+    "0.26.4.6: one-dropdown reordering for goals/rooms, overnight presence hold option, several pollen sensors (user feedback)",
+    "0.26.4.7: outdoor fine dust protection – PM2.5 sensors under Outdoor air source, 'Consider outdoor fine dust' and limit under Air quality (user feedback; pending maintainer approval)"
+  ]
 }

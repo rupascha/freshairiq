@@ -9,7 +9,10 @@ from homeassistant.const import MATCH_ALL, PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .dashboard_transport import DETAILS_API, slim_room, slim_rooms
+from .opening_strategy import HOUSE_ALIGNED_STATES
 from .const import DOMAIN, VERSION
+from .room_devices import add_entities_by_room
 from .entity import FreshAirIQEntity
 from .runtime import get_runtime_coordinator
 from .coordinator import FreshAirIQCoordinator
@@ -74,6 +77,8 @@ ROOM_FIELDS = (
     ("forecast_temperature_change_c", "Forecast temperature change", "°C", None, SensorDeviceClass.TEMPERATURE_DELTA, True),
     ("forecast_cost", "Forecast reheating cost", "€", "mdi:currency-eur", None, True),
     ("forecast_confidence", "Forecast confidence", PERCENTAGE, "mdi:shield-check-outline", None, True),
+    # 0.26.4.7: what the room should do given the whole-house decision.
+    ("house_aligned_action", "Recommendation", None, "mdi:home-switch-outline", None, True),
 )
 
 
@@ -112,9 +117,10 @@ async def async_setup_entry(
 ) -> None:
     coordinator = get_runtime_coordinator(hass, entry)
     entities = [HouseSensor(coordinator, entry, desc) for desc in HOUSE]
+    room_entities: dict[str, list[Any]] = {}
     for room in entry.data.get("rooms", []):
         for field, label, unit, icon, device_class, enabled_default in ROOM_FIELDS:
-            entities.append(
+            room_entities.setdefault(room["key"], []).append(
                 RoomSensor(
                     coordinator,
                     entry,
@@ -128,7 +134,8 @@ async def async_setup_entry(
                     enabled_default,
                 )
             )
-    async_add_entities(entities)
+    # 0.26.4.9: each room's entities belong to the room's sub-entry.
+    add_entities_by_room(async_add_entities, entry, entities, room_entities)
 
 
 class HouseSensor(FreshAirIQEntity, SensorEntity):
@@ -163,8 +170,11 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
                 # fallback. Per-room Action entities still expose the same payload, but
                 # disabling/missing one of those entities must never remove room history
                 # from the dashboard.
-                "rooms": self.coordinator.data["rooms"],
+                # 0.26.4.7: hourly chart series are served on demand
+                # (/api/freshairiq/room-history/<entry_id>), not pushed every cycle.
+                "rooms": slim_rooms(self.coordinator.data["rooms"]),
                 "freshairiq_transport": "status_v2",
+                "freshairiq_details_api": DETAILS_API,
                 "freshairiq_entry_id": self._entry.entry_id,
                 "freshairiq_version": VERSION,
                 "levels": self.coordinator.data.get("levels", []),
@@ -233,6 +243,11 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
                 "pollen_index": self.coordinator.data.get("pollen_index", 0),
                 "pollen_limit": self.coordinator.data.get("pollen_limit", 4),
                 "pollen_blocked": self.coordinator.data.get("pollen_blocked", False),
+                "outdoor_pm25": self.coordinator.data.get("outdoor_pm25"),
+                "outdoor_pm25_limit": self.coordinator.data.get("outdoor_pm25_limit"),
+                "outdoor_pm25_blocked": self.coordinator.data.get("outdoor_pm25_blocked", False),
+                "outdoor_air_veto_cause": self.coordinator.data.get("outdoor_air_veto_cause"),
+                "weather_now": self.coordinator.data.get("weather_now", {}),
                 "wind_bearing": self.coordinator.data.get("wind_bearing"),
                 "wind_speed": self.coordinator.data.get("wind_speed"),
                 "last_ventilation": self.coordinator.data.get("last_ventilation"),
@@ -297,6 +312,8 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
         value = self.coordinator.data["rooms"].get(self.room_key, {}).get(self.field)
         if self.field == "action":
             return ACTION_STATE_MAP.get(value, "unknown")
+        if self.field == "house_aligned_action":
+            return value if value in HOUSE_ALIGNED_STATES else "unknown"
         if self.field == "mould_level":
             return MOULD_STATE_MAP.get(value, "unknown")
         if self.field == "learning_status":
@@ -313,7 +330,7 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
             room = self.coordinator.data.get("rooms", {}).get(self.room_key)
             if room:
                 attributes = {
-                    "freshairiq_room_payload": room,
+                    "freshairiq_room_payload": slim_room(room),
                     "freshairiq_room_key": self.room_key,
                     "freshairiq_transport": "room_v2",
                     "freshairiq_entry_id": self._entry.entry_id,

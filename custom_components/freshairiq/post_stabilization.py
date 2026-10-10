@@ -14,6 +14,7 @@ TARGET_MINUTES = 10.0
 MAX_MINUTES = 15.0
 MIN_SAMPLE_SPACING_SECONDS = 45.0
 MAX_SAMPLES = 24
+_CLEAN_QUALITIES = frozenset({"legacy", "excellent", "acceptable"})
 
 def _num(value: Any, default: float = 0.0) -> float:
     try:
@@ -186,8 +187,19 @@ def update_post_close_observation(
             changed = True
 
     if elapsed >= TARGET_MINUTES and len(room.get("post_close_samples") or []) >= 2:
-        outcome = _outcome(room, now=now, current_ah=absolute_humidity_g_m3, current_temp_c=temperature_c,
-                           status="complete", reason="target_window_reached", frame_quality=frame_quality)
+        end_ah, end_temp, end_quality = absolute_humidity_g_m3, temperature_c, frame_quality
+        if not (frame_valid and frame_quality in _CLEAN_QUALITIES and absolute_humidity_g_m3 is not None):
+            # 0.26.4.7 (Hub cluster FAIQ-POST-001: up to 98 % "invalid"): sensors
+            # that report only on change are "held"/"uncertain" at the exact
+            # 10-minute mark although the window was observed cleanly. The last
+            # clean sample of the window is the honest end value then.
+            last = _last_clean_sample(room, min_elapsed=TARGET_MINUTES * 0.5)
+            if last is not None:
+                end_ah = _num(last.get("absolute_humidity_g_m3"), _num(room.get("post_close_ah"), 0.0))
+                end_temp = _num(last.get("temperature_c"), _num(room.get("post_close_temp_c"), 0.0))
+                end_quality = last.get("frame_quality")
+        outcome = _outcome(room, now=now, current_ah=end_ah, current_temp_c=end_temp,
+                           status="complete", reason="target_window_reached", frame_quality=end_quality)
         room["post_close_active"] = False
         room["post_close_last_outcome"] = outcome
         return outcome, True
@@ -198,6 +210,15 @@ def update_post_close_observation(
         room["post_close_last_outcome"] = outcome
         return outcome, True
     return None, changed
+
+
+def _last_clean_sample(room: dict[str, Any], *, min_elapsed: float) -> dict[str, Any] | None:
+    for sample in reversed(list(room.get("post_close_samples") or [])):
+        if not isinstance(sample, dict):
+            continue
+        if sample.get("frame_quality") in _CLEAN_QUALITIES and _num(sample.get("elapsed_min"), 0.0) >= min_elapsed:
+            return sample
+    return None
 
 
 def prune_history(history: list[dict[str, Any]], now: datetime, days: int = 30) -> list[dict[str, Any]]:

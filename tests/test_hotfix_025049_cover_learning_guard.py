@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,4 +59,4 @@ def test_contract_defaults_and_bilingual_explanations_present():
     en=json.loads((ROOT/"custom_components/freshairiq/translations/en.json").read_text())
     assert de["selector"]["cover_position_zero_means"]["options"]["closed"].startswith("0 % = vollständig geschlossen")
     assert en["selector"]["cover_position_zero_means"]["options"]["closed"].startswith("0 % = fully closed")
-    assert "Lern-Grenze" in (ROOT/"custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    assert "Lern-Grenze" in card_text()

@@ -310,3 +310,35 @@ def synchronize_room_presentation_actions(
                 "recommendation_kind": kind,
                 "reason": "final_recommendation_alignment",
             }
+
+
+# 0.26.4.7 (open item "Raumanzeige folgt Hausentscheidung"): the room "Aktion"
+# sensor keeps its physical, room-local meaning (automations rely on it). An
+# additional value tells what the room should do *given the house decision*:
+# while the house deliberately waits (better window later, pollen/fine dust,
+# night hold) a room that could physically be aired reads "ventilate_later".
+HOUSE_HOLD_KINDS = frozenset({"wait", "pollen_wait"})
+HOUSE_ALIGNED_STATES = frozenset({
+    "ventilate", "continue_ventilating", "close", "ventilate_for_cooling", "do_not_ventilate",
+    "wait", "okay", "check_sensor", "monitor_only", "ventilate_later", "ventilate_indirectly", "open_fully",
+})
+
+
+def _action_code(action: Any) -> str:
+    text = str(action or "").strip()
+    return text.lower().replace(" ", "_") if text else "unknown"
+
+
+def house_aligned_room_actions(recommendation: dict[str, Any], rooms: dict[str, dict[str, Any]]) -> None:
+    """Add ``house_aligned_action`` to every room payload (presentation only)."""
+    if not isinstance(rooms, dict):
+        return
+    kind = str((recommendation or {}).get("kind") or "") if isinstance(recommendation, dict) else ""
+    house_holds = kind in HOUSE_HOLD_KINDS
+    for room in rooms.values():
+        if not isinstance(room, dict):
+            continue
+        code = _action_code(room.get("action"))
+        if house_holds and code in {"ventilate", "ventilate_for_cooling"} and not room.get("active"):
+            code = "ventilate_later"
+        room["house_aligned_action"] = code if code in HOUSE_ALIGNED_STATES else "unknown"

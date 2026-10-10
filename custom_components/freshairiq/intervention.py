@@ -87,7 +87,9 @@ def build_interventions(
     illuminance = None if room.get("illuminance") is None else _f(room.get("illuminance"))
     action = str(room.get("action") or "")
     source_active = bool(room.get("moisture_source_active"))
-    pollen_blocked = bool(room.get("pollen_blocked"))
+    pollen_only = bool(room.get("pollen_blocked"))
+    pm25_outdoor = bool(room.get("outdoor_pm25_blocked"))
+    pollen_blocked = pollen_only or pm25_outdoor
 
     interventions: list[Intervention] = []
 
@@ -191,7 +193,11 @@ def build_interventions(
     # Air purifier for particles/VOC or pollen-limited window ventilation.
     purifier = str(config.get("air_purifier") or "") or None
     if purifier and (air_quality_high or pollen_blocked):
-        reason = "Außenluft ist pollenbedingt ungünstig." if pollen_blocked and not air_quality_high else "Erhöhte Partikel-/VOC-Belastung erkannt."
+        reason = (
+            ("Außenluft ist durch Pollen und Feinstaub belastet." if pollen_only and pm25_outdoor
+             else "Außenluft ist pollenbedingt ungünstig." if pollen_only else "Außenluft ist durch Feinstaub belastet.")
+            if pollen_blocked and not air_quality_high else "Erhöhte Partikel-/VOC-Belastung erkannt."
+        )
         add(
             "purify_air",
             "Luftreiniger nutzen",

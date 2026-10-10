@@ -1,4 +1,5 @@
 from pathlib import Path
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js"
@@ -6,7 +7,7 @@ COORD = ROOT / "custom_components/freshairiq/coordinator.py"
 
 
 def test_three_state_runtime_copy_has_english_dashboard_parity():
-    card = CARD.read_text(encoding="utf-8")
+    card = card_text()
     pairs = {
         "Fenster ist gekippt; vollständig öffnen erhöht den Luftwechsel für die aktuelle Empfehlung":
             "Window is tilted; opening it fully increases airflow for the current recommendation",
@@ -21,7 +22,7 @@ def test_three_state_runtime_copy_has_english_dashboard_parity():
 
 
 def test_open_fully_action_uses_existing_language_adapter():
-    card = CARD.read_text(encoding="utf-8")
+    card = card_text()
     assert '"Open fully": "Vollständig öffnen"' in card
     assert 'faiqEnglishText(actionDE(r.action))' in card
     assert "_localizeLegacyFragment" in card
@@ -29,7 +30,7 @@ def test_open_fully_action_uses_existing_language_adapter():
 
 def test_all_new_three_state_user_visible_backend_copy_is_covered():
     coordinator = COORD.read_text(encoding="utf-8")
-    card = CARD.read_text(encoding="utf-8")
+    card = card_text()
     expected = [
         "Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet",
     ]

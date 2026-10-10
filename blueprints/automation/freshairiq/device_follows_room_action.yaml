@@ -1,0 +1,59 @@
+blueprint:
+  name: FreshAirIQ – Lüfter folgt der Raum-Empfehlung
+  description: >-
+    Schaltet ein Gerät (z. B. den Lüfter im Bad, einen Entfeuchter oder einen
+    Schalter) ein, solange FreshAirIQ für den Raum „Lüften“ empfiehlt, und wieder
+    aus, sobald die Empfehlung endet. FreshAirIQ selbst schaltet nie – das macht
+    nur diese Automation, weil du sie anlegst.
+  domain: automation
+  source_url: https://github.com/rupascha/freshairiq/blob/main/blueprints/automation/freshairiq/device_follows_room_action.yaml
+  input:
+    room:
+      name: Raum
+      description: Der FreshAirIQ-Sensor „Aktion“ des Raums (z. B. „Badezimmer Aktion“).
+      selector:
+        entity:
+          integration: freshairiq
+          domain: sensor
+    device:
+      name: Gerät
+      selector:
+        entity:
+          domain: [switch, fan, humidifier, input_boolean, light]
+    on_actions:
+      name: Einschalten bei
+      default: [ventilate, continue_ventilating]
+      selector:
+        select:
+          multiple: true
+          options:
+            - { label: "Lüften", value: ventilate }
+            - { label: "Weiterlüften", value: continue_ventilating }
+            - { label: "Zum Kühlen lüften", value: ventilate_for_cooling }
+    only_when_windows_closed:
+      name: Nicht einschalten, wenn das Fenster offen ist
+      default: true
+      selector: { boolean: {} }
+mode: restart
+triggers:
+  - trigger: event
+    event_type: freshairiq_room_action
+variables:
+  room: !input room
+  room_key: "{{ state_attr(room, 'freshairiq_room_key') }}"
+  on_actions: !input on_actions
+  only_when_windows_closed: !input only_when_windows_closed
+  data: "{{ trigger.event.data }}"
+conditions:
+  - "{{ room_key is not none and data.room_key == room_key }}"
+actions:
+  - if:
+      - "{{ data.action in on_actions and not (only_when_windows_closed and data.ventilation_active) }}"
+    then:
+      - action: homeassistant.turn_on
+        target:
+          entity_id: !input device
+    else:
+      - action: homeassistant.turn_off
+        target:
+          entity_id: !input device

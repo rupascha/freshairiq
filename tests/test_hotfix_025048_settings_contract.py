@@ -28,8 +28,11 @@ def test_passive_rooms_do_not_require_geometry_but_active_rooms_still_do():
 
 
 def test_duplicate_priorities_are_rejected_in_native_and_dashboard_editors():
-    assert '"duplicate_goal_order"' in FLOW
-    assert "len(set(ranked)) != len(ranked)" in FLOW
+    # 0.26.4.6: duplicates are no longer rejected but resolved as a move
+    # (user report: the order could not be confirmed after adding CO2 sensors).
+    # Behaviour: tests/test_ordering_move_026406.py
+    assert "duplicate_goal_order" in FLOW
+    assert "_resolve_move_ranking(ranked, current)" in FLOW
     assert "_goal_priority_errors(user_input, room)" in FLOW
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).

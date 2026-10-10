@@ -1,0 +1,73 @@
+blueprint:
+  name: FreshAirIQ – Raum-Empfehlung ansagen (z. B. Alexa)
+  description: >-
+    Sagt eine FreshAirIQ-Empfehlung an, sobald sie sich ändert – zum Beispiel
+    „Schlafzimmer: Bitte Fenster schließen.“ Die Ausgabe wählst du selbst:
+    Alexa, Sprachausgabe, Telegram, Handy … Der fertige Satz steht in der
+    Variable `message`.
+
+
+    Beispiel für Alexa (Integration „Alexa Media Player“): Aktion
+    „Benachrichtigungen: alexa_media_<dein Echo>“ mit Nachricht `{{ message }}`
+    und Daten `type: announce`.
+  domain: automation
+  source_url: https://github.com/rupascha/freshairiq/blob/main/blueprints/automation/freshairiq/announce_room_action.yaml
+  input:
+    rooms:
+      name: Räume
+      description: >-
+        Wähle für jeden Raum seinen FreshAirIQ-Sensor „Aktion“ (z. B. „Schlafzimmer Aktion“).
+        Leer lassen = alle Räume.
+      default: []
+      selector:
+        entity:
+          integration: freshairiq
+          domain: sensor
+          multiple: true
+    actions_filter:
+      name: Bei diesen Empfehlungen ansagen
+      default: [close, ventilate]
+      selector:
+        select:
+          multiple: true
+          options:
+            - { label: "Lüften", value: ventilate }
+            - { label: "Fenster schließen", value: close }
+            - { label: "Zum Kühlen lüften", value: ventilate_for_cooling }
+            - { label: "Nicht lüften", value: do_not_ventilate }
+            - { label: "Sensor prüfen", value: check_sensor }
+    quiet_start:
+      name: Keine Ansagen ab
+      default: "22:00:00"
+      selector: { time: {} }
+    quiet_end:
+      name: Keine Ansagen bis
+      default: "07:00:00"
+      selector: { time: {} }
+    output:
+      name: Ausgabe
+      description: Was soll passieren? Der Ansagetext steht in `{{ message }}`.
+      selector:
+        action: {}
+mode: queued
+max: 10
+triggers:
+  - trigger: event
+    event_type: freshairiq_room_action
+variables:
+  rooms: !input rooms
+  actions_filter: !input actions_filter
+  room_keys: >-
+    {{ rooms | map('state_attr', 'freshairiq_room_key') | reject('none') | list }}
+  message: "{{ trigger.event.data.message }}"
+  room_name: "{{ trigger.event.data.room_name }}"
+  action_code: "{{ trigger.event.data.action }}"
+conditions:
+  - "{{ action_code in actions_filter }}"
+  - "{{ rooms | length == 0 or trigger.event.data.room_key in room_keys }}"
+  - condition: not
+    conditions:
+      - condition: time
+        after: !input quiet_start
+        before: !input quiet_end
+actions: !input output

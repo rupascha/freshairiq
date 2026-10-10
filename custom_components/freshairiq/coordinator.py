@@ -16,15 +16,27 @@ from .const import *
 from .climate_sources import aggregate_states, entity_ids, climate_report_snapshot, advance_climate_report_activity, participating_climate_entities
 from .energy import energy_price_per_kwh_equivalent, exchanged_air_fraction, heating_cost_context, ventilation_cost, ventilation_cost_for_duration, ventilation_cost_for_temperature_path
 from .forecast import effective_night_rate_ml_h, estimated_daily_moisture_ml, horizon_forecast, in_night_window, night_interval_bounds, night_window_hours, overnight_forecast_ml, remaining_night_hours, update_night_learning
-from .model import RoomInput, absolute_humidity, evaluate_room, update_learning
+from .weather_now import weather_now
+from . import cover_guard
+from .outdoor_air import outdoor_pm25_blocked, outdoor_pm25_limit, plausible_pm25, pm25_reason, veto_cause as outdoor_veto_cause
+from .model import (
+    VENTILATION_HYSTERESIS_DELTA_G_M3,
+    VENTILATION_HYSTERESIS_RH,
+    RoomInput,
+    absolute_humidity,
+    evaluate_room,
+    scaled_min_return,
+    update_learning,
+)
 from .moisture_source import update_moisture_source
 from .notifications import process_notifications
 from .presence import presence_diagnostics, resolve_occupancy
 from .recommendation import build_recommendation
-from .opening_strategy import enrich_opening_recommendation, synchronize_room_presentation_actions
+from .opening_strategy import enrich_opening_recommendation, house_aligned_room_actions, synchronize_room_presentation_actions
 from .opening_state import normalize_opening_state, opening_contact_profile, aggregate_opening_mode, specialist_opening_provenance, stabilise_explicit_mode, update_passage_pattern, stable_state_seconds
 from .personal_context import build_resident_context, personalise_recommendation
 from .language_confidence import adapt_language_confidence
+from .automation_events import AutomationEventEmitter
 from .live_coach import refine_live_recommendation
 from .anticipation import refine_with_anticipation
 from .planner import build_multi_hour_plan, refine_with_plan
@@ -35,7 +47,12 @@ from .intelligence import (
 )
 from .storage import LearningStore
 from .decision import build_decision_simulation
-from .weather_future import async_hourly_forecast, future_boundaries
+from .weather_future import (
+    FORECAST_REFRESH_SECONDS,
+    async_hourly_forecast,
+    forecast_retry_delay_seconds,
+    future_boundaries,
+)
 from .routines import expected_source_rate, learn_source_pattern, project_generation_ml, response_pattern, routine_maturity
 from .strategy import strategy_maturity
 from .seasonality import learn_seasonal_source, seasonal_context
@@ -104,6 +121,25 @@ def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
     return finite_float(state.state)
 
 
+def _pollen_level(hass: HomeAssistant, configured: Any) -> float:
+    """Highest valid value of all configured pollen sensors (0.26.4.6).
+
+    A single legacy entity behaves exactly as before; unavailable sensors are
+    ignored so one offline sensor cannot hide the others.
+    """
+    values = [value for value in (_float_state(hass, entity_id) for entity_id in entity_ids(configured)) if value is not None]
+    return max(values) if values else 0.0
+
+
+def _outdoor_pm25_level(hass: HomeAssistant, configured: Any) -> float | None:
+    """Highest plausible outdoor PM2.5 value of the configured sensors; None without one."""
+    values = [
+        value for value in (plausible_pm25(_float_state(hass, entity_id)) for entity_id in entity_ids(configured))
+        if value is not None
+    ]
+    return max(values) if values else None
+
+
 def _cover_learning_guard(hass: HomeAssistant, room: dict[str, Any], contact_modes: dict[str, str], options: dict[str, Any]) -> dict[str, Any]:
     """Return normalized cover closure and whether current ventilation is clean enough to learn.
 
@@ -117,11 +153,15 @@ def _cover_learning_guard(hass: HomeAssistant, room: dict[str, Any], contact_mod
     threshold = min(max(float(options.get("cover_learning_max_closed_percent", 20.0) or 0.0), 0.0), 100.0)
     affected: list[dict[str, Any]] = []
     unknown: list[str] = []
+    moving = False
     for contact, mode in contact_modes.items():
         if mode not in {"open", "tilted"}:
             continue
         for entity_id in list(mapping.get(contact) or []):
             state = hass.states.get(str(entity_id))
+            if state is not None and str(getattr(state, "state", "")) in {"opening", "closing"}:
+                moving = True
+                continue  # 0.26.4.9: a shutter on its way is not judged
             raw = finite_float((state.attributes or {}).get("current_position")) if state is not None else None
             if raw is None:
                 unknown.append(str(entity_id)); continue
@@ -129,7 +169,7 @@ def _cover_learning_guard(hass: HomeAssistant, room: dict[str, Any], contact_mod
             closed_pct = raw if zero_means == "open" else 100.0 - raw
             if closed_pct > threshold:
                 affected.append({"contact": str(contact), "cover": str(entity_id), "position": round(raw, 1), "closed_percent": round(closed_pct, 1)})
-    return {"blocked": bool(affected), "threshold": threshold, "zero_means": zero_means, "affected": affected, "unknown": sorted(set(unknown))}
+    return {"blocked": bool(affected), "threshold": threshold, "zero_means": zero_means, "affected": affected, "unknown": sorted(set(unknown)), "moving": moving}
 
 
 
@@ -496,7 +536,7 @@ def _room_orientation_factor(hass: HomeAssistant, room: dict[str, Any], now: dat
     return round(sum(factors) / len(factors), 3)
 
 
-def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2: float | None, airflow: float, wind_bearing: float | None, wind_speed: float | None) -> tuple[str, str, list[str]]:
+def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2: float | None, airflow: float, wind_bearing: float | None, wind_speed: float | None, outdoor_pm25: float | None = None, ventilation_latched: bool = False) -> tuple[str, str, list[str]]:
     """Build a room-specific recommendation with an explicit trigger and suitability reason.
 
     The house threshold is intentionally *not* used here. A room can therefore
@@ -526,6 +566,7 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
     co2_urgent = co2 is not None and co2 >= co2_critical
     urgent = float(result.surface_rh or 0) >= mould_critical or co2_urgent
     pollen_blocked = bool(options.get("pollen_enabled", False)) and bool(options.get("pollen_strict_veto", True)) and pollen > float(options.get("pollen_max", 4)) and not urgent
+    pm25_blocked = outdoor_pm25_blocked(options, outdoor_pm25) and not urgent
 
     # State the room-specific trigger first. This text is shown verbatim in the
     # dashboard and notifications, so the user can immediately see *why* this
@@ -548,7 +589,7 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
     if source_active:
         reasons.append(f"{source_label} wahrscheinlich aktiv ({source_conf} % Sicherheit); interne Feuchteproduktion etwa {source_rate * 60:.0f} ml/h")
 
-    if result.active and source_active and float(result.delta_g_m3) > float(options.get("close_delta", 0.4)) and not pollen_blocked:
+    if result.active and source_active and float(result.delta_g_m3) > float(options.get("close_delta", 0.4)) and not (pollen_blocked or pm25_blocked):
         action = "Continue ventilating"
         reasons.append("Die Referenzluft ist weiterhin trockener; die steigende Raumfeuchte stammt trotz wirksamer Lüftung aus der aktiven Feuchtequelle")
     elif result.active and result.close_recommended:
@@ -569,14 +610,26 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
             reasons.append("Seit 15 Minuten fehlen zwei neue Klimamessungen; Modellbewertung sieht aktuell noch einen sinnvollen Lüftungsvorteil")
         else:
             reasons.append(f"Kurzfristiger Schließcheck (5 min): voraussichtlich {max(round(result.moisture_effect_next_5_min_ml), 0)} ml Feuchteabbau")
-    elif pollen_blocked and (result.ventilation_candidate or result.cooling_candidate):
+    elif (pollen_blocked or pm25_blocked) and (result.ventilation_candidate or result.cooling_candidate):
         action = "Do not ventilate"
-        reasons.append(f"Pollenindex {pollen:.1f} liegt über dem Grenzwert {float(options.get('pollen_max',4)):.1f}")
+        if pollen_blocked:
+            reasons.append(f"Pollenindex {pollen:.1f} liegt über dem Grenzwert {float(options.get('pollen_max',4)):.1f}")
+        if pm25_blocked:
+            reasons.append(pm25_reason(outdoor_pm25, options))
     elif result.ventilation_candidate:
         action = "Ventilate"
         required_delta = min_delta_high if humidity_high else min_delta
         reasons.append(f"Außen-/Referenzluft ist {float(result.delta_g_m3):.1f} g/m³ trockener (mindestens {required_delta:.1f} g/m³ nötig)")
         reasons.append(f"Aktuell sind etwa {max(round(result.potential_ml),0)} ml Feuchtigkeit entfernbar")
+        delta_now = float(result.delta_g_m3)
+        meets_fresh_start = (humidity_start and delta_now >= min_delta) or (humidity_high and delta_now >= min_delta_high)
+        if ventilation_latched and not meets_fresh_start:
+            # 0.26.4.7 (GitHub #15): explain why the advice stays although a
+            # value dipped just below the start threshold.
+            reasons.append(
+                f"Empfehlung bleibt trotz leichter Schwankung bestehen: sie endet erst {VENTILATION_HYSTERESIS_RH:.0f} % "
+                f"bzw. {VENTILATION_HYSTERESIS_DELTA_G_M3:.1f} g/m³ unter den Startwerten"
+            )
     elif result.cooling_candidate:
         action = "Ventilate for cooling"
         reasons.append("Außenluft ist ausreichend kühler und der Feuchteeintrag bleibt vertretbar")
@@ -622,6 +675,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._refresh_coalesce_unsub = None
         self._hourly_forecast_cache: list[dict[str, Any]] = []
         self._hourly_forecast_fetched_at: datetime | None = None
+        self._hourly_forecast_failures = 0
+        self._outdoor_pm25: float | None = None
+        self._outdoor_pm25_blocked = False
+        self._pollen_only_blocked = False
         self.diagnostics = FreshAirIQDiagnosticsRecorder(hass, entry.entry_id, VERSION)
         self.robustness = RobustnessMonitor()
         self.runtime_health = RuntimeHealthMonitor()
@@ -642,6 +699,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             },
         )
         self._unavailable_required_sources: set[str] = set()
+        self.automation_events = AutomationEventEmitter(
+            lambda event_type, payload: self.hass.bus.async_fire(event_type, payload), entry.entry_id
+        )
+        self._unsub_automation_events = None
         # Short source outages are common while HA integrations (for example MQTT/Zigbee)
         # restore after startup. Keep them separate from persistent sensor failures.
         self._sensor_recovery_started_at: datetime | None = None
@@ -703,11 +764,29 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.robustness.repaired_option_keys = repaired
         return options
 
+    @callback
+    def _async_fire_automation_events(self) -> None:
+        """Coordinator listener: fire user-automation events from published data.
+
+        Runs after every successful update with the localized payload, so
+        Alexa/TTS texts match the Home Assistant language. Never raises.
+        """
+        try:
+            if isinstance(self.data, dict):
+                self.automation_events.process(self.data)
+        except Exception:  # noqa: BLE001 - user automations are optional consumers
+            _LOGGER.debug("Could not fire FreshAirIQ automation events", exc_info=True)
+
     async def async_start_listeners(self) -> None:
         await self.telemetry.async_start()
+        add_listener = getattr(self, "async_add_listener", None)
+        if self._unsub_automation_events is None and callable(add_listener):
+            self._unsub_automation_events = add_listener(self._async_fire_automation_events)
         entities: set[str] = set()
-        for entity_id in (self.entry.data.get(CONF_OUTDOOR_WEATHER), self.entry.data.get(CONF_OUTDOOR_TEMPERATURE), self.entry.data.get(CONF_OUTDOOR_HUMIDITY), self.entry.data.get(CONF_POLLEN_ENTITY)):
+        for entity_id in (self.entry.data.get(CONF_OUTDOOR_WEATHER), self.entry.data.get(CONF_OUTDOOR_TEMPERATURE), self.entry.data.get(CONF_OUTDOOR_HUMIDITY)):
             if entity_id: entities.add(entity_id)
+        entities.update(entity_ids(self.entry.data.get(CONF_POLLEN_ENTITY)))
+        entities.update(entity_ids(self.entry.data.get(CONF_OUTDOOR_PM25_ENTITY)))
         self._contact_entities = set()
         options = self.options
         optional_sensor_keys = [
@@ -777,10 +856,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if invalidate_weather_cache:
             self._hourly_forecast_cache = []
             self._hourly_forecast_fetched_at = None
+            self._hourly_forecast_failures = 0
         await self.async_start_listeners()
 
     async def async_stop_listeners(self) -> None:
         self._clear_runtime_listeners()
+        if self._unsub_automation_events is not None:
+            self._unsub_automation_events()
+            self._unsub_automation_events = None
         await self.telemetry.async_stop()
         # Flush the latest live balance before reload/shutdown.
         await self.store.async_save()
@@ -1020,7 +1103,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _phase_started = perf_counter()
         self._log_required_source_availability()
         options = self.options
-        occupancy = resolve_occupancy(options, self.hass.states.get)
+        occupancy = resolve_occupancy(options, self.hass.states.get, dt_util.now())
         effective_adults = float(occupancy["expected_adults"])
         effective_children = float(occupancy["expected_children"])
         outdoor_weather_entity = self.entry.data.get(CONF_OUTDOOR_WEATHER)
@@ -1034,7 +1117,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if sensor_t is not None: outdoor_t = sensor_t
         if sensor_rh is not None: outdoor_rh = sensor_rh
         wind_bearing, wind_speed = _weather_wind(self.hass, self.entry.data.get(CONF_OUTDOOR_WEATHER))
-        pollen = _float_state(self.hass, self.entry.data.get(CONF_POLLEN_ENTITY)) or 0.0
+        pollen = _pollen_level(self.hass, self.entry.data.get(CONF_POLLEN_ENTITY))
+        # 0.26.4.7 (user feedback): outdoor fine dust protection.
+        outdoor_pm25 = _outdoor_pm25_level(self.hass, self.entry.data.get(CONF_OUTDOOR_PM25_ENTITY))
+        self._outdoor_pm25 = outdoor_pm25
+        self._outdoor_pm25_blocked = outdoor_pm25_blocked(options, outdoor_pm25)
         now = dt_util.now(); results: dict[str, Any] = {}; changed = False; completed_sessions = []
         # Sensor recovery guard: integrations can restore after FreshAirIQ during a HA
         # restart. A brief all-source unavailable phase must not become a support
@@ -1058,23 +1145,23 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         weather_entity = self.entry.data.get(CONF_OUTDOOR_WEATHER)
         if weather_entity and (
             self._hourly_forecast_fetched_at is None
-            or (now - self._hourly_forecast_fetched_at).total_seconds() >= 600
+            or (now - self._hourly_forecast_fetched_at).total_seconds() >= FORECAST_REFRESH_SECONDS
         ):
-            fetched_forecast = await async_hourly_forecast(self.hass, weather_entity)
+            forecast_status: dict[str, Any] = {}
+            fetched_forecast = await async_hourly_forecast(self.hass, weather_entity, forecast_status)
             if fetched_forecast:
                 # Replace only with a valid provider response. A transient weather
                 # integration failure must not discard the last useful forecast.
                 self._hourly_forecast_cache = fetched_forecast
                 self._hourly_forecast_fetched_at = now
-            elif self._hourly_forecast_cache:
-                self.robustness.weather_failure()
-                # Keep the previous forecast but retry soon instead of treating an
-                # empty response like a successful ten-minute cache fill.
-                self._hourly_forecast_fetched_at = now - timedelta(seconds=540)
+                self._hourly_forecast_failures = 0
             else:
-                self.robustness.weather_failure()
-                # No usable cache exists yet: retry after roughly one minute.
-                self._hourly_forecast_fetched_at = now - timedelta(seconds=540)
+                # Keep any previous forecast. Retry after 1, 2, 5, 10, 30, then
+                # 60 minutes instead of every minute forever (0.26.4.7).
+                self.robustness.weather_failure(forecast_status.get("reason"))
+                self._hourly_forecast_failures += 1
+                delay = forecast_retry_delay_seconds(self._hourly_forecast_failures)
+                self._hourly_forecast_fetched_at = now - timedelta(seconds=FORECAST_REFRESH_SECONDS - delay)
         future_outdoor = future_boundaries(
             self._hourly_forecast_cache, now, outdoor_t, outdoor_rh
         ) if weather_entity else {}
@@ -1090,6 +1177,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._hourly_forecast_cache, now, outdoor_t, outdoor_rh, delays=planning_delays
         ) if weather_entity else {}
         cross = self._cross_ventilation_active()
+        # 0.26.4.8: current weather for the dashboard mascot (rain now / soon,
+        # snow, thunder, frost, heat) instead of "rain somewhere tonight".
+        weather_situation = weather_now(
+            outdoor_weather_state.state if outdoor_weather_state is not None else None,
+            self._hourly_forecast_cache if weather_entity else [], now, outdoor_t,
+        )
 
         rooms_cfg, runtime_room_issues = prepare_runtime_rooms(self.entry.data.get(CONF_ROOMS, []))
         self.robustness.runtime_config_issues = runtime_room_issues
@@ -1302,6 +1395,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             total_water=total_water,
             valid=valid,
         )
+        pollen_only_blocked = pollen_blocked
+        outdoor_air_cause = outdoor_veto_cause(pollen_only_blocked, self._outdoor_pm25_blocked)
+        # One outdoor-air veto for house status and recommendation (pollen and/or PM2.5).
+        pollen_blocked = bool(pollen_only_blocked or self._outdoor_pm25_blocked)
+        self._pollen_only_blocked = pollen_only_blocked
         status = house_status_fallback(
             actionable_potential=actionable_potential,
             active=active,
@@ -1789,6 +1887,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # recommendation. Canonical room actions are preserved as metadata and
         # this happens only after all physics/learning decisions are complete.
         synchronize_room_presentation_actions(intelligent_recommendation, results)
+        house_aligned_room_actions(intelligent_recommendation, results)
 
         # summaries in coordinator data so the dashboard payload stays small.
         for _room in results.values():
@@ -1888,7 +1987,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "soft_presence_score": occupancy.get("soft_presence_score", 0.0), "active_presence_sensors": occupancy.get("active_presence_sensors", []),
             "property_type": options.get("property_type", PROPERTY_HOUSE), "heating_system": options.get("heating_system"),
             "energy_price_per_kwh": energy_price_per_kwh_equivalent(options), "notifications_enabled": bool(options.get("notifications_enabled")), "estimated_moisture_generation_day_ml": current_daily_generation, "configured_moisture_generation_day_ml": expected_daily_generation, "estimated_generated_so_far_ml": expected_generated_so_far, "moisture_balance_today_ml": moisture_balance_today,
-            "pollen_enabled": bool(options.get("pollen_enabled")), "pollen_index": pollen, "pollen_limit": float(options.get("pollen_max", 4)), "pollen_blocked": pollen_blocked,
+            "pollen_enabled": bool(options.get("pollen_enabled")), "pollen_index": pollen, "pollen_limit": float(options.get("pollen_max", 4)), "pollen_blocked": pollen_only_blocked,
+            "outdoor_pm25": outdoor_pm25, "outdoor_pm25_limit": outdoor_pm25_limit(options), "outdoor_pm25_blocked": bool(self._outdoor_pm25_blocked), "outdoor_air_veto_cause": outdoor_air_cause,
+            "weather_now": weather_situation,
             "wind_bearing": wind_bearing, "wind_speed": wind_speed, "last_ventilation": self.store.data.get("last_ventilation"),
             "finalizing_measurements": finalizing_measurements,
             "forecast_validation": forecast_validation_status,
@@ -2125,7 +2226,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             total_potential_ml=realistic_actionable_potential,
             recommended_duration_min=recommended,
             pollen_index=pollen,
-            pollen_blocked=pollen_blocked,
+            pollen_blocked=bool(getattr(self, "_pollen_only_blocked", pollen_blocked)),
+            outdoor_pm25=getattr(self, "_outdoor_pm25", None),
+            outdoor_pm25_blocked=bool(getattr(self, "_outdoor_pm25_blocked", False)),
             night_forecast_ml=night_forecast,
         )
         intelligent_recommendation = refine_with_anticipation(
@@ -2215,6 +2318,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ``changed`` flag and the house-wide ``ventilation_group`` accumulator.
         """
         key = cfg["key"]; mem = self.store.room(key); ensure_behaviour_defaults(mem); include = bool(cfg.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))
+        outdoor_pm25 = getattr(self, "_outdoor_pm25", None)
         # v0.21.0.2: structure-only rooms are valid building metadata and may
         # intentionally have no climate/contact entities. Never dereference
         # mandatory climate keys before the calculation flag has been checked.
@@ -2654,8 +2758,11 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             mem["session_passage_contacts"] = list(active_passage_contacts) if opening_mode == "open" else []
             mem["session_learning_quarantined"] = bool(three_state_stale_contacts)
             mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006" if three_state_stale_contacts else None
-            mem["session_cover_learning_blocked"] = bool(cover_learning_guard.get("blocked"))
-            mem["session_cover_learning_guard"] = cover_learning_guard
+            # 0.26.4.9: judged over the whole airing, not by its first moment.
+            cover_guard.reset(mem)
+            cover_guard.tick(mem, cover_learning_guard, now)
+            mem["session_cover_learning_blocked"] = False
+            mem["session_cover_learning_guard"] = dict(cover_learning_guard, session=cover_guard.verdict(mem, float(cover_learning_guard.get("threshold", 20.0))))
             # Hotfix 0.20.2.6: a session prediction is frozen from the first
             # forecast calculated after the physical opening. Never carry a
             # previous recommendation/live forecast into a new session.
@@ -2819,10 +2926,13 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 changed = True
 
         if mem["session_active"]:
-            if cover_learning_guard.get("blocked"):
-                mem["session_cover_learning_blocked"] = True
-                mem["session_cover_learning_guard"] = cover_learning_guard
+            cover_guard.tick(mem, cover_learning_guard, now)
+            cover_verdict = cover_guard.verdict(mem, float(cover_learning_guard.get("threshold", 20.0)))
+            if bool(mem.get("session_cover_learning_blocked")) != cover_verdict["blocked"]:
                 changed = True
+            mem["session_cover_learning_blocked"] = cover_verdict["blocked"]
+            if cover_learning_guard.get("blocked") or cover_verdict["blocked"]:
+                mem["session_cover_learning_guard"] = dict(cover_learning_guard, session=cover_verdict)
             current_session_mode = "mechanical_exhaust" if mechanical_exhaust_active and not raw_contact_open else "combined" if mechanical_exhaust_active and raw_contact_open else ("cross" if cross and opening_mode == "open" else opening_mode)
             started_mode = str(mem.get("session_opening_mode") or current_session_mode)
             if current_session_mode not in {"unknown", "closed"} and started_mode != current_session_mode:
@@ -3130,8 +3240,16 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             moisture_source_label=str(moisture_source.get("label") or "Feuchtequelle"),
             moisture_source_confidence=int(moisture_source.get("confidence") or 0),
             moisture_source_rate_ml_min=float(moisture_source.get("source_rate_ml_min") or 0.0),
+            ventilation_latched=bool(mem.get("ventilation_candidate_latched", False)),
+            outdoor_pm25=outdoor_pm25,
         )
         result = evaluate_room(room_input, options, cross)
+        # 0.26.4.7 (GitHub #15): hysteresis memory. Only a closed room that
+        # recommended airing keeps the relaxed release thresholds.
+        _latched = bool(result.data_quality == "ok" and result.ventilation_candidate and has_ventilation_contact and not mem["session_active"] and not is_open)
+        if bool(mem.get("ventilation_candidate_latched", False)) != _latched:
+            mem["ventilation_candidate_latched"] = _latched
+            changed = True
 
         # Recommendation Engine v2 and the live forecast both use
         # persistence and trend. Forecast learning is based on absolute
@@ -3227,7 +3345,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         mem["last_measurement_at"] = now.isoformat()
         mem["last_measurement_valid"] = result.data_quality == "ok"
-        action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed)
+        action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed, outdoor_pm25=outdoor_pm25, ventilation_latched=bool(room_input.ventilation_latched))
         if explicit_tilted and action not in {"Close", "Check sensor"}:
             # A tilted three-state session is a valid, separately learned
             # ventilation mode. Do not silently upgrade a user's deliberate
@@ -3320,7 +3438,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 horizon_min=forecast_horizon,
                 target_ah=target_ah,
                 cap_positive_to_target=forecast_horizon > 5,
-                min_return_next_5_min_ml=float(options.get("min_return_next_5_min_ml", 25.0)),
+                min_return_next_5_min_ml=scaled_min_return(options.get("min_return_next_5_min_ml", 25.0), cfg[CONF_ROOM_VOLUME]),
                 max_temp_loss_next_5_min_c=float(options.get("max_temp_loss_next_5_min_c", 0.6)),
                 min_efficiency_ml_per_01c=float(options.get("min_efficiency_ml_per_01c", 8.0)),
                 min_duration_min=float(options.get("min_duration_min", 3.0)),
@@ -3487,7 +3605,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         horizon_min=remaining,
                         target_ah=target_ah,
                         cap_positive_to_target=remaining > 5,
-                        min_return_next_5_min_ml=float(options.get("min_return_next_5_min_ml", 25.0)),
+                        min_return_next_5_min_ml=scaled_min_return(options.get("min_return_next_5_min_ml", 25.0), cfg[CONF_ROOM_VOLUME]),
                         max_temp_loss_next_5_min_c=float(options.get("max_temp_loss_next_5_min_c", 0.6)),
                         min_efficiency_ml_per_01c=float(options.get("min_efficiency_ml_per_01c", 8.0)),
                         min_duration_min=float(options.get("min_duration_min", 3.0)),
@@ -3565,6 +3683,20 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         cooldown_override = bool(strong_new_source or weather_override_allowed or urgent_override)
         stabilizing = stabilization
         recently_ventilated = minutes_since_vent is not None and minutes_since_vent < repeat_cooldown and not cooldown_override
+        cooldown_demoted = bool(recently_ventilated and result.action == "Ventilate" and not is_open and not mem["session_active"])
+        if cooldown_demoted:
+            # 0.26.4.7 (GitHub #15): the house recommendation already skipped
+            # rooms inside the repeat cooldown, but the room's own action (sensor,
+            # dashboard tile, push, automation event) still said "Ventilate" a
+            # few minutes after "Close". The room now shows the same decision.
+            # Urgent air quality, a strong new moisture source or clearly better
+            # weather still re-arm the room immediately (cooldown_override).
+            result.action = "Wait"
+            reason_list.append(
+                f"Vor {max(round(minutes_since_vent), 1)} min gelüftet: eine erneute Lüftungsempfehlung folgt erst nach "
+                f"der Wiederholungssperre von {round(repeat_cooldown)} min, außer bei kritischer Luftqualität, einer starken neuen Feuchtequelle oder deutlich trockenerer Außenluft"
+            )
+            result.reason = "; ".join(reason_list)
         if (
             include and result.data_quality == "ok" and not is_open and not mem.get("session_active")
             and not moisture_source.get("active") and not moisture_source.get("recovery")
@@ -3635,7 +3767,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             elif goal.get("id") == "temperature":
                 goal["achievable_now"] = bool(result.cooling_candidate or (result.active and ref_t < t))
             elif goal.get("id") == "co2":
-                goal["achievable_now"] = bool(co2_available and co2 >= float(options.get("co2_warn", 1000.0)) and not (options.get("pollen_enabled", False) and options.get("pollen_strict_veto", True) and pollen > float(options.get("pollen_max", 4.0))))
+                goal["achievable_now"] = bool(co2_available and co2 >= float(options.get("co2_warn", 1000.0)) and not (options.get("pollen_enabled", False) and options.get("pollen_strict_veto", True) and pollen > float(options.get("pollen_max", 4.0))) and not outdoor_pm25_blocked(options, outdoor_pm25))
         mem["goal_trend_sample"] = {"at": now.isoformat(), "rh": rh, "co2": co2, "temp": t}
 
         results[key] = result.as_dict() | {
@@ -3712,7 +3844,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "moisture_source_ah_rise_g_m3": float(moisture_source.get("absolute_humidity_rise_g_m3", 0.0)), "moisture_source_window_min": float(moisture_source.get("window_min", 0.0)),
             "moisture_source_started_at": moisture_source.get("started_at"), "moisture_source_last_ended_at": moisture_source.get("last_ended_at"),
             "cover_learning_blocked": bool(mem.get("session_cover_learning_blocked")), "cover_learning_guard": mem.get("session_cover_learning_guard") if isinstance(mem.get("session_cover_learning_guard"), dict) else cover_learning_guard,
-            "recommendation_reasons": ([*reason_list, f"Rollladen/Jalousie stärker als {float(cover_learning_guard.get('threshold', 20.0)):.0f} % geschlossen: Lüftung wird bilanziert, aber nicht als Lernprobe verwendet"] if mem.get("session_active") and mem.get("session_cover_learning_blocked") else reason_list), "humidity_trend_pct_h": round(humidity_trend, 2), "humidity_high_duration_min": round(high_duration, 1),
+            "recommendation_reasons": ([*reason_list, f"Rollladen/Jalousie stärker als {float(cover_learning_guard.get('threshold', 20.0)):.0f} % geschlossen: Lüftung wird bilanziert, aber nicht als Lernprobe verwendet"] if mem.get("session_active") and cover_learning_guard.get("blocked") else reason_list), "humidity_trend_pct_h": round(humidity_trend, 2), "humidity_high_duration_min": round(high_duration, 1),
             "last_measurement_at": mem.get("last_measurement_at"), "last_measurement_valid": mem.get("last_measurement_valid"),
             "measurement_frame_quality": measurement_frame.get("quality"), "measurement_frame_learning_eligible": bool(measurement_frame.get("learning_eligible")),
             "measurement_frame_skew_s": measurement_frame.get("skew_s"), "measurement_frame_full_skew_s": measurement_frame.get("full_skew_s"), "measurement_frame_reference_skew_s": measurement_frame.get("reference_skew_s"), "measurement_frame_max_age_s": measurement_frame.get("max_age_s"),
@@ -3748,7 +3880,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ),
             "close_decision_ready": bool(result.close_decision_ready),
             "last_learning_at": mem.get("last_learning_at"), "last_learning_valid": mem.get("last_learning_valid"),
-            "stabilizing": stabilizing, "recently_ventilated": recently_ventilated, "repeat_cooldown_override": cooldown_override,
+            "stabilizing": stabilizing, "recently_ventilated": recently_ventilated, "repeat_cooldown_demoted": cooldown_demoted, "repeat_cooldown_override": cooldown_override,
             "minutes_since_last_ventilation": round(minutes_since_vent,1) if minutes_since_vent is not None else None,
             "repeat_humidity_rebound_percent": round(humidity_rebound, 1) if humidity_rebound is not None else None,
             "history_14d": self.store.room_history_days(key, int(options.get("statistics_days", 14))), "temperature_history_14d": self.store.room_temperature_points(key, int(options.get("statistics_days", 14))), "humidity_history_14d": self.store.room_humidity_points(key, int(options.get("statistics_days", 14))),
@@ -3758,6 +3890,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and options.get("pollen_strict_veto", True)
             and pollen > float(options.get("pollen_max", 4.0))
         )
+        results[key]["outdoor_pm25_blocked"] = outdoor_pm25_blocked(options, outdoor_pm25)
         interventions = build_interventions(
             room=results[key],
             config=cfg,
@@ -3823,7 +3956,13 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.runtime_health.observe_metric("coordinator_phase_notifications_ms", (perf_counter() - _notification_started) * 1000.0, now, unit="ms")
         changed = changed or notification_changed
         _persistence_started = perf_counter()
-        if changed: await self.store.async_save()
+        if changed:
+            # Completed sessions and notification bookkeeping are persisted at
+            # once; routine learning/runtime updates are coalesced (0.26.4.6).
+            if completed_sessions or notification_changed:
+                await self.store.async_save()
+            else:
+                await self.store.async_save_deferred()
         self.runtime_health.observe_metric("coordinator_phase_persistence_ms", (perf_counter() - _persistence_started) * 1000.0, now, unit="ms")
         data["runtime_health"] = self.runtime_health.snapshot
         _diagnostics_started = perf_counter()
@@ -3881,6 +4020,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "session_reference_moisture_reversal": False,
             "session_cover_learning_blocked": False,
             "session_cover_learning_guard": {},
+            **cover_guard.MEMORY_DEFAULTS,
             "session_cross_active": False,
             "session_three_state_unknown_observed": False,
             "session_cross_seconds": 0.0,
@@ -4154,16 +4294,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         mem["session_result_ml"] = session_removed
         source_contaminated = bool(mem.get("session_moisture_source_detected"))
         reference_moisture_reversal = bool(mem.get("session_reference_moisture_reversal"))
-        cover_learning_blocked = bool(mem.get("session_cover_learning_blocked"))
+        cover_session = cover_guard.verdict(mem, float(self.options.get("cover_learning_max_closed_percent", 20.0) or 20.0))
+        cover_learning_blocked = bool(cover_session["blocked"])
+        mem["session_cover_learning_blocked"] = cover_learning_blocked
         learning_contaminated = source_contaminated or reference_moisture_reversal
         frame_learning_eligible = session_activity_eligible
         if cover_learning_blocked:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
-            guard = mem.get("session_cover_learning_guard") if isinstance(mem.get("session_cover_learning_guard"), dict) else {}
-            threshold = float(guard.get("threshold", self.options.get("cover_learning_max_closed_percent", 20.0)) or 20.0)
-            affected = list(guard.get("affected") or [])
-            max_closed = max((float(row.get("closed_percent", 0.0) or 0.0) for row in affected if isinstance(row, dict)), default=0.0)
-            diagnosis = f"Lernmessung übersprungen: Rollladen/Jalousie war {max_closed:.0f} % geschlossen und damit stärker als die Lern-Grenze von {threshold:.0f} %. Die Lüftung wurde weiterhin erkannt und bilanziert."
+            diagnosis = cover_guard.diagnosis(cover_session)
             valid = False
         elif learning_contaminated:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])

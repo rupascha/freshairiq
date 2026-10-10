@@ -21,6 +21,14 @@ from .const import (
 )
 from .energy import exchanged_air_fraction
 
+# Post-close rebound guard (0.26.4.7): minutes after closing in which a newly
+# detected source needs a stronger signature, and that signature.
+POST_CLOSE_REBOUND_GUARD_MIN = 20.0
+POST_CLOSE_REBOUND_MIN_AH_RISE = 1.2
+POST_CLOSE_REBOUND_MIN_GENERATED_ML = 40.0
+POST_CLOSE_REBOUND_CONFIRM_MIN = 3.0
+POST_CLOSE_REBOUND_CONFIRM_AH_RISE = 0.25
+
 _LABELS = {
     MOISTURE_SOURCE_SHOWER: "Dusche",
     MOISTURE_SOURCE_BATH: "Bad",
@@ -189,6 +197,8 @@ def update_moisture_source(
         )
     if add:
         points.append(current)
+    if window_open:
+        memory["moisture_source_last_open_at"] = now.isoformat()
 
     cutoff = now - timedelta(minutes=20)
     points = [x for x in points if (_dt(x.get("at")) or now) >= cutoff][-36:]
@@ -274,6 +284,46 @@ def update_moisture_source(
             and (pattern.get("ah_monotonic", 0.0) >= 0.66 or pattern.get("samples", 0.0) < 3)
         )
         detected = bool(matches) or generic_strong
+
+        # 0.26.4.7 (support case "Lüften empfohlen 5 min nach dem Lüften"):
+        # after a long airing, walls, towels and furniture release moisture again
+        # for several minutes once the window is closed. That rebound looks like a
+        # weak bath/shower start (+0.3…0.9 g/m³). Right after closing, a new source
+        # therefore needs either a clearly stronger signature or confirmation: the
+        # humidity must keep rising for a few more minutes. A rebound flattens out,
+        # a running shower keeps climbing and is still recognised.
+        last_open = _dt(memory.get("moisture_source_last_open_at"))
+        minutes_since_open = (now - last_open).total_seconds() / 60.0 if last_open else None
+        in_rebound_window = (
+            not active_before
+            and not window_open
+            and minutes_since_open is not None
+            and 0 <= minutes_since_open <= POST_CLOSE_REBOUND_GUARD_MIN
+        )
+        candidate = memory.get("moisture_source_rebound_candidate")
+        candidate = candidate if isinstance(candidate, dict) else None
+        if detected and in_rebound_window and not (
+            ah_rise >= POST_CLOSE_REBOUND_MIN_AH_RISE and generated_ml >= POST_CLOSE_REBOUND_MIN_GENERATED_ML
+        ):
+            candidate_at = _dt(candidate.get("at")) if candidate else None
+            try:
+                candidate_ah = float(candidate.get("ah")) if candidate else None
+            except (TypeError, ValueError):
+                candidate_ah = None
+            confirmed = bool(
+                candidate_at is not None
+                and candidate_ah is not None
+                and (now - candidate_at).total_seconds() / 60.0 >= POST_CLOSE_REBOUND_CONFIRM_MIN
+                and float(absolute_humidity_g_m3) - candidate_ah >= POST_CLOSE_REBOUND_CONFIRM_AH_RISE
+            )
+            if not confirmed:
+                detected = False
+                if candidate_at is None:
+                    memory["moisture_source_rebound_candidate"] = {"at": now.isoformat(), "ah": round(float(absolute_humidity_g_m3), 4)}
+            else:
+                memory["moisture_source_rebound_candidate"] = None
+        elif candidate is not None:
+            memory["moisture_source_rebound_candidate"] = None
 
         if detected:
             label, identified_source, source_message = _identify_source(matches)

@@ -9,13 +9,15 @@
           "outdoor_weather": "Local weather entity (recommended)",
           "outdoor_temperature": "Outdoor temperature sensor (optional)",
           "outdoor_humidity": "Outdoor humidity sensor (optional)",
-          "pollen_entity": "Pollen index sensor (optional)"
+          "pollen_entity": "Pollen sensors (several allowed)",
+          "outdoor_pm25_entity": "Outdoor fine dust – PM2.5 sensors (several allowed)"
         },
         "data_description": {
           "outdoor_weather": "Optional. Recommended source for outdoor air and weather forecasts. It can be added at any time after installation.",
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
-          "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
+          "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled. Several sensors are allowed (e.g. one per pollen type); the highest current value counts.",
+          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
         }
       },
       "room": {
@@ -151,13 +153,15 @@
           "outdoor_weather": "Local weather entity (recommended)",
           "outdoor_temperature": "Outdoor temperature sensor (optional)",
           "outdoor_humidity": "Outdoor humidity sensor (optional)",
-          "pollen_entity": "Pollen index sensor (optional)"
+          "pollen_entity": "Pollen sensors (several allowed)",
+          "outdoor_pm25_entity": "Outdoor fine dust – PM2.5 sensors (several allowed)"
         },
         "data_description": {
           "outdoor_weather": "Recommended default source for current outdoor-air data.",
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
-          "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled."
+          "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled. Several sensors are allowed (e.g. one per pollen type); the highest current value counts.",
+          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
         }
       }
     },
@@ -400,13 +404,15 @@
           "outdoor_weather": "Local weather entity",
           "outdoor_temperature": "Outdoor temperature sensor (optional)",
           "outdoor_humidity": "Outdoor humidity sensor (optional)",
-          "pollen_entity": "Pollen index sensor (optional)"
+          "pollen_entity": "Pollen sensors (several allowed)",
+          "outdoor_pm25_entity": "Outdoor fine dust – PM2.5 sensors (several allowed)"
         },
         "data_description": {
           "outdoor_weather": "Recommended when your weather entity provides reliable temperature and humidity values.",
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor. This sensor pair then replaces the weather entity for current outdoor air.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
-          "pollen_entity": "Optional numeric pollen index. Used only when pollen consideration is enabled."
+          "pollen_entity": "Optional numeric pollen index. Used only when pollen consideration is enabled. Several sensors are allowed (e.g. one per pollen type); the highest current value counts.",
+          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
         }
       },
       "rooms": {
@@ -1431,6 +1437,7 @@
           "adult_presence_entities": "Adult phone/person entities (optional)",
           "child_presence_entities": "Child phone/person entities (optional)",
           "untracked_follow_household": "Residents without trackers follow household presence",
+          "presence_night_hold": "Count residents as home at night when their phone goes off",
           "presence_sensor_entities": "Presence/motion sensors",
           "pet_safe_presence_entities": "Pet-safe presence sensors",
           "pets_in_household": "Pets in household",
@@ -1450,6 +1457,7 @@
           "pet_safe_presence_entities": "Sensors from the selection above that reliably detect real human presence even with pets. These signals may be weighted more strongly in pet mode.",
           "pets_in_household": "Enable when pets can trigger motion sensors. Conventional motion sensors are then weighted much less strongly to avoid phantom occupants.",
           "untracked_follow_household": "If at least one relevant tracker is definitely home, residents without trackers may be assumed present. If all relevant trackers are definitely away, they may be assumed absent. Uncertain states are handled conservatively.",
+          "presence_night_hold": "For households that switch phones off at night: if a tracker only reports \"away\" during the night window, the person still counts as home until the night ends. Anyone who was already away before the night started stays away.",
           "adult_resident_names": "Separate names with commas and enter them in the same order as the adult trackers. If Paul is selected first and Lydia second above, enter “Paul, Lydia”. Residents without their own tracker may be added, e.g. “Paul, Lydia, Grandma”. Names stay local and are used only for understandable personal assignment.",
           "child_resident_names": "Separate names with commas and enter them in the same order as the child trackers, e.g. “Fiona, Maya”. Children without their own tracker may also be named. Names stay local; FreshAirIQ does not use them for direct action requests to children."
         }
@@ -1559,36 +1567,36 @@
           "room_position_30": "30. Room"
         },
         "data_description": {
-          "room_position_1": "Position 1 in the room order. Select every room exactly once.",
-          "room_position_2": "Position 2 in the room order. Select every room exactly once.",
-          "room_position_3": "Position 3 in the room order. Select every room exactly once.",
-          "room_position_4": "Position 4 in the room order. Select every room exactly once.",
-          "room_position_5": "Position 5 in the room order. Select every room exactly once.",
-          "room_position_6": "Position 6 in the room order. Select every room exactly once.",
-          "room_position_7": "Position 7 in the room order. Select every room exactly once.",
-          "room_position_8": "Position 8 in the room order. Select every room exactly once.",
-          "room_position_9": "Position 9 in the room order. Select every room exactly once.",
-          "room_position_10": "Position 10 in the room order. Select every room exactly once.",
-          "room_position_11": "Position 11 in the room order. Select every room exactly once.",
-          "room_position_12": "Position 12 in the room order. Select every room exactly once.",
-          "room_position_13": "Position 13 in the room order. Select every room exactly once.",
-          "room_position_14": "Position 14 in the room order. Select every room exactly once.",
-          "room_position_15": "Position 15 in the room order. Select every room exactly once.",
-          "room_position_16": "Position 16 in the room order. Select every room exactly once.",
-          "room_position_17": "Position 17 in the room order. Select every room exactly once.",
-          "room_position_18": "Position 18 in the room order. Select every room exactly once.",
-          "room_position_19": "Position 19 in the room order. Select every room exactly once.",
-          "room_position_20": "Position 20 in the room order. Select every room exactly once.",
-          "room_position_21": "Position 21 in the room order. Select every room exactly once.",
-          "room_position_22": "Position 22 in the room order. Select every room exactly once.",
-          "room_position_23": "Position 23 in the room order. Select every room exactly once.",
-          "room_position_24": "Position 24 in the room order. Select every room exactly once.",
-          "room_position_25": "Position 25 in the room order. Select every room exactly once.",
-          "room_position_26": "Position 26 in the room order. Select every room exactly once.",
-          "room_position_27": "Position 27 in the room order. Select every room exactly once.",
-          "room_position_28": "Position 28 in the room order. Select every room exactly once.",
-          "room_position_29": "Position 29 in the room order. Select every room exactly once.",
-          "room_position_30": "Position 30 in the room order. Select every room exactly once."
+          "room_position_1": "Position 1 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_2": "Position 2 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_3": "Position 3 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_4": "Position 4 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_5": "Position 5 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_6": "Position 6 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_7": "Position 7 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_8": "Position 8 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_9": "Position 9 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_10": "Position 10 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_11": "Position 11 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_12": "Position 12 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_13": "Position 13 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_14": "Position 14 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_15": "Position 15 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_16": "Position 16 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_17": "Position 17 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_18": "Position 18 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_19": "Position 19 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_20": "Position 20 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_21": "Position 21 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_22": "Position 22 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_23": "Position 23 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_24": "Position 24 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_25": "Position 25 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_26": "Position 26 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_27": "Position 27 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_28": "Position 28 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_29": "Position 29 in the room order. Picking a different room moves it here; the others shift automatically.",
+          "room_position_30": "Position 30 in the room order. Picking a different room moves it here; the others shift automatically."
         }
       },
       "contact_delays_room": {
@@ -1614,6 +1622,8 @@
           "pollen_enabled": "Consider pollen",
           "pollen_max": "Maximum pollen index",
           "pollen_strict_veto": "Block normal ventilation above limit",
+          "outdoor_pm25_enabled": "Consider outdoor fine dust",
+          "outdoor_pm25_max": "Maximum outdoor fine dust (PM2.5)",
           "wind_orientation_enabled": "Use window orientation with wind data",
           "voc_warn": "VOC warning threshold",
           "voc_critical": "Critical VOC threshold",
@@ -1632,6 +1642,8 @@
           "pollen_enabled": "Requires a pollen-index sensor under the outdoor-air source.",
           "pollen_max": "Above this index, normal ventilation is postponed when the veto is active; critical mould/CO₂ risk remains prioritized.",
           "pollen_strict_veto": "Off = pollen is displayed but does not block a recommendation.",
+          "outdoor_pm25_enabled": "Only active when an outdoor PM2.5 sensor is selected under Outdoor air source.",
+          "outdoor_pm25_max": "Above this value normal airing is postponed (keep windows closed for now). Critical CO₂ or mould risk keeps priority. 35 µg/m³ is roughly the step from “moderate” to “unhealthy for sensitive groups”.",
           "wind_orientation_enabled": "Uses only available local wind data; without wind direction the factor remains neutral.",
           "voc_warn": "Threshold for optional VOC/TVOC-based supplemental recommendations. It does not change canonical ventilation calculations.",
           "voc_critical": "Critical VOC threshold for diagnostics and future prioritisation. It does not change the existing ventilation physics.",
@@ -1993,12 +2005,14 @@
             "data": {
               "presence_sensor_entities": "Presence/motion sensors",
               "pet_safe_presence_entities": "Pet-safe presence sensors",
-              "untracked_follow_household": "Residents without trackers follow household status"
+              "untracked_follow_household": "Residents without trackers follow household status",
+              "presence_night_hold": "Count residents as home at night when their phone goes off"
             },
             "data_description": {
               "presence_sensor_entities": "Soft supporting signals for presence.",
               "pet_safe_presence_entities": "Sensors that reliably indicate human presence even when pets are present.",
-              "untracked_follow_household": "Estimates residents without trackers from the reliable household presence state."
+              "untracked_follow_household": "Estimates residents without trackers from the reliable household presence state.",
+              "presence_night_hold": "For households that switch phones off at night: if a tracker only reports \"away\" during the night window, the person still counts as home until the night ends. Anyone who was already away before the night started stays away."
             }
           },
           "personalisation": {
@@ -2101,6 +2115,7 @@
           "presence_sensor_entities": "Presence/motion sensors",
           "pet_safe_presence_entities": "Pet-safe presence sensors",
           "untracked_follow_household": "Residents without trackers follow household status",
+          "presence_night_hold": "Count residents as home at night when their phone goes off",
           "personalisation_enabled": "Personal recommendations",
           "thermal_preference": "Default thermal preference",
           "personal_priority": "Personal priority",
@@ -2121,6 +2136,7 @@
           "presence_sensor_entities": "Soft supporting signals for presence.",
           "pet_safe_presence_entities": "Sensors that reliably indicate human presence even when pets are present.",
           "untracked_follow_household": "Estimates residents without trackers from the reliable household presence state.",
+          "presence_night_hold": "For households that switch phones off at night: if a tracker only reports \"away\" during the night window, the person still counts as home until the night ends. Anyone who was already away before the night started stays away.",
           "personalisation_enabled": "Uses household context for more suitable recommendations; health and safety limits remain unchanged.",
           "thermal_preference": "Household comfort default. Individual profiles may override it.",
           "personal_priority": "Weights only non-safety-critical comfort/energy decisions.",
@@ -2159,12 +2175,14 @@
             "data": {
               "presence_sensor_entities": "Presence/motion sensors",
               "pet_safe_presence_entities": "Pet-safe presence sensors",
-              "untracked_follow_household": "Residents without trackers follow household status"
+              "untracked_follow_household": "Residents without trackers follow household status",
+              "presence_night_hold": "Count residents as home at night when their phone goes off"
             },
             "data_description": {
               "presence_sensor_entities": "Soft supporting signals for presence.",
               "pet_safe_presence_entities": "Sensors that reliably indicate human presence even when pets are present.",
-              "untracked_follow_household": "Estimates residents without trackers from the reliable household presence state."
+              "untracked_follow_household": "Estimates residents without trackers from the reliable household presence state.",
+              "presence_night_hold": "For households that switch phones off at night: if a tracker only reports \"away\" during the night window, the person still counts as home until the night ends. Anyone who was already away before the night started stays away."
             }
           },
           "personalisation": {
@@ -2617,7 +2635,7 @@
       },
       "room_goals": {
         "title": "Prioritize ventilation goals",
-        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Each goal must appear exactly once.",
+        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically.",
         "data": {
           "wizard_back": "← Back to previous page",
           "goal_priority_1": "1. Priority",
@@ -2632,16 +2650,16 @@
           "goal_priority_10": "10. Priority"
         },
         "data_description": {
-          "goal_priority_1": "Priority 1. Select each available goal exactly once.",
-          "goal_priority_2": "Priority 2. Select each available goal exactly once.",
-          "goal_priority_3": "Priority 3. Select each available goal exactly once.",
-          "goal_priority_4": "Priority 4. Select each available goal exactly once.",
-          "goal_priority_5": "Priority 5. Select each available goal exactly once.",
-          "goal_priority_6": "Priority 6. Select each available goal exactly once.",
-          "goal_priority_7": "Priority 7. Select each available goal exactly once.",
-          "goal_priority_8": "Priority 8. Select each available goal exactly once.",
-          "goal_priority_9": "Priority 9. Select each available goal exactly once.",
-          "goal_priority_10": "Priority 10. Select each available goal exactly once."
+          "goal_priority_1": "Priority 1. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift automatically."
         }
       },
       "recommendation_priorities": {
@@ -2658,7 +2676,7 @@
       },
       "recommendation_priority_order": {
         "title": "Rank priorities",
-        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Each goal must appear exactly once.",
+        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically.",
         "data": {
           "wizard_back": "← Back to previous page",
           "goal_priority_1": "1. Priority",
@@ -2673,20 +2691,20 @@
           "goal_priority_10": "10. Priority"
         },
         "data_description": {
-          "goal_priority_1": "Priority 1. Select each available goal exactly once.",
-          "goal_priority_2": "Priority 2. Select each available goal exactly once.",
-          "goal_priority_3": "Priority 3. Select each available goal exactly once.",
-          "goal_priority_4": "Priority 4. Select each available goal exactly once.",
-          "goal_priority_5": "Priority 5. Select each available goal exactly once.",
-          "goal_priority_6": "Priority 6. Select each available goal exactly once.",
-          "goal_priority_7": "Priority 7. Select each available goal exactly once.",
-          "goal_priority_8": "Priority 8. Select each available goal exactly once.",
-          "goal_priority_9": "Priority 9. Select each available goal exactly once.",
-          "goal_priority_10": "Priority 10. Select each available goal exactly once."
+          "goal_priority_1": "Priority 1. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift automatically."
         }
       },
       "add_goals": {
-        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Each goal must appear exactly once.",
+        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically.",
         "data": {
           "goal_priority_1": "1. Priority",
           "goal_priority_2": "2. Priority",
@@ -2700,16 +2718,16 @@
           "goal_priority_10": "10. Priority"
         },
         "data_description": {
-          "goal_priority_1": "Priority 1. Select each available goal exactly once.",
-          "goal_priority_2": "Priority 2. Select each available goal exactly once.",
-          "goal_priority_3": "Priority 3. Select each available goal exactly once.",
-          "goal_priority_4": "Priority 4. Select each available goal exactly once.",
-          "goal_priority_5": "Priority 5. Select each available goal exactly once.",
-          "goal_priority_6": "Priority 6. Select each available goal exactly once.",
-          "goal_priority_7": "Priority 7. Select each available goal exactly once.",
-          "goal_priority_8": "Priority 8. Select each available goal exactly once.",
-          "goal_priority_9": "Priority 9. Select each available goal exactly once.",
-          "goal_priority_10": "Priority 10. Select each available goal exactly once."
+          "goal_priority_1": "Priority 1. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift automatically.",
+          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift automatically."
         }
       }
     },
@@ -2822,7 +2840,7 @@
           "ventilation_running": "Ventilation running",
           "close_windows": "Close windows",
           "cooling_recommended": "Cooling recommended",
-          "pollen_warning": "Pollen warning",
+          "pollen_warning": "Outdoor air polluted (pollen/fine dust)",
           "sensor_error": "Sensor error",
           "sensor_recovering": "Sensors recovering",
           "wait": "Wait",
@@ -2976,6 +2994,24 @@
       },
       "forecast_confidence": {
         "name": "Forecast confidence"
+      },
+      "house_aligned_action": {
+        "name": "Recommendation",
+        "state": {
+          "ventilate": "Ventilate",
+          "continue_ventilating": "Keep ventilating",
+          "close": "Close",
+          "ventilate_for_cooling": "Ventilate for cooling",
+          "do_not_ventilate": "Do not ventilate",
+          "wait": "Wait",
+          "okay": "All good",
+          "check_sensor": "Check sensor",
+          "monitor_only": "Monitor only",
+          "ventilate_later": "Airing possible · wait for now",
+          "ventilate_indirectly": "Ventilate via a connected room",
+          "open_fully": "Open fully",
+          "unknown": "Unknown"
+        }
       }
     },
     "binary_sensor": {

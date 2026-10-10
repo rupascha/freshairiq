@@ -8,6 +8,8 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any
 
+from .model import min_return_volume_factor
+
 
 _KINDS = {"okay", "sensor", "ventilate", "wait", "prepare", "pollen_wait", "continue", "close"}
 _STATUS_BY_KIND = {
@@ -77,17 +79,37 @@ def _reachable_open_non_humidity_goal(room: dict[str, Any]) -> bool:
     return False
 
 
+def _elapsed_min(room: dict[str, Any]) -> float | None:
+    """Session age of an active room; ``None`` when unknown (never blocks)."""
+    raw = room.get("session_elapsed_min")
+    if raw is None or isinstance(raw, bool):
+        return None
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value == value and abs(value) != float("inf") else None
+
+
 def aggregate_close_allowed(
     rooms: list[dict[str, Any]],
     *,
     low_return: bool,
     thermal_bad: bool,
+    min_duration_min: float | None = None,
 ) -> bool:
     """Allow an aggregate close only after every affected room released its gate.
 
     Hard/thermal protection and unanimous room-close decisions remain dominant.
     Moisture low-return alone is suppressed while another configured goal is
     still open and achievable in any participating room.
+
+    0.26.4.7 (support exports): a single room never closes before the configured
+    minimum airing time, but the floor/house aggregate did. Opening one window
+    after another therefore flipped the advice between "weiterlüften" and
+    "schließen" every 10 seconds, one minute after the first window was opened.
+    The aggregate now honours the same minimum duration for every participating
+    room (protection limits and unanimous room decisions still close at once).
     """
     if not aggregate_close_gate_ready(rooms):
         return False
@@ -95,6 +117,11 @@ def aggregate_close_allowed(
         return True
     if all(str(room.get("action")) == "Close" for room in rooms):
         return True
+    elapsed = [_elapsed_min(room) for room in rooms]
+    if min_duration_min is not None and any(
+        value is not None and value < float(min_duration_min) for value in elapsed
+    ):
+        return False
     if thermal_bad:
         return True
     if low_return and any(_reachable_open_non_humidity_goal(room) for room in rooms):
@@ -168,7 +195,9 @@ def stabilise_recommendation(
         # consistency guard only; hard max-duration and poor thermal-efficiency
         # closes remain authoritative.
         profile = str(options.get("operating_profile", "comfort"))
-        min_return = _f(options.get("min_return_next_5_min_ml"), 25.0)
+        min_return = _f(options.get("min_return_next_5_min_ml"), 25.0) * min_return_volume_factor(
+            sum(max(_f(r.get("volume_m3")), 0.0) for r in closing)
+        )
         max_temp_loss = _f(options.get("max_temp_loss_next_5_min_c"), 0.6)
         min_efficiency = _f(options.get("min_efficiency_ml_per_01c"), 8.0)
         if profile == "dehumidify":

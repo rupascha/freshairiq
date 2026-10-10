@@ -60,7 +60,10 @@ from custom_components.freshairiq.telemetry import FreshAirIQDiagnosticsClient
 class _Entry:
     entry_id = "entry"
     def __init__(self, options=None):
-        self.options = options or {}
+        # Since 0.26.3 scheduled uploads require an explicit consent decision.
+        # These transport tests exercise an opted-in installation; the consent
+        # gate itself is covered by the dedicated consent tests.
+        self.options = {"diagnostics_consent": "granted", **(options or {})}
 
 
 class _Recorder:

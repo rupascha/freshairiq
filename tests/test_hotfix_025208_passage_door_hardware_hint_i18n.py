@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+from tests.frontend_source import card_text
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_devices_services_passage_option_is_precise_and_bilingual():
@@ -14,7 +15,7 @@ def test_devices_services_passage_option_is_precise_and_bilingual():
     assert "genuine three-state sensor" in base_blob
 
 def test_dashboard_passage_option_has_same_hardware_warning_and_english_bridge():
-    ui = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    ui = card_text()
     for text in ("Tür wird als Durchgang genutzt und von außen zugezogen", "echter Drei-Zustands-Sensor am Türbeschlag", "Nicht für Drei-Zustands-Helfer", "Door is used as a passage and pulled shut from outside", "genuine three-state sensor on the door hardware", "Do not enable this option for three-state helpers"):
         assert text in ui
 

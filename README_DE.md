@@ -140,6 +140,10 @@ Für Energieabschätzungen können Wärmepumpe, Gas, Heizöl, Fernwärme oder Di
 
 # Beta installieren
 
+## Eigene Automationen (Node-RED, Alexa, Lüfter)
+
+FreshAirIQ schaltet nie selbst – aber du kannst auf jede Empfehlung reagieren: über die Raum-Entitäten (z. B. `sensor.schlafzimmer_aktion`) oder über die Ereignisse `freshairiq_room_action`, `freshairiq_house_recommendation` und `freshairiq_mould_risk`, die einen fertigen Ansagetext („Schlafzimmer: Bitte Fenster schließen.“) mitliefern. Beispiele für Alexa, Ablüfter und Node-RED, zwei fertige Blueprints sowie Tipps zu Kipp-Kontakten und Räumen ohne Fenster: **[docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)**.
+
 ## Voraussetzungen
 
 - Home Assistant **2026.8.0 oder neuer**
@@ -161,6 +165,58 @@ Für Energieabschätzungen können Wärmepumpe, Gas, Heizöl, Fernwärme oder Di
 ## Manuelle Installation
 
 Kopiere `custom_components/freshairiq` vollständig nach `/config/custom_components/freshairiq`, starte Home Assistant neu und füge FreshAirIQ anschließend unter **Einstellungen → Geräte & Dienste** hinzu.
+
+## Fensterkontakte: 2 Zustände, 3 Zustände – oder zwei Kontakte an einem Fenster
+
+FreshAirIQ erkennt die Art deines Fensterkontakts **automatisch**:
+
+- **2 Zustände** (`binary_sensor`, auf/zu) – wird ganz normal als Fenster gelesen.
+- **3 Zustände** (geschlossen / gekippt / offen, z. B. Homematic-Drehgriff) – FreshAirIQ lernt *gekippt* und *offen* getrennt.
+
+**Du hast zwei 2-Zustands-Kontakte an einem Fenster** (unten = Fenster gedreht/offen, oben = Fenster gekippt)? Dann fasst du sie in Home Assistant mit einem **Template-Helfer** zu einem 3-Zustands-Sensor zusammen und gibst FreshAirIQ nur diesen Helfer als Fensterkontakt.
+
+| unterer Kontakt | oberer Kontakt | Helfer zeigt |
+| --- | --- | --- |
+| offen | egal | `open` |
+| zu | offen | `tilted` |
+| zu | zu | `closed` |
+
+**Variante A – per Oberfläche (ohne YAML)**
+
+1. **Einstellungen → Geräte & Dienste → Helfer → Helfer erstellen → Template → Template-Sensor**.
+2. Name, z. B. `Schlafzimmer Fenster`.
+3. Bei **Zustandstemplate** einfügen und die beiden Entitäts-IDs durch deine ersetzen:
+
+   ```jinja
+   {% if is_state('binary_sensor.schlafzimmer_fenster_unten', 'on') %}open
+   {% elif is_state('binary_sensor.schlafzimmer_fenster_oben', 'on') %}tilted
+   {% else %}closed{% endif %}
+   ```
+
+4. Einheit leer lassen, speichern.
+
+**Variante B – per YAML (`configuration.yaml`)** – mit Verfügbarkeit und Optionsliste, damit FreshAirIQ den Sensor sofort als 3-Zustands-Kontakt erkennt:
+
+```yaml
+template:
+  - sensor:
+      - name: "Schlafzimmer Fenster"
+        unique_id: schlafzimmer_fenster_zustand
+        device_class: enum
+        state: >
+          {% if is_state('binary_sensor.schlafzimmer_fenster_unten', 'on') %}open
+          {% elif is_state('binary_sensor.schlafzimmer_fenster_oben', 'on') %}tilted
+          {% else %}closed{% endif %}
+        availability: >
+          {{ states('binary_sensor.schlafzimmer_fenster_unten') not in ['unknown', 'unavailable']
+             and states('binary_sensor.schlafzimmer_fenster_oben') not in ['unknown', 'unavailable'] }}
+        attributes:
+          options: "{{ ['closed', 'tilted', 'open'] }}"
+```
+
+Danach Home Assistant neu laden bzw. **Entwicklerwerkzeuge → YAML → Template-Entitäten neu laden**.
+
+**In FreshAirIQ:** Raum bearbeiten und als Fenster-/Türkontakt **nur den neuen Helfer** (`sensor.schlafzimmer_fenster`) auswählen – nicht zusätzlich die beiden Einzelkontakte, sonst zählt das Fenster doppelt. Mit Variante B erkennt FreshAirIQ die drei Zustände sofort, mit Variante A spätestens beim ersten Kippen.
 
 ---
 

@@ -370,3 +370,35 @@ test('Diagnostics consent hint points admins to Devices & services and never wri
   expect(await page.evaluate(() => window.__posts)).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('GitHub #14: Freshy follows the canonical wait decision and the classic mould count', async ({ page }) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  const errors = [];
+  page.on('pageerror', err => errors.push(String(err)));
+  await page.setContent('<!doctype html><html><body><freshairiq-card id="card"></freshairiq-card></body></html>');
+  await page.addScriptTag({ path: CARD });
+  const result = await page.evaluate(async () => {
+    const names = ['Wohnzimmer', 'Arbeitszimmer', 'Schlafzimmer', 'Bad', 'Küche', 'Kinderzimmer'];
+    const rooms = {};
+    names.forEach((name, i) => { rooms[`r${i}`] = { key: `r${i}`, name, calculation_enabled: true, data_quality: 'ok',
+      temperature: 21, humidity: 63, absolute_humidity: 11.5, action: i < 2 ? 'Ventilate' : 'Okay',
+      recommended_duration_min: i < 2 ? 9 : 0, mould_level: 'Elevated', surface_rh: 76 }; });
+    const status = { entity_id: 'sensor.freshairiq_status', state: 'wait', attributes: {
+      freshairiq_transport: 'status_v2', freshairiq_entry_id: 'e1', status: 'wait', rooms, room_sort_order: Object.keys(rooms),
+      // A headline variant without "abwarten"/"nicht lüften" in it.
+      intelligent_recommendation: { kind: 'wait', status: 'wait', severity: 'warning', title: 'Ein günstigerer Zeitpunkt ist noch nicht erreicht', instruction: 'Noch nicht lüften' },
+      recommended_duration_min: 9, potential_total_ml: 97, night_start_hour: '23:59', night_end_hour: '00:00' } };
+    const card = document.getElementById('card');
+    card.setConfig({ dashboard_variant: 'iq' });
+    card.hass = { states: { [status.entity_id]: status }, language: 'de', locale: { language: 'de' } };
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const section = card.shadowRoot.querySelector('.ai-compact');
+    return { cls: section.className, rooms: [...section.querySelectorAll('.ai-room small')].map(x => x.textContent),
+      facts: section.querySelector('.ai-facts').textContent, allGood: section.querySelector('.ai-all-good span').textContent };
+  });
+  expect(result.cls).toContain('wait');
+  expect(result.rooms).toEqual(['Lüften möglich · noch warten', 'Lüften möglich · noch warten']);
+  expect(result.facts).not.toContain('min');
+  expect(result.allGood).toContain('Schimmelrisiko: 6 Räume auffällig');
+  expect(errors).toEqual([]);
+});

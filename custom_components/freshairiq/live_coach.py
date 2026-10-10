@@ -8,6 +8,8 @@ from __future__ import annotations
 from typing import Any
 from math import isfinite
 
+from .model import min_return_volume_factor
+
 
 def _f(value: Any, default: float = 0.0) -> float:
     try:
@@ -115,7 +117,9 @@ def refine_live_recommendation(
 
     # Marginal benefit can shorten a session even when the initial target was
     # longer; conversely a useful next 5 min can justify a limited extension.
-    min_return = _f(options.get("min_return_next_5_min_ml"), 25.0)
+    # 0.26.4.7 (GitHub #15): absolute ml thresholds scale with the aired volume.
+    volume_factor = min_return_volume_factor(sum(max(_f(r.get("volume_m3")), 0.0) for r in active))
+    min_return = _f(options.get("min_return_next_5_min_ml"), 25.0) * volume_factor
     health_urgent = any(
         _f(r.get("surface_rh")) >= _f(options.get("mould_critical_surface_rh"), 90.0)
         or (bool(r.get("co2_available", r.get("co2") is not None)) and _f(r.get("co2")) >= _f(options.get("co2_critical"), 1400.0))
@@ -190,7 +194,7 @@ def refine_live_recommendation(
         all_close_decisions_ready
         and elapsed >= min_duration
         and remaining <= 0.35
-        and next5 < max(min_return * 1.25, 35.0)
+        and next5 < max(min_return * 1.25, 35.0 * volume_factor)
         and not health_urgent
     ):
         out = dict(recommendation)

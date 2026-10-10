@@ -19,6 +19,7 @@ from homeassistant.helpers import (
 )
 
 from .const import *
+from .climate_sources import entity_ids
 from .settings_contract import native_option_key
 from .notifications import _all_notification_targets, _available_notification_targets, _send_targets
 from .room_creation_trace import trace_room_creation, trace_room_creation_after_reload
@@ -39,6 +40,7 @@ _RUNTIME_LISTENER_DATA_KEYS = {
     CONF_OUTDOOR_TEMPERATURE,
     CONF_OUTDOOR_HUMIDITY,
     CONF_POLLEN_ENTITY,
+    CONF_OUTDOOR_PM25_ENTITY,
 }
 
 _RESIDENT_PROFILE_STORAGE_KEY = native_option_key("resident_room_profiles")
@@ -160,8 +162,14 @@ def _outdoor_schema(data: dict[str, Any] | None = None) -> vol.Schema:
         _optional(CONF_OUTDOOR_HUMIDITY, data.get(CONF_OUTDOOR_HUMIDITY)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="humidity")
         ),
-        _optional(CONF_POLLEN_ENTITY, data.get(CONF_POLLEN_ENTITY)): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor")
+        # 0.26.4.6 (user feedback): several pollen sensors (e.g. one per pollen
+        # type); the highest current value counts. Legacy single values stay valid.
+        _optional(CONF_POLLEN_ENTITY, entity_ids(data.get(CONF_POLLEN_ENTITY)) or None): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", multiple=True)
+        ),
+        # 0.26.4.7 (user feedback): outdoor fine dust, e.g. Sensor.Community.
+        _optional(CONF_OUTDOOR_PM25_ENTITY, entity_ids(data.get(CONF_OUTDOOR_PM25_ENTITY)) or None): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", device_class="pm25", multiple=True)
         ),
     })
 
@@ -204,6 +212,35 @@ def _goal_priority_schema(room: dict[str, Any], *, include_back: bool = False) -
     return vol.Schema(fields)
 
 
+def _resolve_move_ranking(ranked: list[str], current: list[str]) -> list[str]:
+    """Turn the submitted dropdown values into a complete, duplicate-free order.
+
+    0.26.4.6 (user report "Lüftungsziele priorisieren: Reihenfolge lässt sich
+    nicht bestätigen"): reordering with one dropdown per position used to need
+    two coordinated changes; changing only one dropdown produced a duplicate
+    and the form refused to save. A changed position now means "move this goal
+    here": explicitly changed positions win, unchanged positions keep their
+    goal when it is still free, and the remaining goals fill the gaps in their
+    previous order.
+    """
+    size = len(current)
+    result: list[str | None] = [None] * size
+    used: set[str] = set()
+    changed = [idx for idx in range(size) if idx < len(ranked) and ranked[idx] != current[idx]]
+    for idx in changed:
+        goal = ranked[idx]
+        if goal in current and goal not in used:
+            result[idx] = goal
+            used.add(goal)
+    for idx in range(size):
+        goal = ranked[idx] if idx < len(ranked) else ""
+        if result[idx] is None and goal in current and goal not in used:
+            result[idx] = goal
+            used.add(goal)
+    rest = [goal for goal in current if goal not in used]
+    return [goal if goal is not None else rest.pop(0) for goal in result]
+
+
 def _ranked_goal_priorities(user_input: dict[str, Any], room: dict[str, Any]) -> list[str]:
     """Return the complete, duplicate-free ranking submitted by the user."""
     current = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
@@ -213,13 +250,17 @@ def _ranked_goal_priorities(user_input: dict[str, Any], room: dict[str, Any]) ->
     ]
     if not any(ranked):
         return current
-    if len(ranked) != len(current) or set(ranked) != set(current):
+    if any(goal not in current for goal in ranked):
         return current
-    return ranked
+    return _resolve_move_ranking(ranked, current)
 
 
 def _goal_priority_errors(user_input: dict[str, Any], room: dict[str, Any]) -> dict[str, str]:
-    """Reject duplicate/missing ranked goals instead of throwing during persistence."""
+    """Reject unknown goals; duplicates are resolved as "move" (0.26.4.6).
+
+    ``duplicate_goal_order`` is kept as a translation key for older flows but is
+    no longer raised: a goal chosen twice moves to the explicitly changed slot.
+    """
     current = _filter_room_priorities(room.get(CONF_ROOM_GOAL_PRIORITIES, []), room)
     ranked = [
         str(user_input.get(f"goal_priority_{idx}") or "")
@@ -229,8 +270,6 @@ def _goal_priority_errors(user_input: dict[str, Any], room: dict[str, Any]) -> d
         return {}
     if len(ranked) != len(current) or any(goal not in current for goal in ranked):
         return {"base": "invalid_goal_order"}
-    if len(set(ranked)) != len(ranked):
-        return {"base": "duplicate_goal_order"}
     return {}
 
 
@@ -985,6 +1024,7 @@ def _residents_schema(current: dict[str, Any], rooms: list[dict[str, Any]] | Non
             vol.Optional(native_option_key("presence_sensor_entities"), default=current.get("presence_sensor_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
             vol.Optional(native_option_key("pet_safe_presence_entities"), default=current.get("pet_safe_presence_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
             vol.Required(native_option_key("untracked_follow_household"), default=bool(current.get("untracked_follow_household", True))): bool,
+            vol.Required(native_option_key("presence_night_hold"), default=bool(current.get("presence_night_hold", False))): bool,
         }), {"collapsed": True}),
         vol.Optional("personalisation"): section(vol.Schema({
             vol.Required(native_option_key("personalisation_enabled"), default=bool(current.get("personalisation_enabled", True))): bool,
@@ -1018,6 +1058,8 @@ def _air_quality_schema(current: dict[str, Any]) -> vol.Schema:
         vol.Required(native_option_key("pollen_enabled"), default=bool(current.get("pollen_enabled", False))): bool,
         vol.Required(native_option_key("pollen_max"), default=_bounded(current.get("pollen_max"), 4.0, 0, 10)): _number(0, 10, 0.5),
         vol.Required(native_option_key("pollen_strict_veto"), default=bool(current.get("pollen_strict_veto", True))): bool,
+        vol.Required(native_option_key("outdoor_pm25_enabled"), default=bool(current.get("outdoor_pm25_enabled", True))): bool,
+        vol.Required(native_option_key("outdoor_pm25_max"), default=_bounded(current.get("outdoor_pm25_max"), 35.0, 5, 500)): _number(5, 500, 1, "µg/m³"),
         vol.Required(native_option_key("wind_orientation_enabled"), default=bool(current.get("wind_orientation_enabled", True))): bool,
         vol.Required(native_option_key("voc_warn"), default=_bounded(current.get("voc_warn"), 600.0, 50, 5000)): _number(50, 5000, 50),
         vol.Required(native_option_key("voc_critical"), default=_bounded(current.get("voc_critical"), 1200.0, 100, 10000)): _number(100, 10000, 50),
@@ -1166,6 +1208,7 @@ class FreshAirIQConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_OUTDOOR_TEMPERATURE,
                         CONF_OUTDOOR_HUMIDITY,
                         CONF_POLLEN_ENTITY,
+                        CONF_OUTDOOR_PM25_ENTITY,
                     )
                 }
                 return self.async_update_reload_and_abort(
@@ -1989,9 +2032,10 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                     CONF_OUTDOOR_TEMPERATURE,
                     CONF_OUTDOOR_HUMIDITY,
                     CONF_POLLEN_ENTITY,
+                    CONF_OUTDOOR_PM25_ENTITY,
                 ):
                     value = user_input.get(key)
-                    if value in (None, ""):
+                    if value in (None, "", []):
                         self._working_data.pop(key, None)
                     else:
                         self._working_data[key] = value
@@ -2312,16 +2356,15 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 for idx in range(1, len(rooms) + 1)
             ]
             current_keys = [str(room.get("key")) for room in rooms]
-            if (
-                len(ranked_keys) != len(current_keys)
-                or set(ranked_keys) != set(current_keys)
-                or len(set(ranked_keys)) != len(ranked_keys)
-            ):
+            if len(ranked_keys) != len(current_keys) or any(key not in current_keys for key in ranked_keys):
                 return self.async_show_form(
                     step_id="sort_rooms",
                     data_schema=self._room_order_schema(rooms),
                     errors={"base": "invalid_room_order"},
                 )
+            # 0.26.4.6: choosing a room for a position moves it there; no need
+            # to change two dropdowns to swap rooms.
+            ranked_keys = _resolve_move_ranking(ranked_keys, current_keys)
             by_key = {str(room.get("key")): room for room in rooms}
             rooms = [by_key[key] for key in ranked_keys]
             for idx, room in enumerate(rooms):

@@ -124,7 +124,26 @@ def _choose(store: dict[str, Any], key: str, signature: str, variants: list[str]
     return clean[_variant_index(store, key, signature, len(clean))] if clean else ""
 
 
-def _headline_variants(kind: str, band: str, fallback: str) -> list[str]:
+_OUTDOOR_VETO_HEADLINES = {
+    "pm25": [
+        "Lüften wäre sinnvoll – Feinstaub draußen spricht dagegen",
+        "Der Lüftungsnutzen ist da, die Außenluft ist aber mit Feinstaub belastet",
+        "Besser warten, bis die Feinstaubbelastung draußen sinkt",
+    ],
+    "pollen_and_pm25": [
+        "Lüften wäre sinnvoll – Pollen und Feinstaub sprechen dagegen",
+        "Der Lüftungsnutzen ist da, Pollen und Feinstaub draußen bremsen",
+        "Besser warten, bis Pollen- und Feinstaubbelastung sinken",
+    ],
+}
+# 0.26.4.7: specialised stories keep their own headline instead of a generic
+# action phrase (a shower is not "a good moment to air the house").
+_PRESERVED_HEADLINE_STATUSES = {"passive_open_monitor", "moisture_source_active"}
+
+
+def _headline_variants(kind: str, band: str, fallback: str, veto_cause: str | None = None) -> list[str]:
+    if kind == "pollen_wait" and veto_cause in _OUTDOOR_VETO_HEADLINES:
+        return list(_OUTDOOR_VETO_HEADLINES[str(veto_cause)])
     cautious = band in {"grundmodell", "beobachtet"}
     mapping = {
         "ventilate": [
@@ -277,8 +296,9 @@ def adapt_language_confidence(
     current_headline = str(brain.get("headline") or out.get("title") or "").strip()
     # Preserve specialised primary stories (night strategy, passive-open monitor)
     # instead of flattening them into a generic action phrase.
-    if not brain.get("night_strategy_primary") and str(out.get("status") or "") != "passive_open_monitor":
-        headline = _choose(store, f"headline:{kind}", signature, _headline_variants(kind, band_key, current_headline))
+    if not brain.get("night_strategy_primary") and str(out.get("status") or "") not in _PRESERVED_HEADLINE_STATUSES:
+        cause = out.get("outdoor_veto_cause")
+        headline = _choose(store, f"headline:{kind}{':' + str(cause) if cause else ''}", signature, _headline_variants(kind, band_key, current_headline, cause))
         if headline:
             brain["headline"] = headline
             out["title"] = headline

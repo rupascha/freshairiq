@@ -9,13 +9,15 @@
           "outdoor_weather": "Wetter-Entität (optional – später konfigurierbar)",
           "outdoor_temperature": "Außentemperatur (optional – später konfigurierbar)",
           "outdoor_humidity": "Außenluftfeuchtigkeit (optional – später konfigurierbar)",
-          "pollen_entity": "Pollenindex (optional – später konfigurierbar)"
+          "pollen_entity": "Pollensensoren (mehrere möglich)",
+          "outdoor_pm25_entity": "Feinstaub draußen – PM2.5-Sensoren (mehrere möglich)"
         },
         "data_description": {
           "outdoor_weather": "Optional. Empfohlene Quelle für Außenluft und Wetterprognose. Kann jederzeit nach der Installation ergänzt werden.",
           "outdoor_temperature": "Optional. Ohne Wetter-Entität nur gemeinsam mit Außenluftfeuchtigkeit verwenden.",
           "outdoor_humidity": "Optional. Ohne Wetter-Entität nur gemeinsam mit Außentemperatur verwenden.",
-          "pollen_entity": "Optional. Wird nur bei aktivierter Pollenberücksichtigung ausgewertet."
+          "pollen_entity": "Optional. Wird nur bei aktivierter Pollenberücksichtigung ausgewertet. Mehrere Sensoren möglich (z. B. je Pollenart); der höchste aktuelle Wert zählt.",
+          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
         }
       },
       "room": {
@@ -151,13 +153,15 @@
           "outdoor_weather": "Lokale Wetter-Entität",
           "outdoor_temperature": "Außentemperatursensor",
           "outdoor_humidity": "Außenluftfeuchtesensor",
-          "pollen_entity": "Pollenindex-Sensor"
+          "pollen_entity": "Pollensensoren (mehrere möglich)",
+          "outdoor_pm25_entity": "Feinstaub draußen – PM2.5-Sensoren (mehrere möglich)"
         },
         "data_description": {
           "outdoor_weather": "Empfohlene Standardquelle für aktuelle Außenluftdaten.",
           "outdoor_temperature": "Optional. Nur zusammen mit einem Außen-Feuchtesensor verwenden.",
           "outdoor_humidity": "Optional. Nur zusammen mit einem Außen-Temperatursensor verwenden.",
-          "pollen_entity": "Optional. Wird später nur bei aktivierter Pollenberücksichtigung ausgewertet."
+          "pollen_entity": "Optional. Wird später nur bei aktivierter Pollenberücksichtigung ausgewertet. Mehrere Sensoren möglich (z. B. je Pollenart); der höchste aktuelle Wert zählt.",
+          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
         }
       }
     },
@@ -400,13 +404,15 @@
           "outdoor_weather": "Lokale Wetter-Entität",
           "outdoor_temperature": "Außentemperatursensor",
           "outdoor_humidity": "Außenluftfeuchtesensor",
-          "pollen_entity": "Pollenindex-Sensor"
+          "pollen_entity": "Pollensensoren (mehrere möglich)",
+          "outdoor_pm25_entity": "Feinstaub draußen – PM2.5-Sensoren (mehrere möglich)"
         },
         "data_description": {
           "outdoor_weather": "Empfohlen, wenn deine Wetter-Entität zuverlässige Temperatur- und Feuchtewerte liefert.",
           "outdoor_temperature": "Optional. Nur zusammen mit einem Außen-Feuchtesensor verwenden. Dann ersetzt dieses Sensorpaar die Wetter-Entität für die aktuelle Außenluft.",
           "outdoor_humidity": "Optional. Nur zusammen mit einem Außen-Temperatursensor verwenden.",
-          "pollen_entity": "Optionaler numerischer Pollenindex. Wird nur genutzt, wenn „Pollen berücksichtigen“ aktiviert ist."
+          "pollen_entity": "Optionaler numerischer Pollenindex. Wird nur genutzt, wenn „Pollen berücksichtigen“ aktiviert ist. Mehrere Sensoren möglich (z. B. je Pollenart); der höchste aktuelle Wert zählt.",
+          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
         }
       },
       "rooms": {
@@ -1431,6 +1437,7 @@
           "pet_safe_presence_entities": "Haustiersichere Präsenzsensoren",
           "pets_in_household": "Haustiere im Haushalt",
           "untracked_follow_household": "Bewohner ohne Tracker folgen Haushaltsstatus",
+          "presence_night_hold": "Nachts als zuhause werten, wenn das Handy ausgeht",
           "night_start_hour": "Nachtbeginn",
           "night_end_hour": "Nachtende",
           "night_forecast_enabled": "Nachtprognose aktiv",
@@ -1450,6 +1457,7 @@
           "pet_safe_presence_entities": "Sensoren aus der Auswahl oben, die auch bei Haustieren zuverlässig echte menschliche Präsenz erkennen. Diese Signale dürfen im Haustiermodus stärker gewichtet werden.",
           "pets_in_household": "Aktivieren, wenn Haustiere Bewegungsmelder auslösen können. Klassische Bewegungsmelder werden dann deutlich schwächer gewichtet, damit kein Phantom-Bewohner entsteht.",
           "untracked_follow_household": "Wenn mindestens ein maßgeblicher Tracker sicher zuhause ist, können Bewohner ohne Tracker als anwesend angenommen werden. Sind alle maßgeblichen Tracker sicher außer Haus, können sie als abwesend angenommen werden. Unsichere Zustände werden vorsichtig behandelt.",
+          "presence_night_hold": "Für Haushalte, die nachts das Handy ausschalten: Meldet ein Tracker erst während des Nachtfensters „abwesend“, zählt die Person bis zum Nachtende weiter als zuhause. Wer schon vor Nachtbeginn weg war, bleibt abwesend.",
           "adult_resident_names": "Namen mit Komma trennen und in derselben Reihenfolge wie die Erwachsenen-Tracker eintragen. Sind oben zuerst Paul und danach Lydia als Tracker gewählt, trägst du „Paul, Lydia“ ein. Bewohner ohne eigenen Tracker dürfen zusätzlich genannt werden, z. B. „Paul, Lydia, Oma“. Die Namen bleiben lokal und dienen nur der verständlichen persönlichen Zuordnung.",
           "child_resident_names": "Namen mit Komma trennen und in derselben Reihenfolge wie die Kinder-Tracker eintragen, z. B. „Fiona, Maya“. Kinder ohne eigenen Tracker dürfen ebenfalls genannt werden. Die Namen bleiben lokal; FreshAirIQ verwendet sie nicht für direkte Handlungsaufforderungen an Kinder."
         }
@@ -1524,7 +1532,7 @@
       },
       "sort_rooms": {
         "title": "Räume sortieren",
-        "description": "Alle Räume werden gleichzeitig angezeigt. Lege für jede Position den gewünschten Raum fest und bestätige einmal mit OK.",
+        "description": "Alle Räume werden gleichzeitig angezeigt. Wählst du für eine Position einen anderen Raum, rückt er dorthin und die übrigen rutschen automatisch nach. Bestätige einmal mit OK.",
         "data": {
           "wizard_back": "← Zurück zur vorherigen Seite",
           "room_position_1": "1. Raum",
@@ -1559,36 +1567,36 @@
           "room_position_30": "30. Raum"
         },
         "data_description": {
-          "room_position_1": "Position 1 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_2": "Position 2 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_3": "Position 3 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_4": "Position 4 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_5": "Position 5 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_6": "Position 6 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_7": "Position 7 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_8": "Position 8 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_9": "Position 9 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_10": "Position 10 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_11": "Position 11 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_12": "Position 12 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_13": "Position 13 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_14": "Position 14 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_15": "Position 15 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_16": "Position 16 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_17": "Position 17 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_18": "Position 18 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_19": "Position 19 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_20": "Position 20 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_21": "Position 21 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_22": "Position 22 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_23": "Position 23 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_24": "Position 24 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_25": "Position 25 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_26": "Position 26 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_27": "Position 27 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_28": "Position 28 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_29": "Position 29 der Raumreihenfolge. Wähle jeden Raum genau einmal.",
-          "room_position_30": "Position 30 der Raumreihenfolge. Wähle jeden Raum genau einmal."
+          "room_position_1": "Position 1 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_2": "Position 2 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_3": "Position 3 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_4": "Position 4 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_5": "Position 5 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_6": "Position 6 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_7": "Position 7 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_8": "Position 8 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_9": "Position 9 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_10": "Position 10 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_11": "Position 11 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_12": "Position 12 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_13": "Position 13 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_14": "Position 14 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_15": "Position 15 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_16": "Position 16 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_17": "Position 17 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_18": "Position 18 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_19": "Position 19 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_20": "Position 20 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_21": "Position 21 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_22": "Position 22 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_23": "Position 23 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_24": "Position 24 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_25": "Position 25 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_26": "Position 26 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_27": "Position 27 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_28": "Position 28 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_29": "Position 29 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach.",
+          "room_position_30": "Position 30 der Raumreihenfolge. Ein anderer Raum rückt hierher, die übrigen rutschen nach."
         }
       },
       "contact_delays_room": {
@@ -1614,6 +1622,8 @@
           "pollen_enabled": "Pollen berücksichtigen",
           "pollen_max": "Maximaler Pollenindex",
           "pollen_strict_veto": "Bei Überschreitung Lüften verhindern",
+          "outdoor_pm25_enabled": "Feinstaub draußen berücksichtigen",
+          "outdoor_pm25_max": "Maximaler Feinstaub draußen (PM2.5)",
           "wind_orientation_enabled": "Fensterausrichtung mit Winddaten berücksichtigen",
           "voc_warn": "VOC-Warnschwelle",
           "voc_critical": "VOC kritisch",
@@ -1632,6 +1642,8 @@
           "pollen_enabled": "Benötigt einen Pollenindex-Sensor unter Außenluftquelle.",
           "pollen_max": "Oberhalb dieses Index wird bei aktivem Veto eine normale Lüftung verschoben; kritisches Schimmel-/CO₂-Risiko bleibt priorisiert.",
           "pollen_strict_veto": "Aus = Pollen werden angezeigt, blockieren aber keine Empfehlung.",
+          "outdoor_pm25_enabled": "Nur aktiv, wenn unter Außenluftquelle ein PM2.5-Sensor für draußen ausgewählt ist.",
+          "outdoor_pm25_max": "Oberhalb dieses Werts wird eine normale Lüftung verschoben (Fenster vorerst geschlossen lassen). Kritisches CO₂ oder Schimmelrisiko bleibt priorisiert. 35 µg/m³ entspricht etwa dem Übergang von „mäßig“ zu „ungesund für empfindliche Gruppen“.",
           "wind_orientation_enabled": "Verwendet nur vorhandene lokale Winddaten; ohne Windrichtung bleibt der Faktor neutral.",
           "voc_warn": "Grenze für optionale VOC-/TVOC-basierte Zusatzempfehlungen. Kein Einfluss auf die kanonische Lüftungsberechnung.",
           "voc_critical": "Kritische VOC-Grenze für Diagnose und spätere Priorisierung. Kein Einfluss auf die bestehende Lüftungsphysik.",
@@ -1993,12 +2005,14 @@
             "data": {
               "presence_sensor_entities": "Präsenz-/Bewegungssensoren",
               "pet_safe_presence_entities": "Haustiersichere Präsenzsensoren",
-              "untracked_follow_household": "Bewohner ohne Tracker folgen Haushaltsstatus"
+              "untracked_follow_household": "Bewohner ohne Tracker folgen Haushaltsstatus",
+              "presence_night_hold": "Nachts als zuhause werten, wenn das Handy ausgeht"
             },
             "data_description": {
               "presence_sensor_entities": "Weiche Zusatzsignale für Anwesenheit.",
               "pet_safe_presence_entities": "Sensoren, die auch bei Haustieren zuverlässig menschliche Präsenz anzeigen.",
-              "untracked_follow_household": "Schätzt Bewohner ohne Tracker anhand des sicheren Haushaltsstatus."
+              "untracked_follow_household": "Schätzt Bewohner ohne Tracker anhand des sicheren Haushaltsstatus.",
+              "presence_night_hold": "Für Haushalte, die nachts das Handy ausschalten: Meldet ein Tracker erst während des Nachtfensters „abwesend“, zählt die Person bis zum Nachtende weiter als zuhause. Wer schon vor Nachtbeginn weg war, bleibt abwesend."
             }
           },
           "personalisation": {
@@ -2101,6 +2115,7 @@
           "presence_sensor_entities": "Präsenz-/Bewegungssensoren",
           "pet_safe_presence_entities": "Haustiersichere Präsenzsensoren",
           "untracked_follow_household": "Bewohner ohne Tracker folgen Haushaltsstatus",
+          "presence_night_hold": "Nachts als zuhause werten, wenn das Handy ausgeht",
           "personalisation_enabled": "Persönliche Empfehlungen",
           "thermal_preference": "Standard-Temperaturempfinden",
           "personal_priority": "Persönliche Priorität",
@@ -2121,6 +2136,7 @@
           "presence_sensor_entities": "Weiche Zusatzsignale für Anwesenheit.",
           "pet_safe_presence_entities": "Sensoren, die auch bei Haustieren zuverlässig menschliche Präsenz anzeigen.",
           "untracked_follow_household": "Schätzt Bewohner ohne Tracker anhand des sicheren Haushaltsstatus.",
+          "presence_night_hold": "Für Haushalte, die nachts das Handy ausschalten: Meldet ein Tracker erst während des Nachtfensters „abwesend“, zählt die Person bis zum Nachtende weiter als zuhause. Wer schon vor Nachtbeginn weg war, bleibt abwesend.",
           "personalisation_enabled": "Nutzt Haushaltskontext für passendere Empfehlungen; Gesundheits- und Sicherheitsgrenzen bleiben unverändert.",
           "thermal_preference": "Haushaltsweiter Komfortstandard. Einzelne Profile können ihn überschreiben.",
           "personal_priority": "Gewichtet nur nicht sicherheitskritische Komfort-/Energieentscheidungen.",
@@ -2159,12 +2175,14 @@
             "data": {
               "presence_sensor_entities": "Präsenz-/Bewegungssensoren",
               "pet_safe_presence_entities": "Haustiersichere Präsenzsensoren",
-              "untracked_follow_household": "Bewohner ohne Tracker folgen Haushaltsstatus"
+              "untracked_follow_household": "Bewohner ohne Tracker folgen Haushaltsstatus",
+              "presence_night_hold": "Nachts als zuhause werten, wenn das Handy ausgeht"
             },
             "data_description": {
               "presence_sensor_entities": "Weiche Zusatzsignale für Anwesenheit.",
               "pet_safe_presence_entities": "Sensoren, die auch bei Haustieren zuverlässig menschliche Präsenz anzeigen.",
-              "untracked_follow_household": "Schätzt Bewohner ohne Tracker anhand des sicheren Haushaltsstatus."
+              "untracked_follow_household": "Schätzt Bewohner ohne Tracker anhand des sicheren Haushaltsstatus.",
+              "presence_night_hold": "Für Haushalte, die nachts das Handy ausschalten: Meldet ein Tracker erst während des Nachtfensters „abwesend“, zählt die Person bis zum Nachtende weiter als zuhause. Wer schon vor Nachtbeginn weg war, bleibt abwesend."
             }
           },
           "personalisation": {
@@ -2617,7 +2635,7 @@
       },
       "room_goals": {
         "title": "Lüftungsziele priorisieren",
-        "description": "Alle verfügbaren Lüftungsziele werden gleichzeitig nach Priorität angezeigt. 1 ist am wichtigsten. Jedes Ziel darf genau einmal vorkommen.",
+        "description": "Alle verfügbaren Lüftungsziele werden gleichzeitig nach Priorität angezeigt. 1 ist am wichtigsten. Wählst du für eine Position ein anderes Ziel, rückt es dorthin und die übrigen rutschen automatisch nach.",
         "data": {
           "wizard_back": "← Zurück zur vorherigen Seite",
           "goal_priority_1": "1. Priorität",
@@ -2632,16 +2650,16 @@
           "goal_priority_10": "10. Priorität"
         },
         "data_description": {
-          "goal_priority_1": "Priorität 1. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_2": "Priorität 2. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_3": "Priorität 3. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_4": "Priorität 4. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_5": "Priorität 5. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_6": "Priorität 6. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_7": "Priorität 7. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_8": "Priorität 8. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_9": "Priorität 9. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_10": "Priorität 10. Jedes verfügbare Ziel genau einmal auswählen."
+          "goal_priority_1": "Priorität 1. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_2": "Priorität 2. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_3": "Priorität 3. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_4": "Priorität 4. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_5": "Priorität 5. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_6": "Priorität 6. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_7": "Priorität 7. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_8": "Priorität 8. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_9": "Priorität 9. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_10": "Priorität 10. Ein anderes Ziel rückt hierher, die übrigen rutschen nach."
         }
       },
       "recommendation_priorities": {
@@ -2658,7 +2676,7 @@
       },
       "recommendation_priority_order": {
         "title": "Prioritäten sortieren",
-        "description": "Alle verfügbaren Lüftungsziele werden gleichzeitig nach Priorität angezeigt. 1 ist am wichtigsten. Jedes Ziel darf genau einmal vorkommen.",
+        "description": "Alle verfügbaren Lüftungsziele werden gleichzeitig nach Priorität angezeigt. 1 ist am wichtigsten. Wählst du für eine Position ein anderes Ziel, rückt es dorthin und die übrigen rutschen automatisch nach.",
         "data": {
           "wizard_back": "← Zurück zur vorherigen Seite",
           "goal_priority_1": "1. Priorität",
@@ -2673,20 +2691,20 @@
           "goal_priority_10": "10. Priorität"
         },
         "data_description": {
-          "goal_priority_1": "Priorität 1. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_2": "Priorität 2. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_3": "Priorität 3. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_4": "Priorität 4. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_5": "Priorität 5. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_6": "Priorität 6. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_7": "Priorität 7. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_8": "Priorität 8. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_9": "Priorität 9. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_10": "Priorität 10. Jedes verfügbare Ziel genau einmal auswählen."
+          "goal_priority_1": "Priorität 1. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_2": "Priorität 2. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_3": "Priorität 3. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_4": "Priorität 4. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_5": "Priorität 5. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_6": "Priorität 6. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_7": "Priorität 7. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_8": "Priorität 8. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_9": "Priorität 9. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_10": "Priorität 10. Ein anderes Ziel rückt hierher, die übrigen rutschen nach."
         }
       },
       "add_goals": {
-        "description": "Alle verfügbaren Lüftungsziele werden gleichzeitig nach Priorität angezeigt. 1 ist am wichtigsten. Jedes Ziel darf genau einmal vorkommen.",
+        "description": "Alle verfügbaren Lüftungsziele werden gleichzeitig nach Priorität angezeigt. 1 ist am wichtigsten. Wählst du für eine Position ein anderes Ziel, rückt es dorthin und die übrigen rutschen automatisch nach.",
         "data": {
           "goal_priority_1": "1. Priorität",
           "goal_priority_2": "2. Priorität",
@@ -2700,16 +2718,16 @@
           "goal_priority_10": "10. Priorität"
         },
         "data_description": {
-          "goal_priority_1": "Priorität 1. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_2": "Priorität 2. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_3": "Priorität 3. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_4": "Priorität 4. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_5": "Priorität 5. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_6": "Priorität 6. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_7": "Priorität 7. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_8": "Priorität 8. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_9": "Priorität 9. Jedes verfügbare Ziel genau einmal auswählen.",
-          "goal_priority_10": "Priorität 10. Jedes verfügbare Ziel genau einmal auswählen."
+          "goal_priority_1": "Priorität 1. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_2": "Priorität 2. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_3": "Priorität 3. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_4": "Priorität 4. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_5": "Priorität 5. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_6": "Priorität 6. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_7": "Priorität 7. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_8": "Priorität 8. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_9": "Priorität 9. Ein anderes Ziel rückt hierher, die übrigen rutschen nach.",
+          "goal_priority_10": "Priorität 10. Ein anderes Ziel rückt hierher, die übrigen rutschen nach."
         }
       }
     },
@@ -2734,7 +2752,7 @@
       "notification_test_failed": "Keines der ausgewählten Benachrichtigungsziele ist aktuell in Home Assistant verfügbar.",
       "invalid_room_order": "Jeder Raum muss genau einmal in der Reihenfolge vorkommen.",
       "invalid_goal_order": "Bitte ordne jedes verfügbare Lüftungsziel genau einmal zu.",
-      "duplicate_goal_order": "Ein Lüftungsziel wurde mehrfach gewählt. Jedes Ziel darf genau einmal vorkommen."
+      "duplicate_goal_order": "Ein Lüftungsziel wurde mehrfach gewählt. Wählst du für eine Position ein anderes Ziel, rückt es dorthin und die übrigen rutschen automatisch nach."
     },
     "selector": {
       "operating_profile": {
@@ -2822,7 +2840,7 @@
           "ventilation_running": "Lüftung läuft",
           "close_windows": "Fenster schließen",
           "cooling_recommended": "Kühlen empfohlen",
-          "pollen_warning": "Pollenwarnung",
+          "pollen_warning": "Außenluft belastet (Pollen/Feinstaub)",
           "sensor_error": "Sensorfehler",
           "sensor_recovering": "Sensoren starten",
           "wait": "Warten",
@@ -2976,6 +2994,24 @@
       },
       "forecast_confidence": {
         "name": "Prognosesicherheit"
+      },
+      "house_aligned_action": {
+        "name": "Empfehlung",
+        "state": {
+          "ventilate": "Lüften",
+          "continue_ventilating": "Weiterlüften",
+          "close": "Schließen",
+          "ventilate_for_cooling": "Für Kühlung lüften",
+          "do_not_ventilate": "Nicht lüften",
+          "wait": "Warten",
+          "okay": "Alles okay",
+          "check_sensor": "Sensor prüfen",
+          "monitor_only": "Nur anzeigen",
+          "ventilate_later": "Lüften möglich · noch warten",
+          "ventilate_indirectly": "Über Nachbarraum lüften",
+          "open_fully": "Ganz öffnen",
+          "unknown": "Unbekannt"
+        }
       }
     },
     "binary_sensor": {

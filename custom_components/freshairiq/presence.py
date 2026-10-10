@@ -8,6 +8,7 @@ while residents without a tracker remain supported.
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from typing import Any
 
 _UNKNOWN_STATES = {"", "unknown", "unavailable", "none", "null"}
@@ -93,9 +94,54 @@ def _state_kind(value: Any) -> str:
     return "away"
 
 
+def _parse_clock(value: Any, default: str) -> tuple[int, int]:
+    text = str(value or default).strip()
+    try:
+        hour, minute = text.split(":")[:2]
+        return min(max(int(hour), 0), 23), min(max(int(minute), 0), 59)
+    except (TypeError, ValueError):
+        hour, minute = default.split(":")
+        return int(hour), int(minute)
+
+
+def current_night_start(options: dict[str, Any], now: datetime | None) -> datetime | None:
+    """Start of the night window ``now`` lies in, or None outside the window."""
+    if now is None:
+        return None
+    sh, sm = _parse_clock(options.get("night_start_hour"), "22:00")
+    eh, em = _parse_clock(options.get("night_end_hour"), "07:00")
+    length = ((eh * 60 + em) - (sh * 60 + sm)) % (24 * 60)
+    if length == 0:
+        return None
+    start = now.replace(hour=sh, minute=sm, second=0, microsecond=0)
+    if start > now:
+        start -= timedelta(days=1)
+    return start if now < start + timedelta(minutes=length) else None
+
+
+def _went_away_during_night(state: Any, night_start: datetime | None) -> bool:
+    """True when a tracker switched to away only after the night started.
+
+    That is the signature of a phone switched off at bedtime (router-based
+    trackers time out). A resident who left before the night started has an
+    earlier ``last_changed`` and stays away.
+    """
+    if night_start is None:
+        return False
+    changed = getattr(state, "last_changed", None)
+    if not isinstance(changed, datetime):
+        return False
+    if changed.tzinfo is None and night_start.tzinfo is not None:
+        changed = changed.replace(tzinfo=night_start.tzinfo)
+    elif changed.tzinfo is not None and night_start.tzinfo is None:
+        changed = changed.replace(tzinfo=None)
+    return changed >= night_start
+
+
 def resolve_occupancy(
     options: dict[str, Any],
     state_getter: Callable[[str], Any],
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     """Return configured, detected and forecast occupancy.
 
@@ -114,8 +160,20 @@ def resolve_occupancy(
     adult_entities = _unique_entities(options.get("adult_presence_entities", []))[:configured_adults]
     child_entities = _unique_entities(options.get("child_presence_entities", []))[:configured_children]
 
+    night_hold = bool(options.get("presence_night_hold", False))
+    night_start = current_night_start(options, now) if night_hold else None
+    held_overnight = 0
+
     def counts(entities: list[str]) -> tuple[int, int, int]:
-        kinds = [normalize_presence_state(entity_id, state_getter(entity_id)) for entity_id in entities]
+        nonlocal held_overnight
+        kinds = []
+        for entity_id in entities:
+            state = state_getter(entity_id)
+            kind = normalize_presence_state(entity_id, state)
+            if kind == "away" and _went_away_during_night(state, night_start):
+                kind = "home"
+                held_overnight += 1
+            kinds.append(kind)
         return kinds.count("home"), kinds.count("away"), kinds.count("unknown")
 
     ah, aa, au = counts(adult_entities)
@@ -210,6 +268,8 @@ def resolve_occupancy(
         "active_presence_sensors": active_soft,
         "soft_presence_score": round(soft_score, 2),
         "pets_in_household": pets,
+        "presence_night_hold": night_hold,
+        "residents_held_home_overnight": held_overnight,
         "presence_explanation": (
             "Mindestens ein primärer Tracker ist zuhause; Bewohner ohne Tracker werden als zuhause angenommen." if known_home > 0 else
             "Alle verlässlichen primären Tracker sind außer Haus; Bewohner ohne Tracker werden grundsätzlich als abwesend angenommen, weiche Präsenzsignale können die Wahrscheinlichkeit vorsichtig erhöhen." if household_away_signal else

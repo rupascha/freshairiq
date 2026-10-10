@@ -26,6 +26,7 @@ from homeassistant.util import dt as dt_util
 from .runtime import iter_runtime_coordinators
 from .const import DIAGNOSTICS_SCHEMA_VERSION, DOMAIN
 from .diagnostic_transport import normalise_resident_names
+from .export_zip import export_filename, zip_json_document
 from .support_incident import build_support_incident
 
 DIAGNOSTICS_IDENTITY_SCHEMA_VERSION = 1
@@ -64,12 +65,12 @@ _SAFE_OPTION_KEYS = (
     "night_window_preference", "cooling_start_temp_c",
     "cooling_min_outdoor_delta_c", "cooling_max_indoor_rh",
     "cooling_max_moisture_gain_5min_ml", "property_type", "adult_occupants",
-    "child_occupants", "untracked_follow_household", "pets_in_household",
+    "child_occupants", "untracked_follow_household", "presence_night_hold", "pets_in_household",
     "guest_adults", "guest_children", "night_start_hour", "night_end_hour",
     "night_forecast_enabled", "adult_night_moisture_ml_h",
     "child_night_moisture_ml_h", "background_night_moisture_ml_h",
     "adult_day_moisture_ml", "child_day_moisture_ml",
-    "household_day_moisture_ml", "pollen_enabled", "pollen_max",
+    "household_day_moisture_ml", "pollen_enabled", "pollen_max", "outdoor_pm25_enabled", "outdoor_pm25_max",
     "pollen_strict_veto", "wind_orientation_enabled", "heating_system",
     "electricity_price_per_kwh", "heat_pump_cop", "gas_price_per_kwh",
     "gas_efficiency", "district_price_per_kwh", "district_efficiency",
@@ -359,7 +360,7 @@ _TOP_LEVEL_KEYS = (
     "pets_in_household", "soft_presence_score", "property_type", "heating_system",
     "energy_price_per_kwh", "estimated_moisture_generation_day_ml",
     "configured_moisture_generation_day_ml", "estimated_generated_so_far_ml",
-    "moisture_balance_today_ml", "pollen_enabled", "pollen_index", "pollen_limit",
+    "moisture_balance_today_ml", "pollen_enabled", "pollen_index", "pollen_limit", "outdoor_pm25", "outdoor_pm25_limit", "outdoor_pm25_blocked", "outdoor_air_veto_cause",
     "pollen_blocked", "wind_bearing", "wind_speed", "future_weather_available",
     "house_strategy_maturity", "house_strategy_samples", "sign_convention",
     "outdoor_temperature", "outdoor_humidity", "outdoor_absolute_humidity",
@@ -433,7 +434,7 @@ _TREND_TOP_LEVEL_KEYS = (
     "recommended_duration_min", "remaining_duration_min",
     "temperature_change_live_c", "operating_profile", "cooling_rooms",
     "overnight_forecast_ml", "overnight_confidence", "presence_confidence",
-    "pollen_index", "pollen_blocked", "wind_bearing", "wind_speed",
+    "pollen_index", "pollen_blocked", "outdoor_pm25", "outdoor_pm25_blocked", "wind_bearing", "wind_speed",
     "outdoor_temperature", "outdoor_humidity", "outdoor_absolute_humidity",
     "outdoor_data_quality",
 )
@@ -741,6 +742,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "outdoor_temperature_sensor_configured": bool(entry_data.get("outdoor_temperature")),
                 "outdoor_humidity_sensor_configured": bool(entry_data.get("outdoor_humidity")),
                 "pollen_sensor_configured": bool(entry_data.get("pollen_entity")),
+                "outdoor_pm25_sensor_configured": bool(entry_data.get("outdoor_pm25_entity")),
                 "adult_presence_tracker_count": len(options.get("adult_presence_entities") or []),
                 "child_presence_tracker_count": len(options.get("child_presence_entities") or []),
                 "soft_presence_sensor_count": len(options.get("presence_sensor_entities") or []),
@@ -1309,7 +1311,14 @@ class FreshAirIQDiagnosticsRecorder:
         # Upgrade still-retained traces from older versions before applying
         # the storage cap.  This protects the 30-day window from being lost
         # simply because old routine rows were much larger than v3 rows.
+        today_stem = now.date().isoformat()
         for path in sorted(self.directory.glob("*.jsonl")):
+            # The active day file is appended to continuously, so its mtime
+            # always changes and it would be fully re-read and re-parsed on
+            # every hourly cleanup. It only contains current-format rows (or a
+            # few pre-upgrade rows that are compacted once the day has ended).
+            if path.stem == today_stem:
+                continue
             try:
                 mtime_ns = path.stat().st_mtime_ns
             except OSError:
@@ -1696,7 +1705,16 @@ class FreshAirIQDiagnosticsView(HomeAssistantView):
         recorder = self._recorder(hass)
         if recorder is None:
             return self.json({"error": "FreshAirIQ diagnostics are unavailable", "error_code": "FAIQ-DIAG-RUNTIME-001"}, status_code=503)
-        return self.json(await recorder.async_export())
+        exported = await recorder.async_export()
+        if str(request.query.get("format", "")).lower() == "zip":
+            # 0.26.4.9: same export, packed (≈1/15 of the size, content unchanged).
+            from aiohttp import web
+
+            basename = export_filename(dt_util.now())
+            data = await hass.async_add_executor_job(zip_json_document, exported, basename)
+            return web.Response(body=data, content_type="application/zip",
+                                headers={"Content-Disposition": f'attachment; filename="{basename}.zip"', "Cache-Control": "no-store"})
+        return self.json(exported)
 
     async def post(self, request):
         """Register an anonymous dashboard/client observation before export."""

@@ -1,7 +1,9 @@
 """FreshAirIQ integration."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 from functools import partial
 from types import MappingProxyType
 import logging
@@ -12,11 +14,12 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.lovelace.const import LOVELACE_DATA, MODE_STORAGE
 from homeassistant.components.lovelace.resources import ResourceStorageCollection
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.const import CONF_ID, CONF_TYPE, CONF_URL
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CONTACT_MODE,
@@ -27,6 +30,7 @@ from .const import (
     CONF_ROOM_HEIGHT,
     CONF_ROOM_NAME,
     CONF_ROOMS,
+    CONF_ROOM_SUBENTRY_KEYS,
     CONF_ROOM_FLOOR,
     CONF_ROOM_INCLUDE_CALCULATIONS,
     CONF_ROOM_SORT_ORDER,
@@ -52,10 +56,13 @@ from .storage import LearningStore
 from .diagnostics import FreshAirIQDiagnosticsView, FreshAirIQSupportDiagnosticsView
 from .feedback_api import FreshAirIQFeedbackView
 from .ventilation_log_api import FreshAirIQVentilationLogView
+from .room_history_api import FreshAirIQRoomHistoryView
+from .frontend_assets import ensure_precompressed
 from .validation import RELATION_OPTION_KEYS, repair_option_relationships
 from .runtime import clear_runtime_coordinator, get_runtime_coordinator, iter_runtime_coordinators, set_runtime_coordinator
 from .intervention import executable_intervention
 from .repairs import async_clear_missing_entity_issue, async_sync_missing_entity_issue
+from .room_devices import assign_room_devices
 from .typing import FreshAirIQConfigEntry
 
 
@@ -191,8 +198,28 @@ async def _async_execute_intervention_service(hass: HomeAssistant, call: Service
             translation_placeholders={"service": service_full},
         ) from err
 
+def _precompress_frontend() -> dict[str, Any]:
+    """Write .gz/.br siblings of the dashboard files (runs in the executor)."""
+    try:
+        import brotli  # type: ignore[import-not-found]  # shipped with Home Assistant's aiohttp
+
+        def brotli_compress(data: bytes) -> bytes:
+            return brotli.compress(data, quality=10)
+    except Exception:  # noqa: BLE001 - gzip alone is fine
+        brotli_compress = None
+    return ensure_precompressed(_FRONTEND_DIR, brotli_compress)
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register the bundled FreshAirIQ frontend once."""
+    # 0.26.4.8: refresh the compressed copies *before* the files are served, so a
+    # browser never receives an outdated compressed card after an update.
+    try:
+        precompressed = await hass.async_add_executor_job(_precompress_frontend)
+        if precompressed.get("errors"):
+            _LOGGER.debug("FreshAirIQ frontend compression skipped for some files: %s", precompressed["errors"])
+    except Exception:  # noqa: BLE001 - compression is an optimisation only
+        _LOGGER.debug("FreshAirIQ frontend compression unavailable", exc_info=True)
     try:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(_FRONTEND_URL, str(_FRONTEND_DIR), False)]
@@ -214,6 +241,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     if not hass.data.get(f"{DOMAIN}_settings_view_registered"):
         hass.http.register_view(FreshAirIQFeedbackView())
         hass.http.register_view(FreshAirIQVentilationLogView())
+        hass.http.register_view(FreshAirIQRoomHistoryView())
         hass.data[f"{DOMAIN}_settings_view_registered"] = True
     if not hass.services.has_service(DOMAIN, "execute_intervention"):
         hass.services.async_register(
@@ -266,6 +294,110 @@ def _async_sync_room_subentries(hass: HomeAssistant, entry: FreshAirIQConfigEntr
                 title=room.get(CONF_ROOM_NAME, room["key"]),
             )
 
+def _iter_device_entries(device_registry: Any, entry_id: str) -> list[Any]:
+    """Return DeviceEntry objects, whatever shape the registry collection has.
+
+    0.26.4.6 fix: the previous code iterated ``device_registry.devices.data``.
+    That is a mapping, so iteration yielded device *IDs* (strings); every item
+    was then skipped as "unexpected" and stale room devices were never removed.
+    Entries are collected from the public config-entry helper and from the
+    full registry (orphaned devices), resolving ID strings when necessary.
+    """
+    found: dict[str, Any] = {}
+
+    def _add(item: Any) -> None:
+        if isinstance(item, str):
+            getter = getattr(device_registry, "async_get", None)
+            item = getter(item) if callable(getter) else None
+        if item is None or not hasattr(item, "identifiers") or not hasattr(item, "id"):
+            _LOGGER.debug("Skipping unexpected device-registry item during room cleanup: %r", item)
+            return
+        found[item.id] = item
+
+    try:
+        for item in dr.async_entries_for_config_entry(device_registry, entry_id):
+            _add(item)
+    except Exception:  # noqa: BLE001 - fall back to the full registry scan below
+        _LOGGER.debug("Config-entry device lookup failed during room cleanup", exc_info=True)
+
+    collection = getattr(device_registry, "devices", None) or {}
+    raw = getattr(collection, "data", collection)
+    items = raw.values() if isinstance(raw, Mapping) else raw
+    for item in list(items or []):
+        _add(item)
+    return list(found.values())
+
+
+def _room_subentry_keys(entry: FreshAirIQConfigEntry) -> set[str]:
+    return {
+        (sub.unique_id or "").removeprefix("room:")
+        for sub in entry.subentries.values()
+        if sub.subentry_type == "room" and (sub.unique_id or "").startswith("room:")
+    }
+
+
+def _async_drop_rooms_deleted_as_subentries(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> set[str]:
+    """Honour rooms the user deleted directly in Devices & services (0.26.4.6).
+
+    Rooms are canonical in the parent entry data and mirrored into native
+    subentries. When the user deletes a room subentry with Home Assistant's own
+    "Delete" action, the parent data still contained the room and the next
+    start re-created it. FreshAirIQ now remembers which room subentries it
+    has mirrored (CONF_ROOM_SUBENTRY_KEYS); a mirrored subentry that has
+    disappeared means the user deleted that room.
+    """
+    known = entry.data.get(CONF_ROOM_SUBENTRY_KEYS)
+    if not isinstance(known, list):
+        return set()  # first start with this version: nothing can be inferred yet
+    deleted = {str(key) for key in known} - _room_subentry_keys(entry)
+    rooms = [room for room in entry.data.get(CONF_ROOMS, []) if isinstance(room, dict)]
+    drop = {str(room.get("key")) for room in rooms if str(room.get("key")) in deleted}
+    if drop:
+        data = dict(entry.data)
+        data[CONF_ROOMS] = [room for room in rooms if str(room.get("key")) not in drop]
+        hass.config_entries.async_update_entry(entry, data=data)
+        _LOGGER.info("Removed %s FreshAirIQ room(s) deleted in Devices & services", len(drop))
+    return drop
+
+
+def _async_remember_room_subentries(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> None:
+    keys = sorted(_room_subentry_keys(entry))
+    if entry.data.get(CONF_ROOM_SUBENTRY_KEYS) != keys:
+        hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_ROOM_SUBENTRY_KEYS: keys})
+
+
+def _rooms_pending_subentry_deletion(entry: FreshAirIQConfigEntry) -> set[str]:
+    known = entry.data.get(CONF_ROOM_SUBENTRY_KEYS)
+    if not isinstance(known, list):
+        return set()
+    deleted = {str(key) for key in known} - _room_subentry_keys(entry)
+    parent_keys = {str(room.get("key")) for room in entry.data.get(CONF_ROOMS, []) if isinstance(room, dict)}
+    return deleted & parent_keys
+
+
+def _async_watch_room_subentry_deletion(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> None:
+    """Reload right after the user deleted a room subentry.
+
+    Uses Home Assistant's config-entry change signal instead of an update
+    listener, because update listeners must not be combined with
+    OptionsFlowWithReload. Without the signal the room still disappears at
+    the next start.
+    """
+    signal = getattr(config_entries, "SIGNAL_CONFIG_ENTRY_CHANGED", None)
+    if signal is None:
+        return
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    @callback
+    def _changed(_change: Any, changed_entry: Any) -> None:
+        if getattr(changed_entry, "entry_id", None) != entry.entry_id:
+            return
+        if _rooms_pending_subentry_deletion(entry):
+            hass.config_entries.async_schedule_reload(entry.entry_id)
+
+    entry.async_on_unload(async_dispatcher_connect(hass, signal, _changed))
+
+
 def _async_cleanup_removed_room_registry_entries(
     hass: HomeAssistant, entry: FreshAirIQConfigEntry
 ) -> None:
@@ -289,11 +421,7 @@ def _async_cleanup_removed_room_registry_entries(
 
     stale_devices = []
 
-    # Home Assistant 2026.9 deprecates treating DeviceRegistry.devices as a
-    # mapping. The registry collection exposes DeviceEntry objects via .data.
-    registered_devices = device_registry.devices
-    devices = getattr(registered_devices, "data", registered_devices)
-    for device in devices:
+    for device in _iter_device_entries(device_registry, entry.entry_id):
         # A malformed/foreign registry item must never prevent FreshAirIQ from
         # starting. Valid DeviceEntry objects expose both id and identifiers.
         if not hasattr(device, "identifiers") or not hasattr(device, "id"):
@@ -357,15 +485,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -
                 updated_options[key] = repaired_options[key]
         hass.config_entries.async_update_entry(entry, options=updated_options)
 
+    # Rooms deleted directly as subentries are removed from the parent data
+    # first; otherwise the mirror below would re-create them.
+    _async_drop_rooms_deleted_as_subentries(hass, entry)
+
     # Mirror legacy/parent room configuration into native room subentries.
     _async_sync_room_subentries(hass, entry)
+    _async_remember_room_subentries(hass, entry)
 
     # Remove stale room devices/entities left in Home Assistant's registries
     # after a room was deleted from FreshAirIQ configuration.
     _async_cleanup_removed_room_registry_entries(hass, entry)
 
+    # 0.26.4.9: room devices live inside their room sub-entry, so Devices &
+    # services no longer lists every room twice (device + empty sub-entry).
+    try:
+        assign_room_devices(dr.async_get(hass), er.async_get(hass), er.async_entries_for_device, entry, DOMAIN)
+    except Exception:  # noqa: BLE001 - registry layout must never block setup
+        _LOGGER.debug("Could not move room devices into their sub-entries", exc_info=True)
+
     store = LearningStore(hass, entry.entry_id, entry.data.get(CONF_LEGACY_ENTRY_ID))
     await store.async_load()
+    # Data of rooms deleted from the configuration ages out (0.26.4.6).
+    configured_room_keys = {
+        str(room.get("key")) for room in entry.data.get(CONF_ROOMS, []) if isinstance(room, dict) and room.get("key")
+    }
+    try:
+        if store.prune_removed_rooms(configured_room_keys, dt_util.now()):
+            await store.async_save()
+    except Exception:  # noqa: BLE001 - housekeeping must never block integration setup
+        _LOGGER.debug("Could not prune learning data of removed rooms", exc_info=True)
     coordinator = FreshAirIQCoordinator(hass, entry, store)
     await coordinator.async_config_entry_first_refresh()
     await coordinator.async_start_listeners()
@@ -374,6 +523,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -
         async_sync_missing_entity_issue(hass, entry)
     except Exception:  # noqa: BLE001 - repair UI must never block integration setup
         _LOGGER.debug("Could not synchronize FreshAirIQ repair issues during setup", exc_info=True)
+    try:
+        _async_watch_room_subentry_deletion(hass, entry)
+    except Exception:  # noqa: BLE001 - convenience only; setup still drops deleted rooms
+        _LOGGER.debug("Could not watch room subentry deletion", exc_info=True)
     try:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except Exception:

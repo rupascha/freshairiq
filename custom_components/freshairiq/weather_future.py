@@ -6,6 +6,7 @@ back to the current outdoor state and retain the v0.9.6 conservative behaviour.
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from math import exp
 from typing import Any
@@ -15,6 +16,25 @@ from homeassistant.util import dt as dt_util
 
 from .model import absolute_humidity
 from .robustness import finite_float
+
+
+# Upper bound for one weather.get_forecasts action. The call runs inside the
+# coordinator update; a hanging weather provider (cloud API, slow add-on) must
+# never freeze every FreshAirIQ entity. On timeout the state-attribute fallback
+# and the coordinator's cached forecast keep working.
+FORECAST_REQUEST_TIMEOUT_SECONDS = 10.0
+# 0.26.4.7 (support export with 705 failed fetches in 13 h): a weather entity
+# that never delivers hourly temperature + humidity was asked again every
+# minute, each time a service call with up to 10 s timeout. Repeated failures
+# now back off; one successful fetch resets the schedule.
+FORECAST_RETRY_SCHEDULE_SECONDS = (60, 120, 300, 600, 1800, 3600)
+FORECAST_REFRESH_SECONDS = 600
+
+
+def forecast_retry_delay_seconds(consecutive_failures: int) -> int:
+    """Seconds until the next hourly-forecast attempt after N failures in a row."""
+    index = min(max(int(consecutive_failures), 1), len(FORECAST_RETRY_SCHEDULE_SECONDS)) - 1
+    return FORECAST_RETRY_SCHEDULE_SECONDS[index]
 
 
 def _f(value: Any) -> float | None:
@@ -52,24 +72,38 @@ def _extract_rows(payload: Any, entity_id: str) -> list[dict[str, Any]]:
     return [x for x in payload if isinstance(x, dict)]
 
 
-async def async_hourly_forecast(hass: HomeAssistant, entity_id: str | None) -> list[dict[str, Any]]:
-    """Return normalised hourly T/RH/AH boundaries from a HA weather entity."""
+async def async_hourly_forecast(
+    hass: HomeAssistant, entity_id: str | None, status: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Return normalised hourly T/RH/AH boundaries from a HA weather entity.
+
+    ``status`` (optional) receives a privacy-safe ``reason`` when nothing usable
+    came back: ``timeout``, ``service_error``, ``no_hourly_rows`` or
+    ``rows_without_temperature_or_humidity``. Support exports then show *why*
+    a weather entity cannot be used instead of only a failure counter.
+    """
     if not entity_id:
         return []
     payload: Any = None
+    reason: str | None = None
     try:
-        payload = await hass.services.async_call(
-            "weather", "get_forecasts",
-            {"entity_id": entity_id, "type": "hourly"},
-            blocking=True, return_response=True,
-        )
+        async with asyncio.timeout(FORECAST_REQUEST_TIMEOUT_SECONDS):
+            payload = await hass.services.async_call(
+                "weather", "get_forecasts",
+                {"entity_id": entity_id, "type": "hourly"},
+                blocking=True, return_response=True,
+            )
+    except TimeoutError:
+        payload, reason = None, "timeout"
     except Exception:  # Provider/HA version may not support action responses.
-        payload = None
+        payload, reason = None, "service_error"
 
     rows = _extract_rows(payload, entity_id)
     if not rows:
         state = hass.states.get(entity_id)
         rows = _extract_rows(state.attributes.get("forecast") if state else None, entity_id)
+    if not rows and reason is None:
+        reason = "no_hourly_rows"
 
     out: list[dict[str, Any]] = []
     for row in rows:
@@ -98,6 +132,8 @@ async def async_hourly_forecast(hass: HomeAssistant, entity_id: str | None) -> l
             "wind_bearing": round(wind_bearing, 1) if wind_bearing is not None else None,
         })
     out.sort(key=lambda x: x["datetime"])
+    if status is not None:
+        status["reason"] = None if out else (reason or "rows_without_temperature_or_humidity")
     return out[:48]
 
 

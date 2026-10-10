@@ -28,6 +28,7 @@ NATIVE_OPTION_KEYS = frozenset({
     "cooling_max_indoor_rh", "cooling_max_moisture_gain_5min_ml",
     "forecast_horizon_min", "pollen_enabled", "pollen_max",
     "pollen_strict_veto", "wind_orientation_enabled",
+    "outdoor_pm25_enabled", "outdoor_pm25_max",
     "voc_sensor_enabled", "pm25_sensor_enabled", "illuminance_sensor_enabled",
     "voc_warn", "voc_critical", "pm25_warn", "pm25_critical",
     "humidify_below_rh", "shade_above_temp_c", "shade_min_illuminance_lx",
@@ -36,7 +37,7 @@ NATIVE_OPTION_KEYS = frozenset({
     "adult_presence_entities", "child_presence_entities",
     "adult_resident_names", "child_resident_names", "resident_room_profiles",
     "presence_sensor_entities", "pet_safe_presence_entities",
-    "pets_in_household", "untracked_follow_household",
+    "pets_in_household", "untracked_follow_household", "presence_night_hold",
     "night_start_hour", "night_end_hour", "night_forecast_enabled",
     # energy
     "heating_system", "electricity_price_per_kwh", "heat_pump_cop",

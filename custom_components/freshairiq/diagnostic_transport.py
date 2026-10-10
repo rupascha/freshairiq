@@ -80,7 +80,7 @@ _REMOTE_SAFE_MODEL_OPTIONS = {
     "personal_priority", "night_window_preference", "cooling_start_temp_c",
     "cooling_min_outdoor_delta_c", "cooling_max_indoor_rh",
     "cooling_max_moisture_gain_5min_ml", "property_type", "night_start_hour",
-    "night_end_hour", "night_forecast_enabled", "pollen_enabled", "pollen_max",
+    "night_end_hour", "night_forecast_enabled", "pollen_enabled", "pollen_max", "outdoor_pm25_enabled", "outdoor_pm25_max",
     "pollen_strict_veto", "wind_orientation_enabled", "heating_system",
     "statistics_days",
 }

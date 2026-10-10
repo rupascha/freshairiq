@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any, Iterable
 
+from .outdoor_air import pm25_reason, veto_cause
+
 
 _PROBLEM_LEVELS = {"Elevated", "High", "Very high"}
 
@@ -177,8 +179,33 @@ def build_recommendation(
     pollen_index: float = 0.0,
     pollen_blocked: bool = False,
     night_forecast_ml: float = 0.0,
+    outdoor_pm25: float | None = None,
+    outdoor_pm25_blocked: bool = False,
 ) -> dict[str, Any]:
     """Compose the single best action for the home at this moment."""
+    # 0.26.4.7: outdoor fine dust (PM2.5) is a second outdoor-air veto next to
+    # pollen. Both postpone normal airing; critical CO₂/mould keep priority.
+    pollen_only = bool(pollen_blocked)
+    pm25_only = bool(outdoor_pm25_blocked)
+    pollen_blocked = pollen_only or pm25_only
+    veto = veto_cause(pollen_only, pm25_only)
+
+    def _outdoor_burden(context: str) -> list[str]:
+        pm = float(outdoor_pm25 or 0.0)
+        notes = []
+        if pollen_only:
+            notes.append({
+                "multi": f"Pollenindex {pollen_index:.1f}: Belastung beachten; kritische Luftqualität hat aktuell Vorrang",
+                "co2": f"Pollenindex {pollen_index:.1f}: Belastung beachten; die kritische Luftqualität hat aktuell Vorrang",
+                "mould": f"Pollenindex {pollen_index:.1f}; Schimmelschutz hat bei wirksamer Entfeuchtung aktuell Vorrang",
+            }[context])
+        if pm25_only:
+            notes.append({
+                "multi": f"Feinstaub draußen {pm:.0f} µg/m³: Belastung beachten; kritische Luftqualität hat aktuell Vorrang",
+                "co2": f"Feinstaub draußen {pm:.0f} µg/m³: Belastung beachten; die kritische Luftqualität hat aktuell Vorrang",
+                "mould": f"Feinstaub draußen {pm:.0f} µg/m³; Schimmelschutz hat bei wirksamer Entfeuchtung aktuell Vorrang",
+            }[context])
+        return notes
     valid = [r for r in rooms.values() if r.get("calculation_enabled", True) and r.get("data_quality") == "ok"]
     bad = [r for r in rooms.values() if r.get("calculation_enabled", True) and r.get("data_quality") != "ok"]
     active = [r for r in valid if r.get("active")]
@@ -282,7 +309,7 @@ def build_recommendation(
             reasons += [f"{r.get('name', r.get('key', 'Raum'))}: maximale Schutzlüftungsphase erreicht – schließen und CO₂ unmittelbar neu bewerten" for r in co2_reassess]
             reasons += [f"{r.get('name', r.get('key', 'Raum'))}: Oberflächenfeuchte {round(_f(r.get('surface_rh')))} %; trocknere Referenzluft kann jetzt entfeuchten" for r in mould_actions]
             reasons += [f"{r.get('name', r.get('key', 'Raum'))}: kritische Oberflächenfeuchte; Lüften würde aktuell nicht zuverlässig entfeuchten – geschlossen lassen" for r in mould_blocked]
-            if pollen_blocked and critical_co2_rooms: reasons.append(f"Pollenindex {pollen_index:.1f}: Belastung beachten; kritische Luftqualität hat aktuell Vorrang")
+            if pollen_blocked and critical_co2_rooms: reasons.extend(_outdoor_burden("multi"))
             parts=[]
             if to_open: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in to_open)+f" öffnen · ca. {max(round(duration),1)} min")
             if active_now: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in active_now)+" offen lassen")
@@ -312,7 +339,7 @@ def build_recommendation(
         if temp_change <= -1.0:
             reasons.append(f"Temperaturprognose {temp_change:+.1f} °C; deshalb nur kurz und effizient lüften")
         if pollen_blocked:
-            reasons.append(f"Pollenindex {pollen_index:.1f}: Belastung beachten; die kritische Luftqualität hat aktuell Vorrang")
+            reasons.extend(_outdoor_burden("co2"))
         is_active = bool(r.get("active"))
         if is_active and _goal_state(r).get("hard_close"):
             reasons.append("Die maximale Schutzlüftungsphase ist erreicht; schließen und CO₂ unmittelbar neu bewerten")
@@ -344,7 +371,7 @@ def build_recommendation(
             reasons = [f"{name}: Oberflächenfeuchte {round(surf)} %: sehr hohes Schimmelrisiko",
                        f"Außen-/Referenzluft ist {delta:.1f} g/m³ trockener"]
             if pollen_blocked:
-                reasons.append(f"Pollenindex {pollen_index:.1f}; Schimmelschutz hat bei wirksamer Entfeuchtung aktuell Vorrang")
+                reasons.extend(_outdoor_burden("mould"))
             is_active = bool(r.get("active"))
             return result(
                 "continue" if is_active else "ventilate", "critical_mould", "Feuchte kritisch", (f"{name} offen lassen · ca. {max(round(recommended_duration_min), 1)} min" if is_active else f"{name} jetzt lüften · ca. {max(round(recommended_duration_min), 1)} min"),
@@ -448,7 +475,9 @@ def build_recommendation(
         if problem:
             row = (r, urgent, reasons, severity)
             problem_rooms.append(row)
-            if r.get("action") in {"Do not ventilate", "Wait"}:
+            # 0.26.4.7: a room shown as "Wait" only because of the repeat
+            # cooldown is not blocked by physics; do not explain it as such.
+            if r.get("action") in {"Do not ventilate", "Wait"} and not r.get("repeat_cooldown_demoted"):
                 blocked_problem_rooms.append(row)
 
     # Hotfix v0.17.0.1:
@@ -529,10 +558,21 @@ def build_recommendation(
 
     if chosen and pollen_blocked and not any(c.urgent for c in chosen):
         names = ", ".join(c.name for c in chosen)
-        return result("pollen_wait", "pollen_warning", "Lüften verschieben", "Fenster vorerst geschlossen lassen",
-                      f"{names} würden von Lüftung profitieren, die aktuelle Pollenbelastung spricht aber gegen ein Öffnen.",
-                      selected=[room_by_key[c.key] for c in chosen],
-                      reasons=[f"Pollenindex {pollen_index:.1f} liegt über dem eingestellten Grenzwert"], severity="warning")
+        summary = {
+            "pm25": f"{names} würden von Lüftung profitieren, die aktuelle Feinstaubbelastung draußen spricht aber gegen ein Öffnen.",
+            "pollen_and_pm25": f"{names} würden von Lüftung profitieren, die aktuelle Pollen- und Feinstaubbelastung spricht aber gegen ein Öffnen.",
+        }.get(str(veto), f"{names} würden von Lüftung profitieren, die aktuelle Pollenbelastung spricht aber gegen ein Öffnen.")
+        reasons = []
+        if pollen_only:
+            reasons.append(f"Pollenindex {pollen_index:.1f} liegt über dem eingestellten Grenzwert")
+        if pm25_only:
+            reasons.append(pm25_reason(outdoor_pm25, options))
+        rec = result("pollen_wait", "pollen_warning", "Lüften verschieben", "Fenster vorerst geschlossen lassen",
+                     summary,
+                     selected=[room_by_key[c.key] for c in chosen],
+                     reasons=reasons, severity="warning")
+        rec["outdoor_veto_cause"] = veto
+        return rec
 
     if chosen:
         selected_rooms = [room_by_key[c.key] for c in chosen]

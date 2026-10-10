@@ -6,14 +6,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_status_transport_keeps_complete_room_history_fallback():
     text = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="utf-8")
-    assert '"rooms": self.coordinator.data["rooms"]' in text
+    assert '"rooms": slim_rooms(self.coordinator.data["rooms"])' in text  # 0.26.4.7: chart series served on demand (dashboard_transport)
     assert '"freshairiq_transport": "status_v2"' in text
     assert '"freshairiq_entry_id": self._entry.entry_id' in text
 
 
 def test_room_transport_is_versioned_and_keeps_payload():
     text = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="utf-8")
-    assert '"freshairiq_room_payload": room' in text
+    assert '"freshairiq_room_payload": slim_room(room)' in text  # 0.26.4.7: chart series served on demand (dashboard_transport)
     assert '"freshairiq_transport": "room_v2"' in text
     assert '"freshairiq_version": VERSION' in text
 

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.26.4.5",
+  "version": "0.26.4.9",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
     "ha_combined_coverage_percent": 99.0,
@@ -116,6 +116,8 @@
       "node_modules"
     ],
     "forbidden_suffixes": [
+      ".br",
+      ".gz",
       ".pyc",
       ".pyo"
     ],
@@ -123,7 +125,8 @@
       ".coverage",
       "coverage.xml",
       ".DS_Store",
-      "Thumbs.db"
+      "Thumbs.db",
+      ".precompressed.json"
     ],
     "artifact_suffix": "Public-Beta-Diagnostics-README-Screenshots-CLEAN"
   }

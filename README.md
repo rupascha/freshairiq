@@ -140,6 +140,10 @@ For energy estimates, heat pumps, gas, heating oil, district heating, or direct 
 
 # Install the beta
 
+## Your own automations (Node-RED, Alexa, fans)
+
+FreshAirIQ never switches devices itself – but you can react to every recommendation: via the room entities (e.g. `sensor.bedroom_action`) or via the events `freshairiq_room_action`, `freshairiq_house_recommendation` and `freshairiq_mould_risk`, which carry a ready-to-speak sentence. Examples, two blueprints and tips for tilt contacts and rooms without windows: **[docs/AUTOMATIONS.md](docs/AUTOMATIONS.md)** (German, with more detail: [docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)).
+
 ## Requirements
 
 - Home Assistant **2026.8.0 or newer**
@@ -161,6 +165,58 @@ For energy estimates, heat pumps, gas, heating oil, district heating, or direct 
 ## Manual installation
 
 Copy the complete `custom_components/freshairiq` folder to `/config/custom_components/freshairiq`, restart Home Assistant, then add FreshAirIQ under **Settings → Devices & services**.
+
+## Window contacts: 2-state, 3-state – or two contacts on one window
+
+FreshAirIQ detects the kind of window contact **automatically**:
+
+- **2-state** (`binary_sensor`, open/closed) – read as a normal window.
+- **3-state** (closed / tilted / open, e.g. a Homematic handle sensor) – FreshAirIQ learns *tilted* and *open* separately.
+
+**You have two 2-state contacts on one window** (bottom = window turned open, top = window tilted)? Combine them in Home Assistant with a **template helper** into one 3-state sensor and give FreshAirIQ only that helper as the window contact.
+
+| bottom contact | top contact | helper shows |
+| --- | --- | --- |
+| open | any | `open` |
+| closed | open | `tilted` |
+| closed | closed | `closed` |
+
+**Option A – in the UI (no YAML)**
+
+1. **Settings → Devices & services → Helpers → Create helper → Template → Template sensor**.
+2. Name, e.g. `Bedroom window`.
+3. Paste into **State template** and replace both entity IDs with yours:
+
+   ```jinja
+   {% if is_state('binary_sensor.bedroom_window_bottom', 'on') %}open
+   {% elif is_state('binary_sensor.bedroom_window_top', 'on') %}tilted
+   {% else %}closed{% endif %}
+   ```
+
+4. Leave the unit empty and save.
+
+**Option B – YAML (`configuration.yaml`)** – with availability and an options list, so FreshAirIQ recognises the sensor as 3-state right away:
+
+```yaml
+template:
+  - sensor:
+      - name: "Bedroom window"
+        unique_id: bedroom_window_state
+        device_class: enum
+        state: >
+          {% if is_state('binary_sensor.bedroom_window_bottom', 'on') %}open
+          {% elif is_state('binary_sensor.bedroom_window_top', 'on') %}tilted
+          {% else %}closed{% endif %}
+        availability: >
+          {{ states('binary_sensor.bedroom_window_bottom') not in ['unknown', 'unavailable']
+             and states('binary_sensor.bedroom_window_top') not in ['unknown', 'unavailable'] }}
+        attributes:
+          options: "{{ ['closed', 'tilted', 'open'] }}"
+```
+
+Then restart Home Assistant or use **Developer tools → YAML → Template entities**.
+
+**In FreshAirIQ:** edit the room and select **only the new helper** (`sensor.bedroom_window`) as the window/door contact – not the two single contacts as well, otherwise the window counts twice. With option B FreshAirIQ detects the three states immediately, with option A at the latest when the window is tilted for the first time.
 
 ---
 

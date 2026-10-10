@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+from tests.frontend_source import card_text
 ROOT=Path(__file__).resolve().parents[1]
 
 def test_native_multi_select_contract():
@@ -23,6 +24,6 @@ def test_native_de_en_help_contract():
     assert "at least one climate sensor must provide enough new measurements" in e
 
 def test_dashboard_de_en_help_contract():
-    s=(ROOT/"custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
+    s=card_text()
     for x in ("Ein Sensor reicht vollständig aus.","One sensor is fully sufficient.","Für eine Lüftungsauswertung muss mindestens ein Klimasensor genügend neue Messwerte liefern.","For ventilation-session evaluation, at least one climate sensor must provide enough new measurements."):
         assert x in s

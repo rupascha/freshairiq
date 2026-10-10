@@ -1,5 +1,6 @@
 from pathlib import Path
 from custom_components.freshairiq.opening_state import stabilise_explicit_mode
+from tests.frontend_source import card_text
 
 def test_open_to_tilt_transient_is_suppressed():
     assert stabilise_explicit_mode("tilted", "open", 0.4) == ("open", True)
@@ -15,7 +16,7 @@ def test_binary_and_closed_are_not_reinterpreted():
 def test_passage_door_is_available_in_both_configuration_surfaces_and_diagnostics():
     root=Path(__file__).parents[1]
     cfg=(root/'custom_components/freshairiq/config_flow.py').read_text()
-    ui=(root/'custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
+    ui=card_text()
     diag=(root/'custom_components/freshairiq/diagnostics.py').read_text()
     coord=(root/'custom_components/freshairiq/coordinator.py').read_text()
     assert 'CONF_CONTACT_PASSAGE_DOORS' in cfg
@@ -24,5 +25,5 @@ def test_passage_door_is_available_in_both_configuration_surfaces_and_diagnostic
     assert 'FAIQ-OPENING-3STATE-003' in coord
 
 def test_new_dashboard_copy_has_english_parity():
-    text=(Path(__file__).parents[1]/'custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
+    text=card_text()
     assert 'This door is regularly used as a passage and may only be pulled shut from outside' in text

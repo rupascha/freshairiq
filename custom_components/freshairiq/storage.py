@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from math import isfinite
+from time import monotonic
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -32,6 +33,21 @@ def _finite_number(value: Any, default: float = 0.0) -> float:
 
 AGGREGATE_HISTORY_DAYS = 730
 RAW_TEMPERATURE_HISTORY_DAYS = 30
+
+# Routine coordinator cycles change the learning store almost every 30 s. Writing
+# the complete JSON file each time causes heavy flash/SD-card wear and repeated
+# serialisation work. Routine changes are therefore coalesced through Home
+# Assistant's delayed Store write (which is also flushed on HA shutdown), while
+# a hard upper bound guarantees a write even when changes never pause.
+# Critical events (completed sessions, notifications, resets, unload) still save
+# immediately via ``async_save``.
+SAVE_DEBOUNCE_SECONDS = 30.0
+SAVE_MAX_DEFER_SECONDS = 120.0
+
+# Learning data of a room removed from the configuration is kept this long (in
+# case the room is re-added) and then deleted, so the store cannot keep growing.
+REMOVED_ROOM_GRACE_DAYS = 30
+REMOVED_ROOM_MARKER = "removed_from_configuration_at"
 
 
 def _room_defaults() -> dict[str, Any]:
@@ -108,6 +124,12 @@ def _room_defaults() -> dict[str, Any]:
         "session_close_humidity_feedback": False,
         "session_close_refresh_requested_at": None,
         "session_moisture_source_detected": False,
+        # 0.26.4.9: shutter learning guard measured over the whole airing.
+        "session_cover_observed_s": 0.0,
+        "session_cover_closed_s": 0.0,
+        "session_cover_max_closed": 0.0,
+        "session_cover_last_tick": None,
+        "session_cover_last_blocked": False,
         # Time-resolved cross-ventilation tracking.  A boolean sampled only at
         # session close is wrong because closing the contact itself ends the
         # cross-flow before the result is calculated.
@@ -139,6 +161,11 @@ def _room_defaults() -> dict[str, Any]:
         "moisture_source_generated_ml": 0.0,
         "moisture_source_label": "Feuchtequelle",
         "moisture_source_last_evaluated_at": None,
+        # 0.26.4.7: post-close rebound guard (last open sample, pending candidate).
+        "moisture_source_last_open_at": None,
+        "moisture_source_rebound_candidate": None,
+        # 0.26.4.7 (GitHub #15): ventilation start hysteresis.
+        "ventilation_candidate_latched": False,
         "last_action": None,
         "last_measurement_at": None,
         "last_measurement_valid": None,
@@ -276,6 +303,18 @@ def _room_defaults() -> dict[str, Any]:
     }
 
 
+_ROOM_DEFAULT_KEYS = tuple(_room_defaults())
+
+
+def _strictly_equal(left: Any, right: Any) -> bool:
+    """Equality that also distinguishes 1/1.0/True (persisted JSON must not drift)."""
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(_strictly_equal(left[k], right[k]) for k in left)
+    return bool(left == right)
+
+
 class LearningStore:
     """State that must survive Home Assistant restarts and integration reloads."""
 
@@ -283,6 +322,7 @@ class LearningStore:
         self._hass = hass
         self._store = Store(hass, STORAGE_VERSION, f"{STORAGE_KEY}.{entry_id}")
         self._legacy_entry_id = legacy_entry_id
+        self._save_pending_since: float | None = None
         self.data: dict[str, Any] = {
             "rooms": {},
             "last_diagnosis": "",
@@ -523,7 +563,11 @@ class LearningStore:
                 "samples": 0 if mode_samples is None else min(max(int(mode_samples), 0), 1000),
                 "credit": 0.0 if mode_credit is None else min(max(mode_credit, 0.0), 0.999999),
             }
-        room["opening_learning"] = clean_opening_learning
+        # Keep the existing object when nothing had to be repaired. Replacing it on
+        # every room() access was costly and silently detached references held
+        # by callers between two room() calls.
+        if opening_learning is not room.get("opening_learning") or not _strictly_equal(opening_learning, clean_opening_learning):
+            room["opening_learning"] = clean_opening_learning
         if not isinstance(room.get("three_state_contacts"), list):
             room["three_state_contacts"] = []
         if not isinstance(room.get("passage_behavior"), dict):
@@ -550,19 +594,73 @@ class LearningStore:
 
     def room(self, key: str) -> dict[str, Any]:
         rooms = self.data.setdefault("rooms", {})
-        room = rooms.setdefault(key, _room_defaults())
+        room = rooms.get(key)
         if not isinstance(room, dict):
             room = _room_defaults()
             rooms[key] = room
-        defaults = _room_defaults()
-        for k, v in defaults.items():
-            room.setdefault(k, v)
+        elif any(k not in room for k in _ROOM_DEFAULT_KEYS):
+            # Build fresh (unshared) default objects only when something is missing.
+            for k, v in _room_defaults().items():
+                room.setdefault(k, v)
         self._sanitize_room_learning(room)
         sanitize_runtime_session(room)
         return room
 
+    def prune_removed_rooms(self, configured_keys: set[str], now: datetime, *, grace_days: int = REMOVED_ROOM_GRACE_DAYS) -> bool:
+        """Forget learning data of rooms that were removed from the configuration.
+
+        A removed room is first only marked. Its data is deleted after
+        ``grace_days`` so that a room that is re-added soon (or briefly missing
+        during reconfiguration) keeps what it has learned. Returns True when
+        the store changed.
+        """
+        rooms = self.data.get("rooms")
+        if not isinstance(rooms, dict):
+            return False
+        changed = False
+        cutoff = now - timedelta(days=max(int(grace_days), 1))
+        for key in list(rooms):
+            room = rooms[key]
+            if str(key) in configured_keys:
+                if isinstance(room, dict) and room.pop(REMOVED_ROOM_MARKER, None) is not None:
+                    changed = True
+                continue
+            if not isinstance(room, dict):
+                del rooms[key]
+                changed = True
+                continue
+            try:
+                removed_at = datetime.fromisoformat(str(room.get(REMOVED_ROOM_MARKER)))
+            except (TypeError, ValueError):
+                room[REMOVED_ROOM_MARKER] = now.isoformat()
+                changed = True
+                continue
+            if removed_at.tzinfo is None and now.tzinfo is not None:
+                removed_at = removed_at.replace(tzinfo=now.tzinfo)
+            if removed_at <= cutoff:
+                del rooms[key]
+                changed = True
+        return changed
+
     async def async_save(self) -> None:
+        """Persist immediately (critical events, unload, explicit resets)."""
+        self._save_pending_since = None
         await self._store.async_save(self.data)
+
+    def _data_for_delayed_save(self) -> dict[str, Any]:
+        """Data callback for Store.async_delay_save; marks the pending write done."""
+        self._save_pending_since = None
+        return self.data
+
+    async def async_save_deferred(self) -> None:
+        """Coalesce routine persistence without ever deferring indefinitely."""
+        now = monotonic()
+        if self._save_pending_since is None:
+            self._save_pending_since = now
+        elif now - self._save_pending_since >= SAVE_MAX_DEFER_SECONDS:
+            await self.async_save()
+            return
+        self._store.async_delay_save(self._data_for_delayed_save, SAVE_DEBOUNCE_SECONDS)
 
     async def async_reset_learning(self) -> None:
         """Reset adaptive learning only; keep configuration and statistics."""
@@ -593,6 +691,8 @@ class LearningStore:
                     "session_close_humidity_baseline", "session_close_temperature_feedback",
                     "session_close_humidity_feedback", "session_close_refresh_requested_at",
                     "session_moisture_source_detected", "session_cross_active",
+                    "session_cover_observed_s", "session_cover_closed_s", "session_cover_max_closed",
+                    "session_cover_last_tick", "session_cover_last_blocked",
                     "session_cross_seconds", "session_cross_last_update",
                     "session_recommended_duration_min", "session_recommendation_followed",
                     "session_recommendation_issued_at", "session_predicted_removed_ml",

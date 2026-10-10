@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
 FLOW = (COMP / "config_flow.py").read_text(encoding="utf-8")
-CARD = (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
+CARD = card_text()
 
 
 def test_thermostat_is_optional_in_all_native_room_schemas():

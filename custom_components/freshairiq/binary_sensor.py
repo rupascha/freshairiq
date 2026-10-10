@@ -7,6 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity import FreshAirIQEntity
+from .room_devices import add_entities_by_room
 from .runtime import get_runtime_coordinator
 from .coordinator import FreshAirIQCoordinator
 from .typing import FreshAirIQConfigEntry
@@ -16,10 +17,10 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: FreshAirIQConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator = get_runtime_coordinator(hass, entry)
-    entities = [CrossVentilationSensor(coordinator, entry)]
-    for room in entry.data.get("rooms", []):
-        entities.append(RoomCloseSensor(coordinator, entry, room["key"], room["name"]))
-    async_add_entities(entities)
+    house = [CrossVentilationSensor(coordinator, entry)]
+    rooms = {room["key"]: [RoomCloseSensor(coordinator, entry, room["key"], room["name"])] for room in entry.data.get("rooms", [])}
+    # 0.26.4.9: each room's entities belong to the room's sub-entry.
+    add_entities_by_room(async_add_entities, entry, house, rooms)
 
 
 class CrossVentilationSensor(FreshAirIQEntity, BinarySensorEntity):

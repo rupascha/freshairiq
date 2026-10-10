@@ -8,7 +8,7 @@ def test_ai_first_dashboard_contract():
     assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS
     assert '_compactAIPanel(st, rooms = [])' in JS
     assert 'FreshAirIQ übernimmt' in JS
-    assert '<div class="ai-mascot-wrap fr-wrap">${freshySvg(freshyMood, 112, this._uiLanguage(), freshyProgress)}</div>' in JS
+    assert '<div class="ai-mascot-wrap fr-wrap">${freshySvg(freshyMood, 112, this._uiLanguage(), freshyProgress, this._freshyMotion(freshyMood, freshyTimeKind))}</div>' in JS
     assert '@media(prefers-reduced-motion:reduce)' in JS
     assert 'data-info="night"' in JS
     assert 'data-info="pollen"' in JS

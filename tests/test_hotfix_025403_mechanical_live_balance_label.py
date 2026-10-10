@@ -1,4 +1,5 @@
 from pathlib import Path
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -10,7 +11,7 @@ def test_coordinator_exposes_mechanical_exhaust_state_to_room_payload():
 
 
 def test_live_moisture_balance_labels_running_exhaust_as_mechanical():
-    js = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+    js = card_text()
     assert 'Boolean(r.configured_actuators?.mechanical_exhaust_active)' in js
     assert 'MECHANISCHE LÜFTUNG AKTIV' in js
     assert 'MECHANICAL VENTILATION ACTIVE' in js

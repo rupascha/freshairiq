@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
-from .seasonality import seasonal_adjust_rate
+from .seasonality import ensure_seasonal_defaults, seasonal_adjust_rate_prepared
 
 
 def _clamp(value: float, low: float, high: float) -> float:
@@ -22,7 +22,21 @@ def routine_bucket_key(when: datetime) -> str:
     return f"{day_type}_{when.hour:02d}"
 
 
+_ROUTINE_DEFAULT_KEYS = (
+    "routine_source_buckets",
+    "routine_response_buckets",
+    "routine_observation_at",
+    "routine_source_samples",
+    "routine_response_samples",
+    "routine_observation_dates",
+)
+
+
 def ensure_routine_defaults(room: dict[str, Any]) -> None:
+    # Hot path (called per forecast step): skip building defaults when the room
+    # is already complete. Semantics are identical to the former setdefault loop.
+    if all(key in room for key in _ROUTINE_DEFAULT_KEYS):
+        return
     defaults = {
         "routine_source_buckets": {},
         "routine_response_buckets": {},
@@ -99,13 +113,18 @@ def learn_response_pattern(room: dict[str, Any], issued_at: datetime, followed: 
     room["routine_response_samples"] = min(int(room.get("routine_response_samples", 0) or 0) + 1, 100000)
 
 
-def expected_source_rate(room: dict[str, Any], when: datetime) -> tuple[float | None, int]:
-    ensure_routine_defaults(room)
+def _bucket_source_rate(room: dict[str, Any], bucket_key: str) -> tuple[float | None, int]:
+    """Look up one learned bucket; the caller guarantees routine defaults."""
     buckets = room.get("routine_source_buckets")
-    row = buckets.get(routine_bucket_key(when)) if isinstance(buckets, dict) else None
+    row = buckets.get(bucket_key) if isinstance(buckets, dict) else None
     if not isinstance(row, dict) or row.get("rate_ml_min") is None:
         return None, 0
     return float(row["rate_ml_min"]), int(row.get("samples", 0) or 0)
+
+
+def expected_source_rate(room: dict[str, Any], when: datetime) -> tuple[float | None, int]:
+    ensure_routine_defaults(room)
+    return _bucket_source_rate(room, routine_bucket_key(when))
 
 
 def response_pattern(room: dict[str, Any], when: datetime) -> dict[str, Any] | None:
@@ -145,19 +164,28 @@ def project_generation_ml(rooms: list[dict[str, Any]], start: datetime, minutes:
     weighted_maturity = 0.0
     steps = max(1, int((minutes + 14.999) // 15))
     step_min = minutes / steps
+    # Performance (0.26.4.6): defaults are ensured once per room instead of once
+    # per room *and* 15-minute step, and room-invariant values are hoisted.
+    # Every arithmetic step and its order are unchanged, so results are
+    # bit-identical to the previous implementation.
+    prepared: list[tuple[dict[str, Any], float]] = []
+    for room in rooms:
+        ensure_routine_defaults(room)
+        ensure_seasonal_defaults(room)
+        key = str(room.get("key") or "")
+        prepared.append((room, float(fallback_rates.get(key, room.get("forecast_source_rate_ml_min", 0.0) or 0.0))))
     for idx in range(steps):
         at = start + timedelta(minutes=step_min * (idx + 0.5))
-        for room in rooms:
-            key = str(room.get("key") or "")
-            learned, samples = expected_source_rate(room, at)
-            fallback = float(fallback_rates.get(key, room.get("forecast_source_rate_ml_min", 0.0) or 0.0))
+        bucket_key = routine_bucket_key(at)
+        for room, fallback in prepared:
+            learned, samples = _bucket_source_rate(room, bucket_key)
             if learned is not None and samples >= 3:
                 weight = min(samples / 12.0, 1.0)
                 rate = learned * weight + fallback * (1.0 - weight)
                 weighted_maturity += weight
             else:
                 rate = fallback
-            rate, seasonal = seasonal_adjust_rate(room, at, rate)
+            rate, seasonal = seasonal_adjust_rate_prepared(room, at, rate)
             # Seasonal maturity contributes only as a small confidence refinement;
             # routine maturity remains the primary gate.
             weighted_maturity += min(float(seasonal.get("maturity", 0.0)) / 100.0, 1.0) * 0.15

@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from math import sqrt
 from typing import Any
 
+from .model import scaled_min_return
+
 from .energy import ventilation_cost_for_duration, ventilation_cost_for_temperature_path
 from .forecast import horizon_forecast
 
@@ -126,7 +128,8 @@ def evaluate_start_forecast_at_duration(
         horizon_min=duration,
         target_ah=float(context.get("target_ah")),
         cap_positive_to_target=duration > 5.0,
-        min_return_next_5_min_ml=float(controls.get("min_return_next_5_min_ml", 25.0)),
+        # 0.26.4.7: same volume-scaled close threshold as the live forecast.
+        min_return_next_5_min_ml=scaled_min_return(controls.get("min_return_next_5_min_ml", 25.0), args.get("volume_m3")),
         max_temp_loss_next_5_min_c=float(controls.get("max_temp_loss_next_5_min_c", 0.6)),
         min_efficiency_ml_per_01c=float(controls.get("min_efficiency_ml_per_01c", 8.0)),
         min_duration_min=float(controls.get("min_duration_min", 3.0)),
@@ -424,6 +427,7 @@ def build_validation_record(
         room_rows.append(row)
 
     valid = bool(moisture_pairs)
+    invalid_code = None
     if valid:
         invalid_reason = None
     elif sessions:
@@ -431,20 +435,26 @@ def build_validation_record(
         if any(bool(item.get("prediction_time_aligned")) for item in session_rows):
             if any(bool(item.get("moisture_source_contaminated")) for item in session_rows):
                 invalid_reason = "Zeitgleiche Startprognose vorhanden, aber wegen erkannter interner Feuchtequelle nicht objektiv bewertbar."
+                invalid_code = "moisture_source_during_session"
             elif any(
                 item.get("session_timestamp_activity_gate_passed") is False
                 for item in session_rows
                 if bool(item.get("prediction_time_aligned"))
             ):
                 invalid_reason = "Zeitgleiche Startprognose vorhanden, aber Temperatur und Luftfeuchtigkeit lieferten während der Lüftung nicht beide einen neueren Sensor-Zeitstempel. Die Session bleibt deshalb von Lernen und objektiver Prognosebewertung ausgeschlossen."
+                invalid_code = "no_fresh_sensor_timestamps"
             else:
                 invalid_reason = "Zeitgleiche Startprognose vorhanden, aber keine Session erfüllte alle objektiven Validierungskriterien."
+                invalid_code = "validation_criteria_not_met"
         elif any(item.get("prediction_reference") == "session_start_curve_v2" for item in session_rows):
             invalid_reason = "Eingefrorene Startprognose vorhanden, konnte aber nicht auf dieselbe Messdauer der abgeschlossenen Lüftung ausgewertet werden."
+            invalid_code = "duration_mismatch"
         else:
             invalid_reason = "Keine Startprognose mit eingefrorener, verlässlicher Zeitbasis für die abgeschlossene Lüftung vorhanden."
+            invalid_code = "no_frozen_start_forecast"
     else:
         invalid_reason = "Keine abgeschlossenen Raum-Sessions vorhanden."
+        invalid_code = "no_completed_room_sessions"
 
     return {
         "validation_version": 2,
@@ -453,6 +463,7 @@ def build_validation_record(
         "ended_at": result.get("ended_at"),
         "valid": valid,
         "invalid_reason": invalid_reason,
+        "invalid_code": invalid_code,
         "session_count": len([item for item in sessions if isinstance(item, dict)]),
         "comparable_session_count": len(comparable),
         "comparable_room_count": len({str(item.get("key") or "unknown") for item in comparable}),
@@ -603,6 +614,9 @@ def validation_summary(records: list[dict[str, Any]], *, days: int = 30) -> dict
         "record_count": len(scoped),
         "valid_record_count": len(valid),
         "invalid_record_count": len(scoped) - len(valid),
+        # 0.26.4.7 (Hub cluster FAIQ-FORECAST-001): exports only showed *that*
+        # comparisons were unusable; the codes tell why (no free text exported).
+        "invalid_reason_counts": _invalid_reason_counts(item for item in scoped if not item.get("valid")),
         "moisture_mae_ml": round(_mean(moisture_abs), 1) if moisture_abs else None,
         "moisture_rmse_ml": round(_rmse(moisture_signed), 1) if moisture_signed else None,
         "moisture_bias_ml": round(_mean(moisture_signed), 1) if moisture_signed else None,
@@ -616,3 +630,12 @@ def validation_summary(records: list[dict[str, Any]], *, days: int = 30) -> dict
         "latest": scoped[-1] if scoped else None,
         "rooms": room_summary,
     }
+
+
+def _invalid_reason_counts(records: Any) -> dict[str, int]:
+    """Count invalid comparisons by stable machine code (older records: "unrecorded")."""
+    counts: dict[str, int] = {}
+    for item in records:
+        code = str(item.get("invalid_code") or "unrecorded") if isinstance(item, dict) else "unrecorded"
+        counts[code] = counts.get(code, 0) + 1
+    return dict(sorted(counts.items()))

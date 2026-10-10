@@ -1,0 +1,15 @@
+# FreshAirIQ 0.26.4.8
+
+Dashboard download and Freshy release. Recommendations and learning are unchanged (golden master: 6 scenarios / 117 cycles, the only change is the new display field `weather_now`; German and English verified).
+
+Faster dashboard (smaller download):
+- The English phrase tables (about 165 kB, a third of the card) are now a separate module (`freshairiq-card-i18n-en.js`) that is loaded only when a dashboard is shown in English. German dashboards no longer download or parse them; the card itself shrinks from 553 kB to about 406 kB. The first paint of an English dashboard waits for the texts (no German flash, at most 2.5 s); if they cannot be loaded the card still renders (checked: 0.3 s with the module missing), retries after a minute and switches to English as soon as the texts arrive.
+- Compressed copies: at Home Assistant start FreshAirIQ writes `.gz` (and `.br` when Brotli is available) copies of its dashboard files next to them. Home Assistant's web server sends them automatically to browsers that accept compression – the card download drops from about 407 kB to about 98 kB (gzip; German dashboards: 553 kB before). The copies are refreshed before the files are served and only when a file changed (SHA-256 manifest); an outdated copy is deleted instead of being served. A read-only installation simply keeps serving the uncompressed files.
+
+Freshy:
+- The umbrella picture appeared on many dry days: it showed whenever rain was expected at some point during the coming night (forecast probability ≥ 55 %). It now appears only while it really rains (not for dry thunder either). New status attribute `weather_now` (condition, raining, snowing, thunder, `rain_in_min` – real precipitation within the next 2 hours –, frost ≤ 0 °C, heat ≥ 28 °C), display only.
+- Both eyes now always share one drawing (the happy face mixed a filled eye with an open arc).
+- New situations: tired with a night cap one hour before the night window ("Freshy wird müde – bald ist Nacht"), asleep with the cap at night, the cap also during evening recommendations, good morning with the sun in the first hour after the night, rain coming (looks up at a cloud), snow (scarf, snowflakes), frost (scarf, shivers, breath clouds), heat (sunglasses, sun), waiting for a better moment (clock), fine dust outside (mask). 19 moods in total.
+- Seamless animations: every loop ends exactly as it starts (checked automatically in a browser for all 35 loops), particles fade in and out, and no element waits visibly before it starts. All motion is anchored to one shared clock, so a live update continues the animation instead of jumping back to the first frame (verified: 1567 ms → 1693 ms across a re-render, before: back to 0). A short fade-in plays only when Freshy's situation changes.
+- New tests: `tests/test_freshy_026408.py`, `tests/test_frontend_split_026408.py`; contract tests that check German copy together with its English text read card + English module (`tests/frontend_source.py`).
+

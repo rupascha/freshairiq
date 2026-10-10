@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_sensor_notifications_respect_runtime_recovery_grace_without_hiding_persistent_failures():
     s = (ROOT / "custom_components/freshairiq/notifications.py").read_text()
     assert 'sensor_recovery_active = bool(recovery.get("active"))' in s
-    assert 'options.get("notify_sensor") and not sensor_recovery_active' in s
+    assert '    if not sensor_recovery_active:\n        for r in room_events["sensor"]:' in s  # 0.26.4.9: events + push
     assert 'kind == "sensor" and sensor_recovery_active' in s
     assert 'reason="sensor_recovery_grace"' in s
     assert 'not (kind == "sensor" and sensor_recovery_active)' in s

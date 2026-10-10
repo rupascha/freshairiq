@@ -1,7 +1,8 @@
 import json, re
 from pathlib import Path
+from tests.frontend_source import card_text
 ROOT=Path(__file__).resolve().parents[1]
-CARD=(ROOT/'custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
+CARD=card_text()
 
 def _flat(obj,p=''):
     out={}

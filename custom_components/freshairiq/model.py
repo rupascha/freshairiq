@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass
 from math import exp, isfinite
 from typing import Any
 
+from .outdoor_air import outdoor_pm25_blocked as _outdoor_pm25_blocked
+
 
 def absolute_humidity(temp_c: float, rh: float) -> float:
     """Return absolute humidity in g/m³ using the V14.2.1 Magnus formula."""
@@ -53,6 +55,10 @@ class RoomInput:
     moisture_source_label: str = "Feuchtequelle"
     moisture_source_confidence: int = 0
     moisture_source_rate_ml_min: float = 0.0
+    # 0.26.4.7 (GitHub #15): the room recommended airing in the previous cycle.
+    ventilation_latched: bool = False
+    # 0.26.4.7 (user feedback): outdoor fine dust (PM2.5, µg/m³); None = no sensor.
+    outdoor_pm25: float | None = None
 
 
 @dataclass(slots=True)
@@ -95,6 +101,40 @@ class RoomResult:
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+# 0.26.4.7 (GitHub #15 "Ventilate/Close flapping in small rooms"):
+# * Hysteresis: once a room recommends airing, the start condition is released
+#   only after humidity/drying gradient fall clearly below the start values.
+# * The close criterion "additional benefit in the next 5 min" is an absolute
+#   amount of water (default 25 ml). A 9.4 m³ bathroom can physically never
+#   reach it, so every session was closed at the minimum duration and the room
+#   re-armed shortly after. The threshold now scales with room volume below a
+#   typical 30 m³ room (never below a quarter of the configured value).
+VENTILATION_HYSTERESIS_RH = 2.0
+VENTILATION_HYSTERESIS_DELTA_G_M3 = 0.4
+MIN_RETURN_REFERENCE_VOLUME_M3 = 30.0
+MIN_RETURN_MIN_VOLUME_FACTOR = 0.25
+
+
+def min_return_volume_factor(volume_m3: Any) -> float:
+    """Share of the configured 5-minute close threshold that applies to a room volume."""
+    try:
+        volume = float(volume_m3)
+    except (TypeError, ValueError):
+        return 1.0
+    if not isfinite(volume) or volume <= 0:
+        return 1.0
+    return min(max(volume / MIN_RETURN_REFERENCE_VOLUME_M3, MIN_RETURN_MIN_VOLUME_FACTOR), 1.0)
+
+
+def scaled_min_return(min_return_ml: Any, volume_m3: Any) -> float:
+    """Configured close threshold (ml per 5 min) scaled to the room volume."""
+    try:
+        base = float(min_return_ml)
+    except (TypeError, ValueError):
+        base = 25.0
+    return max(base, 0.0) * min_return_volume_factor(volume_m3)
 
 
 def _mould_level(surface_rh: float, warn: float, critical: float) -> str:
@@ -164,9 +204,15 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         start_rh = max(40.0, start_rh - 2.0)
         min_delta = max(0.1, min_delta * 0.85)
         min_delta_high = max(0.1, min_delta_high * 0.85)
+    high_rh = float(options["high_rh"])
+    if room.ventilation_latched and not room.session_active:
+        start_rh -= VENTILATION_HYSTERESIS_RH
+        high_rh -= VENTILATION_HYSTERESIS_RH
+        min_delta = max(0.1, min_delta - VENTILATION_HYSTERESIS_DELTA_G_M3)
+        min_delta_high = max(0.1, min_delta_high - VENTILATION_HYSTERESIS_DELTA_G_M3)
     candidate = (
         (room.humidity >= start_rh and delta >= min_delta)
-        or (room.humidity >= float(options["high_rh"]) and delta >= min_delta_high)
+        or (room.humidity >= high_rh and delta >= min_delta_high)
     )
     # An active internal moisture source changes the decision context. Even a
     # modest positive drying gradient is useful because ventilation is then
@@ -220,7 +266,9 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         and room.pollen_index > float(options.get("pollen_max", 4.0))
         and not urgent
     )
-    min_return = float(options["min_return_next_5_min_ml"])
+    pm25_blocked = _outdoor_pm25_blocked(options, room.outdoor_pm25) and not urgent
+    outdoor_blocked = pollen_blocked or pm25_blocked
+    min_return = scaled_min_return(options["min_return_next_5_min_ml"], room.volume_m3)
     max_temp_loss = float(options["max_temp_loss_next_5_min_c"])
     min_efficiency = float(options["min_efficiency_ml_per_01c"])
     if profile == "dehumidify":
@@ -277,7 +325,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         and delta >= max(float(options.get("close_delta", 0.4)), 0.4)
         and mins < max(float(options.get("moisture_source_postrun_min", 8.0)), float(options.get("min_duration_min", 3.0)))
     )
-    source_keep_open = running and (source_drying_useful or source_postrun) and not pollen_blocked
+    source_keep_open = running and (source_drying_useful or source_postrun) and not outdoor_blocked
     # Hotfix 0.19.1.1: reaching target RH or the close-delta is no longer
     # sufficient on its own to stop an active airing session.  In a dry-air
     # situation a room can still remove a meaningful amount of water even after
@@ -312,8 +360,11 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
             action, reason = "Continue ventilating", f"Cooling remains useful; outdoor air is {cooling_delta:.1f} °C cooler"
         else:
             action, reason = "Continue ventilating", f"Short-term 5-minute close check expects {round(next5)} ml moisture removal"
-    elif pollen_blocked and (candidate or cooling_candidate):
-        action, reason = "Do not ventilate", f"Pollen load {room.pollen_index:.1f} exceeds configured limit"
+    elif outdoor_blocked and (candidate or cooling_candidate):
+        action, reason = "Do not ventilate", (
+            f"Pollen load {room.pollen_index:.1f} exceeds configured limit" if pollen_blocked
+            else f"Outdoor fine dust {float(room.outdoor_pm25 or 0.0):.0f} µg/m³ exceeds configured limit"
+        )
     elif candidate:
         action, reason = "Ventilate", f"About {max(round(potential), 0)} ml moisture can be removed"
     elif cooling_candidate:

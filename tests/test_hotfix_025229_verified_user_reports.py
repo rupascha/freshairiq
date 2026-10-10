@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from custom_components.freshairiq.guardian import evaluate_guardian
 from custom_components.freshairiq.opening_state import advertises_three_states, normalize_opening_state
 from custom_components.freshairiq.opening_strategy import synchronize_room_presentation_actions
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -36,14 +37,14 @@ def test_unexplained_visible_contradiction_is_still_guarded():
 
 
 def test_iq_branding_respects_same_toggle_as_classic():
-    card = (COMP / "frontend/freshairiq-card.js").read_text()
+    card = card_text()
     assert 'const iqTopBar = showBranding || showProfileBadge ?' in card
     assert 'ai-top${showBranding ? "" : " profile-only"}' in card
     assert '${showBranding ? `<img class="logo"' in card
 
 
 def test_dark_dashboard_room_text_has_explicit_readable_contrast_contract():
-    card = (COMP / "frontend/freshairiq-card.js").read_text()
+    card = card_text()
     rule = '.room-title,.room-water strong,.room-value,.room-big,.breakdown-row b,.breakdown-row strong,.ai-room b,.decision-room-disclosure>summary span,.decision-more>summary>span:first-child{color:#e9f0f4}'
     assert rule in card
 
@@ -51,7 +52,7 @@ def test_dark_dashboard_room_text_has_explicit_readable_contrast_contract():
 def test_attic_apartment_english_copy_is_top_floor_without_migrating_internal_id():
     strings = (COMP / "strings.json").read_text()
     english = (COMP / "translations/en.json").read_text()
-    card = (COMP / "frontend/freshairiq-card.js").read_text()
+    card = card_text()
     assert '"attic_apartment": "Top-floor apartment"' in strings
     assert '"attic_apartment": "Top-floor apartment"' in english
     assert '["Dachgeschosswohnung", "Top-floor apartment"]' in card

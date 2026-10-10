@@ -10,7 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-MOODS = ["ok", "act", "run", "done", "night", "rain", "cool", "mould", "sensor", "pollen", "learn"]
+# 0.26.4.8: nineteen moods (sleepy, morning, rain_soon, snow, frost, heat, wait, dust added).
+MOODS = ["ok", "act", "run", "done", "night", "sleepy", "morning", "rain", "rain_soon", "snow", "frost", "heat", "wait", "cool", "mould", "sensor", "pollen", "dust", "learn"]
 
 
 def _panel():
@@ -25,7 +26,7 @@ def test_iq_view_and_classic_view_are_both_back():
 
 def test_iq_hero_uses_the_animated_freshy():
     panel = _panel()
-    assert '<div class="ai-mascot-wrap fr-wrap">${freshySvg(freshyMood, 112, this._uiLanguage(), freshyProgress)}</div>' in panel
+    assert '<div class="ai-mascot-wrap fr-wrap">${freshySvg(freshyMood, 112, this._uiLanguage(), freshyProgress, this._freshyMotion(freshyMood, freshyTimeKind))}</div>' in panel
     assert 'class="ai-freshy-angle"' not in panel
 
 
@@ -33,15 +34,21 @@ def test_eleven_moods_each_have_their_own_face_or_motion():
     assert f'const FRESHY_MOODS = {str(MOODS).replace(chr(39), chr(34))};' in CARD
     for mood in MOODS:
         assert re.search(rf"\.fr-{mood} [^{{]*\{{[^}}]*(display:inline|animation|stroke)", CARD), mood
-    assert "@media (prefers-reduced-motion: reduce){.fr *{animation:none!important}}" in CARD
+    assert "@media (prefers-reduced-motion: reduce){.fr,.fr *{animation:none!important}}" in CARD
     assert "FAIQ_DESIGN_CSS + FAIQ_FRESHY_CSS" in CARD
 
 
 def test_mood_follows_the_situation_logic():
     panel = _panel()
-    assert 'const freshyMood = kind === "live" && close.some(r => r.active) ? "done"' in panel
-    assert ': kind === "continuous" || kind === "live" ? "run"' in panel
-    assert 'kind === "night" ? (nightRecommendation && freshyNightAction ? "act" : freshyRainClose ? "rain" : "night")' in panel
+    assert "const freshyMood = this._freshyMood(st, {" in panel
+    start = CARD.index("    _freshyMood(st, ctx) {")
+    logic = CARD[start:CARD.index("\n    _freshyMotion", start)]
+    assert 'if (kind === "live" && close.some(r => r.active)) return "done";' in logic
+    assert 'if (kind === "continuous" || kind === "live") return "run";' in logic
+    assert 'if (kind === "recommend" || (kind === "night" && nightRecommendation && nightAction)) return "act";' in logic
+    # 0.26.4.8: umbrella only while it really rains, not for rain expected tonight
+    assert 'if (weather.raining) return weather.snowing ? "snow" : "rain";' in logic
+    assert "rain_expected" not in logic
 
 
 def test_freshy_is_not_small():

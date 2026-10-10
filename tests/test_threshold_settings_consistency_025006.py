@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+from tests.frontend_source import card_text
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / 'custom_components' / 'freshairiq'
@@ -17,7 +18,7 @@ def test_threshold_settings_are_guided_and_unambiguous():
 
 
 def test_automatic_threshold_explanation_matches_runtime_formula():
-    js = (COMP / 'frontend' / 'freshairiq-card.js').read_text(encoding='utf-8')
+    js = card_text()
     de = json.loads((COMP / 'translations' / 'de.json').read_text(encoding='utf-8'))
     desc = de['options']['step']['threshold']['description']
     for token in ('durch vier', '6–12 %', '25 %', '2 °C'):
