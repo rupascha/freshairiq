@@ -38,6 +38,7 @@ from .const import (
     DOMAIN,
     VERSION,
 )
+from .cooldown import FEEDBACK_COOLDOWN_SECONDS, cooldown_result, hub_retry_after, remaining_seconds, started_cooldown
 from .runtime_health import HEALTH_CONTRACT_VERSION
 from .diagnostic_transport import (
     build_upload_chunks,
@@ -168,6 +169,7 @@ class FreshAirIQDiagnosticsClient:
             "client_context_enabled": bool(self.entry.options.get("diagnostics_include_client_context", True)),
             "support_last_success_at": self._state.get("support_last_success_at"),
             "support_cooldown_until": self._state.get("support_cooldown_until"),
+            "feedback_cooldown_until": self._state.get("feedback_cooldown_until"),
             "support_last_case_id": self._state.get("support_last_case_id"),
         }
 
@@ -473,6 +475,24 @@ class FreshAirIQDiagnosticsClient:
             raise ValueError("feedback_message_invalid")
         if not self.endpoint:
             raise RuntimeError("hub_unconfigured")
+        # 0.26.4.10 (to-do "Feedback alle 15min"): one feedback per 15 minutes.
+        now = dt_util.now()
+        left = remaining_seconds(self._state.get("feedback_cooldown_until"), now)
+        if left:
+            return cooldown_result(left, now)
+        result = await self._async_post_feedback(kind, text, client_context)
+        if isinstance(result, dict) and result.get("reason") == "cooldown":
+            self._state["feedback_cooldown_until"] = result["cooldown_until"]
+            await self._save_state()
+            return result
+        until = started_cooldown(now)
+        self._state["feedback_cooldown_until"] = until
+        await self._save_state()
+        out = dict(result) if isinstance(result, dict) else {}
+        out.update({"cooldown_until": until, "cooldown_seconds": FEEDBACK_COOLDOWN_SECONDS})
+        return out
+
+    async def _async_post_feedback(self, kind: str, text: str, client_context: Mapping[str, Any] | None) -> dict[str, Any]:
         identity = await self.recorder.async_get_identity()
         installation_id = str(identity.get("installation_id") or "")
         if not installation_id:
@@ -513,6 +533,12 @@ class FreshAirIQDiagnosticsClient:
                 async with session.post(f"{self.endpoint}/v1/feedback", json=payload, headers=headers, timeout=timeout) as retry:
                     if retry.status < 200 or retry.status >= 300: raise RuntimeError(f"feedback_http_{retry.status}")
                     return await retry.json()
+            if response.status == 429:
+                try:
+                    body = await response.json()
+                except Exception:  # noqa: BLE001 - an unreadable 429 still means "later"
+                    body = None
+                return cooldown_result(hub_retry_after(body) or FEEDBACK_COOLDOWN_SECONDS, dt_util.now())
             if response.status < 200 or response.status >= 300:
                 raise RuntimeError(f"feedback_http_{response.status}")
             return await response.json()

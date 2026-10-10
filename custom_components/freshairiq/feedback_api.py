@@ -40,6 +40,11 @@ class FreshAirIQFeedbackView(HomeAssistantView):
                 raise ValueError(_msg(hass, "FreshAirIQ ist gerade nicht geladen.", "FreshAirIQ is not loaded right now."))
             client_context = payload.get("client_context") if isinstance(payload.get("client_context"), dict) else None
             result = await coordinator.telemetry.async_submit_feedback(kind, message, client_context=client_context)
+            if isinstance(result, dict) and result.get("reason") == "cooldown":
+                mins = max(1, -(-int(result.get("retry_after_seconds") or 60) // 60))
+                return self.json({**result, "error": _msg(
+                    hass, f"Feedback ist nur alle 15 Minuten möglich. Nächstes Feedback in {mins} Min.",
+                    f"Feedback can be sent once every 15 minutes. Next feedback in {mins} min.")}, status_code=429)
             return self.json({"ok":True, **result})
         except ValueError as err:
             return self.json({"error":str(err)}, status_code=400)

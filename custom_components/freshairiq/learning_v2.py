@@ -29,7 +29,7 @@ def build_learning_v2_status(rooms: Mapping[str,Mapping[str,Any]]|list[Mapping[s
     post_close: Mapping[str,Any]|None=None, components: Mapping[str,Any]|None=None) -> dict[str,Any]:
     vals=list(rooms.values()) if isinstance(rooms,Mapping) else list(rooms or [])
     vals=[r for r in vals if isinstance(r,Mapping) and r.get("calculation_enabled",True)]
-    bt=forecast_backtest or {}; eff=learning_effectiveness or {}; pc=post_close or {}; comp=components or {}
+    bt=forecast_backtest or {}; eff=learning_effectiveness or {}; pc=post_close or {}
     eff_status=str(eff.get("status") or "collecting")
     global_drift = eff_status == "regressing"
     overall_mae=bt.get("moisture_mae_ml")

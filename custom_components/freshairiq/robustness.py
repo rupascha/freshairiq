@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from math import isfinite
-from typing import Any, Iterable
+from typing import Any
 
 from .const import (
     CONF_ROOM_NAME,

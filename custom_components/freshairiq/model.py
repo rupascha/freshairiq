@@ -59,6 +59,10 @@ class RoomInput:
     ventilation_latched: bool = False
     # 0.26.4.7 (user feedback): outdoor fine dust (PM2.5, µg/m³); None = no sensor.
     outdoor_pm25: float | None = None
+    # 0.26.4.10: planned airing duration known when the window was opened.
+    session_target_min: float | None = None
+    # 0.26.4.10: only an exhaust fan runs, no window/door is open.
+    mechanical_only: bool = False
 
 
 @dataclass(slots=True)
@@ -334,16 +338,30 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     # threshold.  The configured hard maximum duration and a genuinely poor
     # thermal efficiency remain independent close reasons.
     moisture_close = low_return and not cooling_still_useful
-    should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and (
-        mins >= float(options["max_duration_min"])
-        or (
-            mins >= float(options["min_duration_min"])
-            and (
-                moisture_close
-                or thermal_bad
+    # 0.26.4.10 (support case): within the planned airing duration a close is only
+    # recommended when moisture would come in – not merely because the next five
+    # minutes look small or the room cools down as forecast.
+    moisture_ingress = moisture_effect_next5 <= 0.0 or delta <= float(options.get("close_delta", 0.4))
+    planned_phase = running and room.session_target_min is not None and mins < float(room.session_target_min)
+    soft_close_allowed = not planned_phase or moisture_ingress
+    # 0.26.4.10 (community: "Garage schließen", although only the exhaust fan
+    # runs): a fan may run for hours on purpose. There is nothing to close, and
+    # neither the maximum window duration nor a small return is a reason to stop
+    # it – only moisture coming in is ("Lüfter ausschalten").
+    if room.mechanical_only:
+        should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and moisture_ingress
+    else:
+        should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and (
+            mins >= float(options["max_duration_min"])
+            or (
+                mins >= float(options["min_duration_min"])
+                and soft_close_allowed
+                and (
+                    moisture_close
+                    or thermal_bad
+                )
             )
         )
-    )
     close_signal = running and close_decision_ready and not source_keep_open and (room.close_notified or should_close)
 
     if close_signal:

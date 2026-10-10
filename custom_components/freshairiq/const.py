@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.4.9"
+VERSION = "0.26.4.10"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -115,11 +115,7 @@ MOISTURE_SOURCES = [
     MOISTURE_SOURCE_WASHING_MACHINE, MOISTURE_SOURCE_DRYER, MOISTURE_SOURCE_IRONING_STATION, MOISTURE_SOURCE_LAUNDRY_DRYING,
 ]
 
-FLOOR_BASEMENT = "basement"
 FLOOR_GROUND = "ground_floor"
-FLOOR_UPPER = "upper_floor"
-FLOOR_ATTIC = "attic"
-FLOOR_OTHER = "other"
 
 ORIENTATION_UNKNOWN = "unknown"
 ORIENTATIONS = ["unknown", "n", "ne", "e", "se", "s", "sw", "w", "nw"]

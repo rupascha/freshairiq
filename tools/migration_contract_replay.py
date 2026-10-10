@@ -5,7 +5,7 @@ upgrade contract is testable without importing Home Assistant. Any production mi
 change must update this replay and its fixtures together, making user-data changes explicit.
 """
 from __future__ import annotations
-import copy, json, sys
+import copy, json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]

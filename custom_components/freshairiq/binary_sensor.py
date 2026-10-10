@@ -5,7 +5,6 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
 from .entity import FreshAirIQEntity
 from .room_devices import add_entities_by_room
 from .runtime import get_runtime_coordinator

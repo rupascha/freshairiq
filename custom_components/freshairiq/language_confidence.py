@@ -9,6 +9,8 @@ from __future__ import annotations
 from typing import Any
 from math import isfinite
 
+from .close_wording import fan_only, fan_stop_message
+
 
 def _f(value: Any, default: float = 0.0) -> float:
     try:
@@ -251,6 +253,9 @@ def room_notification_message(event: str, room: dict[str, Any], store_data: dict
             "Für eine verlässliche Empfehlung fehlen gültige Messwerte. Sensoren prüfen.",
         ],
     }.get(event, [""])
+    if event == "close" and fan_only(room):
+        # 0.26.4.10: only the exhaust fan runs – it is stopped only because moisture would come in.
+        variants = [fan_stop_message(room)]
     return _choose(store, f"room_notification:{event}:{room.get('key') or name}", signature, variants)
 
 

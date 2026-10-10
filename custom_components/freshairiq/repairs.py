@@ -7,7 +7,6 @@ configuration repair and must not create a persistent user-facing warning.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er

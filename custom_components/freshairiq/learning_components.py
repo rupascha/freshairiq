@@ -6,7 +6,7 @@ threshold or forecast coefficient.
 """
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 
@@ -227,7 +227,6 @@ def build_learning_components_status(
     # up to 25 points; only a fully traversed season may contribute the full 25.
     # This makes "lernt gerade" visible without falsely declaring a mid-season
     # installation optimized.
-    seasonal_evidence_days = sum(int(item["observed_days"]) for item in season_breakdown)
     seasonal_progress_percent = 0.0
     for item in season_breakdown:
         if item["optimized"]:

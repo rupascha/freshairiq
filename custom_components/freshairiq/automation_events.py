@@ -22,6 +22,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from .close_wording import fan_only
+
 EVENT_ROOM_ACTION = "freshairiq_room_action"
 EVENT_HOUSE_RECOMMENDATION = "freshairiq_house_recommendation"
 EVENT_MOULD_RISK = "freshairiq_mould_risk"
@@ -46,13 +48,13 @@ _LABELS = {
         "ventilate": "Bitte lüften", "continue_ventilating": "Weiterlüften", "close": "Bitte Fenster schließen",
         "ventilate_for_cooling": "Zum Kühlen lüften", "do_not_ventilate": "Bitte nicht lüften", "wait": "Noch warten",
         "okay": "Alles in Ordnung", "check_sensor": "Sensor prüfen", "monitor_only": "Nur Beobachtung",
-        "open_fully": "Fenster ganz öffnen",
+        "open_fully": "Fenster ganz öffnen", "close_fan": "Bitte Lüfter ausschalten",
     },
     "en": {
         "ventilate": "Please air the room", "continue_ventilating": "Keep airing", "close": "Please close the window",
         "ventilate_for_cooling": "Air for cooling", "do_not_ventilate": "Please do not air", "wait": "Wait for now",
         "okay": "All good", "check_sensor": "Check sensor", "monitor_only": "Monitoring only",
-        "open_fully": "Open the window fully",
+        "open_fully": "Open the window fully", "close_fan": "Please switch off the fan",
     },
 }
 _MOULD_ORDER = {"Low": 0, "Elevated": 1, "High": 2, "Very high": 3}
@@ -101,7 +103,8 @@ def _language(data: dict[str, Any]) -> str:
 
 def room_payload(room: dict[str, Any], *, previous_action: Any, language: str, entry_id: str) -> dict[str, Any]:
     code = action_code(room.get("action"))
-    label = _LABELS[language].get(code, str(room.get("action") or ""))
+    # 0.26.4.10: a room aired only by its fan has no window to close.
+    label = _LABELS[language].get("close_fan" if code == "close" and fan_only(room) else code, str(room.get("action") or ""))
     name = str(room.get("name") or room.get("key") or "")
     reasons = [str(x) for x in (room.get("recommendation_reasons") or []) if str(x).strip()][:4]
     return {

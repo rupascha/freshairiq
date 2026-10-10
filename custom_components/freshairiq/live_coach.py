@@ -8,6 +8,8 @@ from __future__ import annotations
 from typing import Any
 from math import isfinite
 
+from .close_wording import close_instruction, fan_only, keep_instruction
+from .consolidation import moisture_coming_in, opening_phase_protected, planned_target_min
 from .model import min_return_volume_factor
 
 
@@ -52,7 +54,9 @@ def refine_live_recommendation(
         )
         return out
 
-    elapsed = max((_f(r.get("session_elapsed_min")) for r in active), default=0.0)
+    # 0.26.4.10: a long-running exhaust fan does not time the windows opened later.
+    timed = [r for r in active if not fan_only(r)] or active
+    elapsed = max((_f(r.get("session_elapsed_min")) for r in timed), default=0.0)
     min_duration = max(_f(options.get("min_duration_min"), 3.0), 2.0)
     max_duration = max(_f(options.get("max_duration_min"), 20.0), min_duration)
 
@@ -129,7 +133,20 @@ def refine_live_recommendation(
     state = "on_track"
     reason = "Ist-Verlauf entspricht dem gelernten Lüftungsmodell"
 
-    if elapsed >= min_duration and next5 < min_return and not health_urgent:
+    # 0.26.4.10: inside the airing time shown when the window was opened – and for
+    # rooms aired only by their exhaust fan – the coach never shortens or closes;
+    # only moisture coming in may end the airing (support case 472cf5b9, garage).
+    signed_next5 = sum(_f(r.get("forecast_5_min_net_moisture_change_ml", r.get("forecast_5_min_moisture_effect_ml",
+                                r.get("moisture_effect_next_5_min_ml")))) for r in active)
+    ingress = moisture_coming_in(active, signed_next5, _f(options.get("close_delta"), 0.4))
+    planned_target = planned_target_min(active)
+    planned_hold = not ingress and opening_phase_protected(active, planned_target)
+    fans_only = all(fan_only(r) for r in active)
+    hold = planned_hold or (fans_only and not ingress)
+
+    if hold:
+        pass
+    elif elapsed >= min_duration and next5 < min_return and not health_urgent:
         target = min(target, elapsed)
         state = "shortened"
         reason = f"Zusatznutzen fällt ab: interner 5-Minuten-Schließcheck nur noch etwa {round(next5)} ml"
@@ -144,6 +161,9 @@ def refine_live_recommendation(
         reason = f"Lüftung wirkt langsamer als erwartet; weitere Luftwechsel sind noch sinnvoll"
 
     target = _clamp(target, min_duration, max_duration)
+    if planned_hold:
+        # The shown time is never shorter than the time shown at opening.
+        target = max(target, min(float(planned_target), max_duration))
     remaining = max(target - elapsed, 0.0)
 
     # Canonical protection gate: no goal priority or ETA may extend a session
@@ -161,7 +181,7 @@ def refine_live_recommendation(
         reason = "Schutzgrenze erreicht; offene Komfortziele dürfen die Lüftung nicht weiter verlängern." + suffix
         out.update({
             "kind":"close", "status":"close_windows", "title":"Jetzt schließen",
-            "instruction":" + ".join(str(r.get("name", r.get("key", "Raum"))) for r in active)+" schließen",
+            "instruction":close_instruction(active),
             "summary":"Eine Schutzgrenze ist erreicht. Noch offene Ziele bleiben sichtbar, rechtfertigen aber kein weiteres Lüften.",
             "duration_min":0.0, "live_coach":True, "live_coach_state":"protection_close",
             "live_coach_reason":reason, "live_coach_remaining_min":0.0,
@@ -191,7 +211,8 @@ def refine_live_recommendation(
 
     # If the learned target has been reached and marginal return is weak, ask to close.
     if (
-        all_close_decisions_ready
+        not hold
+        and all_close_decisions_ready
         and elapsed >= min_duration
         and remaining <= 0.35
         and next5 < max(min_return * 1.25, 35.0 * volume_factor)
@@ -200,7 +221,7 @@ def refine_live_recommendation(
         out = dict(recommendation)
         out.update({
             "kind": "close", "status": "close_windows", "title": "Jetzt schließen",
-            "instruction": " + ".join(str(r.get("name", r.get("key", "Raum"))) for r in active) + " schließen",
+            "instruction": close_instruction(active),
             "summary": "FreshAirIQ hat die laufende Lüftung neu bewertet; der effiziente Endpunkt ist erreicht.",
             "duration_min": 0.0, "estimated_removed_ml": round(actual_removed),
             "live_coach": True, "live_coach_state": "close",
@@ -216,9 +237,8 @@ def refine_live_recommendation(
         return out
 
     out = dict(recommendation)
-    names = " + ".join(str(r.get("name", r.get("key", "Raum"))) for r in active)
     out.update({
-        "instruction": f"{names} offen lassen · noch ca. {max(round(remaining), 1)} min",
+        "instruction": keep_instruction(active, None if fans_only else remaining),
         "duration_min": round(remaining, 1),
         "estimated_removed_ml": round(next5),
         "live_coach": True, "live_coach_state": state,

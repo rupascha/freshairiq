@@ -8,6 +8,8 @@ seasonality and house strategy into a single explainable output.
 from __future__ import annotations
 from typing import Any
 
+from .close_wording import close_instruction
+
 
 def _f(v: Any, default: float = 0.0) -> float:
     try:
@@ -206,7 +208,7 @@ def build_unified_decision(
     elif kind == "close":
         headline = "Der sinnvolle Lüftungspunkt ist erreicht"
         decision_label = "JETZT SCHLIESSEN"
-        action_line = f"{' + '.join(names) if names else 'Geöffnete Fenster'} schließen"
+        action_line = close_instruction(selected_rooms) if selected_rooms else "Geöffnete Fenster schließen"
         summary = "Die zusätzliche Wirkung nimmt gegenüber Temperaturverlust und Feuchteziel nicht mehr ausreichend zu."
 
     elif kind == "pollen_wait":

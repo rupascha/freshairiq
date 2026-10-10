@@ -15,7 +15,7 @@ from homeassistant.util import dt as dt_util
 from .const import *
 from .climate_sources import aggregate_states, entity_ids, climate_report_snapshot, advance_climate_report_activity, participating_climate_entities
 from .energy import energy_price_per_kwh_equivalent, exchanged_air_fraction, heating_cost_context, ventilation_cost, ventilation_cost_for_duration, ventilation_cost_for_temperature_path
-from .forecast import effective_night_rate_ml_h, estimated_daily_moisture_ml, horizon_forecast, in_night_window, night_interval_bounds, night_window_hours, overnight_forecast_ml, remaining_night_hours, update_night_learning
+from .forecast import effective_night_rate_ml_h, estimated_daily_moisture_ml, horizon_forecast, in_night_window, night_interval_bounds, night_window_hours, overnight_forecast_ml, update_night_learning
 from .weather_now import weather_now
 from . import cover_guard
 from .outdoor_air import outdoor_pm25_blocked, outdoor_pm25_limit, plausible_pm25, pm25_reason, veto_cause as outdoor_veto_cause
@@ -57,7 +57,7 @@ from .routines import expected_source_rate, learn_source_pattern, project_genera
 from .strategy import strategy_maturity
 from .seasonality import learn_seasonal_source, seasonal_context
 from .house_strategy import learn_house_outcome, house_strategy_fit, house_maturity
-from .consolidation import aggregate_close_allowed, aggregate_close_gate_ready, stabilise_recommendation
+from .consolidation import session_target_min as _session_target_min, stabilise_recommendation
 from .decision_brain import build_unified_decision
 from .decision_trace import build_decision_trace, build_recommendation_quality
 from .diagnostics import FreshAirIQDiagnosticsRecorder
@@ -732,10 +732,6 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     if ids:
                         groups.append((f"room:{room_key}:{key}", ids))
         return groups
-
-    def _required_source_entities(self) -> set[str]:
-        """Return all configured entities that participate in required groups."""
-        return {entity_id for _, ids in self._required_source_groups() for entity_id in ids}
 
     def _log_required_source_availability(self) -> None:
         """Track loss per logical source group, tolerating redundant room sensors."""
@@ -2652,6 +2648,14 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             elif include_ventilation_group_start(ventilation_group, physical_started):
                 changed = True
             mem["session_active"] = True
+            # 0.26.4.10: the airing duration FreshAirIQ showed when the window was
+            # opened. Until it has passed, a close is only advised if moisture
+            # would come in (see model.analyse_room).
+            # A session started by the exhaust fan alone has no planned time;
+            # a window opened later in it gets one then (see below).
+            fan_start = bool(mechanical_exhaust_active and not raw_contact_open)
+            mem["session_target_min"] = None if fan_start else _session_target_min(self.data, options)
+            mem["session_target_fan_start"] = fan_start
             target_mode = str(cfg.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))
             manual_target = cfg.get(CONF_ROOM_TARGET_TEMPERATURE) if target_mode == "manual" else None
             auto_target = mem.get("last_plausible_comfort_target_c") if target_mode == "automatic" else None
@@ -3210,6 +3214,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if opening_model and int(opening_model.get("samples", 0) or 0) > 0:
             effective_learning_rate = float(opening_model.get("rate", effective_learning_rate))
             effective_learning_samples = int(opening_model.get("samples", effective_learning_samples))
+        if mem.get("session_active") and mem.get("session_target_fan_start") and raw_contact_open:
+            joined = _session_target_min(self.data, options)
+            mem["session_target_min"] = round(elapsed + joined, 1) if joined is not None else None
+            mem["session_target_fan_start"] = False
         room_input = RoomInput(
             key=key, name=cfg[CONF_ROOM_NAME], temperature=t, humidity=rh, reference_temperature=ref_t, reference_humidity=ref_rh,
             volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
@@ -3219,6 +3227,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)),
             airflow_factor=airflow, pollen_index=pollen,
             session_fresh_measurements=int(mem.get("session_fresh_measurements", 0)),
+            session_target_min=mem.get("session_target_min") if mem.get("session_active") else None,
+            mechanical_only=bool(mechanical_exhaust_active and not raw_contact_open),
             future_reference_temperature_15=(
                 float(future_outdoor[15]["temperature_c"])
                 if 15 in future_outdoor
@@ -3813,7 +3823,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "outcome_feedback_samples": int(mem.get("outcome_feedback_samples", 0)), "outcome_removed_factor": float(mem.get("outcome_removed_factor", 1.0) or 1.0), "outcome_temperature_factor": float(mem.get("outcome_temperature_factor", 1.0) or 1.0),
             "shadow_learning_samples": int(mem.get("shadow_learning_samples", 0)), "shadow_learning_total_samples": int(mem.get("shadow_learning_total_samples", 0)), "shadow_learning_status": mem.get("shadow_learning_status"), "shadow_learning_last_action": mem.get("shadow_learning_last_action"), "shadow_learning_last_improvement_pct": mem.get("shadow_learning_last_improvement_pct"), "shadow_learning_promotions": int(mem.get("shadow_learning_promotions", 0)), "shadow_learning_rollbacks": int(mem.get("shadow_learning_rollbacks", 0)), "shadow_rollback_active": bool(mem.get("shadow_rollback_active")),
             "outcome_avg_removed_error_ml": mem.get("outcome_avg_removed_error_ml"), "outcome_avg_temperature_error_c": mem.get("outcome_avg_temperature_error_c"), "outcome_success_rate": mem.get("outcome_success_rate"),
-            "session_recommended_duration_min": mem.get("session_recommended_duration_min"), "session_predicted_removed_ml": mem.get("session_predicted_removed_ml"), "session_predicted_temperature_change_c": mem.get("session_predicted_temperature_change_c"), "session_prediction_confidence": mem.get("session_prediction_confidence"), "session_prediction_snapshot_at": mem.get("session_prediction_snapshot_at"), "session_prediction_horizon_min": mem.get("session_prediction_horizon_min"), "session_prediction_snapshot_elapsed_min": mem.get("session_prediction_snapshot_elapsed_min"), "session_prediction_snapshot_valid": bool(mem.get("session_prediction_snapshot_valid")), "session_prediction_reference": mem.get("session_prediction_reference"),
+            "session_recommended_duration_min": mem.get("session_recommended_duration_min"), "session_target_min": mem.get("session_target_min") if mem.get("session_active") else None, "session_predicted_removed_ml": mem.get("session_predicted_removed_ml"), "session_predicted_temperature_change_c": mem.get("session_predicted_temperature_change_c"), "session_prediction_confidence": mem.get("session_prediction_confidence"), "session_prediction_snapshot_at": mem.get("session_prediction_snapshot_at"), "session_prediction_horizon_min": mem.get("session_prediction_horizon_min"), "session_prediction_snapshot_elapsed_min": mem.get("session_prediction_snapshot_elapsed_min"), "session_prediction_snapshot_valid": bool(mem.get("session_prediction_snapshot_valid")), "session_prediction_reference": mem.get("session_prediction_reference"),
             "session_elapsed_min": round(elapsed, 1), "temperature_change_c": temp_change, "volume_m3": round(float(cfg[CONF_ROOM_VOLUME]), 1),
             "contact_mode": cfg.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY), "contact_count": len(_contact_ids(cfg)), "contact_entities": _contact_ids(cfg), "contact_delays": dict(cfg.get(CONF_CONTACT_DELAYS, {})), "contact_orientations": dict(cfg.get(CONF_CONTACT_ORIENTATIONS, {})), "contact_reference_temperatures": dict(cfg.get(CONF_CONTACT_REFERENCE_TEMPERATURES, {})), "contact_reference_humidities": dict(cfg.get(CONF_CONTACT_REFERENCE_HUMIDITIES, {})), "active_reference_temperature_entity": reference_temperature_entity, "active_reference_humidity_entity": reference_humidity_entity, "opening_assessments": opening_assessments,
             "next_5_min_heat_kwh": delivered, "next_5_min_purchased_kwh": purchased, "next_5_min_cost": cost, "next_5_min_energy_amount": fuel["amount"], "next_5_min_energy_unit": fuel["unit"],
@@ -3905,6 +3915,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "climate": cfg.get(CONF_ROOM_CLIMATE),
             "exhaust_fan": cfg.get(CONF_ROOM_EXHAUST_FAN),
             "mechanical_exhaust_active": mechanical_exhaust_active,
+            "window_open": raw_contact_open,
             "ventilation_type": mem.get("session_specialist_opening_mode") if mem.get("session_active") else None,
             "supply_fan": cfg.get(CONF_ROOM_SUPPLY_FAN),
             "ventilation_device": cfg.get(CONF_ROOM_VENTILATION_DEVICE),
@@ -3994,6 +4005,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "session_result_base_ml": 0.0,
             "close_notified": False,
             "session_fresh_measurements": 0,
+            "session_target_min": None,
+            "session_target_fan_start": False,
             "session_temperature_reports": 0,
             "session_humidity_reports": 0,
             "session_last_temperature_update": None,

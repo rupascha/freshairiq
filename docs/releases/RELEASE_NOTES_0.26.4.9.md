@@ -23,5 +23,4 @@ Diagnostics export as ZIP: "Diagnose exportieren" now downloads a ZIP with the u
 Quieter, clearer pushes (user feedback):
 - "Lüftung läuft · Lüftung weiter beobachten" is no longer pushed – it asks nothing of the user (still available as event `house_continue`).
 - Rooms with an exhaust fan: airing and mould messages add "Alternativ den Lüfter einschalten" (house messages name the rooms).
-- New tests: `tests/test_user_feedback_026409.py`.
-
+- New tests: `tests/test_user_feedback_026409.py`, `tests/test_room_devices_026409.py`, `tests/test_room_view_explain_026409.py`, `tests/test_export_zip_026409.py`.

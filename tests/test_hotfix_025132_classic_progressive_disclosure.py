@@ -6,7 +6,7 @@ JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_te
 
 def classic_block():
     start = JS.index("    _intelligentPanel(st, rooms = []) {")
-    end = JS.index("    _recommendationRows(rooms) {", start)
+    end = JS.index("    _goalTracker(r, compact=false) {", start)
     return JS[start:end]
 
 

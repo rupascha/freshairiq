@@ -4,7 +4,7 @@ Added after a refactoring step lost the fallback value of ``status`` (read via
 ``status = ... or status``) without any scenario noticing.
 Reports names that are read at a point where they are not bound on every path
 (top-level flow of the function body; compound statements bind only 'maybe')."""
-import ast, sys, symtable
+import ast
 SCOPES=(ast.ListComp,ast.SetComp,ast.DictComp,ast.GeneratorExp,ast.Lambda,ast.FunctionDef,ast.AsyncFunctionDef)
 def loads(node):
     out=[]

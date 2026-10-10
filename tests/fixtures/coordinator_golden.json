@@ -3,7 +3,7 @@
   "evening_ventilation_and_night": {
    "cycles": [
     {
-     "all": "07a2bcb096ae87c5",
+     "all": "86a4f09161ab1c63",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -21,7 +21,7 @@
       "decision_trace": "e8db26828669eb83",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "65169374b0f63261",
-      "diagnostics_upload": "c325676b4b8912c2",
+      "diagnostics_upload": "30eafd6489ff83e8",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -118,7 +118,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b64124209317b5b6",
+      "rooms": "dfb98c7f7a9edfb5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "dec27115ec6db514",
       "runtime_robustness": "d48c5cd3ce8eb94e",
@@ -148,10 +148,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "b6b40d3db97ef9f8"
+     "store": "4b8badeb2e3668cf"
     },
     {
-     "all": "a7c8b797cc70a82d",
+     "all": "90262bc9d2e05032",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -169,7 +169,7 @@
       "decision_trace": "e8db26828669eb83",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "65169374b0f63261",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -266,7 +266,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6995443bb5967ade",
+      "rooms": "bd26dccc1ee2a01b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "32d793354e7a685f",
       "runtime_robustness": "ed027e3757180140",
@@ -296,10 +296,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "78f721029c61da6a"
+     "store": "fb7f7f50e655621a"
     },
     {
-     "all": "4cb35e13e77dce02",
+     "all": "1f3acbccd7823a01",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -317,7 +317,7 @@
       "decision_trace": "e8db26828669eb83",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "65169374b0f63261",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -414,7 +414,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d67cc74640b3a851",
+      "rooms": "2e6e55621ebec99d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8ddaec29c62dc16c",
       "runtime_robustness": "4bd5d87c75704ea7",
@@ -444,10 +444,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "bd6c38783d5aed58"
+     "store": "db3bb915c2cd53a5"
     },
     {
-     "all": "dc6258b37c03ed66",
+     "all": "d13a6ec56834e5d4",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -465,7 +465,7 @@
       "decision_trace": "e8db26828669eb83",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "65169374b0f63261",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -562,7 +562,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a30ead060b436e7d",
+      "rooms": "f52fd39912444723",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "41b003613257c871",
       "runtime_robustness": "31899a6cfcb54135",
@@ -592,10 +592,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "388ed157c94ced97"
+     "store": "0637a9ea9cb038ff"
     },
     {
-     "all": "fc779d0280f4f30a",
+     "all": "b1cbdbf1f63fb53e",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -613,7 +613,7 @@
       "decision_trace": "e8db26828669eb83",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "65169374b0f63261",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -710,7 +710,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "67483eea13216e35",
+      "rooms": "9ddd3ea1bbebcca1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "db537a4cd7a6db02",
       "runtime_robustness": "c1c2574d9f39e6c8",
@@ -740,10 +740,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "74be24a6f51423f6"
+     "store": "013d1c63d2f68d62"
     },
     {
-     "all": "dfcd6ab82c1ff881",
+     "all": "53a843c87cf65b9d",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -761,7 +761,7 @@
       "decision_trace": "b0cb2a394af6f121",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "70324c4e2e5ff1b4",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -858,7 +858,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2aac374d12817452",
+      "rooms": "13a3e55453796447",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "36535a3dd0a694a2",
       "runtime_robustness": "af063c6ec3c0026d",
@@ -888,10 +888,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window open",
-     "store": "28023bbadf5f15e2"
+     "store": "65a05cc466b89707"
     },
     {
-     "all": "074146662a32f3e4",
+     "all": "f278f2160a286653",
      "keys": {
       "actionable_potential_ml": "3d914f9348c9cc0f",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -909,7 +909,7 @@
       "decision_trace": "3def2b5d6f6ac6b3",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "70324c4e2e5ff1b4",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1006,7 +1006,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a5e0153bad062a8d",
+      "rooms": "cf2e5ddc30592c50",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b7a05d5ee0db8fa",
       "runtime_robustness": "29f115f556de70e4",
@@ -1036,10 +1036,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 1",
-     "store": "d9ca2b4fea887c10"
+     "store": "1f05d3197997290a"
     },
     {
-     "all": "93cf202fbbc7a359",
+     "all": "f68441740f877c81",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1057,7 +1057,7 @@
       "decision_trace": "c19ac7140e4541e6",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8f92c980b606594f",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1154,7 +1154,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f8caa3903120afc4",
+      "rooms": "3c7dc20617d0c0c2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf0dbbf849011a65",
       "runtime_robustness": "6175c0cc419e351a",
@@ -1184,10 +1184,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 2",
-     "store": "81b8c39d74269814"
+     "store": "6a6b952b83061868"
     },
     {
-     "all": "2db363831df19928",
+     "all": "ab2333a3c7fc1bb3",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1205,7 +1205,7 @@
       "decision_trace": "b744520969f0dfdd",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8f92c980b606594f",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1302,7 +1302,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e33b749993307782",
+      "rooms": "9c081a814a8ca22b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "536c0b72bc2a091b",
       "runtime_robustness": "8e834cfa984cf8de",
@@ -1332,10 +1332,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 3",
-     "store": "bc6ee6ec301ad0d5"
+     "store": "63606aba2e134140"
     },
     {
-     "all": "a83e13165cdca849",
+     "all": "d2640dea7c70481d",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1353,7 +1353,7 @@
       "decision_trace": "c0b7f3be0ca01545",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "ce679a0a5bdf9cb7",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1450,7 +1450,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "78e546270eabc6fb",
+      "rooms": "793ee4cd03b60d35",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "dcc4dc3ff1cffd4b",
       "runtime_robustness": "9046ea0934315e89",
@@ -1480,10 +1480,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 4",
-     "store": "989321e76a1aa6cb"
+     "store": "6cbee778ecaa090b"
     },
     {
-     "all": "ab40e5cdf4bebf53",
+     "all": "0b006cc988861dc2",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1501,7 +1501,7 @@
       "decision_trace": "936602ecb6e6b3b5",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2efd1c6790263f7d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1598,7 +1598,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f6eee9ed9f395f16",
+      "rooms": "7a1e9a6677a2feac",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f339fd9756d3812a",
       "runtime_robustness": "62001acfbfdb8e07",
@@ -1628,10 +1628,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 5",
-     "store": "c75157c02c7ba162"
+     "store": "4e94c624b3738fcd"
     },
     {
-     "all": "aee46db0c3264293",
+     "all": "c6345a20b4beb1c6",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1649,7 +1649,7 @@
       "decision_trace": "f62041cde14a9ac8",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2efd1c6790263f7d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1746,7 +1746,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "433d2ed27978e512",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cd691a2790d3c42a",
+      "rooms": "2e56909dbf3453ab",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e2faaaf10dbd59f6",
       "runtime_robustness": "584a0f5b2c35c096",
@@ -1776,10 +1776,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 6",
-     "store": "8ae3859e7350b321"
+     "store": "51d18780007c311b"
     },
     {
-     "all": "eadfbc7620d8df6b",
+     "all": "f47990a8e62c628a",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1797,7 +1797,7 @@
       "decision_trace": "3307bbdd8aa42b89",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f2961b0d6f8baf65",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -1894,7 +1894,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "3e8acbd32dad939b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e6b65cd455527550",
+      "rooms": "655b73979dd73380",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6cf35b2c1e395ce9",
       "runtime_robustness": "c99f3f74a560520f",
@@ -1924,10 +1924,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 7",
-     "store": "67cbaca4a57f8d46"
+     "store": "afc55b19ca9ed6d1"
     },
     {
-     "all": "0c11f1104d0d3138",
+     "all": "8df1cd010fd9ab62",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1945,7 +1945,7 @@
       "decision_trace": "b000334cdf486c2b",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f2961b0d6f8baf65",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2042,7 +2042,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1f89909782e4ce4a",
+      "rooms": "cf0163a3faafa0aa",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3b3109139a92478b",
       "runtime_robustness": "b9ee76288d12dcba",
@@ -2072,10 +2072,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 8",
-     "store": "fc093b022865abfb"
+     "store": "ff3f3980cddd24d2"
     },
     {
-     "all": "cacf06510ad0cb0c",
+     "all": "cde8e76e715db542",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2093,7 +2093,7 @@
       "decision_trace": "b000334cdf486c2b",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "5adaec4f4f3d8306",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2190,7 +2190,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "3e8acbd32dad939b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "24e55e1f94945d31",
+      "rooms": "d4a8d6604cdef0ab",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8fd33fe261916427",
       "runtime_robustness": "83416cc5a28d64cc",
@@ -2220,10 +2220,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 9",
-     "store": "8f8b7324b25e9f9c"
+     "store": "32dc4aece1749d5c"
     },
     {
-     "all": "7c7dbb86cc10e7a5",
+     "all": "6c60752e14060449",
      "keys": {
       "actionable_potential_ml": "eb1e33e8a81b697b",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2241,7 +2241,7 @@
       "decision_trace": "5eb549551d999f26",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "5adaec4f4f3d8306",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2338,7 +2338,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f2d0a07f59ec6327",
+      "rooms": "4811e66ee3c52726",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7a1ac79ce6e853d0",
       "runtime_robustness": "183527c6a35fb29d",
@@ -2368,10 +2368,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 10",
-     "store": "2281a3f2ed867b5c"
+     "store": "358cb2257def0ac3"
     },
     {
-     "all": "9d76570934722b48",
+     "all": "408f587172b90433",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2389,7 +2389,7 @@
       "decision_trace": "605c3475ed6bdb5a",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "223adb9403f63c60",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2486,7 +2486,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "02b27afb62ccf129",
+      "rooms": "55326226b1ebefcf",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "365374ee0c913ef8",
       "runtime_robustness": "c3391ce856cb1f86",
@@ -2516,10 +2516,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 11",
-     "store": "91f8ed0ea53a9b1f"
+     "store": "14963283dfadf605"
     },
     {
-     "all": "eb66eecd8ec6e009",
+     "all": "dad5ec48d1432bd7",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2537,7 +2537,7 @@
       "decision_trace": "f25b0eb52f342e74",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "223adb9403f63c60",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2634,7 +2634,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "5fcaaa5150b122cd",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7103f1820b5962df",
+      "rooms": "afd919800e9ef863",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "979d3963472ee30a",
       "runtime_robustness": "badf571473761219",
@@ -2664,10 +2664,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 12",
-     "store": "472a781d337cd406"
+     "store": "08ff60f7b9eed659"
     },
     {
-     "all": "7ca7231ada9d2a22",
+     "all": "e2a8ef46b194ffb7",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2685,7 +2685,7 @@
       "decision_trace": "f25b0eb52f342e74",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "c70b5b88d2eb28f8",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2782,7 +2782,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "5c91a1ba11dbd43a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1fac2867172690d2",
+      "rooms": "f36a479a72bf7c65",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "21d5bf759c22e809",
       "runtime_robustness": "612fae74d584a339",
@@ -2812,10 +2812,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window closed",
-     "store": "ec92448608845105"
+     "store": "8a596cc3a27b5133"
     },
     {
-     "all": "2234ae5e7137483a",
+     "all": "d3ce60785ed89f7a",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2833,7 +2833,7 @@
       "decision_trace": "fdc6de33b9cd8855",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fc8404de960a8d01",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -2930,7 +2930,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "7a4632cf400d946a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "92175f4ee71c6ffc",
+      "rooms": "8bd7a1d2c9988131",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "edf80c7a3a54d7c7",
       "runtime_robustness": "2443723f489576e1",
@@ -2960,10 +2960,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 1",
-     "store": "1debc30f746d04c0"
+     "store": "387f9997bfb8be86"
     },
     {
-     "all": "670af92ea5336add",
+     "all": "e270b2f89af446c9",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2981,7 +2981,7 @@
       "decision_trace": "fa4ea26902371f7c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3078,7 +3078,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7fa4eddca7129d3e",
+      "rooms": "0b185c436af886b6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a521ae68d95f0e4f",
       "runtime_robustness": "4c62611656eefc89",
@@ -3108,10 +3108,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 2",
-     "store": "d0a9e61eb5d81039"
+     "store": "2f82639c0cb7022f"
     },
     {
-     "all": "3a9841f37de557d3",
+     "all": "95e3c57fa7f409e0",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3129,7 +3129,7 @@
       "decision_trace": "38c222d23f1bf222",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3226,7 +3226,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c13b5dee806009cf",
+      "rooms": "5e8482d24eac3216",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "431a961b86aefbb4",
       "runtime_robustness": "082c7dba58117914",
@@ -3256,10 +3256,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 3",
-     "store": "78e0535cb01efbd8"
+     "store": "b6dcbbce4d46ef2d"
     },
     {
-     "all": "7c32ed27a96f4b84",
+     "all": "73c282023d3b2f32",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3277,7 +3277,7 @@
       "decision_trace": "a384a944a346e3c8",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3374,7 +3374,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c2ff38d999f301f9",
+      "rooms": "87de6150a3d8e9c6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d01bd34d72ef4446",
       "runtime_robustness": "7792ae66ca5da760",
@@ -3404,10 +3404,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 4",
-     "store": "8d903598e5b84ad6"
+     "store": "161fd1c99fdecc65"
     },
     {
-     "all": "71ffa63b9476409f",
+     "all": "b19a81694a44fc54",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3425,7 +3425,7 @@
       "decision_trace": "3e0ff59cd0a7defa",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3522,7 +3522,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "038868f20af393c1",
+      "rooms": "3b249b7dbab34b88",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "31ed09fb06d0a45d",
       "runtime_robustness": "53f38c7bf8340931",
@@ -3552,10 +3552,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 5",
-     "store": "482b03ba99999340"
+     "store": "4d7c33a2836f3194"
     },
     {
-     "all": "df74ab975584535c",
+     "all": "743c5cd27d80566f",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3573,7 +3573,7 @@
       "decision_trace": "fc48f5424135159e",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3670,7 +3670,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3ca8ec2ca46de527",
+      "rooms": "80a1ee32156d20c0",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "35f25549a842e22d",
       "runtime_robustness": "bc87a765060a0980",
@@ -3700,10 +3700,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 6",
-     "store": "455aac5b1264691a"
+     "store": "844a21a36da28c4a"
     },
     {
-     "all": "3ecab008a7ed6c2f",
+     "all": "20c091b9794bcaf3",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3721,7 +3721,7 @@
       "decision_trace": "812ea066acae002c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3818,7 +3818,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "21a1903a2a421fdc",
+      "rooms": "d0f25c021fadb578",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "d06dcbb45f36f07f",
       "runtime_robustness": "638eb05540705586",
@@ -3848,10 +3848,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 7",
-     "store": "7d06a9a6c20c7bee"
+     "store": "d4326b57fc03e2f6"
     },
     {
-     "all": "7af3235c20f0c774",
+     "all": "a3de5a566190bfa2",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3869,7 +3869,7 @@
       "decision_trace": "46260b6bbbad835e",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "8bdb21f67d461bc6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -3966,7 +3966,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a0c592ead2d5dc4f",
+      "rooms": "6af7c6b42ff3b9e6",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "338a9d46ce5c20e4",
       "runtime_robustness": "645f561f68c585d4",
@@ -3996,10 +3996,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 8",
-     "store": "04ce7eccdc671886"
+     "store": "1f4f24fe1a1954e6"
     },
     {
-     "all": "c6cfa4f05fd070e6",
+     "all": "f93f9a1cfa4ecd06",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4017,7 +4017,7 @@
       "decision_trace": "9fe544a56ddb3d0d",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "597cd93ea4a74377",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4114,7 +4114,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "8c160485b860f673",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cd4a31f85410efec",
+      "rooms": "dc878b55a6a1a2a4",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "3ec07059a3609942",
       "runtime_robustness": "29aef4daf3caeb1a",
@@ -4144,10 +4144,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cross ventilation kitchen",
-     "store": "13b3b81aa3586300"
+     "store": "eb53c108d899e8d8"
     },
     {
-     "all": "9fd3ddc2200aca15",
+     "all": "9a8bd6ef38f909ab",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4165,7 +4165,7 @@
       "decision_trace": "9ca9708149b94bd6",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "597cd93ea4a74377",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4262,7 +4262,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "b52c1735552bce4e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "05698cd3f8afb401",
+      "rooms": "581d74f9f4d08013",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "fd0669d55425a613",
       "runtime_robustness": "2a4afe4c553b813a",
@@ -4292,10 +4292,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 1",
-     "store": "8197a16124df5973"
+     "store": "d869829c58e00b0f"
     },
     {
-     "all": "c0a1b512e2778858",
+     "all": "58e4c83085db9c3e",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4313,7 +4313,7 @@
       "decision_trace": "b4c83bf663761f01",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "6162187be8a9ce77",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4410,7 +4410,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "87888cc50bced672",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c840df81fa2244cf",
+      "rooms": "5cea60459b23d893",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "92d7ed9f7dea543b",
       "runtime_robustness": "91456cd274b8b20d",
@@ -4440,10 +4440,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 2",
-     "store": "72626f609feaf473"
+     "store": "830810e36a0a113e"
     },
     {
-     "all": "2e2667ae80d13451",
+     "all": "2956d0d61ca47095",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4458,10 +4458,10 @@
       "day_night_plan": "b4de8e993c59f6f5",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "1e087a2c9108fd88",
+      "decision_trace": "adb714e8d83385e3",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "c27e3248b488b792",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "6162187be8a9ce77",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4499,8 +4499,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "3bc7237bd4fa9528",
-      "iq_state": "c22e8f4ef5708f45",
+      "intelligent_recommendation": "86612c8746050126",
+      "iq_state": "7c745915325e2fe5",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
       "learning_components": "a23c2301d605999b",
@@ -4555,10 +4555,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "27ced09b1b7a71d6",
-      "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "8c160485b860f673",
+      "remaining_duration_min": "2415b58f720c24dc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e29d7357cda31aec",
+      "rooms": "e47f48eada825c1f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "263a79372faddb09",
       "runtime_robustness": "0762eac2d3e31f30",
@@ -4567,8 +4567,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "60959271cb15d120",
+      "status": "654499b4c64a7d5b",
+      "status_text": "56d11c90b85441df",
       "system_check": "3ca37cea28aeb310",
       "temperature_change_live_c": "bbe425924adccb75",
       "theoretical_actionable_potential_ml": "36790ecd55c2030d",
@@ -4588,10 +4588,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 3",
-     "store": "9311274ac5c3d724"
+     "store": "f9db7676fe756148"
     },
     {
-     "all": "b54e4d28a4539816",
+     "all": "17d738bda9e4e1c0",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4606,10 +4606,10 @@
       "day_night_plan": "832f6f3333598f0a",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "bf51ef774f12ce09",
+      "decision_trace": "0ee56b66ad09b512",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "c27e3248b488b792",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "74b6457b36d1181b",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4647,8 +4647,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "e279f8ac6202af0f",
-      "iq_state": "c6e7bd2e970689f3",
+      "intelligent_recommendation": "fd8597de5ee3b717",
+      "iq_state": "9ef30a48d71e3f69",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
       "learning_components": "a23c2301d605999b",
@@ -4703,10 +4703,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "27ced09b1b7a71d6",
-      "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "8c160485b860f673",
+      "remaining_duration_min": "bd8a8f86863435bc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "427654199b12c0dc",
+      "rooms": "799cd032d3e14f8e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a704e2dfb0d530d2",
       "runtime_robustness": "6fdc1570e079590e",
@@ -4715,8 +4715,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "60959271cb15d120",
+      "status": "654499b4c64a7d5b",
+      "status_text": "d3c33800eab5d1f5",
       "system_check": "3ca37cea28aeb310",
       "temperature_change_live_c": "f2548e956645320d",
       "theoretical_actionable_potential_ml": "36790ecd55c2030d",
@@ -4736,10 +4736,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 4",
-     "store": "6695adb668057a50"
+     "store": "491cdfb707cfcaf6"
     },
     {
-     "all": "0ab0fa11af48566c",
+     "all": "003ac5057d75637b",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4754,10 +4754,10 @@
       "day_night_plan": "354016c82f8321b5",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "355df2467dee9624",
+      "decision_trace": "0f8e6fd2d25b9edd",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "350542b9054d7d89",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "74b6457b36d1181b",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4795,8 +4795,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "cfb479e7f3ae7c05",
-      "iq_state": "4de48563f8427c05",
+      "intelligent_recommendation": "68f6e2769d0fad40",
+      "iq_state": "4c5e4ecaaa73f77a",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
       "learning_components": "a23c2301d605999b",
@@ -4851,10 +4851,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "27ced09b1b7a71d6",
-      "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "8c160485b860f673",
+      "remaining_duration_min": "5935bc30bbc1c76e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d3402bba6a60f653",
+      "rooms": "644bab2924978f26",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9f5e21358ad1f7e3",
       "runtime_robustness": "1f46a0627a2c45bd",
@@ -4863,8 +4863,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "60959271cb15d120",
+      "status": "654499b4c64a7d5b",
+      "status_text": "92299c355a55927f",
       "system_check": "3ca37cea28aeb310",
       "temperature_change_live_c": "f452db7f3026979d",
       "theoretical_actionable_potential_ml": "36790ecd55c2030d",
@@ -4884,10 +4884,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 5",
-     "store": "88ef720e71f3f531"
+     "store": "7a0a0e4d29100d7d"
     },
     {
-     "all": "ca2e66cee215f328",
+     "all": "9aaa96fda231e4d3",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4902,10 +4902,10 @@
       "day_night_plan": "5f2e9f2cb531d838",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "35c8d847b8daa2a4",
+      "decision_trace": "dd234a7d97bc8d0f",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "350542b9054d7d89",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "54471e0e13fb2d49",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -4943,8 +4943,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "0d7517a7e9c5be7f",
-      "iq_state": "0de153c1dd7e610f",
+      "intelligent_recommendation": "d0a6f053508d861a",
+      "iq_state": "c15038f231e6111a",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
       "learning_components": "a23c2301d605999b",
@@ -4999,10 +4999,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "27ced09b1b7a71d6",
-      "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "1c52469fed2f3391",
+      "recommended_duration_min": "8c160485b860f673",
+      "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8db50c9710fdc5ef",
+      "rooms": "f8a48890dc7d939b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0e0bed05bf17c095",
       "runtime_robustness": "1811b552db020b0f",
@@ -5011,8 +5011,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "60959271cb15d120",
+      "status": "654499b4c64a7d5b",
+      "status_text": "b51086da8a906828",
       "system_check": "742448a2a1f6c8b7",
       "temperature_change_live_c": "ea0eb2d68d67fea1",
       "theoretical_actionable_potential_ml": "36790ecd55c2030d",
@@ -5032,10 +5032,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 6",
-     "store": "ac31672f28a91b69"
+     "store": "84d54c7bf14e6081"
     },
     {
-     "all": "6b89402953b3d61b",
+     "all": "186e22b48c922586",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5050,10 +5050,10 @@
       "day_night_plan": "08e60924400d3b35",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "b4d0213e4d064651",
+      "decision_trace": "09ca37a2c2054aa7",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "74932752b8c36448",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "54471e0e13fb2d49",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -5091,8 +5091,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "93f79afa8612c88d",
-      "iq_state": "fa93ce66f2ce1bb5",
+      "intelligent_recommendation": "be2e2d2d929851ad",
+      "iq_state": "6587bb3f5d044166",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
       "learning_components": "05699e7b92dbb062",
@@ -5147,10 +5147,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "27ced09b1b7a71d6",
-      "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "98e1c754c1876bb6",
+      "recommended_duration_min": "8c160485b860f673",
+      "remaining_duration_min": "2894248d90b05c55",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "170738637940ba2f",
+      "rooms": "5dd8d3d54dbcdde2",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "1f0625426901fb5b",
       "runtime_robustness": "194f78e585b3330a",
@@ -5159,8 +5159,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "60959271cb15d120",
+      "status": "654499b4c64a7d5b",
+      "status_text": "b8bb2201a5d376bd",
       "system_check": "7684cf2d49d23acb",
       "temperature_change_live_c": "ea0eb2d68d67fea1",
       "theoretical_actionable_potential_ml": "36790ecd55c2030d",
@@ -5180,10 +5180,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen closed",
-     "store": "356156fb28e68839"
+     "store": "68f17789200414a1"
     },
     {
-     "all": "b0806f26cc30a29f",
+     "all": "cc707a8531be3890",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5198,10 +5198,10 @@
       "day_night_plan": "10bd1579536c09c6",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "d077ce67fdf038a0",
+      "decision_trace": "fe0e18d3f591570a",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "4a896307103b19f7",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "f7e42f0f8e8394f8",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -5239,8 +5239,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "2bab24b833ff1034",
-      "iq_state": "6311000b2321f85f",
+      "intelligent_recommendation": "52b0a57481083453",
+      "iq_state": "65ebb0508c8f8e23",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
       "learning_components": "aa27b6c0ad00debf",
@@ -5295,10 +5295,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "27ced09b1b7a71d6",
-      "recommended_duration_min": "2415b58f720c24dc",
-      "remaining_duration_min": "ed6cca0a64012053",
+      "recommended_duration_min": "8c160485b860f673",
+      "remaining_duration_min": "2894248d90b05c55",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "730bb42605795a4c",
+      "rooms": "7e776aa0da4b741a",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a6bd57daa3efdc62",
       "runtime_robustness": "d4fc5611c1942d9f",
@@ -5308,7 +5308,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "85aaac30a08a0e1d",
+      "status_text": "b8bb2201a5d376bd",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "ea0eb2d68d67fea1",
       "theoretical_actionable_potential_ml": "36790ecd55c2030d",
@@ -5328,10 +5328,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 1",
-     "store": "2b96dcd93a353ffe"
+     "store": "7e538f3cf170d6c4"
     },
     {
-     "all": "88c87e9b644f63df",
+     "all": "b74b7929a2043df8",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5348,8 +5348,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "ab02bc0b519be138",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "a18a37e7267bc0be",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "dcee12a28bf44652",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -5446,7 +5446,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bb3c969d40f8fd47",
+      "rooms": "582fea4fb60ab16c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "eb5db890285c94ce",
       "runtime_robustness": "4385a5fd49331b25",
@@ -5476,10 +5476,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 2",
-     "store": "1cef8939e7a7d822"
+     "store": "ee7052100cf0f1bb"
     },
     {
-     "all": "45425b0d869369ec",
+     "all": "5f4b17a7c329030a",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5496,8 +5496,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "dd41cc6d3407d745",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "af07cf04aa92162b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "ce6b2171fa5f0524",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -5594,7 +5594,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "86f64778bc9c2bd5",
+      "rooms": "96224bba47576a55",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "283bb443ac0163b6",
       "runtime_robustness": "fa1ba57aefbe8a5b",
@@ -5624,10 +5624,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 3",
-     "store": "bf0bd8a0317977f4"
+     "store": "4e1e74f259aa7846"
     },
     {
-     "all": "5baccc8e94c8c561",
+     "all": "31025997b041271e",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5644,8 +5644,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "24d8bd974c91d9c5",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "0c3f9e2437b5c28e",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "91c006dc66e14607",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -5742,7 +5742,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c8c73fac0e2abc83",
+      "rooms": "8a5ba123a405e45f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "447ab91d32bdf99a",
       "runtime_robustness": "34e97f8904bb0a06",
@@ -5772,10 +5772,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 4",
-     "store": "a7cef4e41cd94213"
+     "store": "5e79d42d15186ee6"
     },
     {
-     "all": "287bcc55200a23b0",
+     "all": "651728269feff183",
      "keys": {
       "actionable_potential_ml": "76a50887d8f1c2e9",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5792,8 +5792,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "797b07201102bd17",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "f40c7757e9db596d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "df2426fc425ce505",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -5890,7 +5890,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "14f33781c2ea15ab",
+      "rooms": "360aedffb3f60076",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "628e0331c7461026",
       "runtime_robustness": "9295f44ce817700e",
@@ -5920,10 +5920,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 5",
-     "store": "5e900deeb57f6f9d"
+     "store": "741ddd30cc003be1"
     },
     {
-     "all": "cbc714e987cb4178",
+     "all": "14aeb795e3f790b6",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5940,8 +5940,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "48033988f15cbad2",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "594da2ffea98b0c1",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "abaf02b5dd9f3746",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6038,7 +6038,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9587dc054f0587ca",
+      "rooms": "f1ab3e992cf684b5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "07ca56ef03aff2e5",
       "runtime_robustness": "5b219ef371e1e1d7",
@@ -6068,10 +6068,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 6",
-     "store": "3c47ade60a447998"
+     "store": "ca7a4a52d72880c0"
     },
     {
-     "all": "bd0a7a10fd61db1a",
+     "all": "2a58c8ca9d3c8640",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6088,8 +6088,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "aedf3f5a3080f1eb",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "9e29b31dfaae1721",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "50e40e7021428d5c",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6186,7 +6186,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "11c1ae1d7d1692f0",
+      "rooms": "3f55ee3dc0ed76b0",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5358f69aa38a3746",
       "runtime_robustness": "d99855371b6ec168",
@@ -6216,10 +6216,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 7",
-     "store": "89417452ba25df8f"
+     "store": "efb636c0e3427de5"
     },
     {
-     "all": "b0b99c1ca82f9389",
+     "all": "2ceff375220d3d05",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6236,8 +6236,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "61d7c70869580463",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "ed25a8f9226c66ee",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "1b43c37232c61580",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6334,7 +6334,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "eaee12b2b3e39e0c",
+      "rooms": "ef3bf20b61221ce7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7d752455145d60e3",
       "runtime_robustness": "ae34d6cf65e6cf5d",
@@ -6364,10 +6364,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 8",
-     "store": "bf44ffcd598b5706"
+     "store": "af4ff35a267055c4"
     },
     {
-     "all": "08bcbde84ee5db48",
+     "all": "6a597d9f421b3e9b",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6384,8 +6384,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "01ef7a11b4e074d6",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "8cddf04ed5d7a67e",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "bf5adefab8649b58",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6482,7 +6482,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "924cf2b17f14a0cf",
+      "rooms": "bf3b640167d7ccc7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6b1d26c9f4733b8b",
       "runtime_robustness": "64e1791f67f16173",
@@ -6512,10 +6512,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 9",
-     "store": "8473f6bd6c1891e3"
+     "store": "7ed0890a2729e523"
     },
     {
-     "all": "af6659fa42cc53fb",
+     "all": "8fbcf67a07624327",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6532,8 +6532,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "ed17010ed76e91bc",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "d1fb019effa598e8",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "e54bc16ae2e733b8",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6630,7 +6630,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "244ab5210a4ed4ac",
+      "rooms": "faf072a9721db4c9",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c812e2e266efceb9",
       "runtime_robustness": "a68d107ef932fa61",
@@ -6660,10 +6660,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 10",
-     "store": "95d76e6a9734cd74"
+     "store": "4d0e05bdc661c28e"
     },
     {
-     "all": "15471d9b704a583c",
+     "all": "a6fa2325c149d156",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6680,8 +6680,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "c80e6131b9ebb1d2",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "acb535f6cd1180ab",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "a5e151c2c5348c6b",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6778,7 +6778,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0f41f735b11d7411",
+      "rooms": "63890c77530fb204",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "ea2899884dbe808a",
       "runtime_robustness": "d3752a7c48fc6f33",
@@ -6808,10 +6808,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "morning",
-     "store": "9c1f74129c2662da"
+     "store": "6513eedf8b1f0500"
     },
     {
-     "all": "a93313e1a51eb061",
+     "all": "a1ce940b06891018",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6828,8 +6828,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "acbba878959a0d6d",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "278fd02deebf8470",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "a9772c041ec95f1a",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -6867,8 +6867,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "320f0a2122ea4ffd",
-      "iq_state": "c80bdf995b2ae578",
+      "intelligent_recommendation": "6ddaa732d03d8c55",
+      "iq_state": "7f987687b7470222",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "0eb8dc2d7c4a6d3e",
@@ -6926,7 +6926,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fd74c542bd3525a4",
+      "rooms": "2680f292400ac2e8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b952e26248c9a503",
       "runtime_robustness": "822ee4da2e790cbc",
@@ -6936,7 +6936,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "44652bb47bad68f5",
+      "status_text": "a91ccf3a4416dcee",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "a42e815c58f3977f",
@@ -6956,10 +6956,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom window open",
-     "store": "d109a7ef39037d99"
+     "store": "7829a3dc0cd9474b"
     },
     {
-     "all": "368469628ede6cb5",
+     "all": "6354d32f615ba412",
      "keys": {
       "actionable_potential_ml": "a21855da08cb102d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6976,8 +6976,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "164d2a3191144023",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "278fd02deebf8470",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "a9772c041ec95f1a",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -7015,8 +7015,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "0094193c60bdd2a1",
-      "iq_state": "0dff9957ec9e9f62",
+      "intelligent_recommendation": "48e3e1fed53c8cba",
+      "iq_state": "539ff80b8842941f",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "0eb8dc2d7c4a6d3e",
@@ -7074,7 +7074,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "21357eb4e95e08f1",
+      "rooms": "7ff203147c22f1b5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6d8095dd7bfbbe34",
       "runtime_robustness": "520adb9b972149d5",
@@ -7084,7 +7084,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "9f80aaeb6737d48c",
+      "status_text": "28231d9a3d6e8c4c",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "3a8f6d79cd434dc1",
@@ -7104,10 +7104,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 1",
-     "store": "8f644487d41dd994"
+     "store": "ab8f428ad5b8681b"
     },
     {
-     "all": "bd8187a626e9ccaa",
+     "all": "fb0056801d08db20",
      "keys": {
       "actionable_potential_ml": "3ada92f28b4ceda3",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7124,8 +7124,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "3e8f6a74877c14c7",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "ead5916fc5bc72fe",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "7786e0496307757b",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -7163,8 +7163,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "7bfac4f8b9326f3f",
-      "iq_state": "b99521caa1237124",
+      "intelligent_recommendation": "5c90628dd2f47255",
+      "iq_state": "38258830cb48dc8c",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "0eb8dc2d7c4a6d3e",
@@ -7222,7 +7222,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b58b7921636c3ea1",
+      "rooms": "25c19deba35ff478",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3777a57a9303f097",
       "runtime_robustness": "c21fb23b4427ed6b",
@@ -7232,7 +7232,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "76ce7650fc694929",
+      "status_text": "1238db948d507650",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "06de973bb45531d5",
@@ -7252,10 +7252,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 2",
-     "store": "2a328b7c1246fd75"
+     "store": "aa42704ca232086b"
     },
     {
-     "all": "e5dbe6650c6a918f",
+     "all": "6c099079ce3b903f",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7270,10 +7270,10 @@
       "day_night_plan": "1197f74bad13ac70",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "51cc14b456bb3e70",
+      "decision_trace": "0acad24c38e4aa0e",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "ead5916fc5bc72fe",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "7786e0496307757b",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -7311,8 +7311,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "b2873430b5170834",
-      "iq_state": "420c61c676b605f6",
+      "intelligent_recommendation": "387e71c3f041e65b",
+      "iq_state": "624534807d1200c9",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "0eb8dc2d7c4a6d3e",
@@ -7367,10 +7367,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "3ceb90a3d89d4dd1",
-      "recommended_duration_min": "dd6149adc18cfde6",
-      "remaining_duration_min": "987663a1fa8e9325",
+      "recommended_duration_min": "5cc31a244d7ddd1e",
+      "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b246ee781efead0a",
+      "rooms": "d19fa92d50b8c3c1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f34f677401960db1",
       "runtime_robustness": "dd180db36af86cef",
@@ -7380,7 +7380,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "df9a67c741668d7b",
+      "status_text": "acff053fea6a3b2b",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "27d719c754aacd49",
@@ -7400,10 +7400,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 3",
-     "store": "1c5a668e15f87eda"
+     "store": "33bfe7d52e053627"
     },
     {
-     "all": "5d5b57427285daa7",
+     "all": "bcb3b186eb324e75",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7418,10 +7418,10 @@
       "day_night_plan": "7c3f75445225eabc",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "e42f7567c309bc08",
+      "decision_trace": "a0ba1de4fe157a81",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "d27739f7b01531d3",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "f2e4ce819572e9c1",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -7459,8 +7459,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "e45192c025265bfb",
-      "iq_state": "66bf382fd1502b6e",
+      "intelligent_recommendation": "4e5d3ccfa2b83c98",
+      "iq_state": "4f3e297beb37ff95",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "565e4c7afc0ccc78",
@@ -7515,10 +7515,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "3ceb90a3d89d4dd1",
-      "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "5cc31a244d7ddd1e",
+      "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7fef9b7730696629",
+      "rooms": "96905e4530f943d0",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0037b9f217a481c",
       "runtime_robustness": "7c0a9ab5bc84c462",
@@ -7527,8 +7527,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "8dcfa5a4eefe7bc4",
+      "status": "654499b4c64a7d5b",
+      "status_text": "5fae9999e848b2aa",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "27d719c754aacd49",
@@ -7548,10 +7548,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 4",
-     "store": "9fd6842d76584db6"
+     "store": "7ea96bcd76454116"
     },
     {
-     "all": "8f0d5f93aeaa6a95",
+     "all": "24a46b86c46bf871",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7568,8 +7568,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "60d4ae9457221e6d",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "d27739f7b01531d3",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "53deb11ed42c19aa",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -7607,8 +7607,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "3f021332458cf9c6",
-      "iq_state": "b8830b29a7f085f8",
+      "intelligent_recommendation": "c098e7ae91881424",
+      "iq_state": "f168e3226897323f",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "565e4c7afc0ccc78",
@@ -7666,7 +7666,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "147ffbd2d7f7cd0f",
+      "rooms": "d33aa15e7557d822",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cf2b91501dbb236e",
       "runtime_robustness": "e0efe11766928737",
@@ -7676,7 +7676,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "9211b1a9cd06ce4e",
-      "status_text": "8dcfa5a4eefe7bc4",
+      "status_text": "58221de109b9d56c",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "27d719c754aacd49",
@@ -7696,10 +7696,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 5",
-     "store": "51c6b8a675a12433"
+     "store": "4ff50b4e73da1ed6"
     },
     {
-     "all": "4766f2f048168ccb",
+     "all": "18822f4b0f0beffe",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7716,8 +7716,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "60d4ae9457221e6d",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "d2298254399b671c",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "53deb11ed42c19aa",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -7755,8 +7755,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "abb1de2a5d9cb6ff",
-      "iq_state": "b8830b29a7f085f8",
+      "intelligent_recommendation": "cbdcdb7caa6a557c",
+      "iq_state": "f168e3226897323f",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
       "learning_components": "565e4c7afc0ccc78",
@@ -7814,7 +7814,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8e3d7b2de23ebc80",
+      "rooms": "9b22665e11487ea4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "62d1ebf23f4c8e42",
       "runtime_robustness": "0c3c414f22a70229",
@@ -7824,7 +7824,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "9211b1a9cd06ce4e",
-      "status_text": "8dcfa5a4eefe7bc4",
+      "status_text": "58221de109b9d56c",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "27d719c754aacd49",
@@ -7844,16 +7844,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed",
-     "store": "698806844ad619fc"
+     "store": "ee07640104e5e7a3"
     }
    ],
    "network_calls": [],
-   "persisted": "12c0101e10146d8e"
+   "persisted": "3479ad54c8842a12"
   },
   "no_rooms": {
    "cycles": [
     {
-     "all": "021f8ce2ab889f9c",
+     "all": "ca93c47f9ba7cd10",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7871,7 +7871,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "a57d23afbbfad9c1",
-      "diagnostics_upload": "df58dc5f93a28086",
+      "diagnostics_upload": "f044dce38f29d036",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -8001,7 +8001,7 @@
      "store": "9efbe40c3767f779"
     },
     {
-     "all": "f049af02f553092a",
+     "all": "6655c6eb2f8c4617",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8019,7 +8019,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "a57d23afbbfad9c1",
-      "diagnostics_upload": "19b9470d16114829",
+      "diagnostics_upload": "241e26bf37e53ab3",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -8149,7 +8149,7 @@
      "store": "9efbe40c3767f779"
     },
     {
-     "all": "659a5422cbf44bf9",
+     "all": "b7c2c498498730e7",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8167,7 +8167,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "a57d23afbbfad9c1",
-      "diagnostics_upload": "19b9470d16114829",
+      "diagnostics_upload": "241e26bf37e53ab3",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -8303,7 +8303,7 @@
   "sensor_trouble": {
    "cycles": [
     {
-     "all": "3497e4c906be8be5",
+     "all": "e8cdb5fafc91a276",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8321,7 +8321,7 @@
       "decision_trace": "3541f4b459e5b394",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f9e64f165c01b77a",
-      "diagnostics_upload": "c325676b4b8912c2",
+      "diagnostics_upload": "30eafd6489ff83e8",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -8418,7 +8418,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6b72867d3d1bfd90",
+      "rooms": "91a41226e11da2a7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a99f62983bcbeb52",
       "runtime_robustness": "1f626a2e42ae35fe",
@@ -8448,10 +8448,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "ec40030b59484c70"
+     "store": "664c4176bc71eb2c"
     },
     {
-     "all": "eeefcdfa24ad17ad",
+     "all": "4949e9e0e72346b2",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8469,7 +8469,7 @@
       "decision_trace": "3541f4b459e5b394",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f9e64f165c01b77a",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -8566,7 +8566,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "021d6a56c5889a92",
+      "rooms": "2c110a52340939b1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c9db919d628811b3",
       "runtime_robustness": "699ccf32a6ef1a44",
@@ -8596,10 +8596,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "7c6d25f4583e54cf"
+     "store": "3a95695fdd46838f"
     },
     {
-     "all": "e1a3695f91ff4d13",
+     "all": "cc2de0b6ebefbd7d",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8617,7 +8617,7 @@
       "decision_trace": "3541f4b459e5b394",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f9e64f165c01b77a",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -8714,7 +8714,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6475811767b075f7",
+      "rooms": "7127ea01bcd1bb3e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "20ea8874975d06cf",
       "runtime_robustness": "55f05d56575e3f87",
@@ -8744,10 +8744,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "570e1cb7f2272776"
+     "store": "29e1e6c6b0e58ea7"
     },
     {
-     "all": "5ae2646a7458464c",
+     "all": "8bdf7d511df64010",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8765,7 +8765,7 @@
       "decision_trace": "356d6bddf6da57d8",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "6da9ebc0e85ada9d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -8862,7 +8862,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3e857aca0ecb5a97",
+      "rooms": "d737c63f1f08b62f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "87b81f2a6bfd20cf",
       "runtime_robustness": "62419a103bfc4c84",
@@ -8892,10 +8892,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity unavailable",
-     "store": "d9ad841bd055c30b"
+     "store": "50cff2779eceea14"
     },
     {
-     "all": "1608f3b220258910",
+     "all": "781512700074fc25",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8913,7 +8913,7 @@
       "decision_trace": "9202d76765dcf6d7",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "6da9ebc0e85ada9d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9010,7 +9010,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5c0669ce7051f7af",
+      "rooms": "47401e4a54c8a9fc",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "19fdbfb53574d131",
       "runtime_robustness": "0863c0236fec910c",
@@ -9040,10 +9040,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "outdoor + one flur sensor gone",
-     "store": "e4b52dedc570426c"
+     "store": "325dc739eb01cd03"
     },
     {
-     "all": "5207da4e04e6e05b",
+     "all": "872fd06568679ecb",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9061,7 +9061,7 @@
       "decision_trace": "e09b6e972e640516",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "5543572bd66d397b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9158,7 +9158,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "24281b0d364e403f",
+      "rooms": "96351dfc92850810",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "db38f960cd306294",
       "runtime_robustness": "bed68d010ad11020",
@@ -9188,10 +9188,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "implausible values",
-     "store": "61cacaec92a172a6"
+     "store": "e920036584a7f1a7"
     },
     {
-     "all": "0d8d805bd9f3ddbb",
+     "all": "a4a3d418a38b23ce",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9209,7 +9209,7 @@
       "decision_trace": "a51aea1186b6461e",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "5543572bd66d397b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9306,7 +9306,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "487b4d1c8f1694d9",
+      "rooms": "e96583322d262d7d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b6baf49c1ee77ea4",
       "runtime_robustness": "365c58c9550f3eb2",
@@ -9336,10 +9336,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "window open without humidity",
-     "store": "339dcd14e69f75db"
+     "store": "502d0b664f529e77"
     },
     {
-     "all": "140f5d36fb9c5816",
+     "all": "5adf23d14c42f00f",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9354,10 +9354,10 @@
       "day_night_plan": "bea160403d54984c",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "827bfecd4ae1f9c0",
+      "decision_trace": "a2fa4d5ac9624925",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "e6197d1a7117f254",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9395,8 +9395,8 @@
       "house_ventilation_active_ratio": "e40e37ad56e0721c",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "14a4cf3cf9a8c3ce",
-      "iq_state": "9c3b81e77459a135",
+      "intelligent_recommendation": "265048ebe0a06e10",
+      "iq_state": "18011713d4765d4e",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "bd149e675a43b80b",
@@ -9451,10 +9451,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "5cc31a244d7ddd1e",
-      "remaining_duration_min": "1c1ffc8112d9b134",
+      "recommended_duration_min": "cc811c81659039ef",
+      "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7f3ede8ae9be7368",
+      "rooms": "c377a36a2046d3b8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "fcf85fbe7b7816b2",
       "runtime_robustness": "c665f053af038172",
@@ -9464,7 +9464,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "570ecd46e3746c58",
+      "status_text": "364e4e6f13fdb682",
       "system_check": "b461376449fb72e8",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "8acc23987b8960d8",
@@ -9484,10 +9484,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity back",
-     "store": "6a66d2cfb3a9c93b"
+     "store": "56479af570827b8b"
     },
     {
-     "all": "ad9510840e5bbd48",
+     "all": "3b8ab33d78efcc6d",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9502,10 +9502,10 @@
       "day_night_plan": "44f5ba0968fafaf7",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "113b4611a382f58a",
+      "decision_trace": "d0527a233b35c388",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "3ad675c1c26afecf",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9543,8 +9543,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "a29d40efaf344d22",
-      "iq_state": "c0d1e6832248cfab",
+      "intelligent_recommendation": "0f3bf321ed00a935",
+      "iq_state": "eb2967e7b25e5503",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "db1cdadbc1a985b6",
@@ -9599,10 +9599,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "5cc31a244d7ddd1e",
-      "remaining_duration_min": "86169bcf42397928",
+      "recommended_duration_min": "cc811c81659039ef",
+      "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f016de46f08df6a8",
+      "rooms": "681db4e780529590",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5e883a00b3914a8",
       "runtime_robustness": "da109e8d31626854",
@@ -9612,7 +9612,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "e765aaf93208aff9",
+      "status_text": "a472e96e82bdb2e8",
       "system_check": "9ee359a871cc8d38",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "718127812c05853f",
@@ -9632,10 +9632,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "all recovered",
-     "store": "a6763e93ae95e1a5"
+     "store": "2164159a3b38c482"
     },
     {
-     "all": "8918c2e5cda9d168",
+     "all": "eb02e9d6a7c6c89d",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9650,10 +9650,10 @@
       "day_night_plan": "0c0195b5c1b9c14e",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "3e73046d6216afcb",
+      "decision_trace": "0cb1220724010bb9",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "3ad675c1c26afecf",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9691,8 +9691,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "9f16869b2fc4ffd3",
-      "iq_state": "6a75d7c5815b1c19",
+      "intelligent_recommendation": "6d5641c34987d239",
+      "iq_state": "6f058e0d4c9b3c41",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "1cc1ea9f2ca42513",
@@ -9747,10 +9747,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "5cc31a244d7ddd1e",
-      "remaining_duration_min": "a51162aeeb057ca4",
+      "recommended_duration_min": "cc811c81659039ef",
+      "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "45cfde118e4f8d94",
+      "rooms": "283d8d00f1628aef",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b5aec4de78298bee",
       "runtime_robustness": "578449656bc8f9c7",
@@ -9760,7 +9760,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "3d5a71226868a2f8",
+      "status_text": "0a51f6eb029de6c9",
       "system_check": "9ee359a871cc8d38",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "718127812c05853f",
@@ -9780,10 +9780,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "bc5087d0b1bce17d"
+     "store": "819de2d81e418633"
     },
     {
-     "all": "d9ef8458d7772828",
+     "all": "20ae84b0d04f9558",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9798,10 +9798,10 @@
       "day_night_plan": "a5ec3bdfb1aaf0a8",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "dd6b2fd9ed4288bc",
+      "decision_trace": "6fe2422ae6151478",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "1f2ebcdb2d37e03b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -9839,8 +9839,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "545e88fa92fa6aea",
-      "iq_state": "6a75d7c5815b1c19",
+      "intelligent_recommendation": "faa2c34339fe9c68",
+      "iq_state": "6f058e0d4c9b3c41",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "1cc1ea9f2ca42513",
@@ -9895,10 +9895,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "5cc31a244d7ddd1e",
-      "remaining_duration_min": "a51162aeeb057ca4",
+      "recommended_duration_min": "cc811c81659039ef",
+      "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c31a4b20da34425e",
+      "rooms": "deef68b9575bc3c3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0771d28b9c308f0",
       "runtime_robustness": "3993d3c6ee46f9a7",
@@ -9908,7 +9908,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "3d5a71226868a2f8",
+      "status_text": "0a51f6eb029de6c9",
       "system_check": "9ee359a871cc8d38",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "718127812c05853f",
@@ -9928,10 +9928,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 1",
-     "store": "1e1599afeb3e8f91"
+     "store": "15984204e336d01b"
     },
     {
-     "all": "661a8e3a5f3ca983",
+     "all": "4715109e5555e3b1",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9949,7 +9949,7 @@
       "decision_trace": "f7b05b864f7d6f88",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "4ad791a79dbdc30d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -10046,7 +10046,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fcf9086783136930",
+      "rooms": "bbb55c47e542c6f7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "adb94f570800c78a",
       "runtime_robustness": "d3bb337062e3a6e1",
@@ -10076,10 +10076,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 2",
-     "store": "9ad9543fd25ed513"
+     "store": "26ba435eaae076f3"
     },
     {
-     "all": "3695a0b3d8636b10",
+     "all": "ca36e42f1139a2eb",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10097,7 +10097,7 @@
       "decision_trace": "0c8fc937b28dc1b9",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "4ad791a79dbdc30d",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -10194,7 +10194,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b794ace979dc7607",
+      "rooms": "800b9f73ea169adb",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e9fa31f5bb483fca",
       "runtime_robustness": "01392c69dddb7ee1",
@@ -10224,16 +10224,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 3",
-     "store": "04b301937acbb11f"
+     "store": "b62a4c3a2a06c35e"
     }
    ],
    "network_calls": [],
-   "persisted": "b55500bb37fb6aa6"
+   "persisted": "27a17c75ef3cce4d"
   },
   "structure_room_only": {
    "cycles": [
     {
-     "all": "92bfa2173c3c6659",
+     "all": "a1149fd2bb10998f",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10251,7 +10251,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "69dd48e401a6d2f6",
-      "diagnostics_upload": "df58dc5f93a28086",
+      "diagnostics_upload": "f044dce38f29d036",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -10378,10 +10378,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "6955a5ba0c7e2d1a"
+     "store": "44867468f2e8d617"
     },
     {
-     "all": "66f0c94421a42ab0",
+     "all": "c78726f79775ca06",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10399,7 +10399,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "69dd48e401a6d2f6",
-      "diagnostics_upload": "19b9470d16114829",
+      "diagnostics_upload": "241e26bf37e53ab3",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -10526,10 +10526,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "6955a5ba0c7e2d1a"
+     "store": "44867468f2e8d617"
     },
     {
-     "all": "9332480b7c38e43a",
+     "all": "4ecb4d62b0e5f598",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10547,7 +10547,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "69dd48e401a6d2f6",
-      "diagnostics_upload": "19b9470d16114829",
+      "diagnostics_upload": "241e26bf37e53ab3",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -10674,10 +10674,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "6955a5ba0c7e2d1a"
+     "store": "44867468f2e8d617"
     },
     {
-     "all": "5f96c555e32f8278",
+     "all": "16ff13029a89dcea",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10695,7 +10695,7 @@
       "decision_trace": "f904507fcdb5ac5c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "69dd48e401a6d2f6",
-      "diagnostics_upload": "19b9470d16114829",
+      "diagnostics_upload": "241e26bf37e53ab3",
       "effective_adults": "86169bcf42397928",
       "effective_children": "16522468b17d5af6",
       "effective_occupants": "86169bcf42397928",
@@ -10822,16 +10822,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "6955a5ba0c7e2d1a"
+     "store": "44867468f2e8d617"
     }
    ],
    "network_calls": [],
-   "persisted": "7b6015203d32cc8b"
+   "persisted": "ededf7889bc59d63"
   },
   "summer_cooling_and_exhaust": {
    "cycles": [
     {
-     "all": "d0ebc0a9e5a8d885",
+     "all": "389dc2970a70e9d9",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10849,7 +10849,7 @@
       "decision_trace": "00a9d00450e7cf74",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "c2a34d64aa8cfea8",
-      "diagnostics_upload": "c325676b4b8912c2",
+      "diagnostics_upload": "30eafd6489ff83e8",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -10946,7 +10946,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "46496cc06b3fbde2",
+      "rooms": "e0ce8af8abe85dd7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b12d102452dfdd22",
       "runtime_robustness": "e308e595ebfb6e84",
@@ -10976,10 +10976,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "7ca0a0198fe8cc77"
+     "store": "9bdaa8bea43d1bf1"
     },
     {
-     "all": "00440cb8fb47962f",
+     "all": "0f6cbeaa7a86d46e",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10997,7 +10997,7 @@
       "decision_trace": "05bf4466072ab869",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "c2a34d64aa8cfea8",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11094,7 +11094,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "121943984da0b33f",
+      "rooms": "346c0fb17ef9a89e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d720619ce31f84c4",
       "runtime_robustness": "8f4ee1863363bf60",
@@ -11124,10 +11124,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "warm afternoon",
-     "store": "4131975111f70857"
+     "store": "d7518d81169bc61a"
     },
     {
-     "all": "0347fdf1c17f4218",
+     "all": "37bd31bcb1d8cdaf",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11145,7 +11145,7 @@
       "decision_trace": "06bc65892fd5d961",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "c2a34d64aa8cfea8",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11242,7 +11242,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9768a6bd02c39b85",
+      "rooms": "cdd02be603ad9bf8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "015ef0843566d94c",
       "runtime_robustness": "4339d59f58aac8ce",
@@ -11272,10 +11272,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "warm afternoon",
-     "store": "f93ddb0862736312"
+     "store": "2617c377b76b3c10"
     },
     {
-     "all": "b6a0895a64c9ced9",
+     "all": "f17275e016f09281",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11293,7 +11293,7 @@
       "decision_trace": "0469e7d1dcafa58c",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "a2ebcbbb5c9b7237",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11390,7 +11390,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "95d90d488a0da414",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5c775d75e4b96be6",
+      "rooms": "9d53a206b4a9ce3b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cd8b3a545c75e72e",
       "runtime_robustness": "80dceca20d96a319",
@@ -11420,10 +11420,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "evening cools",
-     "store": "3075fe82cf0aee59"
+     "store": "e0fa5b10b6fc909a"
     },
     {
-     "all": "0dfdd8a9d24f44f9",
+     "all": "2ef951746073f1e8",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11438,10 +11438,10 @@
       "day_night_plan": "881dfce83d594745",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "f2ab0f1ec9a674c7",
+      "decision_trace": "204d48c26bd99da8",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fb73536aee6f5edb",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11479,8 +11479,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "303458f29c1d14b9",
-      "iq_state": "059166fb870c4a2e",
+      "intelligent_recommendation": "9701afd6ffb968a9",
+      "iq_state": "1998905381d51abe",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "5b7fc99be30484ea",
@@ -11535,10 +11535,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "95d90d488a0da414",
-      "remaining_duration_min": "95d90d488a0da414",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "bd8a8f86863435bc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2f57dd7dc91cebdc",
+      "rooms": "7a03e3e405e23a5f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a4a34d87e9773d8c",
       "runtime_robustness": "c9ce073f15c893cc",
@@ -11548,7 +11548,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "6336397a65ef801d",
+      "status_text": "174671632c4d43b7",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -11568,10 +11568,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom open for cooling",
-     "store": "b56b705b8beb9184"
+     "store": "73ff1668003ad562"
     },
     {
-     "all": "6e5474cc9f2f9e4e",
+     "all": "0627fecd93a92947",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11586,10 +11586,10 @@
       "day_night_plan": "cb990671063a71ff",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "ef366fec24853518",
+      "decision_trace": "ca58e11ad55d8e36",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2f9d3d2c82264f1b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11627,8 +11627,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "62d6e3fe43d43fc6",
-      "iq_state": "99aae382a5466d7e",
+      "intelligent_recommendation": "eaa0fd0bb713be51",
+      "iq_state": "11ea82b087f88b0e",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "07b18825c7921627",
@@ -11683,10 +11683,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "95d90d488a0da414",
-      "remaining_duration_min": "2254617afd5eb0f0",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "17a20e6217b4e4f7",
+      "rooms": "82d2ab03ae4b3dd9",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a2dea3f5a6f05df0",
       "runtime_robustness": "abd452f44d916490",
@@ -11696,7 +11696,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "b7ed3e9683398d23",
+      "status_text": "d3ffaf40a7857b88",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "ad2178cd3e435283",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -11716,10 +11716,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 1",
-     "store": "1310ec1340b3f4d4"
+     "store": "36a281414edfeaf6"
     },
     {
-     "all": "47b6bce2ef0780f6",
+     "all": "11b2835ca298d8ad",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11734,10 +11734,10 @@
       "day_night_plan": "093386a796904839",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "708411abfe19d0c5",
+      "decision_trace": "63f0eee0841a4031",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "943dfd4219b5dc29",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11775,8 +11775,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "ecf982bb7e45fc2d",
-      "iq_state": "700499166e84ab90",
+      "intelligent_recommendation": "7a6795e713b2d462",
+      "iq_state": "d2c6956169c63578",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "f20fcdf239ab28eb",
@@ -11831,10 +11831,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "d813b7ed683d2ab3",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "b763c74ed41d27af",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7539d6f0459aa8ef",
+      "rooms": "ddfc38626f969b37",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9ac17e4c1cd838d9",
       "runtime_robustness": "2896163e6a16e4b4",
@@ -11843,8 +11843,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "c262905ce9a22e89",
+      "status": "654499b4c64a7d5b",
+      "status_text": "9a69918091174490",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "f452db7f3026979d",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -11864,10 +11864,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 2",
-     "store": "2d1ed1297975dc06"
+     "store": "bdc2fe4b69a168e0"
     },
     {
-     "all": "407af2499357d407",
+     "all": "2fe784a79e65daa1",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11882,10 +11882,10 @@
       "day_night_plan": "051b2ce124b86568",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "b11dc2c3366de39d",
+      "decision_trace": "ce3324de93c2e9c4",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "75ff9ddff7967f64",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -11923,8 +11923,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "56a8b626d20dd8dd",
-      "iq_state": "257cc860a711782a",
+      "intelligent_recommendation": "82e332808150d190",
+      "iq_state": "5ae8d72eeaccda07",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "f20fcdf239ab28eb",
@@ -11979,10 +11979,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "cc811c81659039ef",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "ed6cca0a64012053",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "dbfd7f88b25c927f",
+      "rooms": "7da97be911120209",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c52f9cfd6f0012c7",
       "runtime_robustness": "6950951f9083173f",
@@ -11991,8 +11991,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "c262905ce9a22e89",
+      "status": "654499b4c64a7d5b",
+      "status_text": "9d691cc96a11611d",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "0200d2cc141acdc5",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -12012,10 +12012,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 3",
-     "store": "8b454e236b6ee220"
+     "store": "6a8fee89a02f54f6"
     },
     {
-     "all": "edfb375840741bf9",
+     "all": "fd4a632c6cbb5153",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12030,10 +12030,10 @@
       "day_night_plan": "ee240780b83f1ec0",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "4cee94bfb3df1042",
+      "decision_trace": "e36d861b9c186dff",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f1326a4bd6c68723",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12071,8 +12071,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "516457d3aba08387",
-      "iq_state": "9f6b2f5353a0d073",
+      "intelligent_recommendation": "63839b5a1205189d",
+      "iq_state": "87664fb44480852c",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "f20fcdf239ab28eb",
@@ -12127,10 +12127,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "2254617afd5eb0f0",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "5f7b9b51467bf417",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e2ce68ad78ad7990",
+      "rooms": "ee32a0d0ca6da68c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b92e10a6ffb4256",
       "runtime_robustness": "3515e236671554de",
@@ -12139,8 +12139,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "c262905ce9a22e89",
+      "status": "654499b4c64a7d5b",
+      "status_text": "f2ef913bf0a5bb45",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "1b7cde32427f52a7",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -12160,10 +12160,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 4",
-     "store": "72815879deb3ffb7"
+     "store": "c09551194cdcb51d"
     },
     {
-     "all": "5f5b5205938695c2",
+     "all": "a01cb875b9511471",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12178,10 +12178,10 @@
       "day_night_plan": "3c9ae07a29c8708a",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "7396ced7054cac92",
+      "decision_trace": "dd9993c8961b7bda",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "d4b078cd3f8da34e",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12219,8 +12219,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "228b662916d571ab",
-      "iq_state": "dc3fc8aec242d507",
+      "intelligent_recommendation": "cfa45c639f0c6675",
+      "iq_state": "6d494217733252ce",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "f2d16e29ebf6cbc1",
@@ -12275,10 +12275,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "95d90d488a0da414",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9997b453beb5fd12",
+      "rooms": "83a12afff07391c4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4beacf82b98e0114",
       "runtime_robustness": "83b63f300d9a4e22",
@@ -12287,8 +12287,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "c262905ce9a22e89",
+      "status": "654499b4c64a7d5b",
+      "status_text": "ee69b20d88b47835",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "98e1c754c1876bb6",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -12308,10 +12308,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 5",
-     "store": "366922168dd94fa0"
+     "store": "6f4c6fa63f93b8f2"
     },
     {
-     "all": "af3fbcd7d648ff7a",
+     "all": "cde667e0c86b3ee1",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12326,10 +12326,10 @@
       "day_night_plan": "5cf19f45af55aeba",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "f23294c239625f61",
+      "decision_trace": "a726e658340d8c54",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "b648a693dd1c639a",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12367,8 +12367,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "2431280334ea5886",
-      "iq_state": "e4a168e3d61afce8",
+      "intelligent_recommendation": "95512f0de204cc41",
+      "iq_state": "4a77818f3549e085",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "57b493c201314785",
@@ -12423,10 +12423,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "2894248d90b05c55",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "327865fc8cf76ab9",
+      "rooms": "d66abbb29b5b77e7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c54b2ee90c7abbb8",
       "runtime_robustness": "ccff539bee9e2a01",
@@ -12435,8 +12435,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "c262905ce9a22e89",
+      "status": "654499b4c64a7d5b",
+      "status_text": "c8175f6b3d69e1e1",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "85e7ba9d9902b3c8",
       "theoretical_actionable_potential_ml": "4c970004b0678d43",
@@ -12456,10 +12456,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 6",
-     "store": "c89cfff2e52b281c"
+     "store": "f34d39b9fb23e775"
     },
     {
-     "all": "3a25df8c2c8d15b2",
+     "all": "44887b8a49ce8f4b",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12474,10 +12474,10 @@
       "day_night_plan": "aa29dd0a2e598499",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "8b6fce0c61faafce",
+      "decision_trace": "8f9d142c1592a8eb",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "852f88b80d28ded7",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12515,8 +12515,8 @@
       "house_ventilation_active_ratio": "1e60280e9d1e3e84",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "c0da9e25a5d7afae",
-      "iq_state": "909b85f848d64ff9",
+      "intelligent_recommendation": "c35b0e70db533bdd",
+      "iq_state": "07158e55440a5b24",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "57b493c201314785",
@@ -12571,10 +12571,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "bb125c347cc5324a",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "238d2dc96adadc93",
+      "rooms": "6f8b8c142217fef3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4f2e5aed6d40eaa7",
       "runtime_robustness": "7e07a4f9f45b36f6",
@@ -12604,10 +12604,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed, exhaust on",
-     "store": "a771563d8be7f5dc"
+     "store": "ce9ebadd1b5735cb"
     },
     {
-     "all": "435e3d53603fa232",
+     "all": "9b78d769fb80375a",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12622,10 +12622,10 @@
       "day_night_plan": "380fe38ae319ce28",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "2beccf8175b2f256",
+      "decision_trace": "ffa1d6a8be4ac697",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fbb62e78f6b83b8c",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12663,8 +12663,8 @@
       "house_ventilation_active_ratio": "1e60280e9d1e3e84",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "02531034850e431a",
-      "iq_state": "1de21bc176262a96",
+      "intelligent_recommendation": "61efef247a5e2721",
+      "iq_state": "7fe6165d7ac9cc16",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "89fca1c6e197a212",
@@ -12719,10 +12719,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "bb125c347cc5324a",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "bd8a8f86863435bc",
+      "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7987b5419dfa1d4f",
+      "rooms": "00ff8634d8cc269e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "628d8583b58eb649",
       "runtime_robustness": "0c31da2060437b42",
@@ -12752,10 +12752,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 1",
-     "store": "f49e3614b7b8551f"
+     "store": "1294e052f539e02b"
     },
     {
-     "all": "1a1cebb6b2233322",
+     "all": "113bea2312199621",
      "keys": {
       "actionable_potential_ml": "81b8a03f97e8787c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12773,7 +12773,7 @@
       "decision_trace": "4a779ef93a2ea145",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "541281438cd56ece",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12870,7 +12870,7 @@
       "recommended_duration_min": "95d90d488a0da414",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7dc69cff2c150df4",
+      "rooms": "5f9c64170b903ba1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf453b995f807f0e",
       "runtime_robustness": "103857733e7d6d3a",
@@ -12900,10 +12900,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 2",
-     "store": "fe3ef8b5a214fc7d"
+     "store": "4b1cf7073037cbb4"
     },
     {
-     "all": "3d39e853ec437f62",
+     "all": "f2a07e68bc237a2f",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12918,10 +12918,10 @@
       "day_night_plan": "7589247d8fbf84d9",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "9fd4212a7ec1866d",
+      "decision_trace": "301ff1797cd84862",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fd361b2d5132b8b6",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -12959,8 +12959,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "871d578285bce2f3",
-      "iq_state": "556dcd4f9e9a967a",
+      "intelligent_recommendation": "c9d6a7256b15f614",
+      "iq_state": "ef13287f822f6473",
       "last_learning_diagnosis": "dde4858605f6d7c1",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "6e0d6deda56c94a5",
@@ -13015,10 +13015,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "fc52218f2280709f",
-      "remaining_duration_min": "a35ae6a7722b2a2e",
+      "recommended_duration_min": "95d90d488a0da414",
+      "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ec809da32ad90f05",
+      "rooms": "610d381cf2ca918a",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb5ba45004137509",
       "runtime_robustness": "8dfecc3f5379d32b",
@@ -13028,7 +13028,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "d5d909a20f32fc16",
+      "status_text": "0b36a8dd7742fe62",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "dfe62e836a0a6f26",
@@ -13048,10 +13048,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 3",
-     "store": "da3f1022412eae6b"
+     "store": "fed72933d6d0c4a3"
     },
     {
-     "all": "5f8c36cc8462e184",
+     "all": "356984a932f8af54",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13066,10 +13066,10 @@
       "day_night_plan": "fab277c53cf052fd",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "0031408a6b8a6567",
+      "decision_trace": "4e81a130d315fe36",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "767e96d4d8acfb9b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -13107,8 +13107,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "47998d07063b4506",
-      "iq_state": "fb3f0ea491161a6d",
+      "intelligent_recommendation": "27f73cdbe1b9057b",
+      "iq_state": "ab86f7a1ebe9342a",
       "last_learning_diagnosis": "dde4858605f6d7c1",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "dd7e8301bd5b8296",
@@ -13163,10 +13163,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "2254617afd5eb0f0",
-      "remaining_duration_min": "16522468b17d5af6",
+      "recommended_duration_min": "95d90d488a0da414",
+      "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a7f9fed897d40dea",
+      "rooms": "9ce4f6ab6df8ea7e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d6d28f26d58bebc5",
       "runtime_robustness": "55ed83c7dc52c5b1",
@@ -13175,8 +13175,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "e93f41300b9f4088",
+      "status": "654499b4c64a7d5b",
+      "status_text": "f1f3ed1a689e2f22",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "16badfc6202cb3f8",
@@ -13196,10 +13196,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 4",
-     "store": "22506d54515bc83f"
+     "store": "819e8a3ea18facd6"
     },
     {
-     "all": "f983dab861fddbdb",
+     "all": "e9633b789afe2c83",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13216,8 +13216,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "1327dcce265cc29d",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "eea363e00a1bd672",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "767e96d4d8acfb9b",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -13255,8 +13255,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "0f6d2eedfefa49b5",
-      "iq_state": "dbabce04952c2d96",
+      "intelligent_recommendation": "bc5176a9f35ac1c6",
+      "iq_state": "f71b0aced907f3bc",
       "last_learning_diagnosis": "dde4858605f6d7c1",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "dd7e8301bd5b8296",
@@ -13314,7 +13314,7 @@
       "recommended_duration_min": "95d90d488a0da414",
       "remaining_duration_min": "95d90d488a0da414",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "19533009643a81bc",
+      "rooms": "1eb50e5224c28345",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "578c3747b2f10a50",
       "runtime_robustness": "d4e1b602a576d7d2",
@@ -13324,7 +13324,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "ab38820836d81da4",
+      "status_text": "e54911f6774a3e93",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "16badfc6202cb3f8",
@@ -13344,10 +13344,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust off",
-     "store": "cd4b8a56c3e36cdf"
+     "store": "9ad9cdf181cae7ea"
     },
     {
-     "all": "7f65b165dbf8c406",
+     "all": "eea5393197d16faa",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13364,8 +13364,8 @@
       "decision_engine": "422a18c77c54a5d5",
       "decision_trace": "61cdc6c9cb754794",
       "decision_trace_engine": "161078e42e8fef3b",
-      "diagnostics": "cad2aece8a6761f0",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics": "5450436aa4de9cee",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -13462,7 +13462,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "95d90d488a0da414",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "643c70c3ba973260",
+      "rooms": "1c748a7b204e0a9a",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "6da3cbd04d67ce0a",
       "runtime_robustness": "fa0a3a671d06519d",
@@ -13492,16 +13492,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "4fd1ba43c538e255"
+     "store": "7df85aa576402337"
     }
    ],
    "network_calls": [],
-   "persisted": "3c8fbbb7cafbc61f"
+   "persisted": "9a1e31fb0f676488"
   },
   "tilt_dropout_and_passive": {
    "cycles": [
     {
-     "all": "97eaca3114f669ef",
+     "all": "9f366e05ca710c52",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13519,7 +13519,7 @@
       "decision_trace": "3b726144cdab61e8",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "742c280a162e6793",
-      "diagnostics_upload": "c325676b4b8912c2",
+      "diagnostics_upload": "30eafd6489ff83e8",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -13616,7 +13616,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "be1cf299705e4627",
+      "rooms": "39cd9eb469b1a3f2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "eb48b928e2a22b15",
       "runtime_robustness": "d0c7e5d28b951022",
@@ -13646,10 +13646,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "e0736775876618f2"
+     "store": "8a6b0ee773897052"
     },
     {
-     "all": "5f78c369aa5de4e1",
+     "all": "a93ff232b6780602",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13667,7 +13667,7 @@
       "decision_trace": "519ced6ed9785aa4",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "742c280a162e6793",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -13764,7 +13764,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "536158b4a5a80d13",
+      "rooms": "71d293b9f062e562",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f86dd7303bd8fba9",
       "runtime_robustness": "1fd50771f32321d1",
@@ -13794,10 +13794,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "d81d78364cf10243"
+     "store": "99b66feb32063ee8"
     },
     {
-     "all": "8350a361006ad4b9",
+     "all": "83eaddd9785d4f71",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13815,7 +13815,7 @@
       "decision_trace": "519ced6ed9785aa4",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "742c280a162e6793",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -13912,7 +13912,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2195913ced3419da",
+      "rooms": "f82ba7bccc5b2d50",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5ef7703648bf092",
       "runtime_robustness": "8f98a1e80a756aea",
@@ -13942,10 +13942,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "89ff23eadde9c381"
+     "store": "2502b3ef6a67789d"
     },
     {
-     "all": "c20e9a7d02a446ca",
+     "all": "3b9b6f9733d0c197",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13963,7 +13963,7 @@
       "decision_trace": "7f4a6a8ca21d6ec5",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "742c280a162e6793",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14060,7 +14060,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ed7fbce5ae85683e",
+      "rooms": "a3e03d4d1b7d4d8e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "ec27c5083e521f34",
       "runtime_robustness": "a13980f2972a9442",
@@ -14090,10 +14090,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom tilted",
-     "store": "66db8072fd852cea"
+     "store": "0ebe71933d6039b0"
     },
     {
-     "all": "196c02c61e6929b1",
+     "all": "5a92cb95ffee72df",
      "keys": {
       "actionable_potential_ml": "81b8a03f97e8787c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14111,7 +14111,7 @@
       "decision_trace": "86048ac15f06f9c4",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f6ca9d8c744312fb",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14208,7 +14208,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "42af12abd32eaee7",
+      "rooms": "9f99463209c2009e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e48a6f5e99404c59",
       "runtime_robustness": "304014a5a55ce7d7",
@@ -14238,10 +14238,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 1",
-     "store": "b9054e43a596b534"
+     "store": "44a7bdfc4acaefa0"
     },
     {
-     "all": "733a3a43fdc98b7f",
+     "all": "7cc481edbc0e4372",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14259,7 +14259,7 @@
       "decision_trace": "2fa7556732c3ffa6",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "9d04f0e519b7832a",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14356,7 +14356,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "32f5c4e26f76a35e",
+      "rooms": "a18e430d4acb9d7b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3153e63227b3a900",
       "runtime_robustness": "c12eb79b5c11f584",
@@ -14386,10 +14386,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 2",
-     "store": "e225275824a78a15"
+     "store": "9c9d047617fe8945"
     },
     {
-     "all": "7e10bd2080a4b177",
+     "all": "984d8334e2866f78",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14407,7 +14407,7 @@
       "decision_trace": "f8308c7140cc6f7e",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "db61f42ac3540596",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14504,7 +14504,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7a4632cf400d946a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a1b36ecd7c79a612",
+      "rooms": "1c9e667db10d339b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb79aecf4df1e37a",
       "runtime_robustness": "3adec81b28e0eab3",
@@ -14534,10 +14534,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 3",
-     "store": "0f503fbf52ea04eb"
+     "store": "5a603a9d95291e3c"
     },
     {
-     "all": "650e9254457a4757",
+     "all": "4f8a69467d5823e3",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14555,7 +14555,7 @@
       "decision_trace": "022649ee3abc2fa4",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "377f3fd9c0c3eceb",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14652,7 +14652,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "60e67e3c2c782b96",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "af116d6bc811e17a",
+      "rooms": "930491083beb5d9e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "64e0b4f2b119f7be",
       "runtime_robustness": "5d9a8ddd94c35957",
@@ -14682,10 +14682,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 4",
-     "store": "d291117d485b9ce7"
+     "store": "9b14de12cd4cb0f9"
     },
     {
-     "all": "79e1a7b4d697ba27",
+     "all": "f4607176386efbd3",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14703,7 +14703,7 @@
       "decision_trace": "a5749a363a6a2789",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "37f2523a6254731b",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14800,7 +14800,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6ca219f0eea2235b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "04e552bdb6d6a614",
+      "rooms": "b2ba4a8f302c89f3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "47e53707c7a75b55",
       "runtime_robustness": "17b79560ff51f352",
@@ -14830,10 +14830,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 5",
-     "store": "a5e649faffc832f5"
+     "store": "d2ebf60944d67098"
     },
     {
-     "all": "4465a97923633822",
+     "all": "a706517520b56d20",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14851,7 +14851,7 @@
       "decision_trace": "0d8629d40311aeec",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "05642852f38acae9",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -14948,7 +14948,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6d5bcc98d1457497",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "53f5929b27b1a5e8",
+      "rooms": "2158909da446d9a3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9e06c1f6089b0f9e",
       "runtime_robustness": "9e6804bf3ee52eab",
@@ -14978,10 +14978,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 6",
-     "store": "83bd6b55f95a787a"
+     "store": "cea26baca92ff708"
     },
     {
-     "all": "aae105c28287f270",
+     "all": "29b6922903f9358b",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14999,7 +14999,7 @@
       "decision_trace": "0d8629d40311aeec",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "05642852f38acae9",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15096,7 +15096,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "579325314ca47adc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ad55dbf3b6fcc4fb",
+      "rooms": "0de1c5dd1a48fb10",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "2dda91c6b026cbc3",
       "runtime_robustness": "a3b389038701f9c6",
@@ -15126,10 +15126,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "radio drop-out",
-     "store": "4b0508653b50e6e3"
+     "store": "050e4e80590e4eb6"
     },
     {
-     "all": "bedcbcbd05b295c1",
+     "all": "3ed74a22ed72e23f",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15147,7 +15147,7 @@
       "decision_trace": "1aa16e61ed172f43",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "7b3e6970de738c61",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15244,7 +15244,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5e6443ddd6800c4e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ccca7ee882f924ab",
+      "rooms": "c2992a587eb28078",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "b25cf99a433ff49a",
       "runtime_robustness": "87acfe6c096e7998",
@@ -15274,10 +15274,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "still dropped",
-     "store": "3ed6196e4a5e92b1"
+     "store": "ba2d22b2c09936b2"
     },
     {
-     "all": "cb181da255f9d774",
+     "all": "6df5d2b56c58b22b",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15295,7 +15295,7 @@
       "decision_trace": "1aa16e61ed172f43",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "7b3e6970de738c61",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15392,7 +15392,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7803d0c9e1cf80ff",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7759e3ad92a880bb",
+      "rooms": "0f12cfc2963c10ee",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "f3ab3867b131b82c",
       "runtime_robustness": "3b0a45bbd9f04342",
@@ -15422,10 +15422,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "back: fully open",
-     "store": "96fd5b4a1f73b20c"
+     "store": "dd1ad5d70eb34347"
     },
     {
-     "all": "9279d5c27b22aa40",
+     "all": "7a294508f9971757",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15443,7 +15443,7 @@
       "decision_trace": "81bfb4ae1da5b353",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2bbb9e7d56486958",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15540,7 +15540,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "8dd63c1b40fb8cb9",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a3760e2fbb0ccd8a",
+      "rooms": "c54cc543f11c6974",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5db7b502c75558cc",
       "runtime_robustness": "b019d3325d318b06",
@@ -15570,10 +15570,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 1",
-     "store": "41310350cac51178"
+     "store": "39c088c1ffc93ed7"
     },
     {
-     "all": "f46389e09acc3987",
+     "all": "bc08ff530a00c6af",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15591,7 +15591,7 @@
       "decision_trace": "3dfe46fe66077462",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2bbb9e7d56486958",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15688,7 +15688,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "982de196341a7abc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "761d5e4a3331f763",
+      "rooms": "33c95a260bf25893",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8c1d4fa7980060cc",
       "runtime_robustness": "98658b60e1e5947b",
@@ -15718,10 +15718,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 2",
-     "store": "be70cd2fd3df8b16"
+     "store": "5d5ccd80d9ef3717"
     },
     {
-     "all": "f9efbbbaa8795be2",
+     "all": "047a8a83fa06a75c",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15739,7 +15739,7 @@
       "decision_trace": "69b45fe4303b86fe",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "35b8bd2ce8240958",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15836,7 +15836,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "fd300b638b165a75",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1e249e8895239bd5",
+      "rooms": "d22dd7dbed1a9e22",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "005f9bcab578c86b",
       "runtime_robustness": "1fdba1069c171a33",
@@ -15866,10 +15866,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 3",
-     "store": "bbe188e2371f7c99"
+     "store": "eeac0ffb84f8dc3e"
     },
     {
-     "all": "d1b4bb1ed9be716c",
+     "all": "212a5110211f45c1",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15887,7 +15887,7 @@
       "decision_trace": "20a38d28cfc7255e",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "35b8bd2ce8240958",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -15984,7 +15984,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "9db1813de0d989e3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "4b447fb1a0c89553",
+      "rooms": "7292d9e52d1a9b28",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0bb2e900d31e40a0",
       "runtime_robustness": "2f936f4a73351a60",
@@ -16014,10 +16014,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 4",
-     "store": "5b4762f5dcc812f5"
+     "store": "ac6834036cb1f6be"
     },
     {
-     "all": "4a5d3b458fa71d77",
+     "all": "985cfede74994071",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16035,7 +16035,7 @@
       "decision_trace": "20a38d28cfc7255e",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "21ad148b8080c91e",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -16132,7 +16132,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6de6e5566e2026c4",
+      "rooms": "e4c21b09d859033e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9d2b57769645cfa9",
       "runtime_robustness": "db0099342b52b50d",
@@ -16162,10 +16162,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "33ed277942b3cbf1"
+     "store": "564118f1a4cbd5f5"
     },
     {
-     "all": "46bc01a16d2ec35c",
+     "all": "cedea5b12b66b533",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16183,7 +16183,7 @@
       "decision_trace": "071f534b599ddb90",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fb710a837d32324c",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -16280,7 +16280,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "06c00a278571acff",
+      "rooms": "39b17fd70d3663b2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b339243d23188143",
       "runtime_robustness": "cf13f235fcfd5d45",
@@ -16310,10 +16310,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap open",
-     "store": "b07c4af471714fd0"
+     "store": "b0174fbf3910a553"
     },
     {
-     "all": "670dcf62efb8be7f",
+     "all": "ea207da598111aa7",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16331,7 +16331,7 @@
       "decision_trace": "071f534b599ddb90",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fb710a837d32324c",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -16428,7 +16428,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f58921c7b343f373",
+      "rooms": "0746238ea006a629",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "40f92d9cbdc8550f",
       "runtime_robustness": "5e8f155db98f9058",
@@ -16458,10 +16458,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap closed",
-     "store": "7151fc1729e3c63e"
+     "store": "594a5cbab24c9826"
     },
     {
-     "all": "18b9c75c052c1fa3",
+     "all": "fcd52d979ad5039a",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16479,7 +16479,7 @@
       "decision_trace": "089932bc595ac88b",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "43896f6f0961b735",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -16576,7 +16576,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1631e3bbcb93e499",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "269524673721318c",
+      "rooms": "a4b9b7dfcdccc5b9",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8f0c27aaa8d9e55f",
       "runtime_robustness": "173980f570e02aed",
@@ -16606,10 +16606,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door open",
-     "store": "050279387a401ebb"
+     "store": "ecec9c2b842be3ef"
     },
     {
-     "all": "9e4e97543539d0cb",
+     "all": "a2dbb1c58da08b2f",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16627,7 +16627,7 @@
       "decision_trace": "7c8321bea3cbeda0",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "94ea0594fd081484",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -16724,7 +16724,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2d0091f3c2a36348",
+      "rooms": "ca95b9734b3832e3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9293e1554a9005d3",
       "runtime_robustness": "49602fa27226135a",
@@ -16754,10 +16754,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 1",
-     "store": "ad432d61e3bc4a08"
+     "store": "15afb28546ee3943"
     },
     {
-     "all": "9cfad8dd9f3dd116",
+     "all": "a3e661aa90e542b6",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16772,10 +16772,10 @@
       "day_night_plan": "a124c9a3c5ff8202",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "0175a8cec9d4e464",
+      "decision_trace": "d3e53d483d5bc790",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f0be2deb3a7038b3",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -16813,8 +16813,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "26321978117f7d86",
-      "iq_state": "4b6759cdf3f5136a",
+      "intelligent_recommendation": "5e2f5d009a2220f0",
+      "iq_state": "f69ea4d51df51ebe",
       "last_learning_diagnosis": "281f4b3b2e827393",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "38bb61b60c3bd7c8",
@@ -16870,9 +16870,9 @@
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
       "recommended_duration_min": "ef2d127de37b942b",
-      "remaining_duration_min": "16522468b17d5af6",
+      "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "120c443999635a6b",
+      "rooms": "a5a080eb2365e1f7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d80f2fc3fa621228",
       "runtime_robustness": "b66a7962adaf8785",
@@ -16881,8 +16881,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "9211b1a9cd06ce4e",
-      "status_text": "37d506d091db0e3e",
+      "status": "654499b4c64a7d5b",
+      "status_text": "f709c038c08250f6",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "dac53c17c250fd4d",
@@ -16902,10 +16902,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 2",
-     "store": "a75890318f89b871"
+     "store": "d65d7ef80172ca7a"
     },
     {
-     "all": "729f7fefebf659c7",
+     "all": "5dc43a07a8414a33",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16923,7 +16923,7 @@
       "decision_trace": "37433d8914194d67",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f5ea2d95e809f46c",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -17020,7 +17020,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f49e0af0b27c5985",
+      "rooms": "1ae0a9c5795f9718",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "63e4c8db9cf6bbf7",
       "runtime_robustness": "332122901293bbf0",
@@ -17050,10 +17050,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 3",
-     "store": "4bf8619e579ffa1d"
+     "store": "e4404272894f6421"
     },
     {
-     "all": "4796d03b9d3d9a19",
+     "all": "663446c7f5a50fca",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17071,7 +17071,7 @@
       "decision_trace": "37433d8914194d67",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "f5ea2d95e809f46c",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -17168,7 +17168,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0c8d30c236eab7af",
+      "rooms": "05c819c9e3bc54b9",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "e11a89b24eed3a60",
       "runtime_robustness": "3288db0c7d86ad37",
@@ -17198,10 +17198,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door closed",
-     "store": "638d9333a5e14092"
+     "store": "315a8d195a10174a"
     },
     {
-     "all": "c43548d08e77e4fd",
+     "all": "4ca7c8e38aec2197",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17219,7 +17219,7 @@
       "decision_trace": "d74936f6f0d40188",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "d561b2cce82928f4",
-      "diagnostics_upload": "199e823a0d356354",
+      "diagnostics_upload": "9bf19186dfd208d5",
       "effective_adults": "86169bcf42397928",
       "effective_children": "a51162aeeb057ca4",
       "effective_occupants": "1c1ffc8112d9b134",
@@ -17316,7 +17316,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7dce2ad777237c5c",
+      "rooms": "1fd981c027d0bdc8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "015fb09b57da150f",
       "runtime_robustness": "bbb4639ad8a005e9",
@@ -17346,11 +17346,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "52ad8c3d58af9f60"
+     "store": "cee94ce4dc209ca2"
     }
    ],
    "network_calls": [],
-   "persisted": "91a55a2bf11aae37"
+   "persisted": "cd23ff9d49ee9661"
   }
  },
  "schema": 1

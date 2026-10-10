@@ -6,7 +6,6 @@ edge case that previously hid pure modules).
 """
 from __future__ import annotations
 import ast
-import configparser
 import json
 import os
 from pathlib import Path

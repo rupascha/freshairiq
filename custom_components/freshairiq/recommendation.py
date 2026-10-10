@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any, Iterable
 
+from .close_wording import close_instruction
 from .outdoor_air import pm25_reason, veto_cause
 
 
@@ -313,17 +314,16 @@ def build_recommendation(
             parts=[]
             if to_open: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in to_open)+f" öffnen · ca. {max(round(duration),1)} min")
             if active_now: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in active_now)+" offen lassen")
-            if co2_reassess: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in co2_reassess)+" schließen · CO₂ neu bewerten")
+            if co2_reassess: parts.append(close_instruction(co2_reassess, joiner=", ", all_rooms=True)+" · CO₂ neu bewerten")
             if mould_blocked: parts.append(", ".join(str(r.get("name",r.get("key","Raum"))) for r in mould_blocked)+" geschlossen lassen")
             return result("ventilate" if to_open else "continue", "critical_multiroom", "Schutzlüftung empfohlen" if critical_co2_rooms else "Feuchte kritisch", " · ".join(parts), "FreshAirIQ bündelt gleichzeitig kritische Räume, wenn dieselbe Schutzmaßnahme hilft, und trennt gegensätzliche Maßnahmen raumweise.", selected=actionable, reasons=reasons, severity="danger", duration=duration, removed=sum(max(_f(r.get("realistic_potential_ml",r.get("potential_ml"))),0.0) for r in actionable), secondary="Nach dem Schutzluftwechsel werden alle kritischen Räume und Zielkonflikte neu bewertet.")
         if co2_reassess:
-            names=", ".join(str(r.get("name",r.get("key","Raum"))) for r in co2_reassess)
             reasons=[f"{r.get('name',r.get('key','Raum'))}: CO₂ {round(_f(r.get('co2')))} ppm bleibt kritisch; maximale Schutzlüftungsphase ist erreicht" for r in co2_reassess]
             reasons += [f"{r.get('name',r.get('key','Raum'))}: kritische Oberflächenfeuchte; Außen-/Referenzluft bietet keinen ausreichenden Trocknungsvorteil" for r in mould_blocked]
-            return result("close", "critical_co2_reassess", "Schutzlüftung neu bewerten", names+" schließen · CO₂ unmittelbar neu bewerten", "Die maximale Schutzlüftungsphase ist erreicht. FreshAirIQ beendet den aktuellen Luftwechsel kontrolliert und bewertet die weiterhin kritische Luftqualität anschließend neu.", selected=co2_reassess, reasons=reasons, severity="danger", secondary="Bleibt CO₂ kritisch, wird nach der Neubewertung erneut ein kurzer Luftaustausch empfohlen.")
+            return result("close", "critical_co2_reassess", "Schutzlüftung neu bewerten", close_instruction(co2_reassess, joiner=", ", all_rooms=True)+" · CO₂ unmittelbar neu bewerten", "Die maximale Schutzlüftungsphase ist erreicht. FreshAirIQ beendet den aktuellen Luftwechsel kontrolliert und bewertet die weiterhin kritische Luftqualität anschließend neu.", selected=co2_reassess, reasons=reasons, severity="danger", secondary="Bleibt CO₂ kritisch, wird nach der Neubewertung erneut ein kurzer Luftaustausch empfohlen.")
         active_blocked=[r for r in mould_blocked if r.get("active")]
         reasons=[f"{r.get('name',r.get('key','Raum'))}: Oberflächenfeuchte {round(_f(r.get('surface_rh')))} % kritisch; Außen-/Referenzluft bietet keinen ausreichenden Trocknungsvorteil" for r in mould_blocked]
-        return result("close" if active_blocked else "wait", "critical_mould_wait", "Feuchte kritisch – Lüften derzeit ungünstig", (", ".join(str(r.get("name",r.get("key","Raum"))) for r in active_blocked)+" schließen" if active_blocked else "Außenbedingungen abwarten · Feuchtequelle wenn möglich begrenzen"), "Mehrere Räume haben kritische Oberflächenfeuchte, aber Lüften würde sie aktuell nicht zuverlässig entfeuchten.", selected=mould_blocked, reasons=reasons, severity="danger", secondary="Sobald die Referenzluft wirksam entfeuchten kann, werden alle geeigneten kritischen Räume gemeinsam priorisiert.")
+        return result("close" if active_blocked else "wait", "critical_mould_wait", "Feuchte kritisch – Lüften derzeit ungünstig", (close_instruction(active_blocked, joiner=", ", all_rooms=True) if active_blocked else "Außenbedingungen abwarten · Feuchtequelle wenn möglich begrenzen"), "Mehrere Räume haben kritische Oberflächenfeuchte, aber Lüften würde sie aktuell nicht zuverlässig entfeuchten.", selected=mould_blocked, reasons=reasons, severity="danger", secondary="Sobald die Referenzluft wirksam entfeuchten kann, werden alle geeigneten kritischen Räume gemeinsam priorisiert.")
 
     if critical_co2_rooms:
         r = max(critical_co2_rooms, key=lambda x: _f(x.get("co2")))
@@ -344,7 +344,7 @@ def build_recommendation(
         if is_active and _goal_state(r).get("hard_close"):
             reasons.append("Die maximale Schutzlüftungsphase ist erreicht; schließen und CO₂ unmittelbar neu bewerten")
             return result(
-                "close", "critical_co2_reassess", "Schutzlüftung neu bewerten", f"{name} schließen · CO₂ neu bewerten",
+                "close", "critical_co2_reassess", "Schutzlüftung neu bewerten", f"{close_instruction([r], all_rooms=True)} · CO₂ neu bewerten",
                 "Der notwendige Luftaustausch wurde bis zum konfigurierten Schutzendpunkt durchgeführt. FreshAirIQ beendet die aktuelle Phase kontrolliert und bewertet die weiterhin kritische Luftqualität anschließend neu.",
                 selected=[r], reasons=reasons, severity="danger",
                 secondary="Bleibt CO₂ kritisch, wird nach der Neubewertung erneut ein kurzer Luftaustausch empfohlen.",
@@ -389,7 +389,7 @@ def build_recommendation(
         is_active = bool(r.get("active"))
         return result(
             "close" if is_active else "wait", "critical_mould_wait", "Feuchte kritisch – Lüften derzeit ungünstig",
-            (f"{name} schließen · Feuchtequelle wenn möglich begrenzen" if is_active else "Außenbedingungen abwarten · Feuchtequelle wenn möglich begrenzen"),
+            (f"{close_instruction([r], all_rooms=True)} · Feuchtequelle wenn möglich begrenzen" if is_active else "Außenbedingungen abwarten · Feuchtequelle wenn möglich begrenzen"),
             "Die Oberflächenfeuchte ist kritisch, aber Lüften würde das Feuchteproblem aktuell nicht zuverlässig verbessern. FreshAirIQ hält die Schutzwarnung aktiv, statt eine kontraproduktive Lüftung zu empfehlen.",
             selected=[r], reasons=why, severity="danger",
             secondary="Sobald die Außen-/Referenzluft wirksam entfeuchten kann, wird Lüften zur höchsten Priorität.",
@@ -438,7 +438,7 @@ def build_recommendation(
         names = " + ".join(str(r.get("name", r.get("key"))) for r in closing)
         horizon = max(int(round(_f(closing[0].get("forecast_horizon_min"), options.get("forecast_horizon_min", 5)))), 1)
         remaining_effect = sum(max(_f(r.get("forecast_moisture_effect_ml", r.get("forecast_5_min_moisture_effect_ml", r.get("moisture_effect_next_5_min_ml")))), 0.0) for r in closing)
-        return result("close", "close_windows", "Jetzt schließen", f"{names} schließen",
+        return result("close", "close_windows", "Jetzt schließen", close_instruction(closing),
                       "Das Lüftungsziel ist erreicht; weiteres Lüften bringt nur noch wenig Zusatznutzen.",
                       selected=closing, reasons=[f"Im eingestellten Prognosefenster von {horizon} Minuten wären noch etwa {round(remaining_effect)} ml Feuchteabbau möglich; der kurzfristige Zusatznutzen liegt bereits unter der Schließschwelle"],
                       severity="warning")

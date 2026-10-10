@@ -24,7 +24,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .runtime import iter_runtime_coordinators
-from .const import DIAGNOSTICS_SCHEMA_VERSION, DOMAIN
+from .const import DIAGNOSTICS_SCHEMA_VERSION
 from .diagnostic_transport import normalise_resident_names
 from .export_zip import export_filename, zip_json_document
 from .support_incident import build_support_incident

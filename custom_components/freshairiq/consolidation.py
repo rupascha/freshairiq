@@ -8,6 +8,7 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any
 
+from .close_wording import close_instruction, fan_only
 from .model import min_return_volume_factor
 
 
@@ -91,12 +92,94 @@ def _elapsed_min(room: dict[str, Any]) -> float | None:
     return value if value == value and abs(value) != float("inf") else None
 
 
+def session_target_min(previous_data: Any, options: dict[str, Any]) -> float | None:
+    """Planned airing duration shown when the window was opened (clamped).
+
+    A window opened while other windows are already aired joins that airing: its
+    planned time is what is left of it, so every window ends at the same moment.
+    """
+    if not isinstance(previous_data, dict):
+        return None
+    rooms = previous_data.get("rooms")
+    rows = rooms.values() if isinstance(rooms, dict) else rooms if isinstance(rooms, list) else []
+    running = any(isinstance(r, dict) and r.get("active") and r.get("calculation_enabled", True) and not fan_only(r) for r in rows)
+    try:
+        low = float(options.get("min_duration_min", 3.0))
+        high = float(options.get("max_duration_min", 20.0))
+    except (TypeError, ValueError):
+        return None
+    # The running airing is already over (or unknown): the new window gets the
+    # duration that is shown for a fresh airing.
+    keys = ("remaining_duration_min", "recommended_duration_min") if running else ("recommended_duration_min",)
+    for key in keys:
+        try:
+            value = float(previous_data.get(key))
+        except (TypeError, ValueError):
+            continue
+        if value == value and value > 0:
+            return round(min(max(value, low), max(high, low)), 1)
+    return None
+
+
+def _timed(rooms: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rooms whose airing has a planned time – a running exhaust fan has none."""
+    return [room for room in rooms if not fan_only(room)]
+
+
+def moisture_coming_in(rooms: list[dict[str, Any]], net_next5_ml: float | None, close_delta: float) -> bool:
+    """Same rule as the room model: no net drying, or no room's reference air drier any more."""
+    if net_next5_ml is not None and float(net_next5_ml) <= 0:
+        return True
+    deltas = []
+    for room in rooms:
+        try:
+            deltas.append(float(room.get("delta_g_m3")))
+        except (TypeError, ValueError):
+            continue
+    return bool(deltas) and all(value <= float(close_delta) for value in deltas)
+
+
+def planned_target_min(rooms: list[dict[str, Any]]) -> float | None:
+    """Planned duration of the earliest opened window of a running ventilation."""
+    best: tuple[float, float] | None = None
+    for room in _timed(rooms):
+        elapsed = _elapsed_min(room)
+        try:
+            target = float(room.get("session_target_min"))
+        except (TypeError, ValueError):
+            continue
+        if elapsed is not None and target == target and (best is None or elapsed > best[0]):
+            best = (elapsed, target)
+    return best[1] if best else None
+
+
+def opening_phase_protected(rooms: list[dict[str, Any]], target_min: float | None) -> bool:
+    """True while the planned airing time of this ventilation has not passed yet.
+
+    0.26.4.10 (support case: "alle Fenster geöffnet – sofort schließen, obwohl die
+    15-Minuten-Prognose noch viel Potenzial zeigt"): within the planned duration a
+    close may only be recommended when moisture would come in, never merely
+    because the next five minutes of one room look small.
+    """
+    try:
+        target = float(target_min) if target_min is not None else None
+    except (TypeError, ValueError):
+        target = None
+    if target is None or target != target or target <= 0:
+        return False
+    elapsed = [value for value in (_elapsed_min(room) for room in _timed(rooms)) if value is not None]
+    return bool(elapsed) and max(elapsed) < target
+
+
 def aggregate_close_allowed(
     rooms: list[dict[str, Any]],
     *,
     low_return: bool,
     thermal_bad: bool,
     min_duration_min: float | None = None,
+    target_min: float | None = None,
+    net_next5_ml: float | None = None,
+    close_delta: float = 0.4,
 ) -> bool:
     """Allow an aggregate close only after every affected room released its gate.
 
@@ -115,6 +198,12 @@ def aggregate_close_allowed(
         return False
     if any(bool((room.get("goal_state") or {}).get("hard_close")) for room in rooms):
         return True
+    # 0.26.4.10: before the planned airing time has passed only moisture coming in
+    # may end it – not even every room's own (small) close check, which is
+    # exactly what the aggregate is there to overrule. Afterwards (or with
+    # moisture coming in) the usual rules below apply, incl. minimum duration.
+    if opening_phase_protected(rooms, target_min) and not moisture_coming_in(rooms, net_next5_ml, close_delta):
+        return False
     if all(str(room.get("action")) == "Close" for room in rooms):
         return True
     elapsed = [_elapsed_min(room) for room in rooms]
@@ -158,6 +247,7 @@ def stabilise_recommendation(
         r for r in active
         if not r.get("moisture_source_active")
         and not bool(r.get("opening_state_explicit"))
+        and not fan_only(r)  # 0.26.4.10: a long-running fan is no tilted window
         and _f(r.get("session_elapsed_min")) >= max_duration + 10.0
         and _f(r.get("temperature_change_c")) > -1.5
         and _f(r.get("delta_g_m3")) >= -0.2
@@ -234,7 +324,7 @@ def stabilise_recommendation(
             kind = "close"
             out["room_keys"] = [str(r.get("key")) for r in selected_closing if r.get("key") is not None]
             out["title"] = "Jetzt schließen"
-            out["instruction"] = "Fenster der genannten Räume schließen"
+            out["instruction"] = close_instruction(selected_closing, "Fenster der genannten Räume")
             out["summary"] = "Die laufende Lüftung hat ihren sinnvollen Endpunkt erreicht."
             checks.append("hard_close_subset_selected" if selected_closing is hard_closing else "close_state_authoritative")
     elif tolerated_long_open and not effective_active:

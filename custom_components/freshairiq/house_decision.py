@@ -10,7 +10,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from .consolidation import aggregate_close_allowed, aggregate_close_gate_ready
+from .close_wording import area_close_instruction
+from .consolidation import aggregate_close_allowed, aggregate_close_gate_ready, opening_phase_protected, planned_target_min
 from .model import min_return_volume_factor
 
 
@@ -186,7 +187,12 @@ def floor_ventilation_decision(
         house_should_close = aggregate_close_allowed(
             active, low_return=house_low_return, thermal_bad=house_thermal_bad,
             min_duration_min=float(options.get("min_duration_min", 3.0)),
+            target_min=planned_target_min(active), net_next5_ml=house_next5_removed,
+            close_delta=float(options.get("close_delta", 0.4)),
         )
+        house_target = planned_target_min(active)
+        house_planned_hold = (not house_should_close and (house_low_return or house_thermal_bad)
+                              and opening_phase_protected(active, house_target))
         active_room_keys = [str(r.get("key")) for r in active]
 
         intelligent_recommendation["house_next_5_min_moisture_effect_ml"] = round(house_next5_removed)
@@ -222,6 +228,7 @@ def floor_ventilation_decision(
                     intelligent_recommendation["duration_min"] = None
             intelligent_recommendation["reasons"] = [
                 *([gate_reason] if gate_reason else []),
+                *([f"Geplante Lüftungsdauer von {round(float(house_target or 0))} min läuft noch – vorher empfiehlt FreshAirIQ das Schließen nur, wenn Feuchte hereinkäme"] if house_planned_hold else []),
                 f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {round(house_next5_removed)} ml Feuchteabbau" if house_next5_removed >= 0 else f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {abs(round(house_next5_removed))} ml Feuchtezunahme",
                 f"Gemeinsamer Schwellwert für diese Hauslüftung: etwa {round(house_min_return)} ml in 5 Minuten",
                 f"Mittlere prognostizierte Abkühlung der aktiven Räume: {house_next5_temp_loss:.1f} °C",
@@ -267,6 +274,8 @@ def floor_ventilation_decision(
         floor_should_close = aggregate_close_allowed(
             floor_active, low_return=floor_low_return, thermal_bad=floor_thermal_bad,
             min_duration_min=float(options.get("min_duration_min", 3.0)),
+            target_min=planned_target_min(floor_active), net_next5_ml=floor_next5_removed,
+            close_delta=float(options.get("close_delta", 0.4)),
         )
         intelligent_recommendation["presentation_scope"] = "floor"
         intelligent_recommendation["presentation_floor"] = floor_display_name
@@ -278,7 +287,7 @@ def floor_ventilation_decision(
             intelligent_recommendation.update({
                 "kind": "close", "status": "close_windows",
                 "title": "Etagenlüftung hat ihr sinnvolles Ziel erreicht",
-                "instruction": f"{floor_display_name} schließen",
+                "instruction": area_close_instruction(floor_display_name, floor_active),
                 "summary": "FreshAirIQ hat die Situation nach den zusätzlich geöffneten Fenstern neu bewertet. Die Räume werden jetzt als gemeinsame Etagenlüftung beurteilt; der zusätzliche Gesamtnutzen ist nicht mehr ausreichend.",
                 "reasons": [f"{len(floor_active)} aktive Lüftungsräume auf dieser Etage werden gemeinsam bewertet", f"Nettoeffekt der nächsten 5 Minuten: {round(floor_next5_removed)} ml", f"Gemeinsamer Schwellwert: etwa {round(floor_threshold)} ml in 5 Minuten"],
             })

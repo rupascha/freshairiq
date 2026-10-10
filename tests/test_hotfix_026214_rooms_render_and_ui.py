@@ -78,5 +78,5 @@ def test_small_dashboard_controls_have_finger_sized_tap_areas():
     assert ".ai-scope.clickable::before{content:\"\";position:absolute;inset:-10px -8px}" in design
     assert ".top .pill[data-info]{position:relative;display:inline-flex;align-items:center;min-height:36px" in design
     assert ".ai-all-good{min-height:44px" in design
-    assert ".ai-context button{min-height:48px" in design
+    assert ".ai-context" not in design  # 0.26.4.9: the Nacht/Pollen/Lernen tiles were removed
     assert ".decision-more>summary{min-height:48px}" in design

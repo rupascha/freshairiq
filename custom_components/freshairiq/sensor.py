@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .dashboard_transport import DETAILS_API, slim_room, slim_rooms
 from .opening_strategy import HOUSE_ALIGNED_STATES
-from .const import DOMAIN, VERSION
+from .const import VERSION
 from .room_devices import add_entities_by_room
 from .entity import FreshAirIQEntity
 from .runtime import get_runtime_coordinator

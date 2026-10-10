@@ -1,12 +1,9 @@
 from pathlib import Path
-import importlib.util
+
+from custom_components.freshairiq import language_confidence as module
 
 ROOT = Path(__file__).resolve().parents[1]
 MOD = ROOT / "custom_components/freshairiq/language_confidence.py"
-spec = importlib.util.spec_from_file_location("faiq_language_confidence", MOD)
-module = importlib.util.module_from_spec(spec)
-assert spec and spec.loader
-spec.loader.exec_module(module)
 adapt_language_confidence = module.adapt_language_confidence
 
 

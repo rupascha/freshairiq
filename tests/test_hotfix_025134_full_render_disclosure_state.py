@@ -19,5 +19,5 @@ def test_room_disclosures_have_stable_keys_and_rehydrate_open_state():
 def test_full_render_replaces_dom_but_persistent_state_survives_in_card_instance():
     replace=JS[JS.index('    _replaceRenderedContent(html) {'):JS.index('    disconnectedCallback()')]
     assert 'this.shadowRoot.removeChild(node)' in replace
-    constructor=JS[JS.index('    constructor() {'):JS.index('    _feedbackClientContext() {')]
+    constructor=JS[JS.index('    constructor() {'):JS.index('    _uiLanguage() {')]
     assert 'this._classicDisclosureOpen = new Set()' in constructor
