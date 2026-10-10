@@ -220,6 +220,9 @@ class FreshAirIQDiagnosticsClient:
 
     async def async_activity_heartbeat(self) -> bool:
         """Refresh anonymous installation activity without sending diagnostics payload."""
+        mode = normalise_reporting_mode(self.entry.options.get("diagnostics_reporting_mode", "daily"))
+        if mode == "off":
+            return False
         if not self.endpoint:
             return False
         # 0.26.3: even the minimal heartbeat (installation id + version) contacts the
