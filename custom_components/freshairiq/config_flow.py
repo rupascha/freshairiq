@@ -2966,7 +2966,8 @@ class FreshAirIQOptionsFlow(config_entries.OptionsFlowWithReload):
                 else:
                     sent = await _send_targets(
                         self.hass, targets, "FreshAirIQ · Test",
-                        "Test erfolgreich: FreshAirIQ kann dieses Benachrichtigungsziel erreichen.",
+                        _txt(_flow_language(self.hass), "Test erfolgreich: FreshAirIQ kann dieses Benachrichtigungsziel erreichen.",
+                             "Test successful: FreshAirIQ can reach this notification target."),
                     )
                     if not sent:
                         errors["test_notification_now"] = "notification_test_failed"

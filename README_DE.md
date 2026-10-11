@@ -30,13 +30,13 @@ Die FreshAirIQ Community-Dashboard-Karte bringt **zwei Dashboard-Darstellungen**
 Mit **Freshy** hat FreshAirIQ außerdem ein eigenes Maskottchen. Freshy behält das Klima deines Hauses im Blick und macht den aktuellen Zustand auf einen Blick verständlicher: Beim Lüften segelt Freshy durch den Wind, kurz vor der Nacht macht er sich mit Schlafmütze bereit und nachts schläft er. Weitere Zustände reagieren passend auf die aktuelle Situation im Haus.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/00-freshy-dashboard.jpeg" alt="FreshAirIQ Dashboard mit Freshy" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/00-freshy-dashboard.jpeg" alt="FreshAirIQ Dashboard mit Freshy" width="520">
 </p>
 
 ## FreshAirIQ in Aktion
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/01-house-ventilation.jpeg" alt="FreshAirIQ Hauslüftung mit Live-Prognose" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/01-house-ventilation.jpeg" alt="FreshAirIQ Hauslüftung mit Live-Prognose" width="520">
 </p>
 
 ### Eine Entscheidung statt einer Wand aus Messwerten
@@ -69,7 +69,7 @@ Die Begründung bleibt sichtbar: Schwellenwerte, erwarteter Nettoeffekt, gelernt
 ## Jeder Raum hat seine eigene Physik
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/02-room-overview.jpeg" alt="FreshAirIQ Raumübersicht" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/02-room-overview.jpeg" alt="FreshAirIQ Raumübersicht" width="520">
 </p>
 
 FreshAirIQ betrachtet Räume nicht als identische Kästchen. Volumen, Sensorwerte, Fenster, Ausrichtung, gelernter Luftwechsel und bisherige Lüftungsergebnisse werden raumbezogen geführt. Dadurch kann ein kleines Gäste-WC anders reagieren als eine große Wohnküche oder ein Kellerraum.
@@ -81,7 +81,7 @@ Die Raumansicht bündelt unter anderem Raumklima, absolute Feuchte, Wassermenge,
 # FreshAirIQ Intelligence 2.0
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/03-intelligence-overview.jpeg" alt="FreshAirIQ Intelligence 2.0 Lernübersicht" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/03-intelligence-overview.jpeg" alt="FreshAirIQ Intelligence 2.0 Lernübersicht" width="520">
 </p>
 
 FreshAirIQ trennt bewusst **Erfahrungsreife** von **Prognosequalität**. Viele Messpunkte allein machen ein Modell nicht automatisch gut. Deshalb zählt FreshAirIQ unabhängige Tage, Lüftungen und belastbare Ergebnisvergleiche und zeigt separat, wie gut Vorhersagen bisher zur Realität passen.
@@ -91,9 +91,9 @@ FreshAirIQ trennt bewusst **Erfahrungsreife** von **Prognosequalität**. Viele M
 **Dein Zuhause** lernt Raumphysik, Feuchtepuffer und hausweite Lüftungsstrategien. **Prognosen & Lernen** korrigiert Live-Prognosen, vergleicht Forecasts mit realen Ergebnissen und lässt alternative Shadow-Modelle parallel antreten. **Deine Gewohnheiten** erkennt Tagesroutinen, umgesetzte Strategien und persönlichen Kontext. **Langzeitlernen** sammelt Nacht- und Saisonerfahrung bewusst langsam über echte unterschiedliche Tage und Jahreszeiten.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/05-learning-home.jpeg" alt="FreshAirIQ lernt Raumphysik und Feuchtepuffer" width="430">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/05-learning-home.jpeg" alt="FreshAirIQ lernt Raumphysik und Feuchtepuffer" width="430">
   &nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/06-learning-forecast.jpeg" alt="FreshAirIQ Prognosen und Shadow-Lernen" width="430">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/06-learning-forecast.jpeg" alt="FreshAirIQ Prognosen und Shadow-Lernen" width="430">
 </p>
 
 ### Lernen muss messbar besser werden
@@ -101,7 +101,7 @@ FreshAirIQ trennt bewusst **Erfahrungsreife** von **Prognosequalität**. Viele M
 FreshAirIQ validiert das gelernte Prognosemodell gegen reale Ergebnisse und gegen ein eingefrorenes Grundmodell. Modellgenerationen können unter vergleichbaren Bedingungen gegeneinander replayt werden. MAE, Richtungsgenauigkeit, unabhängige Lüftungen, unterschiedliche Tage und statistische Unsicherheit bleiben sichtbar.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/04-model-quality.jpeg" alt="FreshAirIQ Modellqualität und Diagnose" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/04-model-quality.jpeg" alt="FreshAirIQ Modellqualität und Diagnose" width="520">
 </p>
 
 Das Lernsystem darf eine Verbesserung nicht einfach behaupten: Für belastbare Lernwirkung sind mehrere unabhängige Lüftungen an unterschiedlichen Tagen und konservative Evidenzregeln erforderlich.
@@ -111,7 +111,7 @@ Das Lernsystem darf eine Verbesserung nicht einfach behaupten: Für belastbare L
 ## Feuchtigkeit wird greifbar
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/07-water-balance.jpeg" alt="Wasser in der Hausluft nach Räumen" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/07-water-balance.jpeg" alt="Wasser in der Hausluft nach Räumen" width="520">
 </p>
 
 Relative Luftfeuchtigkeit ist temperaturabhängig und allein oft schwer zu interpretieren. FreshAirIQ berechnet zusätzlich die **absolute Feuchte** und die daraus resultierende **Wassermenge in der Raumluft**. Dadurch lässt sich nachvollziehen, wo Feuchtigkeit sitzt und wie viel durch eine Lüftung voraussichtlich tatsächlich entfernt werden kann.
@@ -123,7 +123,7 @@ In der FreshAirIQ-Oberfläche gilt konsequent: **Minus = Feuchtigkeit wird entfe
 ## Schimmel-IQ – ein Frühindikator, keine Laboranalyse
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/08-mould-iq.jpeg" alt="FreshAirIQ Schimmel-IQ" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/08-mould-iq.jpeg" alt="FreshAirIQ Schimmel-IQ" width="520">
 </p>
 
 FreshAirIQ schätzt aus dem verfügbaren Raumklima eine konservative Oberflächen-RH und hebt auffällige Räume hervor. Das hilft, längerfristig problematische Klimabedingungen zu erkennen. Ohne tatsächlich gemessene Oberflächentemperatur an einem konkreten Bauteil kann FreshAirIQ jedoch **kein reales Schimmelwachstum feststellen oder ausschließen**.
@@ -142,7 +142,7 @@ Für Energieabschätzungen können Wärmepumpe, Gas, Heizöl, Fernwärme oder Di
 
 ## Eigene Automationen (Node-RED, Alexa, Lüfter)
 
-FreshAirIQ schaltet nie selbst – aber du kannst auf jede Empfehlung reagieren: über die Raum-Entitäten (z. B. `sensor.schlafzimmer_aktion`) oder über die Ereignisse `freshairiq_room_action`, `freshairiq_house_recommendation` und `freshairiq_mould_risk`, die einen fertigen Ansagetext („Schlafzimmer: Bitte Fenster schließen.“) mitliefern. Beispiele für Alexa, Ablüfter und Node-RED, zwei fertige Blueprints sowie Tipps zu Kipp-Kontakten und Räumen ohne Fenster: **[docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)**.
+FreshAirIQ schaltet nie selbst – aber du kannst auf jede Empfehlung reagieren: über die Raum-Entitäten (z. B. `sensor.schlafzimmer_aktion`) oder über die Ereignisse `freshairiq_room_action`, `freshairiq_house_recommendation` und `freshairiq_mould_risk`, die einen fertigen Ansagetext („Schlafzimmer: Bitte Fenster schließen.“) mitliefern. Beispiele für Alexa, Ablüfter und Node-RED, zwei fertige Blueprints sowie Tipps zu Kipp-Kontakten und Räumen ohne Fenster: **[docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)**. Die Blueprints gibt es zusätzlich auf Englisch (`*_en.yaml`).
 
 ## Voraussetzungen
 

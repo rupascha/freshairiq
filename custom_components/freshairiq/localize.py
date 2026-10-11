@@ -46,7 +46,7 @@ _CACHE_LIMIT = 8192
 
 
 _GERMAN_SHAPES = re.compile(
-    r"\b\w*[äöüßÄÖÜ]\w*|\b\w{4,}(?:ung|ungen|keit|heit|lich|isch)\b|\b(?:voraussichtlich|etwa|ca\.|Uhr|Tage|Minuten|Fenster|Raum)\b"
+    r"\b\w*[äöüßÄÖÜ]\w*|\b\w{4,}(?:ung|ungen|keit|heit|lich|isch)\b|\b(?:voraussichtlich|etwa|ca\.|Uhr|Tage|Minuten|Fenster|Raum|Proben|Lernreife|Abbau)\b"
 )
 
 

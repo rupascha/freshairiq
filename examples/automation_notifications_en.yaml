@@ -1,0 +1,29 @@
+# Example: simple phone notifications based on FreshAirIQ entities.
+# Replace notify.mobile_app_YOUR_PHONE and the room entity with your own
+# (Settings → Devices & services → FreshAirIQ → room device → Entities).
+alias: FreshAirIQ - Notifications
+mode: parallel
+triggers:
+  - trigger: state
+    entity_id: sensor.freshairiq_status
+    to: ventilate
+    id: open
+  - trigger: state
+    entity_id: binary_sensor.freshairiq_living_room_close_recommended
+    to: "on"
+    id: close
+conditions: []
+actions:
+  - choose:
+      - conditions: "{{ trigger.id == 'open' }}"
+        sequence:
+          - action: notify.mobile_app_YOUR_PHONE
+            data:
+              title: "🌬️ Time to air the house"
+              message: "{{ state_attr('sensor.freshairiq_status','status_text') }}"
+      - conditions: "{{ trigger.id == 'close' }}"
+        sequence:
+          - action: notify.mobile_app_YOUR_PHONE
+            data:
+              title: "🪟 Close the window"
+              message: "Living room: airing any longer won't help much."

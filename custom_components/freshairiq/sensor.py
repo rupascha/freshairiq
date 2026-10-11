@@ -177,6 +177,7 @@ class HouseSensor(FreshAirIQEntity, SensorEntity):
                 "freshairiq_details_api": DETAILS_API,
                 "freshairiq_entry_id": self._entry.entry_id,
                 "freshairiq_version": VERSION,
+                "output_language": self.coordinator.data.get("output_language", "de"),  # 0.26.5.0: the dashboard speaks this language
                 "levels": self.coordinator.data.get("levels", []),
                 "potential_total_ml": self.coordinator.data.get("potential_total_ml", 0),
                 "live_balance_ml": self.coordinator.data.get("live_balance_ml", 0),
@@ -335,6 +336,7 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
                     "freshairiq_transport": "room_v2",
                     "freshairiq_entry_id": self._entry.entry_id,
                     "freshairiq_version": VERSION,
+                    "output_language": self.coordinator.data.get("output_language", "de"),  # 0.26.5.0: the dashboard speaks this language
                 }
                 self.coordinator.runtime_health.observe_attribute_payload(
                     "room_action", attributes,

@@ -419,6 +419,15 @@ def _room_physical_opened_at(
     return min(opened) if opened else None
 
 
+def _contact_unknown_for(state: Any, missing_since: datetime, now: datetime) -> float:
+    """Seconds a configured contact has been unknown/unavailable (or missing)."""
+    since = getattr(state, "last_changed", None) if state is not None else missing_since
+    try:
+        return max((now - since).total_seconds(), 0.0) if isinstance(since, datetime) else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _room_closed_for_seconds(hass: HomeAssistant, room: dict[str, Any], now: datetime, *, contact_modes: dict[str, str] | None = None) -> float | None:
     """Return how long the room has continuously been in its logical closed state.
 
@@ -1080,6 +1089,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         language = getattr(getattr(self.hass, "config", None), "language", None)
         if not isinstance(language, str) or is_german(language):
+            # 0.26.5.0: the dashboard follows the language of these texts, so a
+            # German profile on an English server never mixes both languages.
+            data["output_language"] = "de"
             return data
         try:
             protected = frozenset(protected_names(self.entry.data, self.options))
@@ -2595,12 +2607,31 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # A proven three-state battery contact with a persisted stable state
         # remains physically evaluable while raw HA state is unavailable. Do
         # not route that case through the legacy startup-only keep-open guard.
+        missing_since = self.__dict__.setdefault("_contacts_missing_since", {})
+        expired_contacts: list[str] = []
+        for contact_id in configured_contact_ids:
+            state = self.hass.states.get(contact_id)
+            if state is None:
+                missing_since.setdefault(contact_id, now)
+            else:
+                missing_since.pop(contact_id, None)
+            if (state is None or normalize_opening_state(state.state) == "unknown") and not (
+                contact_id in proven_three_state and stable_session_modes.get(contact_id) in {"closed", "open", "tilted"}
+            ) and _contact_unknown_for(state, missing_since.get(contact_id, now), now) > CONTACT_UNKNOWN_HOLD_SECONDS:
+                expired_contacts.append(contact_id)
         lifecycle_contacts_known = all(
             ((state := self.hass.states.get(contact_id)) is not None
              and normalize_opening_state(state.state) != "unknown")
             or (contact_id in proven_three_state and stable_session_modes.get(contact_id) in {"closed", "open", "tilted"})
+            or contact_id in expired_contacts
             for contact_id in configured_contact_ids
         ) if configured_contact_ids else True
+        if expired_contacts and mem.get("session_active"):
+            # The airing can end, but whether the dead opening was open is unknown:
+            # never learn from it (0.26.5.0).
+            mem["session_learning_quarantined"] = True
+            mem["session_learning_quarantine_code"] = "FAIQ-CONTACT-UNKNOWN-001"
+            mem["session_contact_unknown_expired"] = True
         # During HA startup a contact can temporarily be unavailable. Never
         # interpret an unresolved legacy/binary restore state as a real close.
         if mem.get("session_active") and not lifecycle_contacts_known:
@@ -2762,6 +2793,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             mem["session_passage_contacts"] = list(active_passage_contacts) if opening_mode == "open" else []
             mem["session_learning_quarantined"] = bool(three_state_stale_contacts)
             mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006" if three_state_stale_contacts else None
+            mem["session_contact_unknown_expired"] = False
             # 0.26.4.9: judged over the whole airing, not by its first moment.
             cover_guard.reset(mem)
             cover_guard.tick(mem, cover_learning_guard, now)
@@ -3098,7 +3130,12 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         session_ended_at = physical_closed_at
 
                     event = None
-                    if measurements_valid:
+                    if mem.get("session_contact_unknown_expired"):
+                        # 0.26.5.0: ended because a dead contact stopped holding it –
+                        # duration is logged, nothing is learned from the outcome.
+                        self._cancel_final_measurement_timer(key)
+                        event = self._finish_session_without_measurement(mem, cfg, session_ended_at)
+                    elif measurements_valid:
                         # Missing post-close refresh feedback is not a rejection.
                         # The last currently held numeric state remains usable; the
                         # session quality stays "good" (0.75) instead of "high".
@@ -4007,6 +4044,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "session_fresh_measurements": 0,
             "session_target_min": None,
             "session_target_fan_start": False,
+            "session_contact_unknown_expired": False,
             "session_temperature_reports": 0,
             "session_humidity_reports": 0,
             "session_last_temperature_update": None,

@@ -99,6 +99,7 @@ def _room_defaults() -> dict[str, Any]:
         "session_fresh_measurements": 0,
         "session_target_min": None,
         "session_target_fan_start": False,
+        "session_contact_unknown_expired": False,
         "session_temperature_reports": 0,
         "session_humidity_reports": 0,
         "session_last_temperature_update": None,

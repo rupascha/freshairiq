@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.4.10";
+const FAIQ_VERSION = "0.26.5.0";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -68,7 +68,7 @@ const FAIQ_UI = Object.freeze({
 // English. German dashboards never download or parse them.
 const FAIQ_EN_MODULE = "freshairiq-card-i18n-en.js";
 const FAIQ_EN_READY_EVENT = "freshairiq-i18n-en-ready";
-let FAIQ_EN_RULES = null;
+let FAIQ_EN_RULES = null; let FAIQ_EN_PATTERNS = [];
 let faiqEnglishPromise = null;
 let faiqEnglishFailedAt = 0;
 const FAIQ_EN_RETRY_MS = 60000;
@@ -83,6 +83,7 @@ const faiqLoadEnglish = () => {
     const url = new URL(`./${FAIQ_EN_MODULE}?v=${FAIQ_VERSION}`, import.meta.url).href;
     faiqEnglishPromise = import(url).then(mod => {
       FAIQ_EN_RULES = Array.isArray(mod.FAIQ_EN_RULES) ? mod.FAIQ_EN_RULES : [];
+      FAIQ_EN_PATTERNS = Array.isArray(mod.FAIQ_EN_PATTERNS) ? mod.FAIQ_EN_PATTERNS : [];
       faiqEnglishFailedAt = 0;
       try { window.dispatchEvent(new CustomEvent(FAIQ_EN_READY_EVENT)); } catch (_) { /* ignore */ }
       return FAIQ_EN_RULES;
@@ -143,6 +144,7 @@ const faiqEnglishText = value => {
     .replace(/(\d+) TAGE\b/g, "$1 DAYS")
     .replace(/(\d+) Raum braucht Aufmerksamkeit/g, "$1 room needs attention")
     .replace(/(\d+) Räume brauchen Aufmerksamkeit/g, "$1 rooms need attention");
+  for (const [re, en] of FAIQ_EN_PATTERNS) out = out.replace(re, en); // 0.26.5.0: numbered phrases from the module
   if (!faiqEnglishReady()) faiqLoadEnglish().catch(() => {});
   for (const [de, en] of (FAIQ_EN_RULES || [])) out = typeof de === "string" ? out.split(de).join(en) : out.replace(de, () => en);
 
@@ -189,7 +191,7 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
 };
 // 0.26.4.7: rooms the whole-house decision deliberately holds back.
 const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
-// 0.26.4.10: a room aired only by its exhaust fan has nothing to close.
+// 0.26.5.0: a room aired only by its exhaust fan has nothing to close.
 const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
 const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : (r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action);
 const roomStyleAction = r => houseHeldRoom(r) ? "Wait" : (r && r.action);
@@ -270,7 +272,7 @@ const statusTextDE = value => {
     return s;
 };
 const mouldStyle = v => ({ "Very high": ["#ff6868", "rgba(255,80,80,.12)"], "High": ["#ffb45f", "rgba(255,180,95,.10)"], "Elevated": ["#e2bd69", "rgba(226,189,105,.08)"], "Slightly elevated": ["#d7c982", "rgba(215,201,130,.06)"], "Low": ["#67df92", "rgba(103,223,146,.05)"], "Unknown": ["#9aa7b3", "rgba(255,255,255,.025)"] }[v] || ["#9aa7b3", "rgba(255,255,255,.025)"]);
-const diagnosisDE = value => String(value || "Noch keine Lernmessung").replace(/^Learned:/, "Gelernt:").replace(/^Rejected:/, "Verworfen:").replace(/^Paused:/, "Pausiert:").replace("No learning session evaluated yet", "Noch keine Lernsession ausgewertet").replace("learning disabled", "Lernmodus deaktiviert").replace("duration", "Dauer").replace("start delta", "Startdifferenz").replace("humidity reduction", "Feuchteabbau").replace("learning rate", "Lernrate").replace("sample", "Probe").replace("reduction", "Abbau").replace("rate", "Rate");
+const diagnosisDE = value => FAIQ_NUMBER_LOCALE === "en" ? String(value || "No learning measurement yet") : String(value || "Noch keine Lernmessung").replace(/^Learned:/, "Gelernt:").replace(/^Rejected:/, "Verworfen:").replace(/^Paused:/, "Pausiert:").replace("No learning session evaluated yet", "Noch keine Lernsession ausgewertet").replace("learning disabled", "Lernmodus deaktiviert").replace("duration", "Dauer").replace("start delta", "Startdifferenz").replace("humidity reduction", "Feuchteabbau").replace("learning rate", "Lernrate").replace("sample", "Probe").replace("reduction", "Abbau").replace("rate", "Rate");
 const styleFor = a => ({
     "Close": ["#ffb45f", "rgba(255,180,95,.08)", "mdi:window-closed-variant"],
     "Continue ventilating": ["#5bcaff", "rgba(70,190,235,.07)", "mdi:weather-windy"],
@@ -738,7 +740,7 @@ const FAIQ_FRESHY_CSS = `
 .ai-mascot-wrap.fr-wrap .fr{width:112px;height:98px}
 @media(max-width:520px){.ai-assistant{grid-template-columns:96px minmax(0,1fr) 22px}.ai-mascot-wrap.fr-wrap,.ai-mascot-wrap.fr-wrap .fr{width:96px;height:84px}}
 `;
-// 0.26.4.10: larger room view text and the per-tile explanation window.
+// 0.26.5.0: larger room view text and the per-tile explanation window.
 const FAIQ_ROOM_VIEW_CSS = `
 .room-detail h3{font-size:19px}
 .room-detail .tiny{font-size:calc(9.5px * var(--faiq-font-meta,1));line-height:calc(12px * var(--faiq-font-meta,1));white-space:normal}
@@ -858,9 +860,18 @@ class FreshAirIQCard extends HTMLElement {
     static getStubConfig() { return { dashboard_variant: "classic" }; }
     constructor() { super(); this.attachShadow({ mode: "open" }); this._onEnglishReady = () => { this._englishFailed = false; if (this._hass && this.isConnected && this._uiLanguage() === "en") this._render(); }; try { window.addEventListener(FAIQ_EN_READY_EVENT, this._onEnglishReady); } catch (_) { /* ignore */ } this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._lastSupportError = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; this._compactExpanded = null; this._classicDisclosureOpen = new Set(); }
     _uiLanguage() {
+        // 0.26.5.0: speak the language of FreshAirIQ's own texts (server language) – a German
+        // profile on an English server mixed German headings with English recommendations.
+        if (this._hass && this._langHass !== this._hass) {
+            this._langHass = this._hass;
+            const data = String(this._statusEntity()?.attributes?.output_language || "");
+            if (data === "de" || data === "en") this._dataLang = data;
+        }
+        if (this._dataLang) return this._dataLang;
         const raw = String((this._hass && (this._hass.language || this._hass.locale?.language)) || navigator.language || "en").toLowerCase();
         return raw.startsWith("de") ? "de" : "en";
     }
+    _tx(text) { return this._uiLanguage() === "de" ? text : faiqEnglishText(text); }
     _t(key, vars = {}) {
         const entry = FAIQ_UI[key];
         if (!entry) return key;
@@ -991,7 +1002,7 @@ class FreshAirIQCard extends HTMLElement {
         this.shadowRoot.appendChild(template.content);
         this._syncExplainSheet();
     }
-    // 0.26.4.10: tap a tile in the room view → a small window explains the value.
+    // 0.26.5.0: tap a tile in the room view → a small window explains the value.
     _bindExplainOnce() {
         if (this._explainBound || !this.shadowRoot) return;
         this._explainBound = true;
@@ -1141,7 +1152,7 @@ class FreshAirIQCard extends HTMLElement {
             return { id: this._fieldTestSessionClientId, persistence: "session" };
         }
     }
-    _formatApiError(err, fallback = "Unbekannter Fehler") {
+    _formatApiError(err, fallback = this._tx("Unbekannter Fehler")) {
         const candidates = [err?.body, err?.message, err?.error, err];
         for (const value of candidates) {
             if (typeof value === "string" && value.trim() && value.trim() !== "[object Object]") return value.trim();
@@ -1407,6 +1418,7 @@ class FreshAirIQCard extends HTMLElement {
         this._liveHtmlCache[cacheKey] = html;
         const template = document.createElement("template");
         template.innerHTML = html;
+        this._localizeLegacyFragment(template.content); // 0.26.5.0: live updates stay English
         return template.content.querySelector(selector);
     }
     _refreshOpenViewsLive() {
@@ -2432,7 +2444,7 @@ class FreshAirIQCard extends HTMLElement {
         return info;
     }
     _supportErrorText(info) {
-        return `${info.message}\n\nFehlercode: ${info.code}${info.detail ? `\nTechnik: ${info.detail}` : ""}`;
+        return `${info.message}\n\n${this._tx("Fehlercode")}: ${info.code}${info.detail ? `\n${this._tx("Technik:")} ${info.detail}` : ""}`;
     }
 
     _feedbackCooldownMinutes(st = null) {
@@ -2477,7 +2489,7 @@ class FreshAirIQCard extends HTMLElement {
                 console.error("FreshAirIQ support diagnostics upload failed", err);
                 const info = this._rememberSupportError(err, "FAIQ-SUPPORT-UPLOAD-001");
                 if (button) button.innerHTML = `<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>${esc(this._t("support.failed"))}</b><span>${esc(info.code)}</span>`;
-                window.alert(`${this._t("support.failure_alert")}\n\nFehlercode: ${info.code}${info.detail ? `\nTechnik: ${info.detail}` : ""}`);
+                window.alert(`${this._t("support.failure_alert")}\n\n${this._tx("Fehlercode")}: ${info.code}${info.detail ? `\n${this._tx("Technik:")} ${info.detail}` : ""}`);
             }
         } finally {
             setTimeout(() => { if (button && original) { button.disabled = false; button.innerHTML = original; } }, 3500);
@@ -2519,7 +2531,7 @@ class FreshAirIQCard extends HTMLElement {
         if (this._info === "support") {
             const mode = String(((st && st.diagnostics_upload) || {}).configured_reporting_mode || "daily");
             const modeLabel = {off:"Aus",errors:"Nur bei erkannten Problemen",daily:"Täglich nachts",weekly:"Wöchentlich"}[mode] || mode;
-            // 0.26.4.10: one feedback per 15 minutes; the remaining time is shown.
+            // 0.26.5.0: one feedback per 15 minutes; the remaining time is shown.
             const feedbackMins = this._feedbackCooldownMinutes(st);
             return `<section class="info-panel settings-panel"><div class="tiny info-kicker">FRESHAIRIQ SUPPORT</div><h3>Hilfe, Diagnose & Feedback</h3><p>Alle Support-Funktionen sind hier zentral gebündelt.</p><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">DIAGNOSE</div><span>Diagnosedaten lokal exportieren oder direkt an den FreshAirIQ-Support senden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Nachricht an den Support (optional)</b><span>Die Diagnose wird verschlüsselt über Home Assistant direkt an den FreshAirIQ-Diagnose-Server übertragen – nicht an die hier angezeigte lokale Home-Assistant-Adresse. Zugangsdaten und Tokens werden nicht übertragen.</span></div><textarea id="diagnostics-message" class="settings-input settings-textarea" rows="4" maxlength="4000" placeholder="Optional: Was ist passiert?"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="settings-save" id="diagnostics-send"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>Diagnosedaten</b><span>an Support senden</span></button></div></section><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">FEEDBACK</div><span>Fehler und Verbesserungsvorschläge direkt melden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Art der Meldung</b></div><select id="feedback-type" class="settings-input"><option value="bug">Fehler / Bug</option><option value="improvement">Verbesserungsvorschlag</option><option value="other">Sonstiges</option></select></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Beschreibung</b><span>Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.</span></div><textarea id="feedback-message" class="settings-input settings-textarea" rows="6" maxlength="10000"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="feedback-send"${feedbackMins ? " disabled" : ""}><ha-icon icon="mdi:${feedbackMins ? "timer-sand" : "send-outline"}"></ha-icon> ${feedbackMins ? esc(this._t("feedback.cooldown_button", { mins: feedbackMins })) : "Meldung senden"}</button></div><div id="feedback-result" class="muted">${esc(feedbackMins ? this._t("feedback.cooldown_next", { mins: feedbackMins }) : this._t("feedback.cooldown_hint"))}</div></section><section class="settings-group support-contact"><div class="settings-field-copy"><b>Support per E-Mail</b><span class="support-email">support@freshairiq.com</span></div><div class="settings-field"><div class="settings-field-copy"><b>Automatische Diagnoseübertragung</b><span>Aktuell: ${esc(modeLabel)}. Ändern unter Geräte & Dienste → FreshAirIQ → Konfigurieren → Daten & Lernen → Diagnose-Freigabe.</span></div></div></section></section>`;
         }
@@ -2550,7 +2562,7 @@ class FreshAirIQCard extends HTMLElement {
                 return `<section class="info-panel room-detail monitor-only-detail"><div class="tiny room-detail-label">RAUM-MONITORING</div><h3>${esc(r.name)}</h3><div class="room-iq-hero monitor-only-hero" style="--room-iq:#82929e"><div class="room-iq-icon"><ha-icon icon="mdi:eye-outline"></ha-icon></div><div><div class="tiny">FRESHAIRIQ MODUS</div><strong>Nur anzeigen</strong><span>${esc(monitorText)}</span></div><div class="room-iq-quality ${monitorClass}">${esc(monitorState)}</div></div>${valueBlock}${optionalSensorHtml}<div class="room-iq-context"><div class="tiny">RAUMMODELL</div><span>${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³ · ${contactCount} Fenster-/Türkontakt${contactCount === 1 ? "" : "e"}</span></div></section>`;
             }
             const bal = moisture(r.result_ml), pot = moisture((_a = r.realistic_potential_ml) !== null && _a !== void 0 ? _a : r.potential_ml), eff = moisture((_b = r.forecast_moisture_effect_ml) !== null && _b !== void 0 ? _b : r.moisture_effect_next_5_min_ml);
-            const dirs = Object.entries(r.contact_orientations || {}).map(([k, v]) => `${k}: ${orientationDE(v)}`).join(" · ") || "keine Richtung hinterlegt";
+            const dirs = Object.entries(r.contact_orientations || {}).map(([k, v]) => `${this._hass?.states?.[k]?.attributes?.friendly_name || k}: ${orientationDE(v)}`).join(" · ") || "keine Richtung hinterlegt";
             const days = Number(st.statistics_days || 14), hist = r.history_14d || [], sum = hist.reduce((a, x) => ({ removed: a.removed + Number(x.removed_ml || 0), sessions: a.sessions + Number(x.sessions || 0), mins: a.mins + Number(x.ventilation_minutes || 0), cost: a.cost + Number(x.cost || 0) }), { removed: 0, sessions: 0, mins: 0, cost: 0 });
             const monitoredRoomKeys = new Set((st.intelligent_recommendation?.room_keys || []).map(String));
             const passiveOpenRoom = String(st.intelligent_recommendation?.status || st.status || "") === "passive_open_monitor" && r.active && monitoredRoomKeys.has(String(r.key));
@@ -2606,7 +2618,7 @@ class FreshAirIQCard extends HTMLElement {
             const canonical = this._orderedRooms(rooms);
             const canonicalIndex = new Map(canonical.map((r, i) => [String(r.key || ""), i]));
             const mouldOrdered = [...canonical].sort((a, b) => (order[b.mould_level] || 0) - (order[a.mould_level] || 0) || Number(b.surface_rh || 0) - Number(a.surface_rh || 0) || (canonicalIndex.get(String(a.key || "")) || 0) - (canonicalIndex.get(String(b.key || "")) || 0));
-            const rows = mouldOrdered.map(r => { const [c] = mouldStyle(r.mould_level); return `<div class="breakdown-row clickable" data-room="${esc(r.key)}"><b>${esc(r.name)}</b><span>${Math.round(Number(r.surface_rh || 0))} % Oberflächen-RH</span><strong style="color:${c}">${esc(mouldDE(r.mould_level))}</strong></div>`; }).join("");
+            const rows = mouldOrdered.map(r => { const [c] = mouldStyle(r.mould_level); return `<div class="breakdown-row clickable" data-room="${esc(r.key)}"><b>${esc(r.name)}</b><span>${r.surface_rh == null ? "–" : `${Math.round(Number(r.surface_rh))} %`} Oberflächen-RH</span><strong style="color:${c}">${esc(mouldDE(r.mould_level))}</strong></div>`; }).join("");
             return `<section class="info-panel"><div class="tiny info-kicker">SCHIMMEL-IQ · RISIKO NACH RÄUMEN</div><h3>Wo FreshAirIQ genauer hinschaut</h3><p>Die Räume sind nach Risiko sortiert. <b>Wichtig: Das ist nur eine grobe Einschätzung.</b> FreshAirIQ leitet die Oberflächenfeuchte aus dem Raumklima ab. Ohne gemessene Oberflächentemperatur bzw. Taupunkt an der konkreten Bauteiloberfläche lässt sich ein tatsächliches Schimmelrisiko nicht sicher bestimmen. Tippe einen Raum an, um Ursache, Empfehlung und Lernwerte zu sehen.</p><div class="breakdown">${rows}</div></section>`;
         }
         if (this._info === "rooms") {
@@ -2722,7 +2734,7 @@ class FreshAirIQCard extends HTMLElement {
             const effectLabel = effectiveness.status_label || "Sammelt Vergleichsdaten";
             const generation = effectiveness.generation_effectiveness || {};
             const generationEffect = generation.improvement_percent == null ? null : Number(generation.improvement_percent);
-            return `<section class="info-panel learning-detail-panel"><div class="tiny info-kicker">MODELLQUALITÄT & DIAGNOSE</div><h3>Wie gut FreshAirIQ aktuell vorhersagt</h3><p>Lernreife und Prognosequalität sind getrennt. Zusätzlich vergleicht FreshAirIQ jede neue geeignete Lüftung paarweise mit einem eingefrorenen, ungelernten Grundmodell. Sobald für denselben Raum eine ältere, abweichende Forecast-Generation existiert, wird außerdem die aktuelle Generation gegen diesen unmittelbaren beobachteten Vorgänger unter derselben Startlage und Messdauer replayt.</p><div class="learning-quality-grid"><div><span>Prognosegüte</span><b>${score == null ? "–" : Math.round(score)+" %"}</b></div><div><span>Betragsgenauigkeit</span><b>${reliability.magnitude_accuracy_percent == null ? "–" : fmt(reliability.magnitude_accuracy_percent,0)+" %"}</b></div><div><span>Richtung</span><b>${reliability.direction_accuracy_percent == null ? "–" : fmt(reliability.direction_accuracy_percent,0)+" %"}</b></div><div><span>MAE</span><b>${(backtest.overall||{}).moisture_mae_ml == null ? "–" : fmt((backtest.overall||{}).moisture_mae_ml,0)+" ml"}</b></div><div><span>Lernwirkung vs. Grundmodell</span><b>${effect == null ? "–" : (effect >= 0 ? "+" : "") + fmt(effect,1)+" %"}</b></div><div><span>Aktuell vs. vorherige Generation</span><b>${generationEffect == null ? "–" : (generationEffect >= 0 ? "+" : "") + fmt(generationEffect,1)+" %"}</b></div><div><span>Paarvergleiche</span><b>${Number(effectiveness.samples || 0)}</b></div><div><span>Unabhängige Lüftungen</span><b>${Number(effectiveness.independent_sessions || 0)}</b></div><div><span>Generationenvergleiche</span><b>${Number(generation.independent_sessions || 0)}</b></div><div><span>Unterschiedliche Tage</span><b>${Number(effectiveness.distinct_days || 0)}</b></div><div><span>Gelerntes Modell MAE</span><b>${effectiveness.production_mae_ml == null ? "–" : fmt(effectiveness.production_mae_ml,0)+" ml"}</b></div><div><span>Grundmodell MAE</span><b>${effectiveness.baseline_mae_ml == null ? "–" : fmt(effectiveness.baseline_mae_ml,0)+" ml"}</b></div><div><span>Aktuelle Generation MAE</span><b>${generation.current_model_mae_ml == null ? "–" : fmt(generation.current_model_mae_ml,0)+" ml"}</b></div><div><span>Vorherige Generation MAE</span><b>${generation.previous_model_mae_ml == null ? "–" : fmt(generation.previous_model_mae_ml,0)+" ml"}</b></div><div><span>95-%-Intervall Lerngewinn</span><b>${effectiveness.paired_gain_ci95_low_ml == null || effectiveness.paired_gain_ci95_high_ml == null ? "–" : signed(effectiveness.paired_gain_ci95_low_ml," ml")+" bis "+signed(effectiveness.paired_gain_ci95_high_ml," ml")}</b></div></div><div class="learning-overview-note"><ha-icon icon="mdi:compare-horizontal"></ha-icon><span><b>${esc(effectLabel)}</b> · Belegt wird eine Verbesserung erst nach mindestens ${Number((effectiveness.evidence_rules||{}).minimum_samples || 12)} geeigneten Raumvergleichen aus ${Number((effectiveness.evidence_rules||{}).minimum_independent_sessions || 8)} unabhängigen Lüftungen an ${Number((effectiveness.evidence_rules||{}).minimum_distinct_days || 4)} unterschiedlichen Tagen und einem vollständig positiven, nach Lüftungen geclusterten Fehlerintervall. Der Generationenvergleich verwendet dieselben konservativen Evidenzregeln.</span></div>${byKey.forecast_validation ? componentCard(byKey.forecast_validation) : ""}</section>`;
+            return `<section class="info-panel learning-detail-panel"><div class="tiny info-kicker">MODELLQUALITÄT & DIAGNOSE</div><h3>Wie gut FreshAirIQ aktuell vorhersagt</h3><p>Lernreife und Prognosequalität sind getrennt. Zusätzlich vergleicht FreshAirIQ jede neue geeignete Lüftung paarweise mit einem eingefrorenen, ungelernten Grundmodell. Sobald für denselben Raum eine ältere, abweichende Forecast-Generation existiert, wird außerdem die aktuelle Generation gegen diesen unmittelbaren beobachteten Vorgänger unter derselben Startlage und Messdauer replayt.</p><div class="learning-quality-grid"><div><span>Prognosegüte</span><b>${score == null ? "–" : Math.round(score)+" %"}</b></div><div><span>Betragsgenauigkeit</span><b>${reliability.magnitude_accuracy_percent == null ? "–" : fmt(reliability.magnitude_accuracy_percent,0)+" %"}</b></div><div><span>Richtung</span><b>${reliability.direction_accuracy_percent == null ? "–" : fmt(reliability.direction_accuracy_percent,0)+" %"}</b></div><div><span>MAE</span><b>${(backtest.overall||{}).moisture_mae_ml == null ? "–" : fmt((backtest.overall||{}).moisture_mae_ml,0)+" ml"}</b></div><div><span>Lernwirkung vs. Grundmodell</span><b>${effect == null ? "–" : (effect >= 0 ? "+" : "") + fmt(effect,1)+" %"}</b></div><div><span>Aktuell vs. vorherige Generation</span><b>${generationEffect == null ? "–" : (generationEffect >= 0 ? "+" : "") + fmt(generationEffect,1)+" %"}</b></div><div><span>Paarvergleiche</span><b>${Number(effectiveness.samples || 0)}</b></div><div><span>Unabhängige Lüftungen</span><b>${Number(effectiveness.independent_sessions || 0)}</b></div><div><span>Generationenvergleiche</span><b>${Number(generation.independent_sessions || 0)}</b></div><div><span>Unterschiedliche Tage</span><b>${Number(effectiveness.distinct_days || 0)}</b></div><div><span>Gelerntes Modell MAE</span><b>${effectiveness.production_mae_ml == null ? "–" : fmt(effectiveness.production_mae_ml,0)+" ml"}</b></div><div><span>Grundmodell MAE</span><b>${effectiveness.baseline_mae_ml == null ? "–" : fmt(effectiveness.baseline_mae_ml,0)+" ml"}</b></div><div><span>Aktuelle Generation MAE</span><b>${generation.current_model_mae_ml == null ? "–" : fmt(generation.current_model_mae_ml,0)+" ml"}</b></div><div><span>Vorherige Generation MAE</span><b>${generation.previous_model_mae_ml == null ? "–" : fmt(generation.previous_model_mae_ml,0)+" ml"}</b></div><div><span>95-%-Intervall Lerngewinn</span><b>${effectiveness.paired_gain_ci95_low_ml == null || effectiveness.paired_gain_ci95_high_ml == null ? "–" : signed(effectiveness.paired_gain_ci95_low_ml," ml")+(FAIQ_NUMBER_LOCALE === "en" ? " to " : " bis ")+signed(effectiveness.paired_gain_ci95_high_ml," ml")}</b></div></div><div class="learning-overview-note"><ha-icon icon="mdi:compare-horizontal"></ha-icon><span><b>${esc(effectLabel)}</b> · Belegt wird eine Verbesserung erst nach mindestens ${Number((effectiveness.evidence_rules||{}).minimum_samples || 12)} geeigneten Raumvergleichen aus ${Number((effectiveness.evidence_rules||{}).minimum_independent_sessions || 8)} unabhängigen Lüftungen an ${Number((effectiveness.evidence_rules||{}).minimum_distinct_days || 4)} unterschiedlichen Tagen und einem vollständig positiven, nach Lüftungen geclusterten Fehlerintervall. Der Generationenvergleich verwendet dieselben konservativen Evidenzregeln.</span></div>${byKey.forecast_validation ? componentCard(byKey.forecast_validation) : ""}</section>`;
         }
         if (this._info === "learning:longterm") {
             const season = byKey.seasonality || {}, night = byKey.night_model || {};
@@ -2773,7 +2785,7 @@ class FreshAirIQCard extends HTMLElement {
             if (!entryId) throw new Error("FreshAirIQ-Konfiguration nicht gefunden");
             const start = this.shadowRoot?.getElementById("ventlog-start")?.value || "";
             const end = this.shadowRoot?.getElementById("ventlog-end")?.value || "";
-            if (button) button.innerHTML = '<ha-icon icon="mdi:progress-clock"></ha-icon><b>PDF wird erstellt</b><span>bitte warten</span>';
+            if (button) button.innerHTML = this._tx('<ha-icon icon="mdi:progress-clock"></ha-icon><b>PDF wird erstellt</b><span>bitte warten</span>');
             const payload = await this._hass.callApi("GET", `freshairiq/ventilation-log/${entryId}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
             const raw = atob(payload.pdf_base64 || "");
             const bytes = new Uint8Array(raw.length);
@@ -2793,11 +2805,11 @@ class FreshAirIQCard extends HTMLElement {
         const original = button === null || button === void 0 ? void 0 : button.innerHTML;
         try {
             if (button)
-                button.innerHTML = '<ha-icon icon="mdi:progress-clock"></ha-icon><b>Export wird erstellt</b><span>bitte warten</span>';
+                button.innerHTML = this._tx('<ha-icon icon="mdi:progress-clock"></ha-icon><b>Export wird erstellt</b><span>bitte warten</span>');
             await this._registerFieldTestClient(true);
             const stamp = new Date().toISOString().split(":").join("-").replace(/\.\d{3}Z$/, "Z");
             let blob, filename;
-            // 0.26.4.10: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
+            // 0.26.5.0: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
             // the browser no longer parses and re-indents tens of MiB.
             const zipResponse = typeof this._hass.callApiRaw === "function" ? await this._hass.callApiRaw("GET", "freshairiq/diagnostics?format=zip") : null;
             if (zipResponse && zipResponse.ok && String(zipResponse.headers?.get?.("Content-Type") || "").includes("zip")) {
@@ -2818,7 +2830,7 @@ class FreshAirIQCard extends HTMLElement {
             a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 30000);
             if (button)
-                button.innerHTML = '<ha-icon icon="mdi:check-circle-outline"></ha-icon><b>Export erstellt</b><span>Datei ist bereit</span>';
+                button.innerHTML = this._tx('<ha-icon icon="mdi:check-circle-outline"></ha-icon><b>Export erstellt</b><span>Datei ist bereit</span>');
             setTimeout(() => { if (button && original)
                 button.innerHTML = original; }, 1800);
         }
@@ -2826,7 +2838,7 @@ class FreshAirIQCard extends HTMLElement {
             console.error("FreshAirIQ diagnostics export failed", err);
             const info = this._rememberSupportError(err, "FAIQ-DIAG-EXPORT-001");
             if (button)
-                button.innerHTML = `<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>Export fehlgeschlagen</b><span>${esc(info.code)}</span>`;
+                button.innerHTML = `<ha-icon icon="mdi:alert-circle-outline"></ha-icon><b>${this._tx("Export fehlgeschlagen")}</b><span>${esc(info.code)}</span>`;
             window.alert(this._supportErrorText(info));
             setTimeout(() => { if (button && original)
                 button.innerHTML = original; }, 2500);
@@ -3029,8 +3041,8 @@ class FreshAirIQCard extends HTMLElement {
         const feedbackSend = this.shadowRoot.getElementById("feedback-send");
         if (feedbackSend) feedbackSend.addEventListener("click", async (e) => {
             e.stopPropagation(); const entryId=this._settingsEntryId(); const type=this.shadowRoot.getElementById("feedback-type")?.value||"bug"; const message=(this.shadowRoot.getElementById("feedback-message")?.value||"").trim(); const result=this.shadowRoot.getElementById("feedback-result");
-            if (!entryId || message.length < 3) { if(result) result.textContent="Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben."; return; }
-            feedbackSend.disabled=true; if(result) result.textContent="Wird sicher an den Diagnose-Hub übertragen …";
+            if (!entryId || message.length < 3) { if(result) result.textContent=this._tx("Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben."); return; }
+            feedbackSend.disabled=true; if(result) result.textContent=this._tx("Wird sicher an den Diagnose-Hub übertragen …");
             let locked = false;
             try { const response=await this._hass.callApi("POST", `freshairiq/feedback/${entryId}`, {type,message,client_context:this._fieldTestClientContext()}); if(response?.error) throw new Error(response.error); if (response?.cooldown_until) { this._feedbackCooldownUntil = response.cooldown_until; locked = true; } if(result) result.textContent=`${this._uiLanguage() === "de" ? "Gesendet" : "Sent"} · Feedback-ID ${response.feedback_id||"–"} · ${this._t("feedback.sent_next")}`; const box=this.shadowRoot.getElementById("feedback-message"); if(box) box.value=""; }
             catch(err) {
@@ -3041,7 +3053,7 @@ class FreshAirIQCard extends HTMLElement {
                     locked = true;
                     const mins = Math.max(1, Math.ceil(Number(parsed?.retry_after_seconds || 900) / 60));
                     if(result) result.textContent=this._t("feedback.cooldown_next", { mins });
-                } else if(result) result.textContent=`Senden fehlgeschlagen: ${this._formatApiError(err, "Bitte Verbindung zum Diagnose-Hub prüfen.")}`;
+                } else if(result) result.textContent=`${this._tx("Senden fehlgeschlagen")}: ${this._formatApiError(err, this._tx("Bitte Verbindung zum Diagnose-Hub prüfen."))}`;
             } finally {
                 feedbackSend.disabled = locked;
                 if (locked) { const mins = this._feedbackCooldownMinutes(); feedbackSend.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon> ${esc(this._t("feedback.cooldown_button", { mins: mins || 15 }))}`; }
@@ -3305,7 +3317,7 @@ if (!customElements.get(FAIQ_CARD))
     customElements.define(FAIQ_CARD, FreshAirIQCard);
 window.customCards = window.customCards || [];
 if (!window.customCards.some(c => c.type === FAIQ_CARD))
-    window.customCards.push({ type: FAIQ_CARD, name: "FreshAirIQ", description: "Intelligente Lüftungs-, Feuchte-, Energie- und Lernübersicht.", preview: true, documentationURL: "https://github.com/rupascha/freshairiq" });
+    window.customCards.push({ type: FAIQ_CARD, name: "FreshAirIQ", description: String(navigator.language || "").toLowerCase().startsWith("de") ? "Intelligente Lüftungs-, Feuchte-, Energie- und Lernübersicht." : "Intelligent ventilation, humidity, energy and learning overview.", preview: true, documentationURL: "https://github.com/rupascha/freshairiq" });
 class FreshAirIQDashboardStrategy extends HTMLElement {
     static getCreateSuggestions() { return { title: "FreshAirIQ", icon: "mdi:home-air-filter" }; }
     static async generate(config = {}) { return { title: config.title || "FreshAirIQ", views: [{ title: "FreshAirIQ", path: "freshairiq", icon: "mdi:home-air-filter", cards: [{ type: "custom:freshairiq-card" }] }] }; }

@@ -142,7 +142,7 @@ For energy estimates, heat pumps, gas, heating oil, district heating, or direct 
 
 ## Your own automations (Node-RED, Alexa, fans)
 
-FreshAirIQ never switches devices itself – but you can react to every recommendation: via the room entities (e.g. `sensor.bedroom_action`) or via the events `freshairiq_room_action`, `freshairiq_house_recommendation` and `freshairiq_mould_risk`, which carry a ready-to-speak sentence. Examples, two blueprints and tips for tilt contacts and rooms without windows: **[docs/AUTOMATIONS.md](docs/AUTOMATIONS.md)** (German, with more detail: [docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)).
+FreshAirIQ never switches devices itself – but you can react to every recommendation: via the room entities (e.g. `sensor.bedroom_action`) or via the events `freshairiq_room_action`, `freshairiq_house_recommendation` and `freshairiq_mould_risk`, which carry a ready-to-speak sentence. Texts follow the FreshAirIQ output language (your Home Assistant system language; English for every language except German). Full English guide with examples for Alexa, exhaust fans and Node-RED, plus tips for tilt contacts and rooms without windows: **[docs/AUTOMATIONS.md](docs/AUTOMATIONS.md)**. Ready-made English blueprints: [announce_room_action_en.yaml](blueprints/automation/freshairiq/announce_room_action_en.yaml) (announce room recommendations, e.g. via Alexa) and [device_follows_room_action_en.yaml](blueprints/automation/freshairiq/device_follows_room_action_en.yaml) (a fan follows the room recommendation) – import them via **Settings → Automations & scenes → Blueprints → Import blueprint** with the file's raw GitHub URL. Deutsch: [docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md).
 
 ## Requirements
 

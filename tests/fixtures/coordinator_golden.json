@@ -3,7 +3,7 @@
   "evening_ventilation_and_night": {
    "cycles": [
     {
-     "all": "86a4f09161ab1c63",
+     "all": "9f0b31a7014db37e",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -91,6 +91,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -148,10 +149,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "4b8badeb2e3668cf"
+     "store": "fd1e99a3e8ffb449"
     },
     {
-     "all": "90262bc9d2e05032",
+     "all": "e3cc265e007afd09",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -239,6 +240,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -296,10 +298,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "fb7f7f50e655621a"
+     "store": "705331857e66d1e4"
     },
     {
-     "all": "1f3acbccd7823a01",
+     "all": "8e68230aa2fafd7f",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -387,6 +389,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -444,10 +447,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "db3bb915c2cd53a5"
+     "store": "cb86321e0a9ea104"
     },
     {
-     "all": "d13a6ec56834e5d4",
+     "all": "c367629c65b8b0db",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -535,6 +538,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -592,10 +596,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "0637a9ea9cb038ff"
+     "store": "2012cea6b0d4536d"
     },
     {
-     "all": "b1cbdbf1f63fb53e",
+     "all": "b9d9882ec22804af",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -683,6 +687,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -740,10 +745,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "013d1c63d2f68d62"
+     "store": "490844923bbe0ca4"
     },
     {
-     "all": "53a843c87cf65b9d",
+     "all": "41160f3f0bcc706b",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -831,6 +836,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "3097fc802d49355a",
@@ -888,10 +894,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window open",
-     "store": "65a05cc466b89707"
+     "store": "b8fe734ed12fc946"
     },
     {
-     "all": "f278f2160a286653",
+     "all": "406494b05ddd6f1f",
      "keys": {
       "actionable_potential_ml": "3d914f9348c9cc0f",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -979,6 +985,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "c62ce8b4e927f02f",
@@ -1036,10 +1043,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 1",
-     "store": "1f05d3197997290a"
+     "store": "4cf2e16b822bbcb6"
     },
     {
-     "all": "f68441740f877c81",
+     "all": "d6d00d8120b4f40e",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1127,6 +1134,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "062f50753b9095ee",
@@ -1184,10 +1192,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 2",
-     "store": "6a6b952b83061868"
+     "store": "b3dfba59499d0e82"
     },
     {
-     "all": "ab2333a3c7fc1bb3",
+     "all": "15f655a342eae394",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1275,6 +1283,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "4f97f2eebf92cde5",
@@ -1332,10 +1341,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 3",
-     "store": "63606aba2e134140"
+     "store": "f172f8bf3e378f2e"
     },
     {
-     "all": "d2640dea7c70481d",
+     "all": "389a6d359ae7ff68",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1423,6 +1432,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "000f21ac06aceb9c",
@@ -1480,10 +1490,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 4",
-     "store": "6cbee778ecaa090b"
+     "store": "80fbd5009bf7c00d"
     },
     {
-     "all": "0b006cc988861dc2",
+     "all": "a82a9361585235bd",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1571,6 +1581,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d2e655334ee2e484",
@@ -1628,10 +1639,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 5",
-     "store": "4e94c624b3738fcd"
+     "store": "8a5180488277d160"
     },
     {
-     "all": "c6345a20b4beb1c6",
+     "all": "c7793c7e81ef459f",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1719,6 +1730,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "52efd2aad05d27e3",
@@ -1776,10 +1788,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 6",
-     "store": "51d18780007c311b"
+     "store": "a3d6b043cdc131bf"
     },
     {
-     "all": "f47990a8e62c628a",
+     "all": "8108d85b897304cc",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1867,6 +1879,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "3bd625f07792e885",
@@ -1924,10 +1937,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 7",
-     "store": "afc55b19ca9ed6d1"
+     "store": "0376ea24e6e330af"
     },
     {
-     "all": "8df1cd010fd9ab62",
+     "all": "b04a4792f83ac725",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2015,6 +2028,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d7be6321b3d94082",
@@ -2072,10 +2086,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 8",
-     "store": "ff3f3980cddd24d2"
+     "store": "f90438c65433bd21"
     },
     {
-     "all": "cde8e76e715db542",
+     "all": "c13ee4928d90b761",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2163,6 +2177,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "62f6d46c48c7d9ff",
@@ -2220,10 +2235,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 9",
-     "store": "32dc4aece1749d5c"
+     "store": "9dcc304d8000b55e"
     },
     {
-     "all": "6c60752e14060449",
+     "all": "4473ab3f2af417fb",
      "keys": {
       "actionable_potential_ml": "eb1e33e8a81b697b",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2311,6 +2326,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "eb0c9cdc08626534",
@@ -2368,10 +2384,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 10",
-     "store": "358cb2257def0ac3"
+     "store": "bf8478e6eecaa1f5"
     },
     {
-     "all": "408f587172b90433",
+     "all": "21fb7f3bb3287a79",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2459,6 +2475,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "c62ce8b4e927f02f",
@@ -2516,10 +2533,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 11",
-     "store": "14963283dfadf605"
+     "store": "a94fa0addd79e45c"
     },
     {
-     "all": "dad5ec48d1432bd7",
+     "all": "c5d939648ad72b10",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2607,6 +2624,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "8b6cd7c429e83373",
@@ -2664,10 +2682,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 12",
-     "store": "08ff60f7b9eed659"
+     "store": "7cf28845ba4a935d"
     },
     {
-     "all": "e2a8ef46b194ffb7",
+     "all": "a96ff6714aa1d013",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2755,6 +2773,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "8b6cd7c429e83373",
@@ -2812,10 +2831,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window closed",
-     "store": "8a596cc3a27b5133"
+     "store": "0d74ac00df4fc2ed"
     },
     {
-     "all": "d3ce60785ed89f7a",
+     "all": "5dd3ce3f8c6571a8",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2903,6 +2922,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "debc96817a3523d6",
@@ -2960,10 +2980,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 1",
-     "store": "387f9997bfb8be86"
+     "store": "980ae20944ffc2ad"
     },
     {
-     "all": "e270b2f89af446c9",
+     "all": "e2e59aa653ccd64b",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3051,6 +3071,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d6420a4ee44bc345",
@@ -3108,10 +3129,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 2",
-     "store": "2f82639c0cb7022f"
+     "store": "3c8d5134d17148e5"
     },
     {
-     "all": "95e3c57fa7f409e0",
+     "all": "f706a626a41203f7",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3199,6 +3220,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d6420a4ee44bc345",
@@ -3256,10 +3278,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 3",
-     "store": "b6dcbbce4d46ef2d"
+     "store": "3babe0d03c10112f"
     },
     {
-     "all": "73c282023d3b2f32",
+     "all": "d5e6199fcb083fa0",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3347,6 +3369,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "084917af148384c1",
@@ -3404,10 +3427,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 4",
-     "store": "161fd1c99fdecc65"
+     "store": "d48cdc6a7b5d11f5"
     },
     {
-     "all": "b19a81694a44fc54",
+     "all": "15106701d2a58b78",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3495,6 +3518,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "084917af148384c1",
@@ -3552,10 +3576,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 5",
-     "store": "4d7c33a2836f3194"
+     "store": "654b3eda0f9ab4ee"
     },
     {
-     "all": "743c5cd27d80566f",
+     "all": "6fc3cb2524870ddd",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3643,6 +3667,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "084917af148384c1",
@@ -3700,10 +3725,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 6",
-     "store": "844a21a36da28c4a"
+     "store": "58cbe00df4354d77"
     },
     {
-     "all": "20c091b9794bcaf3",
+     "all": "c1ed53591e707bfd",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3791,6 +3816,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "61ab550f4c85a975",
@@ -3848,10 +3874,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 7",
-     "store": "d4326b57fc03e2f6"
+     "store": "79966ff95bac9002"
     },
     {
-     "all": "a3de5a566190bfa2",
+     "all": "cff8097e5de9d522",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3939,6 +3965,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "61ab550f4c85a975",
@@ -3996,10 +4023,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 8",
-     "store": "1f4f24fe1a1954e6"
+     "store": "a7fb917abce54973"
     },
     {
-     "all": "f93f9a1cfa4ecd06",
+     "all": "c1d7056df418dd3d",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4087,6 +4114,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "8e28c5eb829e92ab",
@@ -4144,10 +4172,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cross ventilation kitchen",
-     "store": "eb53c108d899e8d8"
+     "store": "1afdd83d4a476cc0"
     },
     {
-     "all": "9a8bd6ef38f909ab",
+     "all": "edae5838aae83ed8",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4235,6 +4263,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "e2fa8f5b4364b8ef",
@@ -4292,10 +4321,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 1",
-     "store": "d869829c58e00b0f"
+     "store": "9183c44511e2d281"
     },
     {
-     "all": "58e4c83085db9c3e",
+     "all": "5bd00c08d827eaac",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4383,6 +4412,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "aee4848a8580f311",
@@ -4440,10 +4470,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 2",
-     "store": "830810e36a0a113e"
+     "store": "f6a9e77fae2ad7b3"
     },
     {
-     "all": "2956d0d61ca47095",
+     "all": "40c3d4510d1ab343",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4531,6 +4561,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "fa7aec4efb728534",
@@ -4588,10 +4619,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 3",
-     "store": "f9db7676fe756148"
+     "store": "ffdb60779ce5921d"
     },
     {
-     "all": "17d738bda9e4e1c0",
+     "all": "6bd63541e6d4f97b",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4679,6 +4710,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "ad723f42c7aba316",
@@ -4736,10 +4768,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 4",
-     "store": "491cdfb707cfcaf6"
+     "store": "509dda76b765d8e1"
     },
     {
-     "all": "003ac5057d75637b",
+     "all": "d663e7744db1d550",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4827,6 +4859,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "2618182c3894875e",
@@ -4884,10 +4917,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 5",
-     "store": "7a0a0e4d29100d7d"
+     "store": "1081e6d47a56a3c7"
     },
     {
-     "all": "9aaa96fda231e4d3",
+     "all": "78b453f981b57585",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4975,6 +5008,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "ed0b853bd9c28435",
@@ -5032,10 +5066,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 6",
-     "store": "84d54c7bf14e6081"
+     "store": "22872cadbebec019"
     },
     {
-     "all": "186e22b48c922586",
+     "all": "64f1470160330164",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5123,6 +5157,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "97468f679ad305fa",
@@ -5180,10 +5215,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen closed",
-     "store": "68f17789200414a1"
+     "store": "b3d63c84b75857a7"
     },
     {
-     "all": "cc707a8531be3890",
+     "all": "a986db664ce85415",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5271,6 +5306,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -5328,10 +5364,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 1",
-     "store": "7e538f3cf170d6c4"
+     "store": "fb55c17ae60a98cf"
     },
     {
-     "all": "b74b7929a2043df8",
+     "all": "ccee10e8ca502ea2",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5419,6 +5455,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "b08450dbcb38605b",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "df4865fca1f15916",
       "overnight_forecast_ml": "df4865fca1f15916",
@@ -5476,10 +5513,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 2",
-     "store": "ee7052100cf0f1bb"
+     "store": "717c5cdb73814006"
     },
     {
-     "all": "5f4b17a7c329030a",
+     "all": "5890f9390cae4923",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5567,6 +5604,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "3de2af8f5f3e253f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "44cb730c420480a0",
       "overnight_forecast_base_ml": "c63efd61a70d0f6b",
       "overnight_forecast_ml": "c63efd61a70d0f6b",
@@ -5624,10 +5662,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 3",
-     "store": "4e1e74f259aa7846"
+     "store": "25380a66f87f0dd6"
     },
     {
-     "all": "31025997b041271e",
+     "all": "6e4077832bc64bb4",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5715,6 +5753,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "34e0ec8c9685fcd9",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "811786ad1ae74adf",
       "overnight_forecast_base_ml": "5dad6478e152b8aa",
       "overnight_forecast_ml": "5dad6478e152b8aa",
@@ -5772,10 +5811,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 4",
-     "store": "5e79d42d15186ee6"
+     "store": "e64061c6c2ff258f"
     },
     {
-     "all": "651728269feff183",
+     "all": "2b9d1f7906915138",
      "keys": {
       "actionable_potential_ml": "76a50887d8f1c2e9",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5863,6 +5902,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "fc52218f2280709f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "31489056e0916d59",
       "overnight_forecast_base_ml": "9a35532c7499c19d",
       "overnight_forecast_ml": "9a35532c7499c19d",
@@ -5920,10 +5960,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 5",
-     "store": "741ddd30cc003be1"
+     "store": "34d931017d6f8cad"
     },
     {
-     "all": "14aeb795e3f790b6",
+     "all": "f48d5d71471f8089",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6011,6 +6051,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "1541320c48fbaa94",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "0e17daca5f3e175f",
       "overnight_forecast_base_ml": "0cce0bd361c46fcd",
       "overnight_forecast_ml": "0cce0bd361c46fcd",
@@ -6068,10 +6109,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 6",
-     "store": "ca7a4a52d72880c0"
+     "store": "369c156dfd525285"
     },
     {
-     "all": "2a58c8ca9d3c8640",
+     "all": "e7da9ad35774aeb1",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6159,6 +6200,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "428ff1bbca6880b5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "031b4af5197ec30a",
       "overnight_forecast_base_ml": "db55da3fc3098e9c",
       "overnight_forecast_ml": "db55da3fc3098e9c",
@@ -6216,10 +6258,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 7",
-     "store": "efb636c0e3427de5"
+     "store": "94f921d2eb777ad5"
     },
     {
-     "all": "2ceff375220d3d05",
+     "all": "bb95a8ac9a4a5348",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6307,6 +6349,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "67477cdc76e46b40",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "2858dcd1057d3eae",
       "overnight_forecast_base_ml": "7104741a92e73eb6",
       "overnight_forecast_ml": "7104741a92e73eb6",
@@ -6364,10 +6407,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 8",
-     "store": "af4ff35a267055c4"
+     "store": "b7e772fcd675869b"
     },
     {
-     "all": "6a597d9f421b3e9b",
+     "all": "7dd71d1b72afd887",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6455,6 +6498,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "dad11cb4e23b0044",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "02d20bbd7e394ad5",
       "overnight_forecast_base_ml": "e7866fdc6672f827",
       "overnight_forecast_ml": "e7866fdc6672f827",
@@ -6512,10 +6556,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 9",
-     "store": "7ed0890a2729e523"
+     "store": "1f2b1fd18fd5d4b2"
     },
     {
-     "all": "8fbcf67a07624327",
+     "all": "b6671a53912b956d",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6603,6 +6647,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "61a229bae1e90331",
       "overnight_forecast_ml": "61a229bae1e90331",
@@ -6660,10 +6705,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 10",
-     "store": "4d0e05bdc661c28e"
+     "store": "2646fc6cfad179ea"
     },
     {
-     "all": "a6fa2325c149d156",
+     "all": "876096db1f75370b",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6751,6 +6796,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "0b918943df0962bc",
       "overnight_forecast_ml": "0b918943df0962bc",
@@ -6808,10 +6854,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "morning",
-     "store": "6513eedf8b1f0500"
+     "store": "88bc9c1607726494"
     },
     {
-     "all": "a1ce940b06891018",
+     "all": "84628fab46595f77",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6899,6 +6945,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "aea92132c4cbeb26",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -6956,10 +7003,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom window open",
-     "store": "7829a3dc0cd9474b"
+     "store": "7b701ed5dc55361c"
     },
     {
-     "all": "6354d32f615ba412",
+     "all": "f376206e65571041",
      "keys": {
       "actionable_potential_ml": "a21855da08cb102d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7047,6 +7094,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "7a61b53701befdae",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -7104,10 +7152,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 1",
-     "store": "ab8f428ad5b8681b"
+     "store": "c103df216935dfad"
     },
     {
-     "all": "fb0056801d08db20",
+     "all": "33752a0fb7bf64b6",
      "keys": {
       "actionable_potential_ml": "3ada92f28b4ceda3",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7195,6 +7243,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "7a61b53701befdae",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -7252,10 +7301,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 2",
-     "store": "aa42704ca232086b"
+     "store": "fd4f29588c450136"
     },
     {
-     "all": "6c099079ce3b903f",
+     "all": "abcbc58027744745",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7343,6 +7392,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "76a50887d8f1c2e9",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -7400,10 +7450,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 3",
-     "store": "33bfe7d52e053627"
+     "store": "63030e8807996fac"
     },
     {
-     "all": "bcb3b186eb324e75",
+     "all": "bf5215184f0bc904",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7491,6 +7541,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "9f14025af0065b30",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -7548,10 +7599,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 4",
-     "store": "7ea96bcd76454116"
+     "store": "63b150edf33b27b3"
     },
     {
-     "all": "24a46b86c46bf871",
+     "all": "930a02e0160eb47a",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7639,6 +7690,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "86e5014965866131",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -7696,10 +7748,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 5",
-     "store": "4ff50b4e73da1ed6"
+     "store": "ed6807a6e5a78675"
     },
     {
-     "all": "18822f4b0f0beffe",
+     "all": "081a3be069da7d34",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7787,6 +7839,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "8f4534cece12bad5",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "c837649cce43f272",
       "overnight_forecast_base_ml": "c6f3ac57944a5314",
       "overnight_forecast_ml": "5feceb66ffc86f38",
@@ -7844,16 +7897,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed",
-     "store": "ee07640104e5e7a3"
+     "store": "e03afec7df305f9f"
     }
    ],
    "network_calls": [],
-   "persisted": "3479ad54c8842a12"
+   "persisted": "fc1a7097603d2743"
   },
   "no_rooms": {
    "cycles": [
     {
-     "all": "ca93c47f9ba7cd10",
+     "all": "37f2c0ee6aedc4ed",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7941,6 +7994,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -8001,7 +8055,7 @@
      "store": "9efbe40c3767f779"
     },
     {
-     "all": "6655c6eb2f8c4617",
+     "all": "69f5c196d954033d",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8089,6 +8143,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -8149,7 +8204,7 @@
      "store": "9efbe40c3767f779"
     },
     {
-     "all": "b7c2c498498730e7",
+     "all": "6e6b2a3b1e662d25",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8237,6 +8292,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -8303,7 +8359,7 @@
   "sensor_trouble": {
    "cycles": [
     {
-     "all": "e8cdb5fafc91a276",
+     "all": "ac5c385ba9aef6bd",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8391,6 +8447,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -8448,10 +8505,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "664c4176bc71eb2c"
+     "store": "f041d8ff912b5af5"
     },
     {
-     "all": "4949e9e0e72346b2",
+     "all": "3c7b4f300d170aa6",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8539,6 +8596,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -8596,10 +8654,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "3a95695fdd46838f"
+     "store": "86bd65f57e62ba38"
     },
     {
-     "all": "cc2de0b6ebefbd7d",
+     "all": "482506a16962dd20",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8687,6 +8745,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -8744,10 +8803,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "29e1e6c6b0e58ea7"
+     "store": "911b83e8528c3531"
     },
     {
-     "all": "8bdf7d511df64010",
+     "all": "3989fbc3d609d027",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8835,6 +8894,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -8892,10 +8952,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity unavailable",
-     "store": "50cff2779eceea14"
+     "store": "246493936bcff4c7"
     },
     {
-     "all": "781512700074fc25",
+     "all": "4adb83f906e501b4",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8983,6 +9043,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -9040,10 +9101,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "outdoor + one flur sensor gone",
-     "store": "325dc739eb01cd03"
+     "store": "26976da99faa37ee"
     },
     {
-     "all": "872fd06568679ecb",
+     "all": "b4b6f220d3b13823",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9131,6 +9192,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "920c37d6464a8f20",
@@ -9188,10 +9250,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "implausible values",
-     "store": "e920036584a7f1a7"
+     "store": "92bc78aa629046fe"
     },
     {
-     "all": "a4a3d418a38b23ce",
+     "all": "f847cd2e87dd27bd",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9279,6 +9341,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "920c37d6464a8f20",
@@ -9336,10 +9399,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "window open without humidity",
-     "store": "502d0b664f529e77"
+     "store": "7792c204dddeea5a"
     },
     {
-     "all": "5adf23d14c42f00f",
+     "all": "9a5527cf23a9c305",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9427,6 +9490,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "a2cc73deb383356e",
@@ -9484,10 +9548,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity back",
-     "store": "56479af570827b8b"
+     "store": "da2657c985fe5256"
     },
     {
-     "all": "3b8ab33d78efcc6d",
+     "all": "066876c1a0650159",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9575,6 +9639,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "25139f64c82a1982",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "5e968ce47ce4a17e",
@@ -9632,10 +9697,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "all recovered",
-     "store": "2164159a3b38c482"
+     "store": "80ab36e89da9ebbb"
     },
     {
-     "all": "eb02e9d6a7c6c89d",
+     "all": "190d576e70f59cc5",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9723,6 +9788,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "25139f64c82a1982",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "28096b238fafbfd5",
@@ -9780,10 +9846,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "819de2d81e418633"
+     "store": "256615035a85b491"
     },
     {
-     "all": "20ae84b0d04f9558",
+     "all": "b7cfa972818b9f8d",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9871,6 +9937,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "25139f64c82a1982",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "462c39f8e9bbf461",
@@ -9928,10 +9995,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 1",
-     "store": "15984204e336d01b"
+     "store": "fa79c949f690a04e"
     },
     {
-     "all": "4715109e5555e3b1",
+     "all": "653af3581641cf98",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10019,6 +10086,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "25139f64c82a1982",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "3cb65cad26f0a517",
@@ -10076,10 +10144,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 2",
-     "store": "26ba435eaae076f3"
+     "store": "2bf5ecdc90b1bf29"
     },
     {
-     "all": "ca36e42f1139a2eb",
+     "all": "552bdcb076e3b929",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10167,6 +10235,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "25139f64c82a1982",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "98964da49d0a9840",
@@ -10224,16 +10293,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 3",
-     "store": "b62a4c3a2a06c35e"
+     "store": "7258dc128288a352"
     }
    ],
    "network_calls": [],
-   "persisted": "27a17c75ef3cce4d"
+   "persisted": "cdf7bfa8de7888d1"
   },
   "structure_room_only": {
    "cycles": [
     {
-     "all": "a1149fd2bb10998f",
+     "all": "0bbc9bc3fe58238e",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10321,6 +10390,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -10378,10 +10448,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "44867468f2e8d617"
+     "store": "e25d50aeaa77b7c3"
     },
     {
-     "all": "c78726f79775ca06",
+     "all": "57c3f0f28172d33c",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10469,6 +10539,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -10526,10 +10597,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "44867468f2e8d617"
+     "store": "e25d50aeaa77b7c3"
     },
     {
-     "all": "4ecb4d62b0e5f598",
+     "all": "38d5c621f110b740",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10617,6 +10688,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -10674,10 +10746,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "44867468f2e8d617"
+     "store": "e25d50aeaa77b7c3"
     },
     {
-     "all": "16ff13029a89dcea",
+     "all": "2775e61ef906706f",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10765,6 +10837,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "d59eced1ded07f84",
       "overnight_forecast_base_ml": "bdc5d8a48c238979",
       "overnight_forecast_ml": "bdc5d8a48c238979",
@@ -10822,16 +10895,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "44867468f2e8d617"
+     "store": "e25d50aeaa77b7c3"
     }
    ],
    "network_calls": [],
-   "persisted": "ededf7889bc59d63"
+   "persisted": "d88003fa1aebcb29"
   },
   "summer_cooling_and_exhaust": {
    "cycles": [
     {
-     "all": "389dc2970a70e9d9",
+     "all": "92924ce5eaf8f468",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10919,6 +10992,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "0628973a932b0448",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -10976,10 +11050,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "9bdaa8bea43d1bf1"
+     "store": "4b8cf80fe0d73888"
     },
     {
-     "all": "0f6cbeaa7a86d46e",
+     "all": "987270910ad5ce82",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11067,6 +11141,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "0628973a932b0448",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "582c0168ba17eac4",
@@ -11124,10 +11199,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "warm afternoon",
-     "store": "d7518d81169bc61a"
+     "store": "4a5dc0d1752559da"
     },
     {
-     "all": "37bd31bcb1d8cdaf",
+     "all": "e465dfe48f5290ed",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11215,6 +11290,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "0628973a932b0448",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "2c8b871e52d4e5f5",
@@ -11272,10 +11348,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "warm afternoon",
-     "store": "2617c377b76b3c10"
+     "store": "26258e7c8b7a04ef"
     },
     {
-     "all": "f17275e016f09281",
+     "all": "95293c075eed12cd",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11363,6 +11439,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -11420,10 +11497,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "evening cools",
-     "store": "e0fa5b10b6fc909a"
+     "store": "acb7ae461dac7689"
     },
     {
-     "all": "2ef951746073f1e8",
+     "all": "ca7e2cf697ca0ab1",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11511,6 +11588,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "35a9e381b1a27567",
@@ -11568,10 +11646,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom open for cooling",
-     "store": "73ff1668003ad562"
+     "store": "4c426f49c4aa570a"
     },
     {
-     "all": "0627fecd93a92947",
+     "all": "79cbda77ed453df0",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11659,6 +11737,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "1a1cf797fabe7f95",
@@ -11716,10 +11795,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 1",
-     "store": "36a281414edfeaf6"
+     "store": "bd5fed940f743f68"
     },
     {
-     "all": "11b2835ca298d8ad",
+     "all": "79e9a86b9f37e138",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11807,6 +11886,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "313c938e0103b56b",
@@ -11864,10 +11944,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 2",
-     "store": "bdc2fe4b69a168e0"
+     "store": "37dd757fb6ec524a"
     },
     {
-     "all": "2fe784a79e65daa1",
+     "all": "dc3ee64e71a689bf",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11955,6 +12035,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "7a84ae249fa744b8",
@@ -12012,10 +12093,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 3",
-     "store": "6a8fee89a02f54f6"
+     "store": "0bf926962e1dae2c"
     },
     {
-     "all": "fd4a632c6cbb5153",
+     "all": "a81ab76c206b6679",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12103,6 +12184,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "5c344ba7044815dd",
@@ -12160,10 +12242,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 4",
-     "store": "c09551194cdcb51d"
+     "store": "df3161c444b18434"
     },
     {
-     "all": "a01cb875b9511471",
+     "all": "afce6a6172e1a56d",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12251,6 +12333,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "3d34f102d1708fc5",
@@ -12308,10 +12391,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 5",
-     "store": "6f4c6fa63f93b8f2"
+     "store": "f1ab5431d1ba67df"
     },
     {
-     "all": "cde667e0c86b3ee1",
+     "all": "df9e1706e98fecdc",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12399,6 +12482,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "3097fc802d49355a",
@@ -12456,10 +12540,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 6",
-     "store": "f34d39b9fb23e775"
+     "store": "23d5c3b18be42681"
     },
     {
-     "all": "44887b8a49ce8f4b",
+     "all": "950f81df6621a2b4",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12547,6 +12631,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d359f8b537f1888b",
@@ -12604,10 +12689,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed, exhaust on",
-     "store": "ce9ebadd1b5735cb"
+     "store": "95d86048d18b849a"
     },
     {
-     "all": "9b78d769fb80375a",
+     "all": "091c7f18b13d5390",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12695,6 +12780,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "102624ac0a714fa2",
@@ -12752,10 +12838,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 1",
-     "store": "1294e052f539e02b"
+     "store": "f6346e9a7d9359aa"
     },
     {
-     "all": "113bea2312199621",
+     "all": "19db8990ffe7fcd9",
      "keys": {
       "actionable_potential_ml": "81b8a03f97e8787c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12843,6 +12929,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0c658eb5d61e88c8",
@@ -12900,10 +12987,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 2",
-     "store": "4b1cf7073037cbb4"
+     "store": "f3da7d510e8377eb"
     },
     {
-     "all": "f2a07e68bc237a2f",
+     "all": "03970af0618d15dd",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12991,6 +13078,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "b6bc077d6675a7c8",
@@ -13048,10 +13136,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 3",
-     "store": "fed72933d6d0c4a3"
+     "store": "034fb20afc3b7a24"
     },
     {
-     "all": "356984a932f8af54",
+     "all": "5bffc5f316fda235",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13139,6 +13227,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "04222ea3e14cb120",
@@ -13196,10 +13285,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 4",
-     "store": "819e8a3ea18facd6"
+     "store": "bc493cfabd7f6ddd"
     },
     {
-     "all": "e9633b789afe2c83",
+     "all": "3d7e47032512fe66",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13287,6 +13376,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -13344,10 +13434,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust off",
-     "store": "9ad9cdf181cae7ea"
+     "store": "da63e6a67627db4b"
     },
     {
-     "all": "eea5393197d16faa",
+     "all": "4bc544ba5e736caf",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13435,6 +13525,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "901137b244f8d97f",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -13492,16 +13583,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "7df85aa576402337"
+     "store": "c0d010383c8186be"
     }
    ],
    "network_calls": [],
-   "persisted": "9a1e31fb0f676488"
+   "persisted": "f98162bd20de2ce4"
   },
   "tilt_dropout_and_passive": {
    "cycles": [
     {
-     "all": "9f366e05ca710c52",
+     "all": "a805b4ab5af100a6",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13589,6 +13680,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -13646,10 +13738,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "8a6b0ee773897052"
+     "store": "f2d0d4b8c2fcc4c7"
     },
     {
-     "all": "a93ff232b6780602",
+     "all": "447df5d840bc57e0",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13737,6 +13829,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -13794,10 +13887,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "99b66feb32063ee8"
+     "store": "7500e1133be6586b"
     },
     {
-     "all": "83eaddd9785d4f71",
+     "all": "216f0531e605b545",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13885,6 +13978,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -13942,10 +14036,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "2502b3ef6a67789d"
+     "store": "5c6cb373d7976df4"
     },
     {
-     "all": "3b9b6f9733d0c197",
+     "all": "dd6e4a2abfa06a0f",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14033,6 +14127,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -14090,10 +14185,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom tilted",
-     "store": "0ebe71933d6039b0"
+     "store": "2d1ffbeb9b9416a0"
     },
     {
-     "all": "5a92cb95ffee72df",
+     "all": "37a5489a05c9206f",
      "keys": {
       "actionable_potential_ml": "81b8a03f97e8787c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14181,6 +14276,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "46db1ca7f3598c26",
@@ -14238,10 +14334,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 1",
-     "store": "44a7bdfc4acaefa0"
+     "store": "161c812b8681d28e"
     },
     {
-     "all": "7cc481edbc0e4372",
+     "all": "39bbeeb108c1c34d",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14329,6 +14425,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "c49b60838c5c6ddf",
@@ -14386,10 +14483,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 2",
-     "store": "9c9d047617fe8945"
+     "store": "dabb8227024812ba"
     },
     {
-     "all": "984d8334e2866f78",
+     "all": "f0f097da3d49b63e",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14477,6 +14574,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "fa88d374b9cf5e05",
@@ -14534,10 +14632,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 3",
-     "store": "5a603a9d95291e3c"
+     "store": "c8a07807fa624b95"
     },
     {
-     "all": "4f8a69467d5823e3",
+     "all": "82aadb855ea20127",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14625,6 +14723,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "39e18a493b913441",
@@ -14682,10 +14781,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 4",
-     "store": "9b14de12cd4cb0f9"
+     "store": "03c2d604b358906c"
     },
     {
-     "all": "f4607176386efbd3",
+     "all": "944afe5add1c12d8",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14773,6 +14872,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "b9dafef03fc90f65",
@@ -14830,10 +14930,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 5",
-     "store": "d2ebf60944d67098"
+     "store": "19f592d674c9d519"
     },
     {
-     "all": "a706517520b56d20",
+     "all": "df65016c96aec8a1",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14921,6 +15021,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "b50d427a71ef5f98",
@@ -14978,10 +15079,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 6",
-     "store": "cea26baca92ff708"
+     "store": "3d5a561687e0d5b5"
     },
     {
-     "all": "29b6922903f9358b",
+     "all": "ceba0fc952eee368",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15069,6 +15170,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "b50d427a71ef5f98",
@@ -15126,10 +15228,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "radio drop-out",
-     "store": "050e4e80590e4eb6"
+     "store": "f6d4e63b087bd04d"
     },
     {
-     "all": "3ed74a22ed72e23f",
+     "all": "c299e40c0482a7c7",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15217,6 +15319,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "1a5659493256d9eb",
@@ -15274,10 +15377,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "still dropped",
-     "store": "ba2d22b2c09936b2"
+     "store": "58080ec203935edf"
     },
     {
-     "all": "6df5d2b56c58b22b",
+     "all": "2d744f3baca5050a",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15365,6 +15468,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "1a5659493256d9eb",
@@ -15422,10 +15526,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "back: fully open",
-     "store": "dd1ad5d70eb34347"
+     "store": "21c0375279b4a32c"
     },
     {
-     "all": "7a294508f9971757",
+     "all": "c7e658c15b021df8",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15513,6 +15617,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "6e8d1a943f129896",
@@ -15570,10 +15675,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 1",
-     "store": "39c088c1ffc93ed7"
+     "store": "7825960fbb2a0c97"
     },
     {
-     "all": "bc08ff530a00c6af",
+     "all": "5cf2f899f9076f48",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15661,6 +15766,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "5904c93073387f89",
@@ -15718,10 +15824,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 2",
-     "store": "5d5ccd80d9ef3717"
+     "store": "cce1e852e0788a82"
     },
     {
-     "all": "047a8a83fa06a75c",
+     "all": "23ed378d01253672",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15809,6 +15915,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "b1e92fe0fa7edab2",
@@ -15866,10 +15973,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 3",
-     "store": "eeac0ffb84f8dc3e"
+     "store": "dcaa0b516da85d4c"
     },
     {
-     "all": "212a5110211f45c1",
+     "all": "12f9c53f4d60e69d",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15957,6 +16064,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "fbb2a73b0bacf395",
@@ -16014,10 +16122,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 4",
-     "store": "ac6834036cb1f6be"
+     "store": "42d4f5019c2b937b"
     },
     {
-     "all": "985cfede74994071",
+     "all": "f356ef628c6ea340",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16105,6 +16213,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "fbb2a73b0bacf395",
@@ -16162,10 +16271,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "564118f1a4cbd5f5"
+     "store": "a2a7f5e70e9aa49e"
     },
     {
-     "all": "cedea5b12b66b533",
+     "all": "f95f666efe069768",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16253,6 +16362,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d4e33e2934280979",
@@ -16310,10 +16420,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap open",
-     "store": "b0174fbf3910a553"
+     "store": "764fd8dffe604ff6"
     },
     {
-     "all": "ea207da598111aa7",
+     "all": "304bf16cd29d6647",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16401,6 +16511,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "d4e33e2934280979",
@@ -16458,10 +16569,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap closed",
-     "store": "594a5cbab24c9826"
+     "store": "cf06be0ca379e265"
     },
     {
-     "all": "fcd52d979ad5039a",
+     "all": "91f8fb6b2ac946c5",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16549,6 +16660,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "28ac593455c7f44e",
@@ -16606,10 +16718,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door open",
-     "store": "ecec9c2b842be3ef"
+     "store": "79597fb4ca0dbf49"
     },
     {
-     "all": "a2dbb1c58da08b2f",
+     "all": "89a0102eddae4835",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16697,6 +16809,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "b50d427a71ef5f98",
@@ -16754,10 +16867,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 1",
-     "store": "15afb28546ee3943"
+     "store": "ee6ff2886a2b7cf2"
     },
     {
-     "all": "a3e661aa90e542b6",
+     "all": "7e1d41b85a8a1c80",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16845,6 +16958,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "1a5659493256d9eb",
@@ -16902,10 +17016,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 2",
-     "store": "d65d7ef80172ca7a"
+     "store": "e0e3400a81edc869"
     },
     {
-     "all": "5dc43a07a8414a33",
+     "all": "e30f7844087d213a",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16993,6 +17107,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "e0e3fcdfb0803ca5",
@@ -17050,10 +17165,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 3",
-     "store": "e4404272894f6421"
+     "store": "0d4ea4dea527e67e"
     },
     {
-     "all": "663446c7f5a50fca",
+     "all": "e601aac9c3d5a966",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17141,6 +17256,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "e0e3fcdfb0803ca5",
@@ -17198,10 +17314,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door closed",
-     "store": "315a8d195a10174a"
+     "store": "5caf68163fea82fe"
     },
     {
-     "all": "4ca7c8e38aec2197",
+     "all": "31634281b0ab8b87",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17289,6 +17405,7 @@
       "outdoor_pm25_blocked": "fcbcf165908dd18a",
       "outdoor_pm25_limit": "7269310039810b5f",
       "outdoor_temperature": "ed6cca0a64012053",
+      "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
       "overnight_forecast_ml": "0d21ae129a64e1d1",
@@ -17346,11 +17463,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "cee94ce4dc209ca2"
+     "store": "48d9ab373b4c619b"
     }
    ],
    "network_calls": [],
-   "persisted": "cd23ff9d49ee9661"
+   "persisted": "79e3ab5a317e40bd"
   }
  },
  "schema": 1

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.4.10"
+VERSION = "0.26.5.0"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -76,6 +76,10 @@ CONF_CONTACT_COVERS = "contact_covers"
 CONF_CONTACT_PASSAGE_DOORS = "contact_passage_doors"
 THREE_STATE_TRANSITION_STABLE_SECONDS = 3.0
 THREE_STATE_UNKNOWN_HOLD_SECONDS = 30.0
+# 0.26.5.0: an unavailable/missing contact keeps a running airing open only this
+# long (HA start-up, short radio drop-outs). A dead second contact no longer keeps
+# the room "open" forever after the other window was closed.
+CONTACT_UNKNOWN_HOLD_SECONDS = 900.0
 CONF_ROOM_CLIMATE = "climate"
 CONF_ROOM_EXHAUST_FAN = "exhaust_fan"
 CONF_ROOM_SUPPLY_FAN = "supply_fan"
