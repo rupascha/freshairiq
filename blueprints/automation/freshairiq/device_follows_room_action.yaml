@@ -3,8 +3,8 @@ blueprint:
   description: >-
     Schaltet ein Gerät (z. B. den Lüfter im Bad, einen Entfeuchter oder einen
     Schalter) ein, solange FreshAirIQ für den Raum „Lüften“ empfiehlt, und wieder
-    aus, sobald die Empfehlung endet. FreshAirIQ selbst schaltet nie – das macht
-    nur diese Automation, weil du sie anlegst.
+    aus, sobald die Empfehlung endet. Ohne Blueprint geht es auch direkt in FreshAirIQ: Raum bearbeiten →
+    „Automatische Steuerung“. Bitte nicht beides gleichzeitig nutzen.
   domain: automation
   source_url: https://github.com/rupascha/freshairiq/blob/main/blueprints/automation/freshairiq/device_follows_room_action.yaml
   input:
@@ -15,6 +15,19 @@ blueprint:
         entity:
           integration: freshairiq
           domain: sensor
+    basis:
+      name: Grundlage
+      description: >-
+        „Hausentscheidung“ folgt der Empfehlung, die auch die Karte zeigt
+        (berücksichtigt alle gleichzeitig gelüfteten Räume, z. B. „Weiter lüften“,
+        solange das Haus noch lüftet). „Raumlokal“ folgt nur dem, was für diesen
+        Raum allein sinnvoll wäre, und reagiert dadurch früher.
+      default: room
+      selector:
+        select:
+          options:
+            - { label: "Hausentscheidung (wie in der Karte)", value: house }
+            - { label: "Raumlokal (nur dieser Raum)", value: room }
     device:
       name: Gerät
       selector:
@@ -38,17 +51,25 @@ mode: restart
 triggers:
   - trigger: event
     event_type: freshairiq_room_action
+    id: room
+  - trigger: event
+    event_type: freshairiq_room_recommendation
+    id: house
 variables:
+  basis: !input basis
   room: !input room
   room_key: "{{ state_attr(room, 'freshairiq_room_key') }}"
   on_actions: !input on_actions
   only_when_windows_closed: !input only_when_windows_closed
   data: "{{ trigger.event.data }}"
+  # House decision: effective recommendation (as on the card); room only: raw room action.
+  action_code: "{{ data.recommendation if trigger.id == 'house' else data.action }}"
 conditions:
+  - "{{ trigger.id == basis }}"
   - "{{ room_key is not none and data.room_key == room_key }}"
 actions:
   - if:
-      - "{{ data.action in on_actions and not (only_when_windows_closed and data.ventilation_active) }}"
+      - "{{ action_code in on_actions and not (only_when_windows_closed and data.ventilation_active) }}"
     then:
       - action: homeassistant.turn_on
         target:

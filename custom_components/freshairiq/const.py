@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.5.0"
+VERSION = "0.26.5.1"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -56,6 +56,7 @@ CONF_ROOM_REFERENCE_TEMPERATURE = "reference_temperature"
 CONF_ROOM_REFERENCE_HUMIDITY = "reference_humidity"
 CONF_ROOM_CO2 = "co2"
 CONF_ROOM_GOAL_PRIORITIES = "goal_priorities"
+CONF_ROOM_DISABLED_GOALS = "disabled_goals"
 CONF_ROOM_TARGET_TEMPERATURE = "target_temperature"
 CONF_ROOM_TARGET_TEMPERATURE_MODE = "target_temperature_mode"
 CONF_ROOM_TARGET_TEMPERATURE_FALLBACK = "target_temperature_fallback"
@@ -74,9 +75,15 @@ CONF_ROOM_ILLUMINANCE = "illuminance"
 CONF_ROOM_COVERS = "covers"  # legacy room-wide fallback; new UI assigns covers per opening
 CONF_CONTACT_COVERS = "contact_covers"
 CONF_CONTACT_PASSAGE_DOORS = "contact_passage_doors"
+# 0.26.5.1: optional automatic control (off unless the user enables it)
+CONF_CONTACT_COVER_FOLLOW = "contact_cover_follow"
+CONF_ROOM_AUTO_SUN_PROTECTION = "auto_sun_protection"
+CONF_ROOM_EXHAUST_FAN_CONTROL = "exhaust_fan_control"
+CONF_ROOM_EXHAUST_FAN_FOLLOW_UP = "exhaust_fan_follow_up_min"
+CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME = "exhaust_fan_max_runtime_min"
 THREE_STATE_TRANSITION_STABLE_SECONDS = 3.0
 THREE_STATE_UNKNOWN_HOLD_SECONDS = 30.0
-# 0.26.5.0: an unavailable/missing contact keeps a running airing open only this
+# 0.26.5.1: an unavailable/missing contact keeps a running airing open only this
 # long (HA start-up, short radio drop-outs). A dead second contact no longer keeps
 # the room "open" forever after the other window was closed.
 CONTACT_UNKNOWN_HOLD_SECONDS = 900.0
@@ -201,6 +208,10 @@ DEFAULT_OPTIONS = {
     "humidify_below_rh": 35.0,
     "shade_above_temp_c": 24.0,
     "shade_min_illuminance_lx": 10000.0,
+    # 0.26.5.1: sun protection closes ahead of the sun on warm, clear days
+    "shade_lead_min": 15,
+    "shade_forecast_max_c": 25.0,
+    "shade_max_cloud_coverage": 80.0,
     "learning_enabled": True,
     "learning_max_duration_min": 120.0,
     # Cover learning guard: normalize all cover devices to percent closed.
@@ -304,6 +315,9 @@ DEFAULT_OPTIONS = {
     "notify_cooling": True,
     "notification_cooldown_min": 90,
     "suppress_notifications_at_night": False,
+    # Feedback FAIQ-FB-7C943C054B43: only notify residents who are at home.
+    "notify_only_when_home": False,
+    "notify_important_when_away": True,
 
     # Statistics
     "statistics_days": 14,

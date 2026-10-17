@@ -32,6 +32,7 @@ NATIVE_OPTION_KEYS = frozenset({
     "voc_sensor_enabled", "pm25_sensor_enabled", "illuminance_sensor_enabled",
     "voc_warn", "voc_critical", "pm25_warn", "pm25_critical",
     "humidify_below_rh", "shade_above_temp_c", "shade_min_illuminance_lx",
+    "shade_lead_min", "shade_forecast_max_c", "shade_max_cloud_coverage",
     # household / presence
     "property_type", "adult_occupants", "child_occupants",
     "adult_presence_entities", "child_presence_entities",
@@ -49,7 +50,7 @@ NATIVE_OPTION_KEYS = frozenset({
     "notification_room_keys", "notify_ventilate", "notify_close",
     "notify_complete", "notify_cooling", "notify_mould", "notify_sensor",
     "notify_night", "notify_learning", "notification_cooldown_min",
-    "suppress_notifications_at_night",
+    "suppress_notifications_at_night", "notify_only_when_home", "notify_important_when_away",
     # statistics / optional diagnostics sharing
     "statistics_days", "diagnostics_reporting_mode", "diagnostics_consent",
     "diagnostics_include_client_context",

@@ -23,7 +23,7 @@ from urllib.parse import urlsplit, urlunsplit
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_track_point_in_time, async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -44,6 +44,7 @@ from .diagnostic_transport import (
     build_upload_chunks,
     effective_reporting_mode,
     normalise_consent,
+    next_nightly_upload_time,
     normalise_reporting_mode,
     problem_fingerprint,
     retry_delay_seconds,
@@ -126,6 +127,9 @@ class FreshAirIQDiagnosticsClient:
         self._store = Store(hass, _STORE_VERSION, f"{DOMAIN}.diagnostics_upload.{entry.entry_id}")
         self._state: dict[str, Any] = {}
         self._unsub = None
+        self._unsub_slot = None
+        self._slot_armed_for: str | None = None
+        self._retry_after_seconds: int | None = None
         self._task: asyncio.Task | None = None
         self._started = False
         self._runtime_state = "not_started"
@@ -195,6 +199,7 @@ class FreshAirIQDiagnosticsClient:
         if self._unsub:
             self._unsub()
             self._unsub = None
+        self._cancel_slot_timer()
         task = self._task
         if task and not task.done():
             task.cancel()
@@ -218,7 +223,46 @@ class FreshAirIQDiagnosticsClient:
     async def _async_periodic_check(self) -> bool:
         """Run the privacy-safe activity heartbeat before the diagnostics cadence check."""
         await self.async_activity_heartbeat()
-        return await self.async_maybe_upload()
+        result = await self.async_maybe_upload()
+        await self._async_arm_slot_timer()
+        return result
+
+    def _cancel_slot_timer(self) -> None:
+        if self._unsub_slot:
+            self._unsub_slot()
+        self._unsub_slot = None
+        self._slot_armed_for = None
+
+    async def _async_arm_slot_timer(self) -> None:
+        """E09: wake up exactly at this installation's night slot.
+
+        The 15-minute check grid alone would quantise every slot to the phase of
+        the last Home Assistant start. Only daily/weekly cadences use the night
+        slot; error-driven and manual uploads keep their immediate behaviour.
+        """
+        if not self._started or effective_reporting_mode(dict(self.entry.options)) not in {"daily", "weekly"}:
+            self._cancel_slot_timer()
+            return
+        try:
+            identity = await self.recorder.async_get_identity()
+        except Exception:  # noqa: BLE001 - scheduling must never break the integration
+            return
+        installation_id = str((identity or {}).get("installation_id") or "")
+        if not installation_id:
+            return
+        target = next_nightly_upload_time(dt_util.now(), installation_id)
+        key = target.isoformat()
+        if key == self._slot_armed_for:
+            return
+        self._cancel_slot_timer()
+        self._unsub_slot = async_track_point_in_time(self.hass, self._slot_reached, target)
+        self._slot_armed_for = key
+
+    @callback
+    def _slot_reached(self, now: datetime) -> None:
+        self._unsub_slot = None
+        self._slot_armed_for = None
+        self._schedule_check(now)
 
     async def async_activity_heartbeat(self) -> bool:
         """Refresh anonymous installation activity without sending diagnostics payload."""
@@ -453,6 +497,14 @@ class FreshAirIQDiagnosticsClient:
             async with session.post(self.upload_endpoint, data=compressed, headers=headers, timeout=timeout) as response:
                 status = int(response.status)
                 self._state["last_status_code"] = status
+                # E09: honour a server-side Retry-After (seconds) on 429/503.
+                retry_after = None
+                if status in (429, 503):
+                    try:
+                        retry_after = int(str((getattr(response, "headers", None) or {}).get("Retry-After") or "").strip())
+                    except (TypeError, ValueError):
+                        retry_after = None
+                self._retry_after_seconds = retry_after
             if status != 401 or attempt:
                 return status
             # A Hub database restore/reset can forget enrollments while the HA
@@ -743,11 +795,12 @@ class FreshAirIQDiagnosticsClient:
         # the first 30 minutes of a brand-new installation.
         session = async_get_clientsession(self.hass)
         timeout = ClientTimeout(total=DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)
+        self._retry_after_seconds = None
         try:
             await self._async_ensure_enrolled(session, installation_id, timeout)
         except (ClientError, TimeoutError, RuntimeError, ValueError, TypeError, OSError) as err:
             failures = self._safe_failure_count(self._state.get("consecutive_failures")) + 1
-            delay = retry_delay_seconds(failures)
+            delay = retry_delay_seconds(failures, installation_id, self._retry_after_seconds)
             self._state.update({
                 "consecutive_failures": failures,
                 "next_retry_at": (now + timedelta(seconds=delay)).isoformat(),
@@ -831,7 +884,7 @@ class FreshAirIQDiagnosticsClient:
             raise
         except (ClientError, TimeoutError, RuntimeError, ValueError, TypeError, OSError) as err:
             failures = self._safe_failure_count(self._state.get("consecutive_failures")) + 1
-            delay = retry_delay_seconds(failures)
+            delay = retry_delay_seconds(failures, installation_id, self._retry_after_seconds)
             self._state.update({
                 "consecutive_failures": failures,
                 "next_retry_at": (now + timedelta(seconds=delay)).isoformat(),

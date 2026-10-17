@@ -3,7 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-# test_dashboard_multiselect_preserves_legacy_scalar_sensor: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_multiselect_preserves_legacy_scalar_sensor: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_legacy_scalar_sensor_is_preselected_in_the_multi_select
 
 
 def test_repairs_normalizes_legacy_and_multi_sensor_references():

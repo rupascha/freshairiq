@@ -3,8 +3,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
-# test_freshy_uses_three_quarter_angle_layer_and_permanent_wing: retired in 0.26.4.1, the CSS-drawn mascot was replaced by the animated
-# Freshy SVG (see test_hotfix_026401_freshy_animations_in_iq.py).
+# test_freshy_uses_three_quarter_angle_layer_and_permanent_wing: retired — CSS-drawn mascot replaced by the animated Freshy SVG in 0.26.4.1
+# (see test_hotfix_026401_freshy_animations_in_iq.py); not applicable: it pinned the old CSS three-quarter angle layer and wing
 
 def test_freshy_animation_stage_remains_clipped():
     assert '.ai-mascot-wrap{position:relative;width:62px;height:62px;overflow:hidden' in CARD

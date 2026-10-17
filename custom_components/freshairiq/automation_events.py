@@ -10,6 +10,10 @@ Contract (schema 1, see docs/AUTOMATIONEN.md):
 * ``freshairiq_room_action``         a room's recommended action changed
 * ``freshairiq_house_recommendation`` the whole-home recommendation changed
 * ``freshairiq_mould_risk``          a room's mould risk level changed
+* ``freshairiq_room_recommendation`` a room's *effective* recommendation
+  (``house_aligned_action``) changed (added 2026-10-16, F05). The raw
+  ``freshairiq_room_action`` stream is unchanged; it does not fire when only
+  the house context changes (e.g. ``ventilate_later`` -> ``ventilate``).
 
 Events are fired only on *changes*. The first cycle after a (re)start records
 the current state silently, so restarts never replay old announcements.
@@ -27,6 +31,10 @@ from .close_wording import fan_only
 EVENT_ROOM_ACTION = "freshairiq_room_action"
 EVENT_HOUSE_RECOMMENDATION = "freshairiq_house_recommendation"
 EVENT_MOULD_RISK = "freshairiq_mould_risk"
+EVENT_ROOM_RECOMMENDATION = "freshairiq_room_recommendation"
+# 0.26.5.1 (community: run the bathroom fan only after showering): an internal
+# moisture source (shower, bath, cooking, ...) started or ended in a room.
+EVENT_MOISTURE_SOURCE = "freshairiq_moisture_source"
 EVENT_SCHEMA_VERSION = 1
 
 # Machine-readable action codes: identical to the states of the room "Aktion"
@@ -42,6 +50,7 @@ ACTION_CODES = {
     "Check sensor": "check_sensor",
     "Monitor only": "monitor_only",
     "Open fully": "open_fully",
+    "Ventilate indirectly": "ventilate_indirectly",
 }
 _LABELS = {
     "de": {
@@ -49,15 +58,29 @@ _LABELS = {
         "ventilate_for_cooling": "Zum Kühlen lüften", "do_not_ventilate": "Bitte nicht lüften", "wait": "Noch warten",
         "okay": "Alles in Ordnung", "check_sensor": "Sensor prüfen", "monitor_only": "Nur Beobachtung",
         "open_fully": "Fenster ganz öffnen", "close_fan": "Bitte Lüfter ausschalten",
+        "ventilate_indirectly": "Über Nachbarraum lüften", "ventilate_later": "Lüften möglich, noch warten",
+        "monitor_open": "Daueröffnung wird beobachtet",
     },
     "en": {
         "ventilate": "Please air the room", "continue_ventilating": "Keep airing", "close": "Please close the window",
         "ventilate_for_cooling": "Air for cooling", "do_not_ventilate": "Please do not air", "wait": "Wait for now",
         "okay": "All good", "check_sensor": "Check sensor", "monitor_only": "Monitoring only",
         "open_fully": "Open the window fully", "close_fan": "Please switch off the fan",
+        "ventilate_indirectly": "Air via a connected room", "ventilate_later": "Airing possible, wait for now",
+        "monitor_open": "Long opening is being monitored",
     },
 }
 _MOULD_ORDER = {"Low": 0, "Elevated": 1, "High": 2, "Very high": 3}
+_SOURCE_LABELS = {
+    "de": {"shower": "Dusche", "bath": "Bad", "sauna": "Sauna", "cooking": "Kochen", "washing_machine": "Waschmaschine",
+           "dryer": "Trockner", "ironing_station": "Bügelstation", "laundry_drying": "Wäsche trocknen", None: "Feuchtequelle"},
+    "en": {"shower": "Shower", "bath": "Bath", "sauna": "Sauna", "cooking": "Cooking", "washing_machine": "Washing machine",
+           "dryer": "Dryer", "ironing_station": "Ironing station", "laundry_drying": "Drying laundry", None: "Moisture source"},
+}
+_SOURCE_PHASE_TEXT = {
+    "de": {"started": "{label} erkannt", "ended": "{label} beendet"},
+    "en": {"started": "{label} detected", "ended": "{label} ended"},
+}
 
 
 def mould_code(level: Any) -> str | None:
@@ -134,6 +157,23 @@ def room_payload(room: dict[str, Any], *, previous_action: Any, language: str, e
     }
 
 
+def recommendation_payload(
+    room: dict[str, Any], *, previous_recommendation: Any, language: str, entry_id: str,
+) -> dict[str, Any]:
+    """Payload of ``freshairiq_room_recommendation`` (raw room fields + effective value)."""
+    payload = room_payload(room, previous_action=None, language=language, entry_id=entry_id)
+    payload.pop("previous_action", None)
+    code = str(room.get("house_aligned_action") or "unknown")
+    label = _LABELS[language].get("close_fan" if code == "close" and fan_only(room) else code, code)
+    payload.update({
+        "recommendation": code,
+        "previous_recommendation": previous_recommendation,
+        "recommendation_label": label,
+        "message": f"{payload['room_name']}: {label}.",
+    })
+    return payload
+
+
 def house_payload(iq: dict[str, Any], *, previous_kind: Any, data: dict[str, Any], entry_id: str) -> dict[str, Any]:
     reasons = [str(x) for x in (iq.get("reasons") or []) if str(x).strip()][:4]
     title = str(iq.get("title") or "")
@@ -158,6 +198,31 @@ def house_payload(iq: dict[str, Any], *, previous_kind: Any, data: dict[str, Any
     }
 
 
+def moisture_source_payload(room: dict[str, Any], *, phase: str, source: Any, language: str, entry_id: str) -> dict[str, Any]:
+    """Payload of ``freshairiq_moisture_source`` (``phase``: ``started`` / ``ended``)."""
+    source = source if source in _SOURCE_LABELS["de"] else None
+    label = _SOURCE_LABELS[language][source]
+    name = str(room.get("name") or room.get("key") or "")
+    return {
+        "schema_version": EVENT_SCHEMA_VERSION,
+        "entry_id": entry_id,
+        "room_key": str(room.get("key") or ""),
+        "room_name": name,
+        "floor": room.get("floor"),
+        "phase": phase,
+        "source": source,
+        "source_label": label,
+        "message": f"{name}: {_SOURCE_PHASE_TEXT[language][phase].format(label=label)}.",
+        "confidence": int(_number(room.get("moisture_source_confidence")) or 0),
+        "rate_ml_min": _number(room.get("moisture_source_rate_ml_min")),
+        "generated_ml": _number(room.get("moisture_source_generated_ml_window")),
+        "started_at": room.get("moisture_source_started_at"),
+        "ended_at": room.get("moisture_source_last_ended_at") if phase == "ended" else None,
+        "humidity": _number(room.get("humidity")),
+        "action": action_code(room.get("action")),
+    }
+
+
 class AutomationEventEmitter:
     """Detects changes between coordinator cycles and fires bus events."""
 
@@ -167,6 +232,8 @@ class AutomationEventEmitter:
         self._initialised = False
         self._room_actions: dict[str, Any] = {}
         self._room_mould: dict[str, Any] = {}
+        self._room_aligned: dict[str, Any] = {}
+        self._room_source: dict[str, tuple[bool, Any]] = {}
         self._house_signature: str | None = None
         self._house_kind: Any = None
         self._seen_rooms: set[str] = set()
@@ -187,6 +254,21 @@ class AutomationEventEmitter:
             self._room_actions[key] = action
             if not initial and key in self._seen_rooms and action != previous:
                 self._fire(EVENT_ROOM_ACTION, room_payload(room, previous_action=previous, language=language, entry_id=self._entry_id))
+                fired += 1
+            aligned = room.get("house_aligned_action")
+            previous_aligned = self._room_aligned.get(key)
+            self._room_aligned[key] = aligned
+            if not initial and key in self._seen_rooms and aligned is not None and previous_aligned is not None and aligned != previous_aligned:
+                self._fire(EVENT_ROOM_RECOMMENDATION, recommendation_payload(room, previous_recommendation=previous_aligned, language=language, entry_id=self._entry_id))
+                fired += 1
+            source_active = bool(room.get("moisture_source_active"))
+            source = room.get("moisture_source_identified_source")
+            was_active, previous_source = self._room_source.get(key, (False, None))
+            self._room_source[key] = (source_active, source if source_active else previous_source)
+            if not initial and key in self._seen_rooms and source_active != was_active:
+                self._fire(EVENT_MOISTURE_SOURCE, moisture_source_payload(
+                    room, phase="started" if source_active else "ended",
+                    source=source if source_active else (source or previous_source), language=language, entry_id=self._entry_id))
                 fired += 1
             level = room.get("mould_level")
             previous_level = self._room_mould.get(key)

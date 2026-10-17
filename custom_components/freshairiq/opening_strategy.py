@@ -321,7 +321,9 @@ HOUSE_HOLD_KINDS = frozenset({"wait", "pollen_wait"})
 HOUSE_ALIGNED_STATES = frozenset({
     "ventilate", "continue_ventilating", "close", "ventilate_for_cooling", "do_not_ventilate",
     "wait", "okay", "check_sensor", "monitor_only", "ventilate_later", "ventilate_indirectly", "open_fully",
+    "monitor_open",
 })
+PASSIVE_OPEN_MONITOR_STATUS = "passive_open_monitor"
 
 
 def _action_code(action: Any) -> str:
@@ -335,10 +337,20 @@ def house_aligned_room_actions(recommendation: dict[str, Any], rooms: dict[str, 
         return
     kind = str((recommendation or {}).get("kind") or "") if isinstance(recommendation, dict) else ""
     house_holds = kind in HOUSE_HOLD_KINDS
-    for room in rooms.values():
+    # F02 (2026-10-16): the final house decision tolerates a long, thermally
+    # stable opening ("Daueröffnung wird beobachtet"). The physical room action
+    # may still read "close"; the effective recommendation for exactly these
+    # rooms is "monitor_open", so no surface tells the user to close while the
+    # house says the window may stay open. Hard closes never reach this mode.
+    monitored: set[str] = set()
+    if isinstance(recommendation, dict) and kind == "okay" and str(recommendation.get("status") or "") == PASSIVE_OPEN_MONITOR_STATUS:
+        monitored = {str(k) for k in (recommendation.get("room_keys") or [])}
+    for room_key, room in rooms.items():
         if not isinstance(room, dict):
             continue
         code = _action_code(room.get("action"))
         if house_holds and code in {"ventilate", "ventilate_for_cooling"} and not room.get("active"):
             code = "ventilate_later"
+        elif code == "close" and room.get("active") and str(room.get("key") or room_key) in monitored:
+            code = "monitor_open"
         room["house_aligned_action"] = code if code in HOUSE_ALIGNED_STATES else "unknown"

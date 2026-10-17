@@ -28,56 +28,56 @@ from custom_components.freshairiq.const import (
 )
 
 
-async def _start_room_flow(hass):
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    return await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_OUTDOOR_WEATHER: "weather.home"}
-    )
-
-
 async def test_contact_reference_pair_error_recovers(hass) -> None:
-    """A partial per-opening reference pair must be correctable in-place."""
-    result = await _start_room_flow(hass)
-    assert result["step_id"] == "room"
+    """A partial per-opening reference pair must be correctable in-place.
 
+    Since 0.24.14.0 the initial setup creates the entry right after the outdoor
+    source; rooms are added through the native room flow (menu -> create_room
+    -> goals -> per-opening references).
+    """
+    entry = MockConfigEntry(domain=DOMAIN, unique_id=DOMAIN, data={CONF_OUTDOOR_WEATHER: "weather.home", "rooms": [], "levels": ["EG"]})
+    entry.add_to_hass(hass)
     contact = "binary_sensor.office_window"
-    result = await hass.config_entries.flow.async_configure(
+    result = await hass.config_entries.subentries.async_init((entry.entry_id, "room"), context={"source": config_entries.SOURCE_USER})
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], {"next_step_id": "create_room"})
+    result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         {
-            CONF_ROOM_NAME: "Arbeitszimmer",
-            CONF_ROOM_TEMPERATURE: "sensor.office_temperature",
-            CONF_ROOM_HUMIDITY: "sensor.office_humidity",
-            CONF_ROOM_CONTACTS: [contact],
-            CONF_CONTACT_MODE: CONTACT_MODE_ANY,
-            CONF_ROOM_VOLUME: 35.0,
+            "identity": {CONF_ROOM_NAME: "Arbeitszimmer", "floor": "EG", "include_in_calculations": True},
+            "sensors": {
+                CONF_ROOM_TEMPERATURE: ["sensor.office_temperature"],
+                CONF_ROOM_HUMIDITY: ["sensor.office_humidity"],
+                CONF_ROOM_CONTACTS: [contact],
+                CONF_CONTACT_MODE: CONTACT_MODE_ANY,
+            },
+            "geometry": {CONF_ROOM_VOLUME: 35.0},
         },
     )
-    assert result["step_id"] == "room_orientations"
+    assert result["step_id"] == "add_references"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {contact: "e"}
-    )
-    assert result["step_id"] == "room_references"
-
-    temp_key = _contact_reference_field(contact, "temperature")
-    humidity_key = _contact_reference_field(contact, "humidity")
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {temp_key: "sensor.conservatory_temperature"}
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"reference_temperature": "sensor.conservatory_temperature", "orientation": "e"}
     )
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "room_references"
+    assert result["step_id"] == "add_references"
     assert result["errors"]["base"] == "contact_reference_pair_required"
 
-    result = await hass.config_entries.flow.async_configure(
+    result = await hass.config_entries.subentries.async_configure(
         result["flow_id"],
         {
-            temp_key: "sensor.conservatory_temperature",
-            humidity_key: "sensor.conservatory_humidity",
+            "reference_temperature": "sensor.conservatory_temperature",
+            "reference_humidity": "sensor.conservatory_humidity",
+            "orientation": "e",
         },
     )
-    assert result["step_id"] == "more_rooms"
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    room = entry.data["rooms"][0]
+    assert room["contact_reference_temperatures"] == {contact: "sensor.conservatory_temperature"}
+    assert room["contact_reference_humidities"] == {contact: "sensor.conservatory_humidity"}
+    assert room["contact_orientations"] == {contact: "e"}
+    # The legacy per-field helper keeps producing the documented key shape.
+    assert _contact_reference_field(contact, "temperature").startswith(contact)
 
 
 async def test_legacy_import_can_be_declined_and_recover_to_normal_setup(hass) -> None:
@@ -103,8 +103,11 @@ async def test_legacy_import_can_be_declined_and_recover_to_normal_setup(hass) -
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_OUTDOOR_WEATHER: "weather.new"}
     )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "room"
+    # Since 0.24.14.0 setup is frictionless: the entry is created directly and
+    # rooms are added afterwards through the native room flow.
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_OUTDOOR_WEATHER] == "weather.new"
+    assert "legacy_entry_id" not in result["data"]
 
 
 async def test_legacy_import_creates_freshairiq_entry(hass) -> None:
@@ -155,7 +158,8 @@ async def test_options_outdoor_error_recovers_and_persists(hass) -> None:
     )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "outdoor"
-    assert result["errors"]["base"] == "outdoor_source_required"
+    # Weather is optional (empty shell allowed); a half outdoor pair gets the specific error.
+    assert result["errors"]["base"] == "outdoor_pair_required"
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],

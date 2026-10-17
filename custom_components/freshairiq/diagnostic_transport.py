@@ -25,6 +25,16 @@ _ENTITY_RE = re.compile(r"(?<![A-Za-z0-9_])(?:[a-z_][a-z0-9_]*\.[a-z0-9_]+)(?![A
 _EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
 _IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 _URL_RE = re.compile(r"https?://[^\s]+", re.I)
+# F39 (2026-10-16): technical codes and release versions are never personal
+# data. Protect them from label pseudonymisation and entity redaction, so a
+# floor called e.g. "DATA" cannot turn FAIQ-SENSOR-DATA-001 into garbage and
+# "v0.26.5.0" stays readable. Four-part dotted numbers other than FreshAirIQ's
+# 0.x versions keep being treated as IP addresses.
+_TECHNICAL_TOKEN_RE = re.compile(
+    r"(?<![A-Za-z0-9_.-])(?:(?:FAIQ|HUB)-[A-Z0-9]+(?:-[A-Z0-9]+)*"
+    r"|v?0\.\d{1,3}\.\d{1,3}(?:\.\d{1,3})?(?![\d.])"
+    r"|20\d\d\.\d{1,2}\.\d{1,2}(?![\d.]))"
+)
 _VERSION_LITERAL_KEYS = {"freshairiq_version", "freshairiq_frontend_version", "model_version"}
 
 
@@ -75,7 +85,7 @@ _REMOTE_SAFE_MODEL_OPTIONS = {
     "co2_critical", "voc_sensor_enabled", "pm25_sensor_enabled",
     "illuminance_sensor_enabled", "voc_warn", "voc_critical", "pm25_warn",
     "pm25_critical", "humidify_below_rh", "shade_above_temp_c",
-    "shade_min_illuminance_lx", "learning_enabled", "learning_max_duration_min",
+    "shade_min_illuminance_lx", "shade_lead_min", "shade_forecast_max_c", "shade_max_cloud_coverage", "learning_enabled", "learning_max_duration_min",
     "operating_profile", "personalisation_enabled", "thermal_preference",
     "personal_priority", "night_window_preference", "cooling_start_temp_c",
     "cooling_min_outdoor_delta_c", "cooling_max_indoor_rh",
@@ -92,15 +102,57 @@ def normalise_reporting_mode(value: Any) -> str:
     return text if text in REPORTING_MODES else "off"
 
 
-def deterministic_upload_slot(installation_id: str) -> tuple[int, int]:
-    """Return a stable local upload slot between 02:00 and 03:59.
+# E09 (2026-10-16): automatic daily/weekly uploads are spread over the whole
+# night window 00:30-06:00 (330 min) in the *local Home Assistant time zone*,
+# with one-second resolution. The offset is derived from the existing anonymous
+# installation id, so it is stable across restarts and needs no new identifier.
+NIGHT_WINDOW_START_SECONDS = 30 * 60
+NIGHT_WINDOW_END_SECONDS = 6 * 60 * 60
+NIGHT_WINDOW_SECONDS = NIGHT_WINDOW_END_SECONDS - NIGHT_WINDOW_START_SECONDS
 
-    The two-hour spread prevents every FreshAirIQ installation from contacting
-    the hub at the same minute while remaining deterministic for each install.
-    """
+
+def deterministic_upload_offset_seconds(installation_id: str) -> int:
+    """Stable second of this installation's slot inside the night window."""
     digest = hashlib.sha256(str(installation_id or "anonymous").encode("utf-8")).digest()
-    minute_of_window = int.from_bytes(digest[:2], "big") % 120
-    return 2 + minute_of_window // 60, minute_of_window % 60
+    return NIGHT_WINDOW_START_SECONDS + int.from_bytes(digest[4:8], "big") % NIGHT_WINDOW_SECONDS
+
+
+def deterministic_upload_slot(installation_id: str) -> tuple[int, int]:
+    """Return the stable local (hour, minute) of the upload slot (00:30-05:59)."""
+    offset = deterministic_upload_offset_seconds(installation_id)
+    return offset // 3600, (offset % 3600) // 60
+
+
+def _local_midnight(now: datetime) -> datetime:
+    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def nightly_upload_time(now: datetime, installation_id: str) -> datetime:
+    """This installation's slot in the night window of ``now``'s local date.
+
+    Wall-clock arithmetic keeps the slot at the same local time across DST
+    changes; on the spring-forward night a slot inside the missing hour is
+    simply reached one hour of real time earlier/later, never twice.
+    """
+    return _local_midnight(now) + timedelta(seconds=deterministic_upload_offset_seconds(installation_id))
+
+
+def night_window_end(now: datetime) -> datetime:
+    return _local_midnight(now) + timedelta(seconds=NIGHT_WINDOW_END_SECONDS)
+
+
+def in_upload_window(now: datetime, installation_id: str) -> bool:
+    """True between this installation's slot and 06:00 local time."""
+    return nightly_upload_time(now, installation_id) <= now < night_window_end(now)
+
+
+def next_nightly_upload_time(now: datetime, installation_id: str) -> datetime:
+    """Next slot at or after ``now`` (today's if still ahead, otherwise tomorrow's)."""
+    today = nightly_upload_time(now, installation_id)
+    if now <= today:
+        return today
+    tomorrow = _local_midnight(now) + timedelta(days=1)
+    return nightly_upload_time(tomorrow, installation_id)
 
 
 def _parse_dt(value: Any) -> datetime | None:
@@ -166,32 +218,48 @@ def upload_due(
             return True
         return last is None or now - last >= timedelta(hours=24)
 
-    hour, minute = deterministic_upload_slot(installation_id)
+    # Regular uploads only run inside this installation's part of the night
+    # window. A missed slot (Home Assistant offline, hub error until 06:00) is
+    # taken up in the next night at the same individual slot - never as an
+    # immediate catch-up wave after a restart during the day.
+    if not in_upload_window(now, installation_id):
+        return False
     if mode == "daily":
-        target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        if now < target:
-            return False
         return last is None or last.date() < now.date()
 
-    # Weekly mode uses a second stable digest byte for the weekday.
+    # Weekly mode uses a second stable digest byte for the weekday; a missed
+    # weekly slot is taken up in one of the following nights.
     digest = hashlib.sha256(str(installation_id or "anonymous").encode("utf-8")).digest()
     weekday = digest[2] % 7
-    week_start = (now - timedelta(days=now.weekday())).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    target = week_start + timedelta(days=weekday, hours=hour, minutes=minute)
+    week_start = _local_midnight(now - timedelta(days=now.weekday()))
+    target = nightly_upload_time(week_start + timedelta(days=weekday), installation_id)
     if now < target:
-        return False
+        target = nightly_upload_time(week_start - timedelta(days=7 - weekday), installation_id)
     return last is None or last < target
 
 
-def retry_delay_seconds(consecutive_failures: Any) -> int:
-    """Return bounded exponential retry delay (5 min .. 6 h)."""
+def retry_delay_seconds(consecutive_failures: Any, installation_id: str | None = None, retry_after: Any = None) -> int:
+    """Return bounded exponential retry delay (5 min .. 6 h).
+
+    E09: with an ``installation_id`` an individual, stable offset of up to 25 %
+    is added, so installations that failed together (hub restart) do not
+    retry together. A server ``Retry-After`` is honoured as a lower bound.
+    """
     try:
         failures = max(int(consecutive_failures), 1)
     except (TypeError, ValueError, OverflowError):
         failures = 1
-    return min(300 * (2 ** min(failures - 1, 8)), 6 * 60 * 60)
+    delay = min(300 * (2 ** min(failures - 1, 8)), 6 * 60 * 60)
+    if installation_id:
+        digest = hashlib.sha256(f"{installation_id}:retry:{failures}".encode("utf-8")).digest()
+        delay += int(delay * 0.25 * (int.from_bytes(digest[:2], "big") / 65535.0))
+    try:
+        server = int(float(retry_after))
+    except (TypeError, ValueError, OverflowError):
+        server = 0
+    if 0 < server <= 24 * 60 * 60:
+        delay = max(delay, server)
+    return delay
 
 
 def problem_fingerprint(health: Mapping[str, Any] | None) -> str | None:
@@ -263,7 +331,13 @@ def _collect_room_keys(value: Any, found: set[str] | None = None) -> set[str]:
 def _redact_text(
     text: str, room_map: Mapping[str, str], *, preserve_ipv4_shaped_version: bool = False
 ) -> str:
-    result = text
+    protected: list[str] = []
+
+    def _protect(match: re.Match[str]) -> str:
+        protected.append(match.group(0))
+        return f"\x00{len(protected) - 1}\x00"
+
+    result = _TECHNICAL_TOKEN_RE.sub(_protect, text) if text not in room_map else text
     for raw in sorted(room_map, key=len, reverse=True):
         if not raw:
             continue
@@ -284,6 +358,8 @@ def _redact_text(
     if not preserve_ipv4_shaped_version:
         result = _IPV4_RE.sub("<redacted_ip>", result)
     result = _ENTITY_RE.sub("<redacted_entity>", result)
+    if protected:
+        result = re.sub("\x00(\\d+)\x00", lambda m: protected[int(m.group(1))], result)
     return result
 
 

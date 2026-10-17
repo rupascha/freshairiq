@@ -25,11 +25,31 @@ HELPERS = (
 )
 
 
+class _DevicesView:
+    """Mirrors ``DeviceRegistry.devices``: iterating yields device ids up to HA
+    2026.9 and DeviceEntry objects from 2026.10; mapping access is deprecated
+    (breaks in HA 2027.9) and must not be used (F24)."""
+
+    def __init__(self, devices, *, yields_entries):
+        self._devices = {d.id: d for d in devices}
+        self._yields_entries = yields_entries
+
+    def __iter__(self):
+        return iter(list(self._devices.values()) if self._yields_entries else list(self._devices))
+
+    def __len__(self):
+        return len(self._devices)
+
+    def __getattr__(self, name):
+        raise AssertionError(f"deprecated mapping access devices.{name}")
+
+    def __getitem__(self, key):
+        raise AssertionError("deprecated mapping access devices[...]")
+
+
 class _DeviceRegistry:
-    def __init__(self, devices, *, config_entry_lookup=True):
-        # Mirrors Home Assistant: a UserDict-like collection whose ``.data`` maps
-        # device id -> DeviceEntry (iterating it yields ids, not entries).
-        self.devices = SimpleNamespace(data={d.id: d for d in devices})
+    def __init__(self, devices, *, config_entry_lookup=True, yields_entries=False):
+        self.devices = _DevicesView(devices, yields_entries=yields_entries)
         self._index = {d.id: d for d in devices}
         self.removed: list[str] = []
         self._lookup = config_entry_lookup
@@ -59,7 +79,7 @@ def _load(device_registry, entity_registry):
     dr = SimpleNamespace(
         async_get=lambda _hass: device_registry,
         async_entries_for_config_entry=lambda registry, entry_id: [
-            d for d in registry.devices.data.values() if entry_id in d.config_entries
+            d for d in registry._index.values() if entry_id in d.config_entries
         ] if registry._lookup else (_ for _ in ()).throw(RuntimeError("no helper")),
     )
     er = SimpleNamespace(
@@ -129,6 +149,15 @@ def test_device_iteration_handles_ids_lists_and_missing_helper():
 
     registry.devices = [kitchen, "kitchen", "unknown-id", object()]
     assert ns["_iter_device_entries"](registry, "entry") == [kitchen]
+
+
+def test_device_iteration_uses_no_deprecated_mapping_access_on_any_ha_line():
+    kitchen = _device("kitchen", "entry:room:kitchen")
+    orphan = _device("orphan", "entry:room:gone")
+    for yields_entries in (False, True):  # HA 2026.8/2026.9 vs. 2026.10+
+        registry = _DeviceRegistry([kitchen, orphan], config_entry_lookup=False, yields_entries=yields_entries)
+        ns = _load(registry, _EntityRegistry({}))
+        assert sorted(d.id for d in ns["_iter_device_entries"](registry, "entry")) == ["kitchen", "orphan"]
 
 
 def test_room_deleted_as_subentry_is_removed_from_configuration():

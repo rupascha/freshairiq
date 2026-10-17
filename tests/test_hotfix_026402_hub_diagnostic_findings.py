@@ -49,4 +49,4 @@ def test_living_rooms_no_longer_get_the_kitchen_pot():
     assert 'if (name.includes("wohn") || name.includes("living"))\n        return ["mdi:sofa-outline"' in body
 
 
-# test_admins_reach_the_dashboard_settings_from_the_details_header: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_admins_reach_the_dashboard_settings_from_the_details_header: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); not applicable: the card has no settings entry any more; its consent hint links to Devices & services (tests/test_hotfix_026403_single_settings_surface.py::test_consent_hint_points_to_devices_and_services)

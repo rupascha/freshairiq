@@ -1,7 +1,6 @@
 """FreshAirIQ integration."""
 from __future__ import annotations
 
-from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 from functools import partial
@@ -51,6 +50,7 @@ from .const import (
     VERSION,
     DEFAULT_OPTIONS,
 )
+from .actuator_controller import ActuatorController
 from .coordinator import FreshAirIQCoordinator
 from .storage import LearningStore
 from .diagnostics import FreshAirIQDiagnosticsView, FreshAirIQSupportDiagnosticsView
@@ -320,10 +320,12 @@ def _iter_device_entries(device_registry: Any, entry_id: str) -> list[Any]:
     except Exception:  # noqa: BLE001 - fall back to the full registry scan below
         _LOGGER.debug("Config-entry device lookup failed during room cleanup", exc_info=True)
 
-    collection = getattr(device_registry, "devices", None) or {}
-    raw = getattr(collection, "data", collection)
-    items = raw.values() if isinstance(raw, Mapping) else raw
-    for item in list(items or []):
+    # F24 (2026-10-16): plain iteration is the supported way to enumerate the
+    # registry. HA 2026.10+ yields DeviceEntry objects; older releases yield
+    # device ids, which _add resolves via async_get. Mapping access
+    # (.data/.values()/[...]) is deprecated and breaks in HA 2027.9.
+    collection = getattr(device_registry, "devices", None)
+    for item in list(collection if collection is not None else []):
         _add(item)
     return list(found.values())
 
@@ -519,6 +521,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -
     await coordinator.async_config_entry_first_refresh()
     await coordinator.async_start_listeners()
     set_runtime_coordinator(hass, entry, coordinator)
+    # 0.26.5.1: optional cover/exhaust-fan control, only for rooms that enable it
+    coordinator.actuator_controller = ActuatorController(hass, coordinator, entry)
+    await coordinator.actuator_controller.async_start()
     try:
         async_sync_missing_entity_issue(hass, entry)
     except Exception:  # noqa: BLE001 - repair UI must never block integration setup
@@ -531,6 +536,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except Exception:
         # Never leave listeners/tasks behind after a partial platform setup.
+        await coordinator.actuator_controller.async_stop()
         await coordinator.async_stop_listeners()
         clear_runtime_coordinator(hass, entry)
         try:
@@ -553,6 +559,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) 
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if not unloaded:
         return False
+    controller = getattr(coordinator, "actuator_controller", None)
+    if controller is not None:
+        await controller.async_stop()
     await coordinator.async_stop_listeners()
     clear_runtime_coordinator(hass, entry)
     try:

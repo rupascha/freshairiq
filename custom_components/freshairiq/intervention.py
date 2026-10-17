@@ -11,6 +11,20 @@ from .climate_sources import entity_ids
 from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
+# 0.26.5.1 (support: IKEA VINDSTYRKA "VOC index"): Sensirion-style VOC index
+# sensors report 1–500 without unit or device class (100 = average air of the
+# last 24 h). They are compared against an index threshold instead of the
+# ppb/µg/m³ threshold ``voc_warn``.
+VOC_DEVICE_CLASSES = ("volatile_organic_compounds", "volatile_organic_compounds_parts")
+VOC_INDEX_WARN = 250.0
+
+
+def voc_scale(device_class: Any, unit: Any) -> str:
+    """``index`` for a unitless VOC index sensor, otherwise ``concentration``."""
+    if str(device_class or "") in VOC_DEVICE_CLASSES or str(unit or "").strip():
+        return "concentration"
+    return "index"
+
 
 @dataclass(slots=True, frozen=True)
 class Intervention:
@@ -126,7 +140,7 @@ def build_interventions(
     wants_fresh_air = action in {"Ventilate", "Continue ventilating", "Ventilate for cooling"}
     co2_high = co2 is not None and co2 >= _f(options.get("co2_warn"), 1000.0)
     air_quality_high = (
-        (voc is not None and voc >= _f(options.get("voc_warn"), 600.0))
+        (voc is not None and voc >= (VOC_INDEX_WARN if room.get("voc_scale") == "index" else _f(options.get("voc_warn"), 600.0)))
         or (pm25 is not None and pm25 >= _f(options.get("pm25_warn"), 15.0))
     )
 
@@ -240,8 +254,12 @@ def build_interventions(
         cover_pairs = [(None, cover) for cover in _entity_list(config.get("covers"))]
     hot = temperature >= _f(options.get("shade_above_temp_c"), 24.0)
     bright = illuminance is None or illuminance >= _f(options.get("shade_min_illuminance_lx"), 10000.0)
+    # 0.26.5.1: a cover whose opening has no direct sun right now is not offered
+    shaded_side = set((room.get("shading") or {}).get("shaded_side_covers") or [])
     if cover_pairs and hot and bright:
         for contact_id, cover in cover_pairs:
+            if cover in shaded_side:
+                continue
             add(
                 "shade",
                 "Sonnenschutz schließen",

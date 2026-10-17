@@ -108,3 +108,9 @@ async def test_reconfigure_outdoor_source_validates_and_updates(hass) -> None:
     assert entry.data[CONF_OUTDOOR_HUMIDITY] == "sensor.outdoor_humidity"
     assert entry.data.get(CONF_OUTDOOR_WEATHER) is None
     assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+    # The successful reconfigure reloads the entry in the background; let it
+    # finish and unload it so no telemetry timer outlives the test.
+    await hass.async_block_till_done()
+    if entry.state is config_entries.ConfigEntryState.LOADED:
+        assert await hass.config_entries.async_unload(entry.entry_id)
+        await hass.async_block_till_done()

@@ -43,7 +43,7 @@ def _physical_result(temp, rh, volume, ref_temp, ref_rh):
 
 @pytest.mark.parametrize(
     "temp,rh,volume,reference",
-    product(TEMPERATURES, HUMIDITIES, VOLUMES, REFERENCES),
+    list(product(TEMPERATURES, HUMIDITIES, VOLUMES, REFERENCES)),
 )
 def test_physical_moisture_state_is_invariant_across_ventilation_paths(temp, rh, volume, reference):
     ref_temp, ref_rh = reference

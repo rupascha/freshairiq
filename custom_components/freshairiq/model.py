@@ -63,6 +63,9 @@ class RoomInput:
     session_target_min: float | None = None
     # 0.26.4.10: only an exhaust fan runs, no window/door is open.
     mechanical_only: bool = False
+    # 0.26.5.1: False when the room's temperature goal is switched off – no
+    # airing for cooling is started or prolonged.
+    cooling_allowed: bool = True
 
 
 @dataclass(slots=True)
@@ -119,6 +122,15 @@ VENTILATION_HYSTERESIS_RH = 2.0
 VENTILATION_HYSTERESIS_DELTA_G_M3 = 0.4
 MIN_RETURN_REFERENCE_VOLUME_M3 = 30.0
 MIN_RETURN_MIN_VOLUME_FACTOR = 0.25
+# 0.26.5.1 (Node-RED feedback: "Weiterlüften"/"Bitte Fenster schließen" every
+# minute): once a close was recommended in a running session it is kept until
+# the next five minutes would clearly beat the close threshold again.
+CLOSE_RELEASE_FACTOR = 1.25
+# 0.26.5.1 (summer night cooling): in the "summer cooling" profile an airing
+# that still cools is not ended by the maximum duration; it is ended once the
+# outdoor air is no longer at least this much cooler than a warm room.
+SUMMER_WARMING_MARGIN_C = 0.5
+SUMMER_WARMING_CLOSE_REASON = "Outdoor air is no longer cooler than the room; closing keeps the coolness inside"
 
 
 def min_return_volume_factor(volume_m3: Any) -> float:
@@ -232,7 +244,8 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
 
     cooling_delta = room.temperature - room.reference_temperature
     cooling_candidate = (
-        profile in {"summer_cooling", "comfort"}
+        room.cooling_allowed
+        and profile in {"summer_cooling", "comfort"}
         and room.temperature >= float(options.get("cooling_start_temp_c", 24.0))
         and cooling_delta >= float(options.get("cooling_min_outdoor_delta_c", 2.0))
         and room.humidity <= float(options.get("cooling_max_indoor_rh", 70.0))
@@ -284,7 +297,8 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         # temperature falls. Moisture safety still applies.
         min_return *= 0.50
     cooling_still_useful = (
-        profile == "summer_cooling"
+        room.cooling_allowed
+        and profile == "summer_cooling"
         and room.temperature >= float(options.get("cooling_start_temp_c", 24.0))
         and cooling_delta >= float(options.get("cooling_min_outdoor_delta_c", 2.0))
         and moisture_effect_next5 >= -float(options.get("cooling_max_moisture_gain_5min_ml", 60.0))
@@ -348,11 +362,22 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     # runs): a fan may run for hours on purpose. There is nothing to close, and
     # neither the maximum window duration nor a small return is a reason to stop
     # it – only moisture coming in is ("Lüfter ausschalten").
+    summer_night_cooling = profile == "summer_cooling" and cooling_still_useful
+    summer_warming = (
+        profile == "summer_cooling"
+        and running
+        and room.cooling_allowed
+        and not room.mechanical_only
+        and not urgent
+        and room.temperature >= float(options.get("cooling_start_temp_c", 24.0)) - 1.0
+        and room.reference_temperature >= room.temperature - SUMMER_WARMING_MARGIN_C
+    )
     if room.mechanical_only:
         should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and moisture_ingress
     else:
         should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and (
-            mins >= float(options["max_duration_min"])
+            (mins >= float(options["max_duration_min"]) and not summer_night_cooling)
+            or summer_warming
             or (
                 mins >= float(options["min_duration_min"])
                 and soft_close_allowed
@@ -362,13 +387,22 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
                 )
             )
         )
-    close_signal = running and close_decision_ready and not source_keep_open and (room.close_notified or should_close)
+    close_released = (
+        next5 >= min_return * CLOSE_RELEASE_FACTOR
+        and not thermal_bad
+        and not summer_warming
+        and (mins < float(options["max_duration_min"]) or summer_night_cooling)
+    )
+    close_latched = room.close_notified and not close_released
+    close_signal = running and close_decision_ready and not source_keep_open and (close_latched or should_close)
 
     if close_signal:
         if model_fallback and future_moisture_risk_15:
             action, reason = "Close", "Sensor updates are missing; forecast indicates the drying advantage will soon be lost"
         elif model_fallback:
             action, reason = "Close", "Sensor updates are missing; model indicates additional ventilation benefit is too low"
+        elif summer_warming:
+            action, reason = "Close", SUMMER_WARMING_CLOSE_REASON
         else:
             action, reason = "Close", "Target reached or additional ventilation benefit is too low"
     elif running:

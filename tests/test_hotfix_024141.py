@@ -170,9 +170,9 @@ def _editable_keys() -> set[str]:
     raise AssertionError("NATIVE_OPTION_KEYS not found")
 
 
-# test_dashboard_settings_cover_canonical_api_without_visible_duplicate_fields: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_settings_cover_canonical_api_without_visible_duplicate_fields: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_no_native_form_shows_the_same_setting_twice
 
-# test_settings_navigation_has_icons_and_legacy_duplicate_routes_redirect: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_settings_navigation_has_icons_and_legacy_duplicate_routes_redirect: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_legacy_routes_redirect_and_every_settings_section_has_an_icon
 
 
 def test_frontend_no_longer_uses_systematic_same_time_basis_error_text():

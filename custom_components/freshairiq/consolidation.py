@@ -218,12 +218,25 @@ def aggregate_close_allowed(
     return bool(low_return)
 
 
+# F01 (2026-10-16): once the final house decision has told the user to close
+# the same open rooms, a combined 5-minute return that merely wobbles around the
+# threshold must not flip the published decision back to "continue" on every
+# 30-second cycle (Continue -> Close -> Continue telegram floods). Re-blocking
+# the close needs a clearly higher return. Hard closes are never affected.
+AGGREGATE_CONTINUE_HYSTERESIS = 1.25
+
+
 def stabilise_recommendation(
     recommendation: dict[str, Any],
     rooms: dict[str, dict[str, Any]],
     options: dict[str, Any],
+    previous: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Apply final consistency and real-time safety invariants."""
+    """Apply final consistency and real-time safety invariants.
+
+    ``previous`` is the last *final* recommendation of the running coordinator
+    (``kind`` and ``room_keys``); it is ``None`` after a (re)start.
+    """
     out = dict(recommendation or {})
     checks: list[str] = []
 
@@ -311,7 +324,14 @@ def stabilise_recommendation(
             )
         ]
 
-        if combined_next5 >= min_return and not hard_closing:
+        previous_kind = str((previous or {}).get("kind") or "") if isinstance(previous, dict) else ""
+        previous_keys = {str(k) for k in ((previous or {}).get("room_keys") or [])} if isinstance(previous, dict) else set()
+        closing_keys = {str(r.get("key")) for r in closing if r.get("key") is not None}
+        close_already_published = previous_kind == "close" and bool(closing_keys) and closing_keys <= previous_keys
+        block_threshold = min_return * (AGGREGATE_CONTINUE_HYSTERESIS if close_already_published else 1.0)
+        if close_already_published and min_return <= combined_next5 < block_threshold and not hard_closing:
+            checks.append("aggregate_close_hysteresis_held")
+        if combined_next5 >= block_threshold and not hard_closing:
             kind = "continue"
             out["room_keys"] = [str(r.get("key")) for r in active if r.get("key") is not None]
             out["title"] = "Lüftung läuft"

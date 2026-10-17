@@ -57,6 +57,6 @@ def test_native_contact_labels_use_static_translation_keys():
     assert '"passage_door"' in schema
     assert "opening_" not in schema
 
-# test_dashboard_passage_setting_is_inside_each_contact_card: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_passage_setting_is_inside_each_contact_card: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_passage_door_belongs_to_each_single_opening
 
-# test_dashboard_generic_setting_row_does_not_render_default_every_time: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_generic_setting_row_does_not_render_default_every_time: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); not applicable: it pinned the card's generic settings-row markup; native field texts come from translations

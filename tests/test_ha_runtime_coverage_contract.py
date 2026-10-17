@@ -36,7 +36,7 @@ def test_ha_runtime_ci_persists_machine_readable_coverage() -> None:
     assert "--min-total 99" in workflow
     assert "--min-module 98" in workflow
     assert "--config-flow 100" in workflow
-    assert "actions/upload-artifact@v4" in workflow
+    assert "actions/upload-artifact@v7" in workflow
     assert "freshairiq-ha-runtime-coverage" in workflow
 
 

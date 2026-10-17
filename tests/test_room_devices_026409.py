@@ -44,9 +44,13 @@ class _Registries:
 
     # device registry
     def async_get_device(self, identifiers):
-        if ("freshairiq", "E:room:flur") in identifiers:
+        raise AssertionError("async_get_device is deprecated (HA 2027.8); use async_get_device_by_identifier")
+
+    def async_get_device_by_identifier(self, identifier, config_entry_id):
+        assert config_entry_id == "E"  # identifiers are unique per config entry only (F25)
+        if identifier == ("freshairiq", "E:room:flur"):
             raise RuntimeError("registry hiccup")
-        return next((d for d in self.devices.values() if d.identifiers & identifiers), None)
+        return next((d for d in self.devices.values() if identifier in d.identifiers), None)
 
     def async_update_device(self, device_id, new_config_subentry_id):
         device = self.devices[device_id]

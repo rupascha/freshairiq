@@ -41,7 +41,7 @@ def test_stability_runtime_is_advisory_while_dedicated_performance_gate_remains_
     assert '"performance regression"' in quality
 
 
-# test_native_and_dashboard_settings_are_contract_checked_on_both_surfaces: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_native_and_dashboard_settings_are_contract_checked_on_both_surfaces: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_every_native_option_key_is_editable_on_a_native_form
 
 
 def test_config_flow_labels_match_real_defaults_and_ranges():

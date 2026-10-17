@@ -28,7 +28,7 @@ def test_reference_sensor_selectors_do_not_require_device_class():
     assert '_single_contact_reference_schema(room, contact)' in FLOW
 
 
-# test_dashboard_accepts_unit_based_temperature_and_humidity_sensors: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_accepts_unit_based_temperature_and_humidity_sensors: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_unit_based_climate_sensors_are_accepted_by_room_flow_and_runtime
 
 
 def test_unsaved_room_reference_pair_survives_live_refresh():

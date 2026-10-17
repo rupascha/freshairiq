@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loadCard } from './harness.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,8 +15,7 @@ const viewports = [
 async function mount(page, roomCount = 12) {
   const pageErrors = [];
   page.on('pageerror', err => pageErrors.push(String(err)));
-  await page.setContent(`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body><main><freshairiq-card id="card"></freshairiq-card></main></body></html>`);
-  await page.addScriptTag({ path: CARD });
+  await loadCard(page, `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body><main><freshairiq-card id="card"></freshairiq-card></main></body></html>`);
   await page.evaluate(({ roomCount }) => {
     const rooms = {};
     for (let i = 0; i < roomCount; i++) {
@@ -108,26 +108,43 @@ test('50-room dashboard smoke render remains responsive', async ({ page }) => {
 });
 
 
+// The card speaks FreshAirIQ's output language (0.26.5.0, status attribute
+// `output_language`); without it the browser language decides. The fixture
+// therefore states the language explicitly for each wording check.
+async function liveLearningText(page, language, timestampGatePassed) {
+  return page.locator('freshairiq-card').evaluate((el, { language, timestampGatePassed }) => {
+    const status = el._hass.states['sensor.freshairiq_status'];
+    status.attributes.output_language = language;
+    status.attributes.rooms.room_0.active = true;
+    status.attributes.rooms.room_0.session_measurement_quality = { timestamp_gate_passed: timestampGatePassed };
+    el._hass = { ...el._hass };
+    el._render();
+    return el.shadowRoot.textContent;
+  }, { language, timestampGatePassed });
+}
+
 test('timestamp evidence drives truthful live learning wording', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   const errors = await mount(page, 1);
-  const waitingText = await page.locator('freshairiq-card').evaluate(el => {
-    const status = el._hass.states['sensor.freshairiq_status'];
-    status.attributes.rooms.room_0.active = true;
-    status.attributes.rooms.room_0.session_measurement_quality = { timestamp_gate_passed: false };
-    el._render();
-    return el.shadowRoot.textContent;
-  });
+  const waitingText = await liveLearningText(page, 'de', false);
   expect(waitingText).toContain('LÜFTUNG WIRD BEOBACHTET');
   expect(waitingText).not.toContain('LERNT JETZT: IQ lernt gerade den realen Luftaustausch');
 
-  const learningText = await page.locator('freshairiq-card').evaluate(el => {
-    const status = el._hass.states['sensor.freshairiq_status'];
-    status.attributes.rooms.room_0.session_measurement_quality = { timestamp_gate_passed: true };
-    el._render();
-    return el.shadowRoot.textContent;
-  });
+  const learningText = await liveLearningText(page, 'de', true);
   expect(learningText).toContain('LERNT JETZT: IQ lernt gerade den realen Luftaustausch');
+  expect(errors).toEqual([]);
+});
+
+test('timestamp evidence wording is English on English servers', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  const errors = await mount(page, 1);
+  const waitingText = await liveLearningText(page, 'en', false);
+  expect(waitingText).toContain('VENTILATION OBSERVED');
+  expect(waitingText).not.toContain('LEARNING NOW: IQ is learning the real air exchange');
+  expect(waitingText).not.toContain('LÜFTUNG WIRD BEOBACHTET');
+
+  const learningText = await liveLearningText(page, 'en', true);
+  expect(learningText).toContain('LEARNING NOW: IQ is learning the real air exchange');
   expect(errors).toEqual([]);
 });
 
@@ -278,6 +295,7 @@ test('Freshy follows configured night window and keeps live ventilation priority
       nightStart: el._freshyTimeKind(st, new Date(2026, 8, 27, 23, 30)),
       afterMidnight: el._freshyTimeKind(st, new Date(2026, 8, 28, 2, 0)),
       nightEndBoundary: el._freshyTimeKind(st, new Date(2026, 8, 28, 7, 15)),
+      afterMorningHour: el._freshyTimeKind(st, new Date(2026, 8, 28, 8, 15)),
       defaultNight: el._freshyTimeKind({}, new Date(2026, 8, 27, 22, 0)),
     };
   });
@@ -287,7 +305,9 @@ test('Freshy follows configured night window and keeps live ventilation priority
     preNightLate: 'pre-night',
     nightStart: 'night',
     afterMidnight: 'night',
-    nightEndBoundary: 'good',
+    // 0.26.4.8: the first hour after the night window is Freshy's "good morning".
+    nightEndBoundary: 'morning',
+    afterMorningHour: 'good',
     defaultNight: 'night',
   });
 
@@ -375,8 +395,7 @@ test('GitHub #14: Freshy follows the canonical wait decision and the classic mou
   await page.setViewportSize({ width: 430, height: 932 });
   const errors = [];
   page.on('pageerror', err => errors.push(String(err)));
-  await page.setContent('<!doctype html><html><body><freshairiq-card id="card"></freshairiq-card></body></html>');
-  await page.addScriptTag({ path: CARD });
+  await loadCard(page, '<!doctype html><html><body><freshairiq-card id="card"></freshairiq-card></body></html>');
   const result = await page.evaluate(async () => {
     const names = ['Wohnzimmer', 'Arbeitszimmer', 'Schlafzimmer', 'Bad', 'Küche', 'Kinderzimmer'];
     const rooms = {};

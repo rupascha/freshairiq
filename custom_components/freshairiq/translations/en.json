@@ -79,12 +79,12 @@
           "floor": "Floor/area used for grouping and cross ventilation. Example: “Ground floor”. Default: not assigned.",
           "include_in_calculations": "Off = the room remains visible but is excluded from recommendations, house balance, statistics and learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
-          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -135,7 +135,8 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "covers": "Blind/shutter",
-          "passage_door": "Passage door – pulled shut from outside after passing through"
+          "passage_door": "Passage door – pulled shut from outside after passing through",
+          "cover_follow": "Open the cover when this window/door opens"
         },
         "data_description": {
           "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
@@ -143,7 +144,8 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
-          "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors."
+          "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
+          "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
         }
       },
       "reconfigure": {
@@ -321,7 +323,8 @@
       "options": {
         "humidity": "Dehumidification",
         "co2": "CO₂ / air quality",
-        "temperature": "Temperature comfort"
+        "temperature": "Temperature comfort",
+        "off": "Off"
       }
     },
     "cover_position_zero_means": {
@@ -365,6 +368,13 @@
         "reorder": "Sort areas",
         "remove": "Remove area",
         "back": "← Back to Home & rooms"
+      }
+    },
+    "exhaust_fan_control": {
+      "options": {
+        "off": "Off (recommendation only)",
+        "moisture_source": "After a moisture source (e.g. showering)",
+        "recommendation": "Following the ventilation recommendation"
       }
     }
   },
@@ -540,7 +550,7 @@
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -583,11 +593,11 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -595,7 +605,7 @@
           },
           "optional_actuators": {
             "name": "Optional devices – data collection",
-            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -611,7 +621,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -621,6 +631,22 @@
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            }
+          },
+          "automation": {
+            "name": "Automatic control (optional)",
+            "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+            "data": {
+              "auto_sun_protection": "Close covers against the sun automatically",
+              "exhaust_fan_control": "Switch the exhaust fan automatically",
+              "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+            },
+            "data_description": {
+              "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+              "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+              "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
             }
           }
         },
@@ -642,12 +668,12 @@
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
-          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -749,11 +775,11 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -761,7 +787,7 @@
           },
           "optional_actuators": {
             "name": "Optional room-climate devices",
-            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -777,7 +803,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -787,6 +813,22 @@
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            }
+          },
+          "automation": {
+            "name": "Automatic control (optional)",
+            "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+            "data": {
+              "auto_sun_protection": "Close covers against the sun automatically",
+              "exhaust_fan_control": "Switch the exhaust fan automatically",
+              "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+            },
+            "data_description": {
+              "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+              "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+              "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
             }
           }
         }
@@ -903,7 +945,7 @@
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -946,11 +988,11 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -958,7 +1000,7 @@
           },
           "optional_actuators": {
             "name": "Optional devices – data collection",
-            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -974,7 +1016,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -984,6 +1026,22 @@
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            }
+          },
+          "automation": {
+            "name": "Automatic control (optional)",
+            "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+            "data": {
+              "auto_sun_protection": "Close covers against the sun automatically",
+              "exhaust_fan_control": "Switch the exhaust fan automatically",
+              "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+            },
+            "data_description": {
+              "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+              "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+              "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
             }
           }
         },
@@ -1005,12 +1063,12 @@
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
-          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -1112,11 +1170,11 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -1124,7 +1182,7 @@
           },
           "optional_actuators": {
             "name": "Optional room-climate devices",
-            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -1140,7 +1198,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -1150,6 +1208,22 @@
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            }
+          },
+          "automation": {
+            "name": "Automatic control (optional)",
+            "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+            "data": {
+              "auto_sun_protection": "Close covers against the sun automatically",
+              "exhaust_fan_control": "Switch the exhaust fan automatically",
+              "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+            },
+            "data_description": {
+              "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+              "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+              "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
             }
           }
         }
@@ -1489,7 +1563,9 @@
           "notify_learning": "Learning messages",
           "notification_cooldown_min": "Cooldown minutes",
           "suppress_notifications_at_night": "Suppress notifications at night",
-          "test_notification_now": "Send test notification now"
+          "test_notification_now": "Send test notification now",
+          "notify_only_when_home": "Only notify recipients who are at home",
+          "notify_important_when_away": "Send important warnings while away"
         },
         "description": "Default: notifications off, no recipients, scope “House”, all rooms, ventilate/close/completion/cooling/mould/sensor-error notifications on, night/learning off, minimum interval 90 minutes.",
         "data_description": {
@@ -1507,7 +1583,9 @@
           "notify_sensor": "Warns when sensor data required for a reliable recommendation is missing or implausible. Default: on.",
           "notify_ventilate": "Sends a notification when FreshAirIQ detects a useful time to start ventilation. Default: on.",
           "suppress_notifications_at_night": "When enabled, FreshAirIQ sends no push notifications during the configured night window. Calculations, ventilation logic and learning continue unchanged.",
-          "test_notification_now": "Enable and confirm to immediately send a neutral test message to all currently selected recipients. This action is not saved."
+          "test_notification_now": "Enable and confirm to immediately send a neutral test message to all currently selected recipients. This action is not saved.",
+          "notify_only_when_home": "A personal phone (resident profile) only receives messages while that person is at home according to their presence tracker. General targets receive nothing while every tracker reports away. An unknown tracker state counts as home. Default: off.",
+          "notify_important_when_away": "Mould risk and sensor warnings are still sent while away. Default: on."
         }
       },
       "statistics": {
@@ -1636,7 +1714,10 @@
           "pm25_sensor_enabled": "Use PM2.5",
           "illuminance_sensor_enabled": "Use illuminance",
           "cover_position_zero_means": "Blind/shutter position interpretation",
-          "cover_learning_max_closed_percent": "Maximum closed blind/shutter for learning samples (%)"
+          "cover_learning_max_closed_percent": "Maximum closed blind/shutter for learning samples (%)",
+          "shade_lead_min": "Close covers ahead of the sun",
+          "shade_forecast_max_c": "Warm day from forecast high",
+          "shade_max_cloud_coverage": "No sun protection from cloud cover"
         },
         "data_description": {
           "pollen_enabled": "Requires a pollen-index sensor under the outdoor-air source.",
@@ -1656,7 +1737,10 @@
           "pm25_sensor_enabled": "Off = configured PM2.5 sensors are not read, shown or used for supplemental recommendations. The room assignment remains stored.",
           "illuminance_sensor_enabled": "Off = configured illuminance sensors are not read, shown or used to refine shading recommendations. The room assignment remains stored.",
           "cover_position_zero_means": "Defines how FreshAirIQ interprets blind/shutter position values. Choose the direction that makes the calculated closed percentage match the physical blind/shutter.",
-          "cover_learning_max_closed_percent": "If a blind/shutter assigned to the open window or door is closed beyond this value, ventilation is still detected and balanced but is excluded from learning. Partial shading changes airflow and can bias the learning model. Default: 20%."
+          "cover_learning_max_closed_percent": "If a blind/shutter assigned to the open window or door is closed beyond this value, ventilation is still detected and balanced but is excluded from learning. Partial shading changes airflow and can bias the learning model. Default: 20%.",
+          "shade_lead_min": "Summer cooling: covers close this long before the sun reaches their window (0 = when it arrives). The sun position is calculated from your Home Assistant location.",
+          "shade_forecast_max_c": "Covers close ahead of the sun when today's forecast high reaches this value, the room is above its comfort target or already warmer than the sun protection temperature.",
+          "shade_max_cloud_coverage": "With at least this cloud cover (weather entity) open covers stay open. Covers already closed stay closed until the sun has left their window."
         }
       },
       "energy_details": {
@@ -1950,7 +2034,8 @@
           "covers": "Blind/shutter",
           "passage_door": "Passage door – pulled shut from outside after passing through",
           "cover_position_zero_means": "Blind/shutter position logic",
-          "wizard_back": "← Back to previous page"
+          "wizard_back": "← Back to previous page",
+          "cover_follow": "Open the cover when this window/door opens"
         },
         "data_description": {
           "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
@@ -1960,7 +2045,8 @@
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
           "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
           "cover_position_zero_means": "Choose whether 0% means fully closed or fully open. This setting applies to blinds/shutters assigned to this room.",
-          "wizard_back": "Enable and confirm with OK to go back without changing this page."
+          "wizard_back": "Enable and confirm with OK to go back without changing this page.",
+          "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
         }
       },
       "building": {
@@ -2382,7 +2468,7 @@
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -2425,11 +2511,11 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -2437,7 +2523,7 @@
           },
           "optional_actuators": {
             "name": "Optional devices – data collection",
-            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -2453,7 +2539,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -2463,6 +2549,22 @@
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+            }
+          },
+          "automation": {
+            "name": "Automatic control (optional)",
+            "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+            "data": {
+              "auto_sun_protection": "Close covers against the sun automatically",
+              "exhaust_fan_control": "Switch the exhaust fan automatically",
+              "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+            },
+            "data_description": {
+              "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+              "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+              "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
             }
           }
         },
@@ -2484,12 +2586,12 @@
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
-          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+          "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
           "covers": "Optional room-climate input or intervention target. FreshAirIQ only recommends device actions by default; actuation requires an explicit Home Assistant action.",
           "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+          "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
           "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
           "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
           "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -2591,11 +2693,11 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+              "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -2603,7 +2705,7 @@
           },
           "optional_actuators": {
             "name": "Optional room-climate devices",
-            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+            "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
             "data": {
               "climate": "Climate/HVAC entity (optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -2619,7 +2721,7 @@
             },
             "data_description": {
               "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+              "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
               "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
               "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -2630,12 +2732,28 @@
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
             }
+          },
+          "automation": {
+            "name": "Automatic control (optional)",
+            "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+            "data": {
+              "auto_sun_protection": "Close covers against the sun automatically",
+              "exhaust_fan_control": "Switch the exhaust fan automatically",
+              "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+            },
+            "data_description": {
+              "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+              "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+              "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+            }
           }
         }
       },
       "room_goals": {
         "title": "Prioritize ventilation goals",
-        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically.",
+        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically. From priority 2 on, “Off” switches the remaining goals off for this room: they are no longer shown and do not start airing of their own (temperature off: no “Ventilate for cooling”; CO₂ off: no CO₂ airing). Protection limits still apply.",
         "data": {
           "wizard_back": "← Back to previous page",
           "goal_priority_1": "1. Priority",
@@ -2651,15 +2769,15 @@
         },
         "data_description": {
           "goal_priority_1": "Priority 1. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift automatically."
+          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off."
         }
       },
       "recommendation_priorities": {
@@ -2704,7 +2822,7 @@
         }
       },
       "add_goals": {
-        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically.",
+        "description": "All available ventilation goals are shown at once in priority order. 1 is highest. Picking a different goal for a position moves it there; the others shift automatically. From priority 2 on, “Off” switches the remaining goals off for this room: they are no longer shown and do not start airing of their own (temperature off: no “Ventilate for cooling”; CO₂ off: no CO₂ airing). Protection limits still apply.",
         "data": {
           "goal_priority_1": "1. Priority",
           "goal_priority_2": "2. Priority",
@@ -2719,15 +2837,15 @@
         },
         "data_description": {
           "goal_priority_1": "Priority 1. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift automatically.",
-          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift automatically."
+          "goal_priority_2": "Priority 2. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_3": "Priority 3. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_4": "Priority 4. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_5": "Priority 5. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_6": "Priority 6. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_7": "Priority 7. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_8": "Priority 8. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_9": "Priority 9. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off.",
+          "goal_priority_10": "Priority 10. Picking a different goal moves it here; the others shift. “Off” switches this and every following position off."
         }
       }
     },
@@ -2752,7 +2870,8 @@
       "notification_test_failed": "None of the selected notification targets is currently available in Home Assistant.",
       "invalid_room_order": "Each room must appear exactly once in the order.",
       "invalid_goal_order": "Assign each available ventilation goal exactly once.",
-      "duplicate_goal_order": "A ventilation goal was selected more than once. Each goal may appear only once."
+      "duplicate_goal_order": "A ventilation goal was selected more than once. Each goal may appear only once.",
+      "humidity_goal_required": "Dehumidification cannot be switched off – moisture and mould protection always stays active. Choose “Off” only for CO₂ or temperature."
     },
     "selector": {
       "operating_profile": {
@@ -2899,7 +3018,9 @@
           "okay": "Okay",
           "unknown": "Unknown",
           "ventilate_for_cooling": "Ventilate for cooling",
-          "monitor_only": "Monitor only"
+          "monitor_only": "Monitor only",
+          "ventilate_indirectly": "Ventilate via a connected room",
+          "open_fully": "Open fully"
         }
       },
       "absolute_humidity": {
@@ -3010,7 +3131,8 @@
           "ventilate_later": "Airing possible · wait for now",
           "ventilate_indirectly": "Ventilate via a connected room",
           "open_fully": "Open fully",
-          "unknown": "Unknown"
+          "unknown": "Unknown",
+          "monitor_open": "Monitor long-term opening"
         }
       }
     },
@@ -3020,6 +3142,52 @@
       },
       "close_recommended": {
         "name": "Close recommended"
+      },
+      "moisture_source": {
+        "name": "Moisture source active",
+        "state": {
+          "on": "Active",
+          "off": "Inactive"
+        },
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "shower": "Shower",
+              "bath": "Bath",
+              "sauna": "Sauna",
+              "cooking": "Cooking",
+              "washing_machine": "Washing machine",
+              "dryer": "Dryer",
+              "ironing_station": "Ironing station",
+              "laundry_drying": "Drying laundry"
+            }
+          }
+        }
+      },
+      "shading": {
+        "name": "Sun protection recommended",
+        "state": {
+          "on": "Close",
+          "off": "Not needed"
+        },
+        "state_attributes": {
+          "covers_to_close": {
+            "name": "Covers to close"
+          },
+          "sunlit_covers": {
+            "name": "Covers in the sun"
+          },
+          "sun_soon_covers": {
+            "name": "Covers the sun reaches soon"
+          },
+          "shaded_side_covers": {
+            "name": "Covers without sun"
+          },
+          "sun_tracking": {
+            "name": "Sun position used"
+          }
+        }
       }
     },
     "button": {
@@ -3169,7 +3337,7 @@
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -3212,11 +3380,11 @@
                 "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
                 "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+                "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3240,7 +3408,7 @@
             },
             "optional_actuators": {
               "name": "Optional devices – data collection",
-              "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+              "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
               "data": {
                 "climate": "Climate/HVAC entity (optional)",
                 "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -3256,7 +3424,7 @@
               },
               "data_description": {
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
                 "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
                 "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3266,6 +3434,22 @@
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+              }
+            },
+            "automation": {
+              "name": "Automatic control (optional)",
+              "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+              "data": {
+                "auto_sun_protection": "Close covers against the sun automatically",
+                "exhaust_fan_control": "Switch the exhaust fan automatically",
+                "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              },
+              "data_description": {
+                "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+                "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+                "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
               }
             }
           },
@@ -3288,11 +3472,11 @@
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-            "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+            "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
             "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
             "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
             "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
             "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
             "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
             "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3326,7 +3510,8 @@
             "orientation": "Compass orientation",
             "covers": "Blind/shutter",
             "passage_door": "Door is used as a passage and pulled shut from outside",
-            "wizard_back": "← Back to previous page"
+            "wizard_back": "← Back to previous page",
+            "cover_follow": "Open the cover when this window/door opens"
           },
           "data_description": {
             "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
@@ -3335,7 +3520,8 @@
             "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
             "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
             "passage_door": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample.",
-            "wizard_back": "Tick and press OK to return to the previous page. Entries on this page are not saved."
+            "wizard_back": "Tick and press OK to return to the previous page. Entries on this page are not saved.",
+            "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
           }
         },
         "room_references": {
@@ -3347,7 +3533,8 @@
             "delay_seconds": "Opening delay",
             "orientation": "Compass orientation",
             "covers": "Blind/shutter",
-            "passage_door": "Passage door – pulled shut from outside after passing through"
+            "passage_door": "Passage door – pulled shut from outside after passing through",
+            "cover_follow": "Open the cover when this window/door opens"
           },
           "data_description": {
             "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
@@ -3355,12 +3542,13 @@
             "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
             "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
             "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
-            "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors."
+            "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
+            "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
           }
         },
         "add_goals": {
           "title": "Prioritize ventilation goals",
-          "description": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
+          "description": "Set the order of this room’s goals. 1 is highest priority. From priority 2 on, “Off” switches the remaining goals off for this room; protection limits always take precedence.",
           "data": {
             "goal_priority_1": "Priority 1",
             "goal_priority_2": "Priority 2",
@@ -3369,14 +3557,14 @@
           },
           "data_description": {
             "goal_priority_1": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
-            "goal_priority_2": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
-            "goal_priority_3": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
+            "goal_priority_2": "Set the order of this room’s goals. 1 is highest priority. From priority 2 on, “Off” switches the remaining goals off for this room; protection limits always take precedence.",
+            "goal_priority_3": "Set the order of this room’s goals. 1 is highest priority. From priority 2 on, “Off” switches the remaining goals off for this room; protection limits always take precedence.",
             "wizard_back": "Tick and press OK to return to the previous page. Entries on this page are not saved."
           }
         },
         "room_goals": {
           "title": "Prioritize ventilation goals",
-          "description": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
+          "description": "Set the order of this room’s goals. 1 is highest priority. From priority 2 on, “Off” switches the remaining goals off for this room; protection limits always take precedence.",
           "data": {
             "goal_priority_1": "Priority 1",
             "goal_priority_2": "Priority 2",
@@ -3384,8 +3572,8 @@
           },
           "data_description": {
             "goal_priority_1": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
-            "goal_priority_2": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence.",
-            "goal_priority_3": "Set the order of this room’s goals. 1 is highest priority. All goals remain active; protection limits always take precedence."
+            "goal_priority_2": "Set the order of this room’s goals. 1 is highest priority. From priority 2 on, “Off” switches the remaining goals off for this room; protection limits always take precedence.",
+            "goal_priority_3": "Set the order of this room’s goals. 1 is highest priority. From priority 2 on, “Off” switches the remaining goals off for this room; protection limits always take precedence."
           }
         },
         "create_room": {
@@ -3469,7 +3657,7 @@
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -3512,11 +3700,11 @@
                 "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
                 "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+                "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3540,7 +3728,7 @@
             },
             "optional_actuators": {
               "name": "Optional devices – data collection",
-              "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+              "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
               "data": {
                 "climate": "Climate/HVAC entity (optional)",
                 "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -3556,7 +3744,7 @@
               },
               "data_description": {
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
                 "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
                 "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3566,6 +3754,22 @@
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+              }
+            },
+            "automation": {
+              "name": "Automatic control (optional)",
+              "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+              "data": {
+                "auto_sun_protection": "Close covers against the sun automatically",
+                "exhaust_fan_control": "Switch the exhaust fan automatically",
+                "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              },
+              "data_description": {
+                "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+                "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+                "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
               }
             }
           },
@@ -3588,11 +3792,11 @@
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-            "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+            "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
             "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
             "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
             "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
             "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
             "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
             "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3697,7 +3901,7 @@
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
@@ -3740,11 +3944,11 @@
                 "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
                 "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
-                "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+                "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3768,7 +3972,7 @@
             },
             "optional_actuators": {
               "name": "Optional devices – data collection",
-              "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch any of these devices automatically.",
+              "description": "Optional devices extend the room strategy. An exhaust fan is detected as mechanical ventilation and learned separately; climate can provide a comfort target. Other devices serve as alternative measures. FreshAirIQ does not switch these devices – only the exhaust fan, if you enable it under \"Automatic control\".",
               "data": {
                 "climate": "Climate/HVAC entity (optional)",
                 "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
@@ -3784,7 +3988,7 @@
               },
               "data_description": {
                 "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. FreshAirIQ does not select or switch a fan stage automatically.",
+                "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
                 "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
                 "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3794,6 +3998,22 @@
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
+              }
+            },
+            "automation": {
+              "name": "Automatic control (optional)",
+              "description": "Off by default. Only what you switch on here is controlled by FreshAirIQ itself; everything else stays a recommendation. Covers are assigned per window/door (opening settings), where you can also let a cover open with its window.",
+              "data": {
+                "auto_sun_protection": "Close covers against the sun automatically",
+                "exhaust_fan_control": "Switch the exhaust fan automatically",
+                "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
+                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              },
+              "data_description": {
+                "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
+                "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
+                "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
+                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
               }
             }
           },
@@ -3816,11 +4036,11 @@
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
-            "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics.",
+            "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
             "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
             "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
             "climate": "Optional input. The room remains fully usable without a thermostat/climate device. If configured, FreshAirIQ uses its last plausible setpoint as the comfort target in automatic mode; humidity and other configured ventilation goals remain active.",
-            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. The devices are not switched automatically.",
+            "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ treats the room as mechanically ventilated while at least one selected entity is active. They are only switched if you enable it under \"Automatic control\".",
             "supply_fan": "Optional. Supply-air device for fresh-air/air-quality context. It is not a separate priority goal and is not controlled automatically.",
             "ventilation_device": "Optional. Central or decentralized ventilation/HRV device as an alternative mechanical ventilation option. No automatic device control.",
             "dehumidifier": "Optional. Dehumidifier as an alternative when humidity is high or outdoor air is unsuitable. No automatic device control.",
@@ -3840,7 +4060,8 @@
         "room_volume_required": "Enter either room volume or complete room dimensions.",
         "room_volume_too_small": "The calculated room volume is too small.",
         "room_name_required": "Please enter a room name.",
-        "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone."
+        "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
+        "humidity_goal_required": "Dehumidification cannot be switched off – moisture and mould protection always stays active. Choose “Off” only for CO₂ or temperature."
       },
       "abort": {
         "reconfigure_successful": "Room saved."

@@ -15,6 +15,7 @@ from .forecast import in_night_window, night_window_hours
 from .intelligence import mark_recommendation_notified
 from .language_confidence import room_notification_message
 from .localize import Translator, is_german, protected_names
+from .presence import normalize_presence_state
 
 # Set while one notification pass runs for a non-German Home Assistant (0.26.4.5).
 _OUTPUT_TRANSLATOR: ContextVar[Translator | None] = ContextVar("freshairiq_notification_translator", default=None)
@@ -175,8 +176,50 @@ def _resident_profiles(options: dict[str, Any]) -> list[dict[str, Any]]:
             profile["name"] = stored
         else:
             profile["name"] = ""
+        profile["_slot"] = str(slot)
         result.append(profile)
     return result
+
+
+# Feedback FAIQ-FB-7C943C054B43: optionally only notify residents who are at home.
+# Mould and sensor warnings may still go out while away (own option, default on).
+_IMPORTANT_WHILE_AWAY = {"mould", "sensor", "iq_sensor"}
+
+
+def _presence_entities(options: dict[str, Any], role: str) -> list[str]:
+    return [str(x) for x in (options.get(f"{role}_presence_entities") or []) if str(x)]
+
+
+def _household_away(hass: HomeAssistant, options: dict[str, Any]) -> bool:
+    """True only when presence trackers exist and every one of them reports away."""
+    entities = _presence_entities(options, "adult") + _presence_entities(options, "child")
+    if not entities:
+        return False
+    return all(normalize_presence_state(e, hass.states.get(e)) == "away" for e in entities)
+
+
+def _profile_away(hass: HomeAssistant, options: dict[str, Any], profile: dict[str, Any], household_away: bool) -> bool:
+    """A resident is away when their own tracker says so (slot ``adult:0`` ↔ first adult tracker).
+
+    Residents without a tracker follow the household; an unknown tracker state
+    counts as home so nothing is suppressed on missing information.
+    """
+    role, _sep, index_text = str(profile.get("_slot") or "").partition(":")
+    entities = _presence_entities(options, role) if role in {"adult", "child"} else []
+    if index_text.isdigit() and int(index_text) < len(entities):
+        entity_id = entities[int(index_text)]
+        return normalize_presence_state(entity_id, hass.states.get(entity_id)) == "away"
+    return household_away
+
+
+def _absence_filter(hass: HomeAssistant, options: dict[str, Any], event: str | None):
+    """Return ``(profile_skipped(profile), global_skipped)`` for one message."""
+    if not options.get("notify_only_when_home") or (
+        event in _IMPORTANT_WHILE_AWAY and options.get("notify_important_when_away", True)
+    ):
+        return (lambda _profile: False), False
+    household_away = _household_away(hass, options)
+    return (lambda profile: _profile_away(hass, options, profile, household_away)), household_away
 
 
 def _all_notification_targets(options: dict[str, Any]) -> list[str]:
@@ -303,9 +346,18 @@ async def _send_targets(
     return sent
 
 
-async def _send(hass: HomeAssistant, options: dict[str, Any], title: str, message: str) -> bool:
+async def _send(hass: HomeAssistant, options: dict[str, Any], title: str, message: str, event: str | None = None) -> bool:
     """Send a household message to all configured global/personal devices."""
-    return await _send_targets(hass, _all_notification_targets(options), title, message)
+    profile_skipped, global_skipped = _absence_filter(hass, options, event)
+    targets: list[str] = []
+    skipped: set[str] = set()
+    for profile in _resident_profiles(options):
+        values = [str(t) for t in (profile.get("notification_targets") or []) if str(t)]
+        (skipped.update if profile_skipped(profile) else targets.extend)(values)
+    if not global_skipped:
+        targets.extend(str(t) for t in (options.get("notification_targets") or []))
+    ordered = [t for t in _all_notification_targets(options) if t in set(targets) and t not in skipped]
+    return await _send_targets(hass, ordered, title, message)
 
 
 async def _send_room_personalised(
@@ -314,14 +366,19 @@ async def _send_room_personalised(
     title: str,
     message: str,
     room_key: str,
+    event: str | None = None,
 ) -> bool:
     """Route a room event to global targets plus residents assigned to that room."""
     sent = False
     used: set[str] = set()
+    profile_skipped, global_skipped = _absence_filter(hass, options, event)
 
     for profile in _resident_profiles(options):
         assigned = {str(x) for x in (profile.get("room_keys") or [])}
         if room_key not in assigned:
+            continue
+        if profile_skipped(profile):
+            used.update(str(t) for t in (profile.get("notification_targets") or []))
             continue
         name = str(profile.get("name") or "").strip()
         personal_message = f"{name}, {message}" if name else message
@@ -333,7 +390,7 @@ async def _send_room_personalised(
             if await _send_target(hass, value, title, personal_message):
                 sent = True
 
-    for target in options.get("notification_targets") or []:
+    for target in [] if global_skipped else (options.get("notification_targets") or []):
         value = str(target)
         if not value or value in used:
             continue
@@ -343,7 +400,7 @@ async def _send_room_personalised(
     return sent
 
 
-async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title: str, message: str, iq: dict[str, Any]) -> bool:
+async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title: str, message: str, iq: dict[str, Any], event: str | None = None) -> bool:
     """Send one resident-specific wording per assigned phone/notify service.
 
     The physical recommendation remains identical; only address, room context
@@ -354,7 +411,11 @@ async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title
     used: set[str] = set()
     selected = set(str(x) for x in (iq.get("room_keys") or []))
     temp = _finite_float(iq.get("expected_temperature_change_c"), 0.0)
+    profile_skipped, global_skipped = _absence_filter(hass, options, event)
     for profile in _resident_profiles(options):
+        if profile_skipped(profile):
+            used.update(str(t) for t in (profile.get("notification_targets") or []))
+            continue
         name = str(profile.get("name") or "").strip()
         assigned = set(str(x) for x in (profile.get("room_keys") or []))
         thermal = str(profile.get("thermal_preference") or "inherit")
@@ -372,7 +433,7 @@ async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title
             used.add(value)
             if await _send_target(hass, value, title, personal):
                 sent = True
-    for target in options.get("notification_targets") or []:
+    for target in [] if global_skipped else (options.get("notification_targets") or []):
         if str(target) in used:
             continue
         if await _send_target(hass, str(target), title, message):
@@ -542,9 +603,9 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             return True
         try:
             sender_ok = (
-                await _send_room_personalised(hass, options, title, message, room_key)
+                await _send_room_personalised(hass, options, title, message, room_key, event)
                 if room_key
-                else await _send(hass, options, title, message)
+                else await _send(hass, options, title, message, event)
             )
         except Exception as err:
             _record_notification_diagnostic(
@@ -558,7 +619,9 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             store, now=now, event=event, scope="room" if room_key else "house",
             status="sent" if sender_ok else "not_sent", target_count=target_count,
             available_service_count=available_count,
-            reason=None if sender_ok else "no_available_notify_service",
+            reason=None if sender_ok else (
+                "recipients_away" if _absence_filter(hass, options, event)[1] else "no_available_notify_service"
+            ),
         ):
             changed = True
         if sender_ok:
@@ -627,7 +690,7 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
                     changed = True
             if enabled and not suppress_at_night and not (kind == "sensor" and sensor_recovery_active) and _due(store, event_key, now, cooldown):
                 try:
-                    handled = await _send_personalised(hass, options, title, message, iq)
+                    handled = await _send_personalised(hass, options, title, message, iq, f"iq_{kind}")
                 except Exception as err:
                     handled = False
                     _record_notification_diagnostic(
@@ -719,7 +782,7 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
                 store.data["last_night_event_date"] = today
                 publish("night", "FreshAirIQ · Nachtstrategie", message, None, {"kind": str(ns.get("action") or "")})
                 changed = True
-            if push_enabled and options.get("notify_night") and not suppress_at_night and await _send(hass, options, "FreshAirIQ · Nachtstrategie", message):
+            if push_enabled and options.get("notify_night") and not suppress_at_night and await _send(hass, options, "FreshAirIQ · Nachtstrategie", message, "night"):
                 store.data["last_night_notification_date"] = today
                 changed=True
 

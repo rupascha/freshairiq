@@ -22,6 +22,7 @@ from .outdoor_air import outdoor_pm25_blocked, outdoor_pm25_limit, plausible_pm2
 from .model import (
     VENTILATION_HYSTERESIS_DELTA_G_M3,
     VENTILATION_HYSTERESIS_RH,
+    SUMMER_WARMING_CLOSE_REASON,
     RoomInput,
     absolute_humidity,
     evaluate_room,
@@ -87,8 +88,17 @@ from .post_stabilization import start_post_close_observation, update_post_close_
 from .learning_components import build_learning_components_status
 from .learning_v2 import build_learning_v2_status
 from .robustness import RobustnessMonitor, finite_float, prepare_runtime_rooms, safe_options
-from .intervention import build_interventions
-from .goals import effective_temperature_target, evaluate_goals
+from .intervention import build_interventions, voc_scale
+from .sun_exposure import (
+    DEFAULT_SHADE_FORECAST_MAX_C,
+    DEFAULT_SHADE_LEAD_MIN,
+    DEFAULT_SHADE_MAX_CLOUD_COVERAGE,
+    forecast_max_today,
+    shading_plan,
+    solar_position,
+    sun_position,
+)
+from .goals import effective_temperature_target, evaluate_goals, normalise_disabled_goals
 from .house_decision import build_night_strategy, floor_ventilation_decision, house_status_fallback, ventilation_threshold_decision
 from .repairs import async_sync_missing_entity_issue
 from .localize import Translator, is_german, protected_names
@@ -112,6 +122,27 @@ def _entity_active(hass: HomeAssistant, entity_id: str | list[str] | tuple[str, 
         if state is not None and str(state.state).lower() in {"on", "open", "running", "fan_only", "ventilation"}:
             return True
     return False
+
+
+def _exhaust_stopped_for_seconds(hass: HomeAssistant, entity_id: str | list[str] | tuple[str, ...] | None, session_started: Any, now: datetime) -> float | None:
+    """Return how long ago the exhaust fan stopped, if it stopped during the session.
+
+    A fan-only airing in a room with window contacts ends when the fan stops,
+    not when the (long closed) windows were closed. Only called while the room
+    is logically closed, i.e. no configured fan is running.
+    """
+    entity_ids = [entity_id] if isinstance(entity_id, str) else list(entity_id or [])
+    changed = [state.last_changed for current in entity_ids if (state := hass.states.get(current)) is not None]
+    if not changed:
+        return None
+    try:
+        started = datetime.fromisoformat(str(session_started))
+    except (TypeError, ValueError):
+        return None
+    stopped = max(changed)
+    if stopped < started:
+        return None
+    return max((now - stopped).total_seconds(), 0.0)
 
 
 def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
@@ -287,6 +318,7 @@ def _opening_assessments(
     learning_rate: float, learning_samples: int, co2: float | None, pollen: float,
     options: dict[str, Any], wind_bearing: float | None, wind_speed: float | None,
     contact_modes: dict[str, str] | None = None,
+    cooling_allowed: bool = True,
 ) -> list[dict[str, Any]]:
     """Evaluate every configured opening against its own incoming air.
 
@@ -356,6 +388,7 @@ def _opening_assessments(
                 volume_m3=float(volume_m3), contact_open=False, contact_open_seconds=0.0,
                 learning_rate=float(learning_rate), learning_samples=int(learning_samples),
                 co2=co2, session_active=False, airflow_factor=airflow, pollen_index=float(pollen),
+                cooling_allowed=cooling_allowed,
             ),
             options,
             False,
@@ -513,6 +546,19 @@ def _room_ventilation_state(hass: HomeAssistant, room: dict[str, Any], now: date
     return (True, max(elapsed)) if elapsed else (False, 0.0)
 
 
+def _cover_openings(room: dict[str, Any]) -> list[tuple[str, str]]:
+    """Every configured cover with the orientation of its opening (room fallback)."""
+    fallback = str(room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN))
+    orientations = room.get(CONF_CONTACT_ORIENTATIONS) or {}
+    mapping = room.get(CONF_CONTACT_COVERS) or {}
+    pairs = [
+        (cover, str(orientations.get(contact, fallback)))
+        for contact, covers in (mapping.items() if isinstance(mapping, dict) else [])
+        for cover in entity_ids(covers)
+    ]
+    return pairs or [(cover, fallback) for cover in entity_ids(room.get(CONF_ROOM_COVERS))]
+
+
 _ORIENTATION_DEG = {"n": 0, "ne": 45, "e": 90, "se": 135, "s": 180, "sw": 225, "w": 270, "nw": 315}
 
 
@@ -609,7 +655,11 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
             else:
                 reasons.append("Seit 15 Minuten fehlen zwei neue Klimamessungen; FreshAirIQ entscheidet ersatzweise anhand des physikalischen und gelernten Lüftungsmodells")
         else:
-            reasons.append("Lüftungsziel erreicht oder zusätzlicher Nutzen ist zu gering")
+            reasons.append(
+                "Die Außenluft ist nicht mehr kühler als der Raum; Schließen hält die Kühle im Raum"
+                if getattr(result, "reason", "") == SUMMER_WARMING_CLOSE_REASON
+                else "Lüftungsziel erreicht oder zusätzlicher Nutzen ist zu gering"
+            )
     elif result.active:
         action = "Continue ventilating"
         if not bool(getattr(result, "close_decision_ready", True)):
@@ -617,6 +667,8 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
             reasons.append(f"Schließentscheidung wartet auf neue Klimamessungen ({fresh}/2)")
         elif bool(getattr(result, "close_decision_model_fallback", False)):
             reasons.append("Seit 15 Minuten fehlen zwei neue Klimamessungen; Modellbewertung sieht aktuell noch einen sinnvollen Lüftungsvorteil")
+        elif str(getattr(result, "reason", "")).startswith("Cooling remains useful"):
+            reasons.append("Kühlen wirkt weiter: die Außenluft ist deutlich kühler als der Raum")
         else:
             reasons.append(f"Kurzfristiger Schließcheck (5 min): voraussichtlich {max(round(result.moisture_effect_next_5_min_ml), 0)} ml Feuchteabbau")
     elif (pollen_blocked or pm25_blocked) and (result.ventilation_candidate or result.cooling_candidate):
@@ -681,6 +733,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._contact_entities: set[str] = set()
         self._contact_confirm_unsubs: dict[str, Any] = {}
         self._final_measurement_unsubs: dict[str, Any] = {}
+        # 0.26.5.1: last shading plan per room (runtime only, not persisted)
+        self._shading_memory: dict[str, dict[str, Any]] = {}
         self._refresh_coalesce_unsub = None
         self._hourly_forecast_cache: list[dict[str, Any]] = []
         self._hourly_forecast_fetched_at: datetime | None = None
@@ -712,6 +766,8 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lambda event_type, payload: self.hass.bus.async_fire(event_type, payload), entry.entry_id
         )
         self._unsub_automation_events = None
+        # F01: last final house decision (kind + rooms) for the close hysteresis.
+        self._last_final_recommendation: dict[str, Any] | None = None
         # Short source outages are common while HA integrations (for example MQTT/Zigbee)
         # restore after startup. Keep them separate from persistent sensor failures.
         self._sensor_recovery_started_at: datetime | None = None
@@ -2280,13 +2336,44 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # render the user-facing Decision Brain from that canonical result.
         # No later layer may change kind/rooms/duration after Decision Brain.
         intelligent_recommendation = stabilise_recommendation(
-            intelligent_recommendation, results, options
+            intelligent_recommendation, results, options,
+            previous=getattr(self, "_last_final_recommendation", None),
         )
+        self._last_final_recommendation = {
+            "kind": intelligent_recommendation.get("kind"),
+            "room_keys": list(intelligent_recommendation.get("room_keys") or []),
+        }
         intelligent_recommendation = build_unified_decision(
             intelligent_recommendation, results, options, cross_active=cross,
             night_strategy=night_strategy,
         )
         return changed, day_night_plan, intelligent_recommendation, night_recommendation
+
+    def _shading_context(self, now: datetime, options: dict[str, Any], temperature: Any, comfort_target: Any) -> dict[str, Any]:
+        """Sun now / after the lead time, expected heat and clouds for the shading plan (0.26.5.1)."""
+        latitude = getattr(getattr(self.hass, "config", None), "latitude", None)
+        longitude = getattr(getattr(self.hass, "config", None), "longitude", None)
+        lead = timedelta(minutes=float(options.get("shade_lead_min", DEFAULT_SHADE_LEAD_MIN)))
+        if isinstance(now, datetime) and now.tzinfo is not None and latitude is not None and longitude is not None:
+            sun, sun_soon = solar_position(now, latitude, longitude), solar_position(now + lead, latitude, longitude)
+        else:
+            sun_state = self.hass.states.get("sun.sun")
+            sun, sun_soon = sun_position(dict(sun_state.attributes) if sun_state else None), None
+        weather_entity = self.entry.data.get(CONF_OUTDOOR_WEATHER)
+        weather = self.hass.states.get(weather_entity) if weather_entity else None
+        cloud = finite_float((weather.attributes or {}).get("cloud_coverage")) if weather is not None else None
+        hottest = forecast_max_today(self._hourly_forecast_cache, now) if isinstance(now, datetime) and now.tzinfo is not None else None
+        temperature = finite_float(temperature)
+        target = finite_float(comfort_target)
+        return {
+            "sun": sun,
+            "sun_soon": sun_soon,
+            "heat_expected": bool(
+                (hottest is not None and hottest >= float(options.get("shade_forecast_max_c", DEFAULT_SHADE_FORECAST_MAX_C)))
+                or (temperature is not None and target is not None and temperature >= target)
+            ),
+            "cloudy": cloud is not None and cloud >= float(options.get("shade_max_cloud_coverage", DEFAULT_SHADE_MAX_CLOUD_COVERAGE)),
+        }
 
     async def _async_evaluate_room(
         self,
@@ -2432,10 +2519,21 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         co2_entity = cfg.get(CONF_ROOM_CO2)
         co2 = _float_state(self.hass, co2_entity) if co2_entity else None
+        disabled_goals = normalise_disabled_goals(cfg.get(CONF_ROOM_DISABLED_GOALS))
+        # A switched-off CO2 goal keeps the reading visible but removes it
+        # from every decision (no CO2 airing, no critical-CO2 override).
+        co2_display = co2
+        if "co2" in disabled_goals:
+            co2 = None
         co2_available = co2 is not None
         voc_configured_entity = cfg.get(CONF_ROOM_VOC)
         voc_entity = voc_configured_entity if voc_sensor_enabled else None
         voc = _float_state(self.hass, voc_entity) if voc_entity else None
+        voc_state = self.hass.states.get(voc_entity) if voc_entity else None
+        voc_unit_scale = voc_scale(
+            voc_state.attributes.get("device_class") if voc_state else None,
+            voc_state.attributes.get("unit_of_measurement") if voc_state else None,
+        ) if voc_state else None
         pm25_configured_entity = cfg.get(CONF_ROOM_PM25)
         pm25_entity = pm25_configured_entity if pm25_sensor_enabled else None
         pm25 = _float_state(self.hass, pm25_entity) if pm25_entity else None
@@ -2645,6 +2743,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 session_should = True
             else:
                 closed_for = _room_closed_for_seconds(self.hass, cfg, now, contact_modes=stable_session_modes)
+                fan_stopped_for = _exhaust_stopped_for_seconds(self.hass, cfg.get(CONF_ROOM_EXHAUST_FAN), mem.get("session_started"), now)
+                if closed_for is not None and fan_stopped_for is not None:
+                    closed_for = min(closed_for, fan_stopped_for)
                 confirmed_close_seconds = closed_for
                 if closed_for is not None:
                     physical_close_candidate = now - timedelta(seconds=max(closed_for, 0.0))
@@ -2982,7 +3083,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             started_specialist = mem.get("session_specialist_opening_mode")
             started_signature = tuple(str(x) for x in (mem.get("session_specialist_opening_signature") or []))
             current_signature = tuple(specialist_opening_signature) if current_specialist not in {None, "cross"} else ()
-            if started_specialist and not three_state_stale_contacts and (current_specialist != started_specialist or (started_specialist != "cross" and current_signature != started_signature)):
+            # A closed room (close confirmation / final measurement wait) is not
+            # a source change; like the room-level check above it never mixes.
+            if started_specialist and not three_state_stale_contacts and (current_session_mode not in {"unknown", "closed"}) and (current_specialist != started_specialist or (started_specialist != "cross" and current_signature != started_signature)):
                 if not mem.get("session_opening_mode_mixed"):
                     mem["session_opening_mode_mixed"] = True
                     changed = True
@@ -3259,6 +3362,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             key=key, name=cfg[CONF_ROOM_NAME], temperature=t, humidity=rh, reference_temperature=ref_t, reference_humidity=ref_rh,
             volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
             learning_rate=effective_learning_rate, learning_samples=effective_learning_samples, co2=co2,
+            cooling_allowed="temperature" not in disabled_goals,
             session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),
             session_start_temp=mem.get("session_start_temp"), session_result_base_ml=float(mem.get("session_result_base_ml", 0.0)),
             session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)),
@@ -3414,6 +3518,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 mem["session_result_ml"] = float(result.result_ml); changed = True
         if not include and result.data_quality == "ok":
             result.action = "Monitor only"; result.reason = "Room is visible but excluded from FreshAirIQ calculations"; result.close_recommended = False
+        if mem["session_active"] and bool(mem.get("close_notified", False)) != bool(result.close_recommended):
+            # 0.26.5.1: remember a published close for the rest of the session
+            # (released again by the model only with a clear margin).
+            mem["close_notified"] = bool(result.close_recommended); changed = True
         fraction = exchanged_air_fraction(float(effective_learning_rate), 5, (1.25 if cross and opening_mode == "open" else 1.0) * airflow)
         delivered, purchased, cost = ventilation_cost(float(cfg[CONF_ROOM_VOLUME]), t, ref_t, fraction, options) if -30 < ref_t < 60 and -10 < t < 50 else (0, 0, 0)
         # Reheating cost is only meaningful when the next ventilation step
@@ -3769,6 +3877,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             learning_rate=float(mem.get("learning_rate", .03)),
             learning_samples=int(mem.get("learning_samples", 0)), co2=co2, pollen=pollen,
             options=options, wind_bearing=wind_bearing, wind_speed=wind_speed, contact_modes=physical_contact_modes,
+            cooling_allowed="temperature" not in disabled_goals,
         )
         room_threshold_mode = str(cfg.get(CONF_ROOM_THRESHOLD_MODE, ROOM_THRESHOLD_AUTOMATIC) or ROOM_THRESHOLD_AUTOMATIC)
         if room_threshold_mode == ROOM_THRESHOLD_PERCENT:
@@ -3807,6 +3916,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 *(["temperature"] if (cfg.get(CONF_ROOM_CLIMATE) or cfg.get(CONF_ROOM_TARGET_TEMPERATURE) not in (None, "") or cfg.get(CONF_ROOM_TARGET_TEMPERATURE_FALLBACK) not in (None, "")) else []),
             ],
             hard_close=bool(result.close_recommended),
+            disabled_goals=disabled_goals,
         )
         for goal in goal_state.get("goals", []):
             if goal.get("id") == "humidity":
@@ -3818,7 +3928,7 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         mem["goal_trend_sample"] = {"at": now.isoformat(), "rh": rh, "co2": co2, "temp": t}
 
         results[key] = result.as_dict() | {
-            "learning_diagnosis": mem.get("diagnosis", ""), "learning_sample_credit": round(float(mem.get("learning_sample_credit", 0.0) or 0.0), 3), "co2": co2, "co2_available": co2_available, "co2_data_quality": ("ok" if co2_available else "missing" if co2_entity else "not_configured"),
+            "learning_diagnosis": mem.get("diagnosis", ""), "learning_sample_credit": round(float(mem.get("learning_sample_credit", 0.0) or 0.0), 3), "co2": co2_display, "co2_available": co2_available, "co2_data_quality": ("ok" if co2_available else "goal_disabled" if co2_display is not None else "missing" if co2_entity else "not_configured"),
             "goal_state": goal_state, "goal_priorities": goal_state.get("priorities"),
             "comfort_target_c": comfort_target, "comfort_target_source": comfort_target_source,
             "voc": voc, "voc_available": voc is not None, "voc_enabled": voc_sensor_enabled, "voc_configured": bool(voc_configured_entity),
@@ -3932,12 +4042,26 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "repeat_humidity_rebound_percent": round(humidity_rebound, 1) if humidity_rebound is not None else None,
             "history_14d": self.store.room_history_days(key, int(options.get("statistics_days", 14))), "temperature_history_14d": self.store.room_temperature_points(key, int(options.get("statistics_days", 14))), "humidity_history_14d": self.store.room_humidity_points(key, int(options.get("statistics_days", 14))),
         }
+        if voc_unit_scale is not None:
+            results[key]["voc_scale"] = voc_unit_scale
         results[key]["pollen_blocked"] = bool(
             options.get("pollen_enabled", False)
             and options.get("pollen_strict_veto", True)
             and pollen > float(options.get("pollen_max", 4.0))
         )
         results[key]["outdoor_pm25_blocked"] = outdoor_pm25_blocked(options, outdoor_pm25)
+        shading = shading_plan(
+            cover_openings=_cover_openings(cfg),
+            temperature=results[key].get("temperature"),
+            illuminance=results[key].get("illuminance"),
+            options=options,
+            summer_cooling=str(options.get("operating_profile")) == PROFILE_SUMMER_COOLING,
+            previous=self._shading_memory.get(key, {}).get("covers_to_close"),
+            previous_sunlit=self._shading_memory.get(key, {}).get("sunlit_covers"),
+            **self._shading_context(now, options, results[key].get("temperature"), comfort_target),
+        )
+        self._shading_memory[key] = shading
+        results[key]["shading"] = shading
         interventions = build_interventions(
             room=results[key],
             config=cfg,

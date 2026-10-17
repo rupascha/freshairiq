@@ -19,6 +19,14 @@ HEALTH_CONTRACT_VERSION = 1
 _MAX_INCIDENTS = 32
 _MAX_METRICS = 24
 _MIN_BASELINE_SAMPLES = 8
+# F38 (2026-10-16): a metric anomaly resolves after this many consecutive
+# samples back inside the pre-incident range; a lasting slowdown stays active.
+_METRIC_RECOVERY_CONFIRMATIONS = 10
+_METRIC_RECOVERY_RATIO = 2.5
+# Below this absolute deviation a timing outlier has no user-visible effect
+# (coordinator cycle: 30 s); sub-millisecond baselines would otherwise turn
+# scheduler jitter (e.g. 0.13 ms -> 1.4 ms) into "medium" incidents.
+_MIN_ABSOLUTE_DEVIATION = {"ms": 5.0}
 
 
 def json_payload_bytes(value: Any) -> int:
@@ -214,18 +222,24 @@ class RuntimeHealthMonitor:
         stddev = (m2 / max(samples - 1, 1)) ** 0.5 if samples >= 2 else 0.0
         ratio = numeric / max(mean, 1e-9) if mean > 0 else 1.0
         z_score = (numeric - mean) / stddev if stddev > 1e-9 else 0.0
-        anomalous = samples >= _MIN_BASELINE_SAMPLES and (
+        min_deviation = _MIN_ABSOLUTE_DEVIATION.get(str(unit or "").strip().lower(), 0.0)
+        anomalous = samples >= _MIN_BASELINE_SAMPLES and abs(numeric - mean) >= min_deviation and (
             (higher_is_worse and ratio >= 2.5 and z_score >= 4.0)
             or ((not higher_is_worse) and mean > 0 and numeric <= mean * 0.4 and z_score <= -4.0)
         )
-        if anomalous:
-            classification = {
-                "support_code": "FAIQ-RUNTIME-ANOMALY-001",
-                "category": "runtime_anomaly",
-                "metric": name,
-                "severity": "medium",
-            }
+        classification = {
+            "support_code": "FAIQ-RUNTIME-ANOMALY-001",
+            "category": "runtime_anomaly",
+            "metric": name,
+            "severity": "medium",
+        }
+        if not anomalous:
+            self._confirm_metric_recovery(classification, numeric, now, higher_is_worse=higher_is_worse)
+        else:
+            existing = self._incidents.get(_fingerprint(classification))
+            reference = (existing or {}).get("evidence", {}).get("reference_mean") if existing and str(existing.get("status")) == "active" else None
             self._record(classification, {
+                "reference_mean": round(float(reference if reference is not None else mean), 3),
                 "baseline_samples": samples,
                 "baseline_mean": round(mean, 3),
                 "observed": round(numeric, 3),
@@ -245,6 +259,27 @@ class RuntimeHealthMonitor:
             "max": max(float(row.get("max", numeric)), numeric),
             "last": numeric, "last_seen_at": _stamp(now),
         })
+
+    def _confirm_metric_recovery(
+        self, classification: Mapping[str, Any], numeric: float, now: datetime | str | None, *, higher_is_worse: bool,
+    ) -> None:
+        """Resolve an active metric anomaly after confirmed normal samples."""
+        row = self._incidents.get(_fingerprint(classification))
+        if row is None or str(row.get("status") or "active") == "resolved":
+            return
+        evidence = row.get("evidence") if isinstance(row.get("evidence"), Mapping) else {}
+        reference = evidence.get("reference_mean", evidence.get("baseline_mean"))
+        if isinstance(reference, bool) or not isinstance(reference, (int, float)) or not reference > 0:
+            return  # foreign/corrupt evidence: keep the incident as it is
+        normal = numeric < reference * _METRIC_RECOVERY_RATIO if higher_is_worse else numeric > reference * 0.4
+        if not normal:
+            row["healthy_confirmations"] = 0
+            return
+        confirmations = min(int(row.get("healthy_confirmations") or 0) + 1, _METRIC_RECOVERY_CONFIRMATIONS)
+        row["healthy_confirmations"] = confirmations
+        if confirmations >= _METRIC_RECOVERY_CONFIRMATIONS:
+            row["status"] = "resolved"
+            row["resolved_at"] = _stamp(now)
 
     def health_snapshot(self, now: datetime | str | None = None) -> dict[str, Any]:
         """Return a point-in-time, privacy-safe support/telemetry health snapshot."""

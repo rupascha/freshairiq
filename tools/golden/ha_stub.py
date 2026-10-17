@@ -284,6 +284,7 @@ def install() -> None:
     ev.async_call_later = lambda hass, delay, action: (lambda: None)
     ev.async_track_state_change_event = lambda hass, ids, action: (lambda: None)
     ev.async_track_time_interval = lambda hass, action, interval: (lambda: None)
+    ev.async_track_point_in_time = lambda hass, action, point: (lambda: None)
     _module("homeassistant.helpers.storage").Store = Store
 
     async def _system_info(hass):

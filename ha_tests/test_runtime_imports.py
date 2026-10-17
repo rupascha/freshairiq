@@ -17,7 +17,6 @@ RUNTIME_MODULES = [
     "custom_components.freshairiq.coordinator",
     "custom_components.freshairiq.sensor",
     "custom_components.freshairiq.diagnostics",
-    "custom_components.freshairiq.settings_api",
     "custom_components.freshairiq.storage",
     "custom_components.freshairiq.typing",
     "custom_components.freshairiq.entity",

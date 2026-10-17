@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_release_job_attaches_exact_verified_clean_zip():
     release = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-    assert "uses: actions/download-artifact@v4" in release
+    assert "uses: actions/download-artifact@v8" in release
     assert "name: freshairiq-clean-release" in release
     assert 'SOURCE="release-artifact/FreshAirIQ-release.zip"' in release
     assert 'python tools/github_release_gate.py --zip "$SOURCE"' in release

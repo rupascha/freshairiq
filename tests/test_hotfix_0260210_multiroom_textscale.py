@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.recommendation import build_recommendation
 
@@ -18,7 +20,7 @@ def test_multiple_blocked_mould_wait_then_close_open_one():
 def test_text_scale_contract_moved_to_per_card_editor():
  from custom_components.freshairiq.settings_contract import NATIVE_OPTION_KEYS
  assert "dashboard_text_scale" not in DEFAULT_OPTIONS and "dashboard_text_scale" not in NATIVE_OPTION_KEYS
- card=open('custom_components/freshairiq/frontend/freshairiq-card.js',encoding='utf-8').read()
+ card=Path('custom_components/freshairiq/frontend/freshairiq-card.js').read_text(encoding='utf-8')
  assert "dashboard_text_scale" not in card
  for key in ("font_scale_recommendation","font_scale_goals","font_scale_rooms","font_scale_metrics","font_scale_details","font_scale_meta"):
   assert key in card

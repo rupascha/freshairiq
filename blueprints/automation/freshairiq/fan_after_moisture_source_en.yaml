@@ -1,0 +1,98 @@
+blueprint:
+  name: FreshAirIQ – Fan after a moisture source (e.g. showering)
+  description: >-
+    Switches a device (e.g. the bathroom fan) on as soon as FreshAirIQ detects an
+    internal moisture source in a room (shower, bath, cooking …) and switches it
+    off after a follow-up time once the source has ended. General airing
+    recommendations (e.g. the evening pre-airing) do not trigger this blueprint.
+    Without a blueprint, FreshAirIQ can also do this itself: edit the room →
+    "Automatic control". Please do not use both at the same time.
+  domain: automation
+  source_url: https://github.com/rupascha/freshairiq/blob/main/blueprints/automation/freshairiq/fan_after_moisture_source_en.yaml
+  input:
+    moisture_source:
+      name: Moisture source
+      description: The room's FreshAirIQ sensor "Moisture source active" (e.g. "Bathroom Moisture source active").
+      selector:
+        entity:
+          integration: freshairiq
+          domain: binary_sensor
+    device:
+      name: Device
+      selector:
+        entity:
+          domain: [switch, fan, humidifier, input_boolean, light]
+    sources:
+      name: Only for these sources
+      description: >-
+        Leave empty = every detected moisture source. A source that cannot be
+        identified clearly counts as "Moisture source (unspecified)".
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - { label: "Shower", value: shower }
+            - { label: "Bath", value: bath }
+            - { label: "Sauna", value: sauna }
+            - { label: "Cooking", value: cooking }
+            - { label: "Washing machine", value: washing_machine }
+            - { label: "Dryer", value: dryer }
+            - { label: "Ironing station", value: ironing_station }
+            - { label: "Drying laundry", value: laundry_drying }
+            - { label: "Moisture source (unspecified)", value: unknown }
+    follow_up:
+      name: Follow-up time
+      description: How long the device keeps running after the moisture source has ended.
+      default: 10
+      selector:
+        number: { min: 0, max: 60, unit_of_measurement: min, mode: slider }
+    max_runtime:
+      name: Maximum runtime
+      description: The device is switched off after this time at the latest.
+      default: 60
+      selector:
+        number: { min: 5, max: 240, unit_of_measurement: min, mode: slider }
+mode: restart
+triggers:
+  - trigger: state
+    entity_id: !input moisture_source
+    to: "on"
+    id: start
+  - trigger: state
+    entity_id: !input moisture_source
+    to: "off"
+    for:
+      minutes: !input follow_up
+    id: stop
+variables:
+  sources: !input sources
+  source: "{{ state_attr(trigger.entity_id, 'source') or 'unknown' }}"
+  follow_up: !input follow_up
+  max_runtime: !input max_runtime
+actions:
+  - choose:
+      - conditions:
+          - "{{ trigger.id == 'start' and (sources | length == 0 or source in sources) }}"
+        sequence:
+          - action: homeassistant.turn_on
+            target:
+              entity_id: !input device
+          - wait_for_trigger:
+              - trigger: state
+                entity_id: !input moisture_source
+                to: "off"
+                for:
+                  minutes: "{{ follow_up }}"
+            timeout:
+              minutes: "{{ max_runtime }}"
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input device
+      - conditions:
+          - "{{ trigger.id == 'stop' }}"
+        sequence:
+          # Also covers a restart of Home Assistant while the device was running.
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input device

@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
 FLOW = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
 
-# test_dashboard_existing_room_edit_uses_live_runtime_refresh: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_existing_room_edit_uses_live_runtime_refresh: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_existing_room_edit_is_applied_live_without_reload (strict xfail: product bug, see its marker)
 
 def test_native_room_subentries_are_add_only_not_reconfigurable():
     start = FLOW.index("class FreshAirIQRoomSubentryFlow")

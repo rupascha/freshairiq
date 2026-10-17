@@ -3,7 +3,7 @@
   "evening_ventilation_and_night": {
    "cycles": [
     {
-     "all": "9f0b31a7014db37e",
+     "all": "5905058726486c8b",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -119,7 +119,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "dfb98c7f7a9edfb5",
+      "rooms": "e172a893cbbbe039",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "dec27115ec6db514",
       "runtime_robustness": "d48c5cd3ce8eb94e",
@@ -152,7 +152,7 @@
      "store": "fd1e99a3e8ffb449"
     },
     {
-     "all": "e3cc265e007afd09",
+     "all": "cd19ba9fd227aae0",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -268,7 +268,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bd26dccc1ee2a01b",
+      "rooms": "e94be9d946ea0d01",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "32d793354e7a685f",
       "runtime_robustness": "ed027e3757180140",
@@ -301,7 +301,7 @@
      "store": "705331857e66d1e4"
     },
     {
-     "all": "8e68230aa2fafd7f",
+     "all": "082b0ad7c39d4cd4",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -417,7 +417,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2e6e55621ebec99d",
+      "rooms": "06377b12405ea16d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8ddaec29c62dc16c",
       "runtime_robustness": "4bd5d87c75704ea7",
@@ -450,7 +450,7 @@
      "store": "cb86321e0a9ea104"
     },
     {
-     "all": "c367629c65b8b0db",
+     "all": "d37545e231888be2",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -566,7 +566,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f52fd39912444723",
+      "rooms": "ebc0f7e40716744f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "41b003613257c871",
       "runtime_robustness": "31899a6cfcb54135",
@@ -599,7 +599,7 @@
      "store": "2012cea6b0d4536d"
     },
     {
-     "all": "b9d9882ec22804af",
+     "all": "3e6c9c7d761bce29",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -715,7 +715,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9ddd3ea1bbebcca1",
+      "rooms": "017037a489af979c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "db537a4cd7a6db02",
       "runtime_robustness": "c1c2574d9f39e6c8",
@@ -748,7 +748,7 @@
      "store": "490844923bbe0ca4"
     },
     {
-     "all": "41160f3f0bcc706b",
+     "all": "3eab62822233143f",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -864,7 +864,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "13a3e55453796447",
+      "rooms": "7b56e16c83e3aeab",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "36535a3dd0a694a2",
       "runtime_robustness": "af063c6ec3c0026d",
@@ -897,7 +897,7 @@
      "store": "b8fe734ed12fc946"
     },
     {
-     "all": "406494b05ddd6f1f",
+     "all": "a42dc7e6b8ea1774",
      "keys": {
       "actionable_potential_ml": "3d914f9348c9cc0f",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1013,7 +1013,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cf2e5ddc30592c50",
+      "rooms": "b54f369f561f1fad",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b7a05d5ee0db8fa",
       "runtime_robustness": "29f115f556de70e4",
@@ -1046,7 +1046,7 @@
      "store": "4cf2e16b822bbcb6"
     },
     {
-     "all": "d6d00d8120b4f40e",
+     "all": "af514e7c78f71d45",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1162,7 +1162,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3c7dc20617d0c0c2",
+      "rooms": "110feadb42932221",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf0dbbf849011a65",
       "runtime_robustness": "6175c0cc419e351a",
@@ -1195,7 +1195,7 @@
      "store": "b3dfba59499d0e82"
     },
     {
-     "all": "15f655a342eae394",
+     "all": "0496f5aa8e2567e8",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1311,7 +1311,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9c081a814a8ca22b",
+      "rooms": "5c0a6cb0b82cfba2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "536c0b72bc2a091b",
       "runtime_robustness": "8e834cfa984cf8de",
@@ -1344,7 +1344,7 @@
      "store": "f172f8bf3e378f2e"
     },
     {
-     "all": "389a6d359ae7ff68",
+     "all": "65f5c8342d3d50e6",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1460,7 +1460,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "793ee4cd03b60d35",
+      "rooms": "93ad6ac0db6ece64",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "dcc4dc3ff1cffd4b",
       "runtime_robustness": "9046ea0934315e89",
@@ -1493,7 +1493,7 @@
      "store": "80fbd5009bf7c00d"
     },
     {
-     "all": "a82a9361585235bd",
+     "all": "54b46996c74f6dd9",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1609,7 +1609,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7a1e9a6677a2feac",
+      "rooms": "9ce0803d86095838",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f339fd9756d3812a",
       "runtime_robustness": "62001acfbfdb8e07",
@@ -1642,7 +1642,7 @@
      "store": "8a5180488277d160"
     },
     {
-     "all": "c7793c7e81ef459f",
+     "all": "21ad051f14f4316f",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1758,7 +1758,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "433d2ed27978e512",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2e56909dbf3453ab",
+      "rooms": "016b3cebcd474072",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e2faaaf10dbd59f6",
       "runtime_robustness": "584a0f5b2c35c096",
@@ -1791,7 +1791,7 @@
      "store": "a3d6b043cdc131bf"
     },
     {
-     "all": "8108d85b897304cc",
+     "all": "fda382041b42d732",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1907,7 +1907,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "3e8acbd32dad939b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "655b73979dd73380",
+      "rooms": "35f1dd1ba5f96a06",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6cf35b2c1e395ce9",
       "runtime_robustness": "c99f3f74a560520f",
@@ -1940,7 +1940,7 @@
      "store": "0376ea24e6e330af"
     },
     {
-     "all": "b04a4792f83ac725",
+     "all": "7e06c0e9b80b1559",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2056,7 +2056,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cf0163a3faafa0aa",
+      "rooms": "7de5c6c048546dd2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3b3109139a92478b",
       "runtime_robustness": "b9ee76288d12dcba",
@@ -2089,7 +2089,7 @@
      "store": "f90438c65433bd21"
     },
     {
-     "all": "c13ee4928d90b761",
+     "all": "5eb1920f69650159",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2205,7 +2205,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "3e8acbd32dad939b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d4a8d6604cdef0ab",
+      "rooms": "77ef11a35cd7a06b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8fd33fe261916427",
       "runtime_robustness": "83416cc5a28d64cc",
@@ -2235,10 +2235,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 9",
-     "store": "9dcc304d8000b55e"
+     "store": "b72e19fa7fbbc4ea"
     },
     {
-     "all": "4473ab3f2af417fb",
+     "all": "1d4fcd2020502356",
      "keys": {
       "actionable_potential_ml": "eb1e33e8a81b697b",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2354,7 +2354,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "4811e66ee3c52726",
+      "rooms": "7c069c4e19572c06",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7a1ac79ce6e853d0",
       "runtime_robustness": "183527c6a35fb29d",
@@ -2384,10 +2384,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 10",
-     "store": "bf8478e6eecaa1f5"
+     "store": "403f69cabdcee829"
     },
     {
-     "all": "21fb7f3bb3287a79",
+     "all": "12b26e3506c927f2",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2503,7 +2503,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "55326226b1ebefcf",
+      "rooms": "d4dfb14615f73338",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "365374ee0c913ef8",
       "runtime_robustness": "c3391ce856cb1f86",
@@ -2533,10 +2533,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 11",
-     "store": "a94fa0addd79e45c"
+     "store": "c93e13f03b710ffd"
     },
     {
-     "all": "c5d939648ad72b10",
+     "all": "f2cbe73fcd7edb58",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2652,7 +2652,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "5fcaaa5150b122cd",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "afd919800e9ef863",
+      "rooms": "acf98ce1ccb2fdad",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "979d3963472ee30a",
       "runtime_robustness": "badf571473761219",
@@ -2682,10 +2682,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 12",
-     "store": "7cf28845ba4a935d"
+     "store": "4849f026a2000151"
     },
     {
-     "all": "a96ff6714aa1d013",
+     "all": "9f0e350f17906c91",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2801,7 +2801,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "5c91a1ba11dbd43a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f36a479a72bf7c65",
+      "rooms": "97dd61fa8c9248b9",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "21d5bf759c22e809",
       "runtime_robustness": "612fae74d584a339",
@@ -2831,10 +2831,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window closed",
-     "store": "0d74ac00df4fc2ed"
+     "store": "9db4dcbdf45c1b17"
     },
     {
-     "all": "5dd3ce3f8c6571a8",
+     "all": "d38e9d1e39c5fa71",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2950,7 +2950,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "7a4632cf400d946a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8bd7a1d2c9988131",
+      "rooms": "c920ffea63d9d166",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "edf80c7a3a54d7c7",
       "runtime_robustness": "2443723f489576e1",
@@ -2983,7 +2983,7 @@
      "store": "980ae20944ffc2ad"
     },
     {
-     "all": "e2e59aa653ccd64b",
+     "all": "2b2f546afabd4a11",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3099,7 +3099,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0b185c436af886b6",
+      "rooms": "abdc96a41505af2e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a521ae68d95f0e4f",
       "runtime_robustness": "4c62611656eefc89",
@@ -3132,7 +3132,7 @@
      "store": "3c8d5134d17148e5"
     },
     {
-     "all": "f706a626a41203f7",
+     "all": "efc5a5b228951275",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3248,7 +3248,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5e8482d24eac3216",
+      "rooms": "641cced5210eebfc",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "431a961b86aefbb4",
       "runtime_robustness": "082c7dba58117914",
@@ -3281,7 +3281,7 @@
      "store": "3babe0d03c10112f"
     },
     {
-     "all": "d5e6199fcb083fa0",
+     "all": "e254597017ec92a5",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3397,7 +3397,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "87de6150a3d8e9c6",
+      "rooms": "b34f59f92710a522",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d01bd34d72ef4446",
       "runtime_robustness": "7792ae66ca5da760",
@@ -3430,7 +3430,7 @@
      "store": "d48cdc6a7b5d11f5"
     },
     {
-     "all": "15106701d2a58b78",
+     "all": "828edae7ce6fd39f",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3546,7 +3546,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3b249b7dbab34b88",
+      "rooms": "b137dee08014134d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "31ed09fb06d0a45d",
       "runtime_robustness": "53f38c7bf8340931",
@@ -3579,7 +3579,7 @@
      "store": "654b3eda0f9ab4ee"
     },
     {
-     "all": "6fc3cb2524870ddd",
+     "all": "200e0672cc026a30",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3695,7 +3695,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "80a1ee32156d20c0",
+      "rooms": "81ae24ee9827fe43",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "35f25549a842e22d",
       "runtime_robustness": "bc87a765060a0980",
@@ -3728,7 +3728,7 @@
      "store": "58cbe00df4354d77"
     },
     {
-     "all": "c1ed53591e707bfd",
+     "all": "06713c4d03dfa0da",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3844,7 +3844,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d0f25c021fadb578",
+      "rooms": "855702378d97820e",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "d06dcbb45f36f07f",
       "runtime_robustness": "638eb05540705586",
@@ -3877,7 +3877,7 @@
      "store": "79966ff95bac9002"
     },
     {
-     "all": "cff8097e5de9d522",
+     "all": "fc5c1d3a1ef183ff",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3993,7 +3993,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6af7c6b42ff3b9e6",
+      "rooms": "dad01b26fe8a62ed",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "338a9d46ce5c20e4",
       "runtime_robustness": "645f561f68c585d4",
@@ -4026,7 +4026,7 @@
      "store": "a7fb917abce54973"
     },
     {
-     "all": "c1d7056df418dd3d",
+     "all": "ac32f3acf4e22906",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4142,7 +4142,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "8c160485b860f673",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "dc878b55a6a1a2a4",
+      "rooms": "cc2e34423dbca5bb",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "3ec07059a3609942",
       "runtime_robustness": "29aef4daf3caeb1a",
@@ -4175,7 +4175,7 @@
      "store": "1afdd83d4a476cc0"
     },
     {
-     "all": "edae5838aae83ed8",
+     "all": "d5b5a8ffd5b372b7",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4291,7 +4291,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "b52c1735552bce4e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "581d74f9f4d08013",
+      "rooms": "5291f8f79b22d47b",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "fd0669d55425a613",
       "runtime_robustness": "2a4afe4c553b813a",
@@ -4324,7 +4324,7 @@
      "store": "9183c44511e2d281"
     },
     {
-     "all": "5bd00c08d827eaac",
+     "all": "2a4928b2ec076eaf",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4440,7 +4440,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "87888cc50bced672",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5cea60459b23d893",
+      "rooms": "ae478ca1a841007f",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "92d7ed9f7dea543b",
       "runtime_robustness": "91456cd274b8b20d",
@@ -4473,7 +4473,7 @@
      "store": "f6a9e77fae2ad7b3"
     },
     {
-     "all": "40c3d4510d1ab343",
+     "all": "e6682e1827b5e1fb",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4589,7 +4589,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "2415b58f720c24dc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e47f48eada825c1f",
+      "rooms": "6e41ce34c65bd6a7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "263a79372faddb09",
       "runtime_robustness": "0762eac2d3e31f30",
@@ -4622,7 +4622,7 @@
      "store": "ffdb60779ce5921d"
     },
     {
-     "all": "6bd63541e6d4f97b",
+     "all": "3c87db04a86520a4",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4738,7 +4738,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "bd8a8f86863435bc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "799cd032d3e14f8e",
+      "rooms": "ba93c68629e78ef8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a704e2dfb0d530d2",
       "runtime_robustness": "6fdc1570e079590e",
@@ -4771,7 +4771,7 @@
      "store": "509dda76b765d8e1"
     },
     {
-     "all": "d663e7744db1d550",
+     "all": "a6053c157d5c36e7",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4887,7 +4887,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5935bc30bbc1c76e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "644bab2924978f26",
+      "rooms": "41b5bed1ee6a36bf",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9f5e21358ad1f7e3",
       "runtime_robustness": "1f46a0627a2c45bd",
@@ -4920,7 +4920,7 @@
      "store": "1081e6d47a56a3c7"
     },
     {
-     "all": "78b453f981b57585",
+     "all": "f031f212dc629b0e",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5036,7 +5036,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f8a48890dc7d939b",
+      "rooms": "be581fd20ad55ada",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0e0bed05bf17c095",
       "runtime_robustness": "1811b552db020b0f",
@@ -5069,7 +5069,7 @@
      "store": "22872cadbebec019"
     },
     {
-     "all": "64f1470160330164",
+     "all": "9ce08e9d00b6a869",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5185,7 +5185,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "2894248d90b05c55",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5dd8d3d54dbcdde2",
+      "rooms": "f9f51852eacf6280",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "1f0625426901fb5b",
       "runtime_robustness": "194f78e585b3330a",
@@ -5218,7 +5218,7 @@
      "store": "b3d63c84b75857a7"
     },
     {
-     "all": "a986db664ce85415",
+     "all": "3113b7007f4e7dd5",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5334,7 +5334,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "2894248d90b05c55",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7e776aa0da4b741a",
+      "rooms": "8e664f1279e01225",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a6bd57daa3efdc62",
       "runtime_robustness": "d4fc5611c1942d9f",
@@ -5367,7 +5367,7 @@
      "store": "fb55c17ae60a98cf"
     },
     {
-     "all": "ccee10e8ca502ea2",
+     "all": "6c57bbc6506a8f1a",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5483,7 +5483,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "582fea4fb60ab16c",
+      "rooms": "33b63dc326d9272d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "eb5db890285c94ce",
       "runtime_robustness": "4385a5fd49331b25",
@@ -5516,7 +5516,7 @@
      "store": "717c5cdb73814006"
     },
     {
-     "all": "5890f9390cae4923",
+     "all": "0a1722296ed0ee09",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5632,7 +5632,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "96224bba47576a55",
+      "rooms": "65ea928eeab81e46",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "283bb443ac0163b6",
       "runtime_robustness": "fa1ba57aefbe8a5b",
@@ -5665,7 +5665,7 @@
      "store": "25380a66f87f0dd6"
     },
     {
-     "all": "6e4077832bc64bb4",
+     "all": "a70e812e3b336da8",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5781,7 +5781,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8a5ba123a405e45f",
+      "rooms": "ec3842f822c4f1d5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "447ab91d32bdf99a",
       "runtime_robustness": "34e97f8904bb0a06",
@@ -5814,7 +5814,7 @@
      "store": "e64061c6c2ff258f"
     },
     {
-     "all": "2b9d1f7906915138",
+     "all": "5d8c13732edc7d1d",
      "keys": {
       "actionable_potential_ml": "76a50887d8f1c2e9",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5930,7 +5930,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "360aedffb3f60076",
+      "rooms": "38487c8dfb284968",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "628e0331c7461026",
       "runtime_robustness": "9295f44ce817700e",
@@ -5963,7 +5963,7 @@
      "store": "34d931017d6f8cad"
     },
     {
-     "all": "f48d5d71471f8089",
+     "all": "bf3dbbab7e77ff98",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6079,7 +6079,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f1ab3e992cf684b5",
+      "rooms": "708fadd8b24a352f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "07ca56ef03aff2e5",
       "runtime_robustness": "5b219ef371e1e1d7",
@@ -6112,7 +6112,7 @@
      "store": "369c156dfd525285"
     },
     {
-     "all": "e7da9ad35774aeb1",
+     "all": "29c70217cdbdc75c",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6228,7 +6228,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3f55ee3dc0ed76b0",
+      "rooms": "16900035e9eeebd1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5358f69aa38a3746",
       "runtime_robustness": "d99855371b6ec168",
@@ -6261,7 +6261,7 @@
      "store": "94f921d2eb777ad5"
     },
     {
-     "all": "bb95a8ac9a4a5348",
+     "all": "f2c8c5f40eb6733c",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6377,7 +6377,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ef3bf20b61221ce7",
+      "rooms": "a06c9fee5362268c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7d752455145d60e3",
       "runtime_robustness": "ae34d6cf65e6cf5d",
@@ -6410,7 +6410,7 @@
      "store": "b7e772fcd675869b"
     },
     {
-     "all": "7dd71d1b72afd887",
+     "all": "5f2baec6a9d7915c",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6526,7 +6526,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bf3b640167d7ccc7",
+      "rooms": "e0c6629dca75b61e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6b1d26c9f4733b8b",
       "runtime_robustness": "64e1791f67f16173",
@@ -6559,7 +6559,7 @@
      "store": "1f2b1fd18fd5d4b2"
     },
     {
-     "all": "b6671a53912b956d",
+     "all": "38e45669ff36c43b",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6675,7 +6675,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "faf072a9721db4c9",
+      "rooms": "24709be05f85adb1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c812e2e266efceb9",
       "runtime_robustness": "a68d107ef932fa61",
@@ -6708,7 +6708,7 @@
      "store": "2646fc6cfad179ea"
     },
     {
-     "all": "876096db1f75370b",
+     "all": "caf422224fe1b290",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6824,7 +6824,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "63890c77530fb204",
+      "rooms": "96d5d2d9160e52bb",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "ea2899884dbe808a",
       "runtime_robustness": "d3752a7c48fc6f33",
@@ -6857,7 +6857,7 @@
      "store": "88bc9c1607726494"
     },
     {
-     "all": "84628fab46595f77",
+     "all": "0006f08df12fca5f",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6973,7 +6973,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2680f292400ac2e8",
+      "rooms": "8c39e320e621e487",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b952e26248c9a503",
       "runtime_robustness": "822ee4da2e790cbc",
@@ -7006,7 +7006,7 @@
      "store": "7b701ed5dc55361c"
     },
     {
-     "all": "f376206e65571041",
+     "all": "dc1b58bd463cea12",
      "keys": {
       "actionable_potential_ml": "a21855da08cb102d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7122,7 +7122,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7ff203147c22f1b5",
+      "rooms": "fa9d6075b62ddf85",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6d8095dd7bfbbe34",
       "runtime_robustness": "520adb9b972149d5",
@@ -7155,7 +7155,7 @@
      "store": "c103df216935dfad"
     },
     {
-     "all": "33752a0fb7bf64b6",
+     "all": "ce8d469de18c361e",
      "keys": {
       "actionable_potential_ml": "3ada92f28b4ceda3",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7271,7 +7271,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "25c19deba35ff478",
+      "rooms": "c7df138a52dad347",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3777a57a9303f097",
       "runtime_robustness": "c21fb23b4427ed6b",
@@ -7304,7 +7304,7 @@
      "store": "fd4f29588c450136"
     },
     {
-     "all": "abcbc58027744745",
+     "all": "09361c0f6854755b",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7420,7 +7420,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d19fa92d50b8c3c1",
+      "rooms": "3e290d6ec591a2e8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f34f677401960db1",
       "runtime_robustness": "dd180db36af86cef",
@@ -7453,7 +7453,7 @@
      "store": "63030e8807996fac"
     },
     {
-     "all": "bf5215184f0bc904",
+     "all": "5ca7a8a8c4609d31",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7569,7 +7569,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "96905e4530f943d0",
+      "rooms": "f296d4724dd2b535",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0037b9f217a481c",
       "runtime_robustness": "7c0a9ab5bc84c462",
@@ -7602,7 +7602,7 @@
      "store": "63b150edf33b27b3"
     },
     {
-     "all": "930a02e0160eb47a",
+     "all": "9efb50335b33c145",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7718,7 +7718,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d33aa15e7557d822",
+      "rooms": "2a9a69bdb5e23ac3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cf2b91501dbb236e",
       "runtime_robustness": "e0efe11766928737",
@@ -7748,10 +7748,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 5",
-     "store": "ed6807a6e5a78675"
+     "store": "1828e4e1adbb3c21"
     },
     {
-     "all": "081a3be069da7d34",
+     "all": "01698500baa90718",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7867,7 +7867,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9b22665e11487ea4",
+      "rooms": "ca50fab2414889d5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "62d1ebf23f4c8e42",
       "runtime_robustness": "0c3c414f22a70229",
@@ -7897,11 +7897,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed",
-     "store": "e03afec7df305f9f"
+     "store": "5c6e9e1c83c09add"
     }
    ],
    "network_calls": [],
-   "persisted": "fc1a7097603d2743"
+   "persisted": "f4681421871e5d2f"
   },
   "no_rooms": {
    "cycles": [
@@ -8359,7 +8359,7 @@
   "sensor_trouble": {
    "cycles": [
     {
-     "all": "ac5c385ba9aef6bd",
+     "all": "0983d54f4fd18f25",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8475,7 +8475,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "91a41226e11da2a7",
+      "rooms": "e3780504a1310373",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a99f62983bcbeb52",
       "runtime_robustness": "1f626a2e42ae35fe",
@@ -8508,7 +8508,7 @@
      "store": "f041d8ff912b5af5"
     },
     {
-     "all": "3c7b4f300d170aa6",
+     "all": "e4804a2c6fc7a055",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8624,7 +8624,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2c110a52340939b1",
+      "rooms": "2007b8f927babce4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c9db919d628811b3",
       "runtime_robustness": "699ccf32a6ef1a44",
@@ -8657,7 +8657,7 @@
      "store": "86bd65f57e62ba38"
     },
     {
-     "all": "482506a16962dd20",
+     "all": "82720922c6d5232c",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8773,7 +8773,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7127ea01bcd1bb3e",
+      "rooms": "3b305f33c46c3b04",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "20ea8874975d06cf",
       "runtime_robustness": "55f05d56575e3f87",
@@ -8806,7 +8806,7 @@
      "store": "911b83e8528c3531"
     },
     {
-     "all": "3989fbc3d609d027",
+     "all": "e7dedbdf43c19340",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8922,7 +8922,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d737c63f1f08b62f",
+      "rooms": "ef68236292cba1c2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "87b81f2a6bfd20cf",
       "runtime_robustness": "62419a103bfc4c84",
@@ -8955,7 +8955,7 @@
      "store": "246493936bcff4c7"
     },
     {
-     "all": "4adb83f906e501b4",
+     "all": "5ec09c7ed0b7c52f",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9071,7 +9071,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "47401e4a54c8a9fc",
+      "rooms": "c6b1f3bef617bd2e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "19fdbfb53574d131",
       "runtime_robustness": "0863c0236fec910c",
@@ -9104,7 +9104,7 @@
      "store": "26976da99faa37ee"
     },
     {
-     "all": "b4b6f220d3b13823",
+     "all": "9c183ce81e820264",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9220,7 +9220,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "96351dfc92850810",
+      "rooms": "6eba8f20b78f8717",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "db38f960cd306294",
       "runtime_robustness": "bed68d010ad11020",
@@ -9253,7 +9253,7 @@
      "store": "92bc78aa629046fe"
     },
     {
-     "all": "f847cd2e87dd27bd",
+     "all": "7e213b14636d1803",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9369,7 +9369,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e96583322d262d7d",
+      "rooms": "90dbce86660bf247",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b6baf49c1ee77ea4",
       "runtime_robustness": "365c58c9550f3eb2",
@@ -9402,7 +9402,7 @@
      "store": "7792c204dddeea5a"
     },
     {
-     "all": "9a5527cf23a9c305",
+     "all": "81bd35af32abd71e",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9518,7 +9518,7 @@
       "recommended_duration_min": "cc811c81659039ef",
       "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c377a36a2046d3b8",
+      "rooms": "97891d0e5c4d3c7c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "fcf85fbe7b7816b2",
       "runtime_robustness": "c665f053af038172",
@@ -9551,7 +9551,7 @@
      "store": "da2657c985fe5256"
     },
     {
-     "all": "066876c1a0650159",
+     "all": "9fbbd550fa9367c7",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9667,7 +9667,7 @@
       "recommended_duration_min": "cc811c81659039ef",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "681db4e780529590",
+      "rooms": "e17039ab26907e74",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5e883a00b3914a8",
       "runtime_robustness": "da109e8d31626854",
@@ -9700,7 +9700,7 @@
      "store": "80ab36e89da9ebbb"
     },
     {
-     "all": "190d576e70f59cc5",
+     "all": "0f5c286a501f4574",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9816,7 +9816,7 @@
       "recommended_duration_min": "cc811c81659039ef",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "283d8d00f1628aef",
+      "rooms": "2a011851cd00b19f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b5aec4de78298bee",
       "runtime_robustness": "578449656bc8f9c7",
@@ -9849,7 +9849,7 @@
      "store": "256615035a85b491"
     },
     {
-     "all": "b7cfa972818b9f8d",
+     "all": "f6d7945bc69fc9c0",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9965,7 +9965,7 @@
       "recommended_duration_min": "cc811c81659039ef",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "deef68b9575bc3c3",
+      "rooms": "89014571342df7f3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0771d28b9c308f0",
       "runtime_robustness": "3993d3c6ee46f9a7",
@@ -9998,7 +9998,7 @@
      "store": "fa79c949f690a04e"
     },
     {
-     "all": "653af3581641cf98",
+     "all": "d10db6eb23998296",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10114,7 +10114,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bbb55c47e542c6f7",
+      "rooms": "cfe50bc70a8f4db7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "adb94f570800c78a",
       "runtime_robustness": "d3bb337062e3a6e1",
@@ -10147,7 +10147,7 @@
      "store": "2bf5ecdc90b1bf29"
     },
     {
-     "all": "552bdcb076e3b929",
+     "all": "e5b22d6bae66b0db",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10263,7 +10263,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "800b9f73ea169adb",
+      "rooms": "76d1860c74de3119",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e9fa31f5bb483fca",
       "runtime_robustness": "01392c69dddb7ee1",
@@ -10904,7 +10904,7 @@
   "summer_cooling_and_exhaust": {
    "cycles": [
     {
-     "all": "92924ce5eaf8f468",
+     "all": "8590026e4b43a81b",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11020,7 +11020,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e0ce8af8abe85dd7",
+      "rooms": "0dbfc36851057b34",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b12d102452dfdd22",
       "runtime_robustness": "e308e595ebfb6e84",
@@ -11053,7 +11053,7 @@
      "store": "4b8cf80fe0d73888"
     },
     {
-     "all": "987270910ad5ce82",
+     "all": "278880aaba1e7410",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11169,7 +11169,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "346c0fb17ef9a89e",
+      "rooms": "8f3bd27e4be985db",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d720619ce31f84c4",
       "runtime_robustness": "8f4ee1863363bf60",
@@ -11202,7 +11202,7 @@
      "store": "4a5dc0d1752559da"
     },
     {
-     "all": "e465dfe48f5290ed",
+     "all": "58f8da19e19e134d",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11318,7 +11318,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cdd02be603ad9bf8",
+      "rooms": "76abe95ea3c810f4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "015ef0843566d94c",
       "runtime_robustness": "4339d59f58aac8ce",
@@ -11351,7 +11351,7 @@
      "store": "26258e7c8b7a04ef"
     },
     {
-     "all": "95293c075eed12cd",
+     "all": "b179ad75443257c3",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11467,7 +11467,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "95d90d488a0da414",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9d53a206b4a9ce3b",
+      "rooms": "7a34bacc2e0f80d8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cd8b3a545c75e72e",
       "runtime_robustness": "80dceca20d96a319",
@@ -11500,7 +11500,7 @@
      "store": "acb7ae461dac7689"
     },
     {
-     "all": "ca7e2cf697ca0ab1",
+     "all": "98fc03eb4d4eda35",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11616,7 +11616,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "bd8a8f86863435bc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7a03e3e405e23a5f",
+      "rooms": "05d4c50f8a6e239c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a4a34d87e9773d8c",
       "runtime_robustness": "c9ce073f15c893cc",
@@ -11649,7 +11649,7 @@
      "store": "4c426f49c4aa570a"
     },
     {
-     "all": "79cbda77ed453df0",
+     "all": "eec089dd2db31ec9",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11765,7 +11765,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "82d2ab03ae4b3dd9",
+      "rooms": "2e72bebf91ec5cea",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a2dea3f5a6f05df0",
       "runtime_robustness": "abd452f44d916490",
@@ -11798,7 +11798,7 @@
      "store": "bd5fed940f743f68"
     },
     {
-     "all": "79e9a86b9f37e138",
+     "all": "0ec59384990212fb",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11914,7 +11914,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "b763c74ed41d27af",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ddfc38626f969b37",
+      "rooms": "459abb0223009420",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9ac17e4c1cd838d9",
       "runtime_robustness": "2896163e6a16e4b4",
@@ -11947,7 +11947,7 @@
      "store": "37dd757fb6ec524a"
     },
     {
-     "all": "dc3ee64e71a689bf",
+     "all": "60ceecc2d79098b4",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12063,7 +12063,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "ed6cca0a64012053",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7da97be911120209",
+      "rooms": "c4c5b4ebcf0a1fd1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c52f9cfd6f0012c7",
       "runtime_robustness": "6950951f9083173f",
@@ -12096,7 +12096,7 @@
      "store": "0bf926962e1dae2c"
     },
     {
-     "all": "a81ab76c206b6679",
+     "all": "c1c1784d09492dfb",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12212,7 +12212,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "5f7b9b51467bf417",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ee32a0d0ca6da68c",
+      "rooms": "d8403725dfdec5cd",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b92e10a6ffb4256",
       "runtime_robustness": "3515e236671554de",
@@ -12245,7 +12245,7 @@
      "store": "df3161c444b18434"
     },
     {
-     "all": "afce6a6172e1a56d",
+     "all": "56b43c734236b5b5",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12361,7 +12361,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "83a12afff07391c4",
+      "rooms": "cbb50a572d737b75",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4beacf82b98e0114",
       "runtime_robustness": "83b63f300d9a4e22",
@@ -12394,7 +12394,7 @@
      "store": "f1ab5431d1ba67df"
     },
     {
-     "all": "df9e1706e98fecdc",
+     "all": "7c4b8a3b613012b0",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12510,7 +12510,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d66abbb29b5b77e7",
+      "rooms": "67a5ee0b75da494a",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c54b2ee90c7abbb8",
       "runtime_robustness": "ccff539bee9e2a01",
@@ -12543,7 +12543,7 @@
      "store": "23d5c3b18be42681"
     },
     {
-     "all": "950f81df6621a2b4",
+     "all": "660b6072c5333ae4",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12659,7 +12659,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6f8b8c142217fef3",
+      "rooms": "c6ed3a638af89ab8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4f2e5aed6d40eaa7",
       "runtime_robustness": "7e07a4f9f45b36f6",
@@ -12692,7 +12692,7 @@
      "store": "95d86048d18b849a"
     },
     {
-     "all": "091c7f18b13d5390",
+     "all": "ffff370696f1a524",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12808,7 +12808,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "00ff8634d8cc269e",
+      "rooms": "8eccae3bc6b10e8c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "628d8583b58eb649",
       "runtime_robustness": "0c31da2060437b42",
@@ -12841,7 +12841,7 @@
      "store": "f6346e9a7d9359aa"
     },
     {
-     "all": "19db8990ffe7fcd9",
+     "all": "0f9d332a330f0a76",
      "keys": {
       "actionable_potential_ml": "81b8a03f97e8787c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12957,7 +12957,7 @@
       "recommended_duration_min": "95d90d488a0da414",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5f9c64170b903ba1",
+      "rooms": "6aa9b4fe36f054e3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf453b995f807f0e",
       "runtime_robustness": "103857733e7d6d3a",
@@ -12990,7 +12990,7 @@
      "store": "f3da7d510e8377eb"
     },
     {
-     "all": "03970af0618d15dd",
+     "all": "51eb8c20c5560dc3",
      "keys": {
       "actionable_potential_ml": "39fa9ec190eee7b6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13106,7 +13106,7 @@
       "recommended_duration_min": "95d90d488a0da414",
       "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "610d381cf2ca918a",
+      "rooms": "9793b848cff739d6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb5ba45004137509",
       "runtime_robustness": "8dfecc3f5379d32b",
@@ -13139,7 +13139,7 @@
      "store": "034fb20afc3b7a24"
     },
     {
-     "all": "5bffc5f316fda235",
+     "all": "497f7d1f317b3bc5",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13255,7 +13255,7 @@
       "recommended_duration_min": "95d90d488a0da414",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9ce4f6ab6df8ea7e",
+      "rooms": "a394155e8ac7d741",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d6d28f26d58bebc5",
       "runtime_robustness": "55ed83c7dc52c5b1",
@@ -13288,7 +13288,7 @@
      "store": "bc493cfabd7f6ddd"
     },
     {
-     "all": "3d7e47032512fe66",
+     "all": "466ba06255c2baa5",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13300,10 +13300,10 @@
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "6b86b273ff34fce1",
       "cross_ventilation": "fcbcf165908dd18a",
-      "day_night_plan": "23ff7c150bc7f8ca",
+      "day_night_plan": "67bc11cd730f5738",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "1327dcce265cc29d",
+      "decision_trace": "b346a67c3b38824b",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "767e96d4d8acfb9b",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -13313,7 +13313,7 @@
       "energy_price_per_kwh": "59d720a1ab8d6974",
       "estimated_generated_so_far_ml": "8d99af9470d4a657",
       "estimated_moisture_generation_day_ml": "7a00c776e0af1135",
-      "finalizing_measurements": "81fc12976866398a",
+      "finalizing_measurements": "2518e5e542c22ed4",
       "floor_ventilation_floor": "74234e98afe7498f",
       "floor_ventilation_mode": "fcbcf165908dd18a",
       "forecast_backtest": "6bc2f6738ffb81ce",
@@ -13321,12 +13321,12 @@
       "forecast_cost": "c8473c76c559e9e7",
       "forecast_heat_kwh": "6473e26cba0eb544",
       "forecast_horizon_min": "ef2d127de37b942b",
-      "forecast_live_adapted": "fcbcf165908dd18a",
-      "forecast_live_observation_weight": "16522468b17d5af6",
-      "forecast_moisture_effect_ml": "eb1e33e8a81b697b",
+      "forecast_live_adapted": "b5bea41b6c623f7c",
+      "forecast_live_observation_weight": "69be8fc1781b9aaf",
+      "forecast_moisture_effect_ml": "624b60c58c9d8bfb",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
       "forecast_target_limited": "fcbcf165908dd18a",
-      "forecast_temperature_change_c": "2ea14d89ed793fad",
+      "forecast_temperature_change_c": "04108aaf6fcf693e",
       "forecast_uncapped_moisture_effect_ml": "eb1e33e8a81b697b",
       "forecast_validation": "9cb15f2a4a38125b",
       "future_weather_available": "b5bea41b6c623f7c",
@@ -13344,8 +13344,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "bc5176a9f35ac1c6",
-      "iq_state": "f71b0aced907f3bc",
+      "intelligent_recommendation": "4c38002a2914e8e6",
+      "iq_state": "c7645ba949e3bb17",
       "last_learning_diagnosis": "dde4858605f6d7c1",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "dd7e8301bd5b8296",
@@ -13357,14 +13357,14 @@
       "max_surface_rh": "ff5a1ae012afa5d4",
       "moisture_balance_today_ml": "8d99af9470d4a657",
       "moisture_gain_next_5_min_ml": "5feceb66ffc86f38",
-      "next_5_min_effect_ml": "eb1e33e8a81b697b",
-      "next_5_min_ml": "eb1e33e8a81b697b",
+      "next_5_min_effect_ml": "624b60c58c9d8bfb",
+      "next_5_min_ml": "624b60c58c9d8bfb",
       "night_end_hour": "1656a0ca0b99d538",
       "night_model_ml_h": "50363eedabe0dc94",
       "night_model_samples": "5feceb66ffc86f38",
       "night_recommendation": "08d99a292ce76eb7",
       "night_start_hour": "312b38dae6e996f2",
-      "night_strategy": "6b0f6eec76d5799c",
+      "night_strategy": "117cbff32040f8a0",
       "notifications_enabled": "fcbcf165908dd18a",
       "occupants": "4e07408562bedb8b",
       "operating_profile": "f9fb6fbb554f2450",
@@ -13379,12 +13379,12 @@
       "output_language": "fa20977256dfdd5a",
       "overnight_confidence": "3d914f9348c9cc0f",
       "overnight_forecast_base_ml": "0d21ae129a64e1d1",
-      "overnight_forecast_ml": "0d21ae129a64e1d1",
+      "overnight_forecast_ml": "04222ea3e14cb120",
       "overnight_hours_remaining": "2254617afd5eb0f0",
       "overnight_routine_adjustment_ml": "5feceb66ffc86f38",
-      "overnight_routine_projection_ml": "25fc0e7096fc6537",
+      "overnight_routine_projection_ml": "5316ca1c5ddca8e6",
       "overnight_trend_effect_ml": "5feceb66ffc86f38",
-      "overnight_weather_effect_ml": "5feceb66ffc86f38",
+      "overnight_weather_effect_ml": "0230341833708a61",
       "pets_in_household": "fcbcf165908dd18a",
       "planner_engine": "161078e42e8fef3b",
       "pollen_blocked": "fcbcf165908dd18a",
@@ -13402,9 +13402,9 @@
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
       "recommended_duration_min": "95d90d488a0da414",
-      "remaining_duration_min": "95d90d488a0da414",
+      "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1eb50e5224c28345",
+      "rooms": "3db256e51bd1f82f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "578c3747b2f10a50",
       "runtime_robustness": "d4e1b602a576d7d2",
@@ -13414,7 +13414,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "e54911f6774a3e93",
+      "status_text": "cd5a4406a989514d",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "16badfc6202cb3f8",
@@ -13434,10 +13434,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust off",
-     "store": "da63e6a67627db4b"
+     "store": "f6697701e7875a27"
     },
     {
-     "all": "4bc544ba5e736caf",
+     "all": "f0988bd8904a459f",
      "keys": {
       "actionable_potential_ml": "c837649cce43f272",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13449,10 +13449,10 @@
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "6b86b273ff34fce1",
       "cross_ventilation": "fcbcf165908dd18a",
-      "day_night_plan": "4f332510b896b9d5",
+      "day_night_plan": "730cbfef67c5f270",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "61cdc6c9cb754794",
+      "decision_trace": "b7aa227b30631b9a",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "5450436aa4de9cee",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -13462,52 +13462,52 @@
       "energy_price_per_kwh": "59d720a1ab8d6974",
       "estimated_generated_so_far_ml": "5dbb51ba631f2c78",
       "estimated_moisture_generation_day_ml": "7a00c776e0af1135",
-      "finalizing_measurements": "2518e5e542c22ed4",
+      "finalizing_measurements": "94fc5ad711e116cd",
       "floor_ventilation_floor": "74234e98afe7498f",
       "floor_ventilation_mode": "fcbcf165908dd18a",
-      "forecast_backtest": "27adc6409a5e822d",
+      "forecast_backtest": "6bc2f6738ffb81ce",
       "forecast_confidence": "5feceb66ffc86f38",
-      "forecast_cost": "5feceb66ffc86f38",
-      "forecast_heat_kwh": "5feceb66ffc86f38",
+      "forecast_cost": "c8473c76c559e9e7",
+      "forecast_heat_kwh": "6473e26cba0eb544",
       "forecast_horizon_min": "ef2d127de37b942b",
       "forecast_live_adapted": "fcbcf165908dd18a",
       "forecast_live_observation_weight": "16522468b17d5af6",
-      "forecast_moisture_effect_ml": "5feceb66ffc86f38",
+      "forecast_moisture_effect_ml": "eb1e33e8a81b697b",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
       "forecast_target_limited": "fcbcf165908dd18a",
-      "forecast_temperature_change_c": "16522468b17d5af6",
-      "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "733f4e60c1295788",
+      "forecast_temperature_change_c": "3c0d9a64c3d7d5f2",
+      "forecast_uncapped_moisture_effect_ml": "eb1e33e8a81b697b",
+      "forecast_validation": "9cb15f2a4a38125b",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "26deeaf19588c6da",
       "guardian": "c1c4f3f043a34045",
       "guest_adults": "5feceb66ffc86f38",
       "guest_children": "5feceb66ffc86f38",
       "heating_system": "03ae1b7d470e35bc",
-      "history_14d": "f72cc0617a1e8728",
-      "history_summary": "6ae06a95fbec6b3c",
+      "history_14d": "56df7de497e2018e",
+      "history_summary": "1f75f9ceaf97367d",
       "home_tracked_occupants": "5feceb66ffc86f38",
       "house_strategy_engine": "161078e42e8fef3b",
       "house_strategy_maturity": "16522468b17d5af6",
       "house_strategy_samples": "5feceb66ffc86f38",
-      "house_ventilation_active_ratio": "16522468b17d5af6",
+      "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "692fe57097935651",
-      "iq_state": "54f1e9b5b559eaf3",
-      "last_learning_diagnosis": "a439dccdd83c22f7",
-      "last_ventilation": "a8def97d1ed983f7",
-      "learning_components": "8c38064f212ec027",
+      "intelligent_recommendation": "0a39a5bbbb23c321",
+      "iq_state": "bfe0cd3c2575ea2a",
+      "last_learning_diagnosis": "dde4858605f6d7c1",
+      "last_ventilation": "74234e98afe7498f",
+      "learning_components": "be7c7682db2c55b7",
       "learning_effectiveness": "caa802ee7daa6636",
       "learning_v2": "9deae8053b2ca5a6",
       "levels": "2c3d7f78f77dca70",
-      "live_balance_ml": "5feceb66ffc86f38",
+      "live_balance_ml": "d59eced1ded07f84",
       "live_coach_engine": "161078e42e8fef3b",
       "max_surface_rh": "ff5a1ae012afa5d4",
       "moisture_balance_today_ml": "5dbb51ba631f2c78",
       "moisture_gain_next_5_min_ml": "5feceb66ffc86f38",
-      "next_5_min_effect_ml": "5feceb66ffc86f38",
-      "next_5_min_ml": "5feceb66ffc86f38",
+      "next_5_min_effect_ml": "eb1e33e8a81b697b",
+      "next_5_min_ml": "eb1e33e8a81b697b",
       "night_end_hour": "1656a0ca0b99d538",
       "night_model_ml_h": "50363eedabe0dc94",
       "night_model_samples": "5feceb66ffc86f38",
@@ -13531,7 +13531,7 @@
       "overnight_forecast_ml": "0d21ae129a64e1d1",
       "overnight_hours_remaining": "2254617afd5eb0f0",
       "overnight_routine_adjustment_ml": "5feceb66ffc86f38",
-      "overnight_routine_projection_ml": "9f14025af0065b30",
+      "overnight_routine_projection_ml": "51cfe39433c33d81",
       "overnight_trend_effect_ml": "5feceb66ffc86f38",
       "overnight_weather_effect_ml": "5feceb66ffc86f38",
       "pets_in_household": "fcbcf165908dd18a",
@@ -13550,11 +13550,11 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "bd8a8f86863435bc",
-      "remaining_duration_min": "95d90d488a0da414",
+      "recommended_duration_min": "95d90d488a0da414",
+      "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1c748a7b204e0a9a",
-      "routine_night_maturity": "6b86b273ff34fce1",
+      "rooms": "77dcd547820d9b1b",
+      "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6da3cbd04d67ce0a",
       "runtime_robustness": "fa0a3a671d06519d",
       "seasonal_engine": "161078e42e8fef3b",
@@ -13562,9 +13562,9 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "6ad763fd8875e6a1",
-      "status_text": "88783142f8ddd468",
-      "system_check": "6bb9b9ac8db68d04",
+      "status": "654499b4c64a7d5b",
+      "status_text": "cd5a4406a989514d",
+      "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "16badfc6202cb3f8",
       "theoretical_potential_total_ml": "47fec9f491173c57",
@@ -13583,16 +13583,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "c0d010383c8186be"
+     "store": "eb3a964df9a4d8f9"
     }
    ],
    "network_calls": [],
-   "persisted": "f98162bd20de2ce4"
+   "persisted": "1c43370fd9f03312"
   },
   "tilt_dropout_and_passive": {
    "cycles": [
     {
-     "all": "a805b4ab5af100a6",
+     "all": "3453a139f7f730f1",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13708,7 +13708,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "39cd9eb469b1a3f2",
+      "rooms": "196204600d6e5132",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "eb48b928e2a22b15",
       "runtime_robustness": "d0c7e5d28b951022",
@@ -13741,7 +13741,7 @@
      "store": "f2d0d4b8c2fcc4c7"
     },
     {
-     "all": "447df5d840bc57e0",
+     "all": "93465a331c95fd0e",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13857,7 +13857,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "71d293b9f062e562",
+      "rooms": "5c90a5abac8c43a5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f86dd7303bd8fba9",
       "runtime_robustness": "1fd50771f32321d1",
@@ -13890,7 +13890,7 @@
      "store": "7500e1133be6586b"
     },
     {
-     "all": "216f0531e605b545",
+     "all": "8a2c7d3b448e3e29",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14006,7 +14006,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f82ba7bccc5b2d50",
+      "rooms": "be8678a7aca861cf",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5ef7703648bf092",
       "runtime_robustness": "8f98a1e80a756aea",
@@ -14039,7 +14039,7 @@
      "store": "5c6cb373d7976df4"
     },
     {
-     "all": "dd6e4a2abfa06a0f",
+     "all": "44b6affc00576520",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14155,7 +14155,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a3e03d4d1b7d4d8e",
+      "rooms": "f3e17e5d7de83692",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "ec27c5083e521f34",
       "runtime_robustness": "a13980f2972a9442",
@@ -14188,7 +14188,7 @@
      "store": "2d1ffbeb9b9416a0"
     },
     {
-     "all": "37a5489a05c9206f",
+     "all": "b6063a4ec16a861f",
      "keys": {
       "actionable_potential_ml": "81b8a03f97e8787c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14304,7 +14304,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9f99463209c2009e",
+      "rooms": "72b43e7fa4734e3e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e48a6f5e99404c59",
       "runtime_robustness": "304014a5a55ce7d7",
@@ -14337,7 +14337,7 @@
      "store": "161c812b8681d28e"
     },
     {
-     "all": "39bbeeb108c1c34d",
+     "all": "3ea484f51f062ee0",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14453,7 +14453,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a18e430d4acb9d7b",
+      "rooms": "01ad7da606b391bb",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3153e63227b3a900",
       "runtime_robustness": "c12eb79b5c11f584",
@@ -14483,10 +14483,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 2",
-     "store": "dabb8227024812ba"
+     "store": "e4ee83fc4537b6e5"
     },
     {
-     "all": "f0f097da3d49b63e",
+     "all": "1d737d8d1e3c4a6a",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14602,7 +14602,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7a4632cf400d946a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1c9e667db10d339b",
+      "rooms": "5e98f9106ab60e61",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb79aecf4df1e37a",
       "runtime_robustness": "3adec81b28e0eab3",
@@ -14632,10 +14632,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 3",
-     "store": "c8a07807fa624b95"
+     "store": "fb83c66ba4d228c2"
     },
     {
-     "all": "82aadb855ea20127",
+     "all": "fc6c6958fe86b5f2",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14751,7 +14751,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "60e67e3c2c782b96",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "930491083beb5d9e",
+      "rooms": "0aea7a421acfc4cd",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "64e0b4f2b119f7be",
       "runtime_robustness": "5d9a8ddd94c35957",
@@ -14781,10 +14781,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 4",
-     "store": "03c2d604b358906c"
+     "store": "639a55e916f23e35"
     },
     {
-     "all": "944afe5add1c12d8",
+     "all": "3cb7a4d144620537",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14900,7 +14900,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6ca219f0eea2235b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b2ba4a8f302c89f3",
+      "rooms": "80b77321ccdb4290",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "47e53707c7a75b55",
       "runtime_robustness": "17b79560ff51f352",
@@ -14930,10 +14930,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 5",
-     "store": "19f592d674c9d519"
+     "store": "11d5678a472740c9"
     },
     {
-     "all": "df65016c96aec8a1",
+     "all": "0b8bc41e4d953a71",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15049,7 +15049,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6d5bcc98d1457497",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2158909da446d9a3",
+      "rooms": "7b440124c8902cfb",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9e06c1f6089b0f9e",
       "runtime_robustness": "9e6804bf3ee52eab",
@@ -15079,10 +15079,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 6",
-     "store": "3d5a561687e0d5b5"
+     "store": "ec64a801fdefa795"
     },
     {
-     "all": "ceba0fc952eee368",
+     "all": "5fa9b635f9ae0305",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15198,7 +15198,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "579325314ca47adc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0de1c5dd1a48fb10",
+      "rooms": "31be2b6624d45a27",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "2dda91c6b026cbc3",
       "runtime_robustness": "a3b389038701f9c6",
@@ -15228,10 +15228,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "radio drop-out",
-     "store": "f6d4e63b087bd04d"
+     "store": "a3458e7f91e9e28c"
     },
     {
-     "all": "c299e40c0482a7c7",
+     "all": "504d148d34d8d658",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15347,7 +15347,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5e6443ddd6800c4e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c2992a587eb28078",
+      "rooms": "3f0ef52e7fb761d3",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "b25cf99a433ff49a",
       "runtime_robustness": "87acfe6c096e7998",
@@ -15377,10 +15377,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "still dropped",
-     "store": "58080ec203935edf"
+     "store": "7e19719fe5ca77ae"
     },
     {
-     "all": "2d744f3baca5050a",
+     "all": "afee1f6f949e1743",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15496,7 +15496,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7803d0c9e1cf80ff",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0f12cfc2963c10ee",
+      "rooms": "57ba3edeeb65db05",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "f3ab3867b131b82c",
       "runtime_robustness": "3b0a45bbd9f04342",
@@ -15526,10 +15526,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "back: fully open",
-     "store": "21c0375279b4a32c"
+     "store": "7596ea3b00985476"
     },
     {
-     "all": "c7e658c15b021df8",
+     "all": "78d7602924449145",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15645,7 +15645,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "8dd63c1b40fb8cb9",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c54cc543f11c6974",
+      "rooms": "d812ae5cbcabc090",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5db7b502c75558cc",
       "runtime_robustness": "b019d3325d318b06",
@@ -15675,10 +15675,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 1",
-     "store": "7825960fbb2a0c97"
+     "store": "bfe617b086731727"
     },
     {
-     "all": "5cf2f899f9076f48",
+     "all": "4a91747f850a937f",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15794,7 +15794,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "982de196341a7abc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "33c95a260bf25893",
+      "rooms": "72959b80d6e633a3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8c1d4fa7980060cc",
       "runtime_robustness": "98658b60e1e5947b",
@@ -15824,10 +15824,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 2",
-     "store": "cce1e852e0788a82"
+     "store": "a0db2b4290386cad"
     },
     {
-     "all": "23ed378d01253672",
+     "all": "8b8bf5b4f0f71414",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15943,7 +15943,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "fd300b638b165a75",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d22dd7dbed1a9e22",
+      "rooms": "3e60bfc9a22cb1ef",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "005f9bcab578c86b",
       "runtime_robustness": "1fdba1069c171a33",
@@ -15973,10 +15973,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 3",
-     "store": "dcaa0b516da85d4c"
+     "store": "2897b7e176c736be"
     },
     {
-     "all": "12f9c53f4d60e69d",
+     "all": "94a74a118089fed8",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16092,7 +16092,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "9db1813de0d989e3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7292d9e52d1a9b28",
+      "rooms": "d5cca503d10df794",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0bb2e900d31e40a0",
       "runtime_robustness": "2f936f4a73351a60",
@@ -16122,10 +16122,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 4",
-     "store": "42d4f5019c2b937b"
+     "store": "9c26170ca6676fb9"
     },
     {
-     "all": "f356ef628c6ea340",
+     "all": "7a4b14bcb02e3a11",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16241,7 +16241,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e4c21b09d859033e",
+      "rooms": "aeb58ac7190cc40b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9d2b57769645cfa9",
       "runtime_robustness": "db0099342b52b50d",
@@ -16271,10 +16271,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "a2a7f5e70e9aa49e"
+     "store": "36997db33f9de98b"
     },
     {
-     "all": "f95f666efe069768",
+     "all": "61e77e703c98a6eb",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16390,7 +16390,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "39b17fd70d3663b2",
+      "rooms": "95c8b5857754887c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b339243d23188143",
       "runtime_robustness": "cf13f235fcfd5d45",
@@ -16423,7 +16423,7 @@
      "store": "764fd8dffe604ff6"
     },
     {
-     "all": "304bf16cd29d6647",
+     "all": "f9d6d9e6120af613",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16539,7 +16539,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0746238ea006a629",
+      "rooms": "ec034812a39fcfa0",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "40f92d9cbdc8550f",
       "runtime_robustness": "5e8f155db98f9058",
@@ -16572,7 +16572,7 @@
      "store": "cf06be0ca379e265"
     },
     {
-     "all": "91f8fb6b2ac946c5",
+     "all": "82ffb34011adee28",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16688,7 +16688,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1631e3bbcb93e499",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a4b9b7dfcdccc5b9",
+      "rooms": "57fce24261821550",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8f0c27aaa8d9e55f",
       "runtime_robustness": "173980f570e02aed",
@@ -16721,7 +16721,7 @@
      "store": "79597fb4ca0dbf49"
     },
     {
-     "all": "89a0102eddae4835",
+     "all": "edd6eb33b4069382",
      "keys": {
       "actionable_potential_ml": "73475cb40a568e8d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16837,7 +16837,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ca95b9734b3832e3",
+      "rooms": "c3c74674fe49d9b2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9293e1554a9005d3",
       "runtime_robustness": "49602fa27226135a",
@@ -16870,7 +16870,7 @@
      "store": "ee6ff2886a2b7cf2"
     },
     {
-     "all": "7e1d41b85a8a1c80",
+     "all": "4e2a584312353ab5",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16986,7 +16986,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a5a080eb2365e1f7",
+      "rooms": "786a75aad35a066d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d80f2fc3fa621228",
       "runtime_robustness": "b66a7962adaf8785",
@@ -17019,7 +17019,7 @@
      "store": "e0e3400a81edc869"
     },
     {
-     "all": "e30f7844087d213a",
+     "all": "15b503b10ff91d6c",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17135,7 +17135,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1ae0a9c5795f9718",
+      "rooms": "90178bb71efc2e53",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "63e4c8db9cf6bbf7",
       "runtime_robustness": "332122901293bbf0",
@@ -17165,10 +17165,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 3",
-     "store": "0d4ea4dea527e67e"
+     "store": "36c5165a23dd5c78"
     },
     {
-     "all": "e601aac9c3d5a966",
+     "all": "86e563766f6e8aee",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17284,7 +17284,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "05c819c9e3bc54b9",
+      "rooms": "98fe42b37a0d71d4",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "e11a89b24eed3a60",
       "runtime_robustness": "3288db0c7d86ad37",
@@ -17314,10 +17314,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door closed",
-     "store": "5caf68163fea82fe"
+     "store": "97ba5f9e36937a0c"
     },
     {
-     "all": "31634281b0ab8b87",
+     "all": "2f74f7be4ba9318e",
      "keys": {
       "actionable_potential_ml": "b7a56873cd771f2c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17433,7 +17433,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1fd981c027d0bdc8",
+      "rooms": "18dfd209baa52774",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "015fb09b57da150f",
       "runtime_robustness": "bbb4639ad8a005e9",

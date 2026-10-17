@@ -17,9 +17,9 @@ def _native_keys():
             return set(ast.literal_eval(value))
     raise AssertionError("NATIVE_OPTION_KEYS missing")
 
-# test_every_native_global_option_is_exposed_by_dashboard: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_every_native_global_option_is_exposed_by_dashboard: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_every_native_option_key_is_editable_on_a_native_form
 
-# test_dashboard_cannot_create_dashboard_only_global_options: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_cannot_create_dashboard_only_global_options: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_saving_native_pages_writes_only_contract_option_keys
 
 def test_both_surfaces_use_same_configentry_option_store():
     # Dashboard writes entry.options and returns a freshly generated canonical payload.
@@ -36,9 +36,9 @@ def test_dashboard_always_loads_fresh_canonical_state_when_settings_are_opened()
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
 
-# test_base_data_surface_parity: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_base_data_surface_parity: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_outdoor_base_data_is_edited_natively_and_stored_in_entry_data
 
-# test_room_core_fields_exist_on_both_surfaces: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_room_core_fields_exist_on_both_surfaces: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_room_forms_expose_every_core_room_field
 
 def test_per_contact_settings_share_same_room_storage():
     pairs={

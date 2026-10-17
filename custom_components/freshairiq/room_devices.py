@@ -76,7 +76,9 @@ def assign_room_devices(
     entry_id = str(getattr(entry, "entry_id", ""))
     for key, subentry_id in sorted(room_subentry_ids(entry).items()):
         try:
-            device = device_registry.async_get_device(identifiers={room_device_identifier(domain, entry_id, key)})
+            # F25 (2026-10-16): identifiers are unique per config entry only;
+            # async_get_device is deprecated (breaks in HA 2027.8).
+            device = device_registry.async_get_device_by_identifier(room_device_identifier(domain, entry_id, key), entry_id)
             if device is None or getattr(device, "config_subentry_id", None) == subentry_id:
                 continue
             # Entities first: a device move drops entities left in the old sub-entry.

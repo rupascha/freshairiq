@@ -1,6 +1,6 @@
 # Using FreshAirIQ in your own automations
 
-FreshAirIQ **decides**, but it **never switches devices on its own**. What happens next – a fan turning on, an Alexa announcement, a light, a Node-RED flow – is up to you. There are three building blocks for this:
+FreshAirIQ **decides** – and does **not** switch devices on its own. Only covers and exhaust fans can be controlled by FreshAirIQ itself, if you explicitly enable it per room (see "Automatic control without a blueprint" below). Everything else – a fan turning on, an Alexa announcement, a light, a Node-RED flow – is up to you. There are three building blocks for this:
 
 | Building block | What it's for | Example |
 | --- | --- | --- |
@@ -20,11 +20,16 @@ FreshAirIQ **decides**, but it **never switches devices on its own**. What happe
 
 | Entity (example) | States / value | Typical use |
 | --- | --- | --- |
-| `sensor.<room>_action` | `ventilate`, `continue_ventilating`, `close`, `wait`, `do_not_ventilate`, `ventilate_for_cooling`, `okay`, `check_sensor`, `monitor_only` | **Most important trigger** per room |
+| `sensor.<room>_action` | `ventilate`, `continue_ventilating`, `close`, `wait`, `do_not_ventilate`, `ventilate_for_cooling`, `okay`, `check_sensor`, `monitor_only`, `ventilate_indirectly` (room without its own opening contact: air via a connected room), `open_fully` (reserved) | **Most important trigger** per room |
+| `sensor.<room>_recommendation` | every action value plus `ventilate_later` and `monitor_open` (long opening is being monitored) | Effective recommendation taking the whole-home decision into account |
 | `binary_sensor.<room>_close_recommended` | `on` / `off` | "Close the window" announcement |
+| `binary_sensor.<room>_moisture_source_active` (0.26.5.1+) | `on` while an internal moisture source is detected (shower, bath, cooking …); attributes `source` (`shower`, `bath`, `sauna`, `cooking`, `washing_machine`, `dryer`, `ironing_station`, `laundry_drying` or empty = not identified), `confidence`, `rate_ml_min`, `generated_ml`, `started_at`, `last_ended_at`, `recovery` | bathroom fan only after showering; enabled for rooms with a configured moisture source, otherwise present but disabled |
+| `binary_sensor.<room>_sun_protection_recommended` (0.26.5.1+) | `on` while covers should be closed against the sun in the "summer cooling" mode; attributes `covers_to_close`, `sunlit_covers` (windows in direct sun), `sun_soon_covers` (sun arrives within the lead time), `shaded_side_covers` (windows without sun), `sun_tracking` (sun position `sun.sun` available) | close covers when the sun shines on the window and open them when it is gone; enabled for rooms with assigned covers |
 | `sensor.<room>_mould_risk` | `low`, `slightly_elevated`, `elevated`, `high`, `very_high` | Warning, dehumidifier |
 | `sensor.<room>_moisture_potential` | ml | "Is it worth it?" condition |
 | `sensor.<room>_estimated_surface_humidity` | % | Mould condition |
+
+From 0.26.5.1 `…_action`, `…_recommendation`, mould risk and learning status are enum sensors (`device_class: enum` with `options`). The automation editor therefore lists the translated states (e.g. "Close") for a state trigger instead of only "any state / unavailable / unknown". The values themselves are unchanged.
 
 The room action sensor also carries the complete room result in the attribute `freshairiq_room_payload` (reasons, forecast, readings). In templates: `{{ state_attr('sensor.bathroom_action', 'freshairiq_room_payload').recommendation_reasons }}`.
 
@@ -46,6 +51,8 @@ The room action sensor also carries the complete room result in the attribute `f
 FreshAirIQ fires events on the Home Assistant event bus – on **changes only**. After a restart, the current state is taken over silently; old announcements are not repeated. Texts follow the FreshAirIQ output language (Home Assistant system language; English for every non-German language).
 
 ### `freshairiq_room_action` – a room's action has changed
+
+From 0.26.5.1 a published "Close" is kept for the running airing until the next five minutes beat the close threshold by at least 25 % or the window is closed. The action no longer toggles between "Continue ventilating" and "Close" every 30 seconds.
 
 | Field | Example | Meaning |
 | --- | --- | --- |
@@ -79,6 +86,27 @@ Possible `action_label` texts in English: `Please air the room`, `Keep airing`, 
 ### `freshairiq_mould_risk` – a room's mould risk has changed
 
 All fields of `freshairiq_room_action`, plus `previous_mould_level` and `rising` (`true` = risk is going up). With `ventilation_measures_active` you can decide for yourself whether a warning makes sense while someone is showering.
+
+### `freshairiq_room_recommendation` – a room's effective recommendation has changed (2026-10-16+)
+
+Fires when `sensor.<room>_recommendation` (`house_aligned_action`) changes – also when the raw room action stays the same (example: the house waited, now air: `ventilate_later` → `ventilate`). `freshairiq_room_action` deliberately does **not** fire in that case; its behaviour is unchanged.
+
+All fields of `freshairiq_room_action` (without `previous_action`) plus `recommendation` / `previous_recommendation` (codes as `sensor.<room>_recommendation`) and `recommendation_label`; `message` is the ready sentence for the effective recommendation.
+
+### `freshairiq_moisture_source` – an internal moisture source starts or ends (0.26.5.1+)
+
+Fires when FreshAirIQ detects an internal moisture source in a room (`phase: started`) and when it has ended (`phase: ended`, after about 6 quiet minutes). Fields: `room_key`, `room_name`, `floor`, `phase`, `source` (code as above or `null`), `source_label` ("Shower"), `message` ("Bathroom: Shower detected."), `confidence`, `rate_ml_min`, `generated_ml`, `started_at`, `ended_at`, `humidity`, `action`. Detection needs a few minutes of clearly rising humidity; general airing recommendations (e.g. the evening pre-airing) never fire this event.
+
+### Which signal for what?
+
+| Signal | Meaning | Firing / restart / cooldown | Typical use |
+| --- | --- | --- | --- |
+| `action` (`sensor.<room>_action`, `freshairiq_room_action`) | Room action **after** alignment with the final whole-home decision for the rooms it names (air/keep airing/close); the original room physics is then kept as `canonical_action` in the room payload | immediately on every change, no cooldown; adopted silently after a restart | control devices in the room |
+| `house_aligned_action` (`sensor.<room>_recommendation`, `freshairiq_room_recommendation`) | effective recommendation incl. house waiting (`ventilate_later`) and tolerated long opening (`monitor_open`) | immediately on change, no cooldown; silent after restart | per-room announcements |
+| `freshairiq_house_recommendation` | one coherent whole-home recommendation | on change of kind/rooms/instruction; silent after restart | announcements to everyone |
+| `freshairiq_notification` | exactly the push texts (information **and** calls to action, see `type`) | at most once per notification interval (default 90 min) per type/room | Telegram, Alexa |
+
+Since 2026-10-16 the whole-home decision keeps a close recommendation it already issued while the combined 5-minute return merely wobbles around the threshold (125 % hysteresis); hard close reasons (maximum duration, cooling) still act immediately.
 
 ### `freshairiq_notification` – every FreshAirIQ message as an event (0.26.4.9+)
 
@@ -177,12 +205,31 @@ In the repository under `blueprints/automation/freshairiq/` (English versions en
 
 * `announce_room_action_en.yaml` – **Announce room recommendation**: pick rooms from a list, choose which recommendations to announce (e.g. "Close the window") and a quiet time, then choose the output (Alexa, TTS, Telegram …).
 * `device_follows_room_action_en.yaml` – **Fan follows the room recommendation**: pick a room and a device; the device runs while FreshAirIQ recommends airing, and not while the window is open.
+* `fan_after_moisture_source_en.yaml` – **Fan after a moisture source (e.g. showering)** (0.26.5.1+): pick the "Moisture source active" sensor and a device; the device starts as soon as a shower or similar is detected and keeps running for a follow-up time after it ends (default 10 min), at most the maximum runtime (default 60 min). Optionally only for selected sources. The evening pre-airing never switches the fan.
+* `covers_follow_sun_protection_en.yaml` – **Covers against the sun (summer cooling)** (0.26.5.1+): pick the "Sun protection recommended" sensor (optionally only some covers). In the "summer cooling" mode the covers of windows the sun is about to shine on close – by default 15 minutes ahead – when a warm day is expected (forecast high from 25 °C, a room above its comfort target or already warm) and the sky is not densely clouded; they open again once the sun has left these windows – not merely because the room cooled down. Optional: keep them closed after sunset. Requires the window direction and the cover assignment in the room setup; without a direction or without `sun.sun` only warmth and brightness decide.
 
-German versions: `announce_room_action.yaml`, `device_follows_room_action.yaml`. Both language versions work identically – only the UI texts differ; the announced sentence always follows the FreshAirIQ output language.
+German versions: `announce_room_action.yaml`, `device_follows_room_action.yaml`, `fan_after_moisture_source.yaml`, `covers_follow_sun_protection.yaml`. Both language versions work identically – only the UI texts differ; the announced sentence always follows the FreshAirIQ output language.
 
 In each blueprint you pick the room via its FreshAirIQ "Action" sensor – you don't need to know any internal room key.
 
+**Choose the basis (from 0.26.5.1):** both blueprints ask what they should follow:
+
+* **House decision (as shown on the card)** – follows `freshairiq_room_recommendation`. When several rooms are aired together it stays at "Keep airing" until the house should close, so announcements never come earlier than on the card. Default of the announce blueprint.
+* **Room only (this room alone)** – follows `freshairiq_room_action`, i.e. what would be right for this room alone; reacts earlier. Default of the fan blueprint (previous behaviour).
+
+Home Assistant does not update blueprints you already imported: re-import the blueprint (same URL, overwrite) and pick the basis in the automation.
+
 Import: **Settings → Automations & scenes → Blueprints → Import blueprint** and paste the raw URL of the file on GitHub, e.g. `https://raw.githubusercontent.com/rupascha/freshairiq/main/blueprints/automation/freshairiq/announce_room_action_en.yaml`.
+
+### Automatic control without a blueprint (0.26.5.1+)
+
+Covers and exhaust fans need no blueprint: under **Settings → Devices & services → FreshAirIQ → edit room** FreshAirIQ can control them itself. Everything is **off** by default; do not use a blueprint for the same device at the same time.
+
+* **Per window/door** (opening settings, where you also assign the covers): **"Open the cover when this window/door opens"** – when it is opened (also tilted) the cover goes fully up, when it is closed it returns to its previous position. If someone moved the cover in between, it is left as it is. The position is remembered across a Home Assistant restart.
+* **Passage door** ("passage door" enabled): the cover never closes while the contact does not report "closed" (not even when its state is unknown). In rooms with automatic cover control, a close started by anyone else (button, scene, automation) is stopped and the cover is opened again – so nobody gets locked out on the balcony or terrace.
+* **Per room, section "Automatic control":**
+  * **"Close covers against the sun automatically"** – like the blueprint "Covers against the sun": only in the "summer cooling" mode, only windows in direct sun; covers open again once the sun is gone – but only covers FreshAirIQ closed itself. If the window is open and "Open the cover …" is enabled, the cover closes once the window is closed.
+  * **"Switch the exhaust fan automatically"** – *after a moisture source* (like the blueprint "Fan after a moisture source", with follow-up time) or *following the recommendation* (on while airing is recommended and no window is open), each with a maximum runtime. FreshAirIQ only switches off what it switched on itself; if you switch the fan off, it stays off until the reason has ended.
 
 ### Node-RED
 
@@ -239,4 +286,4 @@ Since 0.26.4.6, FreshAirIQ no longer sends mould push notifications while someth
 
 ## Recommendation aligned with the house decision (0.26.4.7+)
 
-A room's **Action** sensor describes what would make physical sense for that room alone. The additional **Recommendation** sensor (`sensor.<room>_recommendation`) also takes the whole-home decision into account: while the house deliberately waits (better airing window later, pollen/fine dust, night strategy), it shows `ventilate_later` ("Airing possible · wait for now") instead of `ventilate`. For announcements and fan automations this sensor is usually the better choice. The `freshairiq_room_action` event carries the same value in the `house_aligned_action` field.
+A room's **Action** sensor describes what would make physical sense for that room alone. The additional **Recommendation** sensor (`sensor.<room>_recommendation`) also takes the whole-home decision into account: while the house deliberately waits (better airing window later, pollen/fine dust, night strategy), it shows `ventilate_later` ("Airing possible · wait for now") instead of `ventilate`. While the house tolerates a long, thermally stable opening ("long opening is being monitored") it shows `monitor_open` instead of `close` for those rooms. For announcements and fan automations this sensor is usually the better choice. The `freshairiq_room_action` event carries the same value in the `house_aligned_action` field; when only this value changes, `freshairiq_room_recommendation` fires.

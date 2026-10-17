@@ -59,9 +59,9 @@ def test_dashboard_no_longer_exposes_duplicate_integration_settings_gear():
     assert "Geräte & Dienste → FreshAirIQ → Konfigurieren" in card
 
 
-# test_dashboard_settings_cover_every_native_options_key: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_settings_cover_every_native_options_key: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_every_native_option_key_is_editable_on_a_native_form
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
 
 
-# test_settings_ui_exposes_native_room_features: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_settings_ui_exposes_native_room_features: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_native_room_features_are_all_reachable

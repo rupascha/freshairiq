@@ -7,10 +7,10 @@ COORDINATOR = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(e
 CONFIG_FLOW = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
 
 
-# test_020307_runtime_settings_use_lightweight_refresh: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_020307_runtime_settings_use_lightweight_refresh: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_runtime_option_change_is_applied_live_without_reload
 
 
-# test_020307_only_structural_dashboard_room_changes_keep_reload: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_020307_only_structural_dashboard_room_changes_keep_reload: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_only_room_topology_changes_reload_the_entry
 
 
 def test_020307_coordinator_can_rebuild_source_listeners_without_unload():
@@ -45,7 +45,7 @@ def test_020307_forecast_and_profile_controls_publish_immediately_then_refresh_b
     assert "await self.coordinator.async_request_refresh()" not in select
 
 
-# test_020307_settings_http_ack_does_not_wait_for_full_recalculation: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_020307_settings_http_ack_does_not_wait_for_full_recalculation: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_options_page_returns_before_the_runtime_recalculation_finishes
 
 def test_020307_version_is_consistent():
     assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")

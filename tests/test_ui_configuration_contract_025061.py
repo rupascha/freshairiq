@@ -29,7 +29,7 @@ def _configuration_surface(path: Path) -> str:
     return _canon({key: data[key] for key in CONFIG_KEYS})
 
 
-# test_dashboard_settings_match_the_approved_baseline: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_settings_match_the_approved_baseline: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); not applicable: it hashed the removed card settings methods/events; there is no card settings UI left to freeze
 
 
 def test_devices_services_schema_matches_the_approved_baseline():

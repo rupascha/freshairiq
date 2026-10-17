@@ -24,7 +24,7 @@ def test_passive_rooms_do_not_require_geometry_but_active_rooms_still_do():
     assert "room.pop(CONF_ROOM_VOLUME, None)" in src
 
 
-# test_current_editors_never_write_legacy_room_wide_reference_air: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_current_editors_never_write_legacy_room_wide_reference_air: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_room_editors_never_write_legacy_room_wide_reference_air
 
 
 def test_duplicate_priorities_are_rejected_in_native_and_dashboard_editors():

@@ -14,7 +14,7 @@ def test_dashboard_support_tile_and_editor_visibility():
     for text in ['<b>Diagnosedaten</b><span>exportieren</span>','<b>Diagnosedaten</b><span>an Support senden</span>','support@freshairiq.com','Automatische Diagnoseübertragung','Verbesserungsvorschlag']:
         assert text in CARD
 
-# test_dashboard_room_save_reads_ha_selector_value_not_selected_options: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_room_save_reads_ha_selector_value_not_selected_options: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); not applicable: it pinned how the card's JS read <ha-selector> values; HA flow forms submit selector values themselves
 
 def test_room_reference_air_has_one_canonical_editor_surface():
     # Room-level duplicate controls are hidden; per-opening reference controls remain.
@@ -23,7 +23,7 @@ def test_room_reference_air_has_one_canonical_editor_surface():
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     assert 'CONF_ROOM_REFERENCE_TEMPERATURE' not in FLOW[FLOW.index('def _room_schema'):FLOW.index('def _flatten_sections')]
 
-# test_all_requested_moisture_sources_are_offered: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_all_requested_moisture_sources_are_offered: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_room_form_offers_every_moisture_source_with_translated_labels
 
 def test_washing_and_hung_laundry_have_distinct_physical_signatures():
     base={'samples':5.0,'ah_monotonic':1.0,'temp_monotonic':1.0,'peak_ah_rate':0.1}

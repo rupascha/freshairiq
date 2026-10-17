@@ -18,11 +18,20 @@ import asyncio
 import copy
 import hashlib
 import json
+import os
 import sys
+import time
 import types
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+# The frozen clock hands out naive Europe/Berlin wall time; production code that
+# calls ``datetime.now().astimezone()`` interprets naive values in the *process*
+# zone. Pin it so the reference is identical on UTC CI runners and local machines.
+os.environ["TZ"] = "Europe/Berlin"
+if hasattr(time, "tzset"):
+    time.tzset()
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "coordinator_golden.json"

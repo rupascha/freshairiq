@@ -1,6 +1,6 @@
 # FreshAirIQ in eigenen Automationen nutzen
 
-FreshAirIQ **entscheidet**, schaltet aber **nie selbst** Geräte. Was daraus passiert – Lüfter an, Alexa-Ansage, Licht, Node-RED-Flow – legst du fest. Dafür gibt es drei Bausteine:
+FreshAirIQ **entscheidet** – und schaltet von sich aus **keine** Geräte. Nur Rollos und Ablüfter kann FreshAirIQ selbst steuern, wenn du das je Raum ausdrücklich einschaltest (siehe „Automatische Steuerung ohne Blueprint“ unten). Alles andere – Lüfter an, Alexa-Ansage, Licht, Node-RED-Flow – legst du fest. Dafür gibt es drei Bausteine:
 
 | Baustein | Wofür | Beispiel |
 | --- | --- | --- |
@@ -18,11 +18,16 @@ FreshAirIQ **entscheidet**, schaltet aber **nie selbst** Geräte. Was daraus pas
 
 | Entität (Beispiel) | Zustände / Wert | Typische Nutzung |
 | --- | --- | --- |
-| `sensor.<raum>_aktion` | `ventilate` (lüften), `continue_ventilating`, `close`, `wait`, `do_not_ventilate`, `ventilate_for_cooling`, `okay`, `check_sensor`, `monitor_only` | **Wichtigster Trigger** pro Raum |
+| `sensor.<raum>_aktion` | `ventilate` (lüften), `continue_ventilating`, `close`, `wait`, `do_not_ventilate`, `ventilate_for_cooling`, `okay`, `check_sensor`, `monitor_only`, `ventilate_indirectly` (Raum ohne eigenen Fenster-/Türkontakt: über Nachbarraum lüften), `open_fully` (reserviert) | **Wichtigster Trigger** pro Raum |
+| `sensor.<raum>_empfehlung` | alle Werte der Aktion plus `ventilate_later` und `monitor_open` (Daueröffnung wird beobachtet) | Wirksame Empfehlung unter Berücksichtigung der Hausentscheidung |
 | `binary_sensor.<raum>_schliessen_empfohlen` | `on` / `off` | Ansage „Fenster schließen“ |
+| `binary_sensor.<raum>_feuchtequelle_aktiv` (ab 0.26.5.1) | `on` solange eine innere Feuchtequelle erkannt ist (Dusche, Bad, Kochen …); Attribute `source` (`shower`, `bath`, `sauna`, `cooking`, `washing_machine`, `dryer`, `ironing_station`, `laundry_drying` oder leer = nicht eindeutig), `confidence`, `rate_ml_min`, `generated_ml`, `started_at`, `last_ended_at`, `recovery` | Badlüfter nur nach dem Duschen; für Räume mit eingetragener Feuchtequelle aktiviert, sonst vorhanden, aber deaktiviert |
+| `binary_sensor.<raum>_sonnenschutz_empfohlen` (ab 0.26.5.1) | `on` solange im Modus „Sommer kühlen“ Rollos gegen die Sonne geschlossen sein sollten; Attribute `covers_to_close` (zu schließende Rollos), `sunlit_covers` (Fenster mit direkter Sonne), `sun_soon_covers` (Sonne kommt innerhalb des Vorlaufs), `shaded_side_covers` (Fenster ohne Sonne), `sun_tracking` (Sonnenstand `sun.sun` verfügbar) | Rollos schließen, wenn die Sonne aufs Fenster scheint, und öffnen, wenn sie weg ist; für Räume mit zugeordneten Rollos aktiviert |
 | `sensor.<raum>_schimmelrisiko` | `low`, `slightly_elevated`, `elevated`, `high`, `very_high` | Warnung, Entfeuchter |
 | `sensor.<raum>_feuchtepotenzial` | ml | Bedingung „lohnt sich“ |
 | `sensor.<raum>_geschatzte_oberflachenfeuchte` | % | Schimmel-Bedingung |
+
+Ab 0.26.5.1 sind `…_aktion`, `…_empfehlung`, Schimmelrisiko und Lernstatus Auswahl-Sensoren (`device_class: enum` mit `options`). Im Automations-Editor erscheinen beim Auslöser „Zustand“ dadurch die übersetzten Zustände (z. B. „Schließen“) statt nur „beliebiger Zustand / nicht verfügbar / unbekannt“. Die Werte selbst sind unverändert.
 
 Die Raum-Aktion trägt zusätzlich das komplette Raum-Ergebnis als Attribut `freshairiq_room_payload` (Begründungen, Prognose, Messwerte). In Templates: `{{ state_attr('sensor.bad_aktion', 'freshairiq_room_payload').recommendation_reasons }}`.
 
@@ -44,6 +49,8 @@ Die Raum-Aktion trägt zusätzlich das komplette Raum-Ergebnis als Attribut `fre
 FreshAirIQ feuert Ereignisse auf dem Home-Assistant-Event-Bus – nur bei **Änderungen**. Nach einem Neustart wird der aktuelle Zustand still übernommen; alte Ansagen werden nicht wiederholt. Die Texte kommen in der Home-Assistant-Sprache.
 
 ### `freshairiq_room_action` – Raum-Aktion hat sich geändert
+
+Ab 0.26.5.1 bleibt ein einmal gemeldetes „Schließen“ für die laufende Lüftung bestehen, bis die nächsten 5 Minuten die Schließschwelle um mindestens 25 % übertreffen oder das Fenster geschlossen wird. Ein Wechsel „Weiterlüften“ ↔ „Schließen“ im Takt von 30 s kommt dadurch nicht mehr vor.
 
 | Feld | Beispiel | Bedeutung |
 | --- | --- | --- |
@@ -74,6 +81,27 @@ FreshAirIQ feuert Ereignisse auf dem Home-Assistant-Event-Bus – nur bei **Änd
 ### `freshairiq_mould_risk` – Schimmelrisiko eines Raums hat sich geändert
 
 Alle Felder von `freshairiq_room_action`, dazu `previous_mould_level` und `rising` (`true` = Risiko steigt). Mit `ventilation_measures_active` kannst du selbst entscheiden, ob eine Warnung während des Duschens sinnvoll ist.
+
+### `freshairiq_room_recommendation` – wirksame Raum-Empfehlung hat sich geändert (ab 2026-10-16)
+
+Feuert, wenn sich `sensor.<raum>_empfehlung` (`house_aligned_action`) ändert – auch dann, wenn die rohe Raum-Aktion gleich bleibt (Beispiel: Haus wartet → jetzt lüften: `ventilate_later` → `ventilate`). `freshairiq_room_action` feuert in diesem Fall bewusst **nicht**; sein Verhalten bleibt unverändert.
+
+Alle Felder von `freshairiq_room_action` (ohne `previous_action`), dazu `recommendation` / `previous_recommendation` (Codes wie `sensor.<raum>_empfehlung`) und `recommendation_label`; `message` enthält den fertigen Satz zur wirksamen Empfehlung (z. B. „Schlafzimmer: Daueröffnung wird beobachtet.“).
+
+### `freshairiq_moisture_source` – innere Feuchtequelle beginnt oder endet (ab 0.26.5.1)
+
+Feuert, wenn FreshAirIQ in einem Raum eine innere Feuchtequelle erkennt (`phase: started`) und wenn sie beendet ist (`phase: ended`, nach etwa 6 ruhigen Minuten). Felder: `room_key`, `room_name`, `floor`, `phase`, `source` (Code wie oben oder `null`), `source_label` („Dusche“), `message` („Bad: Dusche erkannt.“), `confidence`, `rate_ml_min`, `generated_ml`, `started_at`, `ended_at`, `humidity`, `action`. Die Erkennung braucht einige Minuten deutlichen Feuchteanstieg; die allgemeinen Lüftungsempfehlungen (z. B. Vorlüftung am Abend) lösen dieses Ereignis nicht aus.
+
+### Welches Signal wofür? (Aktion, Empfehlung, Haus, Benachrichtigung)
+
+| Signal | Bedeutung | Auslösung / Neustart / Cooldown | Typische Nutzung |
+| --- | --- | --- | --- |
+| `action` (`sensor.<raum>_aktion`, `freshairiq_room_action`) | Raum-Handlung **nach** Abgleich mit der finalen Hausentscheidung für die dort genannten Räume (Lüften/Weiterlüften/Schließen); die ursprüngliche Raumphysik steht dann im Raum-Payload als `canonical_action` | sofort bei jeder Änderung, kein Cooldown; nach Neustart still übernommen | Geräte im Raum steuern |
+| `house_aligned_action` (`sensor.<raum>_empfehlung`, `freshairiq_room_recommendation`) | wirksame Empfehlung inkl. Haus-Warten (`ventilate_later`) und toleriertem Dauerlüften (`monitor_open`) | sofort bei Änderung, kein Cooldown; nach Neustart still übernommen | Ansagen pro Raum |
+| `freshairiq_house_recommendation` | eine zusammenhängende Empfehlung fürs ganze Haus | bei Änderung von Art/Räumen/Anweisung; nach Neustart still | Ansagen an alle |
+| `freshairiq_notification` | genau die Push-Texte (Information **und** Handlungsaufforderung, Art in `type`) | höchstens einmal pro Benachrichtigungs-Abstand (Standard 90 min) je Art/Raum | Telegram, Alexa |
+
+Seit 2026-10-16 hält die Hausentscheidung eine bereits ausgegebene Schließempfehlung, solange der gemeinsame 5-Minuten-Ertrag nur knapp um die Schwelle schwankt (Hysterese 125 %); harte Schließgründe (Maximaldauer, Auskühlung) wirken weiterhin sofort.
 
 ### `freshairiq_notification` – jede FreshAirIQ-Meldung als Ereignis (ab 0.26.4.9)
 
@@ -172,10 +200,29 @@ Im Repository unter `blueprints/automation/freshairiq/`:
 
 * `announce_room_action.yaml` – **Raum-Empfehlung ansagen**: Räume aus einer Liste wählen, Empfehlungen (z. B. „Fenster schließen“) und Ruhezeit festlegen, Ausgabe wählen (Alexa, Sprachausgabe, Telegram …).
 * `device_follows_room_action.yaml` – **Lüfter folgt der Raum-Empfehlung**: Raum und Gerät auswählen; das Gerät läuft, solange FreshAirIQ Lüften empfiehlt, und nicht, während das Fenster offen ist.
+* `fan_after_moisture_source.yaml` – **Lüfter nach Feuchtequelle (z. B. Duschen)** (ab 0.26.5.1): Sensor „Feuchtequelle aktiv“ und Gerät wählen; das Gerät startet, sobald eine Dusche o. Ä. erkannt wird, und läuft nach dem Ende noch eine Nachlaufzeit (Standard 10 min), höchstens aber die Höchstlaufzeit (Standard 60 min). Optional nur bestimmte Quellen. Die abendliche Vorlüftung schaltet den Lüfter nicht.
+* `covers_follow_sun_protection.yaml` – **Rollos gegen die Sonne (Sommer kühlen)** (ab 0.26.5.1): Sensor „Sonnenschutz empfohlen“ wählen (optional nur bestimmte Rollos). Im Modus „Sommer kühlen“ schließen die Rollos der Fenster, auf die die Sonne gleich scheint – standardmäßig 15 Minuten vorher –, sobald ein warmer Tag zu erwarten ist (Vorhersage-Höchstwert ab 25 °C, Raum über der Komfort-Zieltemperatur oder schon warm) und es nicht dicht bewölkt ist; sie öffnen wieder, wenn die Sonne diese Fenster verlassen hat – nicht schon, weil der Raum abgekühlt ist. Optional: nach Sonnenuntergang geschlossen lassen. Voraussetzung: Himmelsrichtung der Fenster und Rollo-Zuordnung in der Raumeinrichtung; ohne Himmelsrichtung oder ohne `sun.sun` entscheiden nur Wärme und Helligkeit.
 
 Den Raum wählst du jeweils über seinen FreshAirIQ-Sensor „Aktion“ – einen internen Raum-Schlüssel musst du nicht kennen.
 
+**Grundlage wählen (ab 0.26.5.1):** Beide Blueprints fragen, worauf sie reagieren sollen:
+
+* **Hausentscheidung (wie in der Karte)** – folgt `freshairiq_room_recommendation`. Werden mehrere Räume gemeinsam gelüftet, heißt es so lange „Weiter lüften“, bis das Haus schließen soll; Ansagen kommen also nicht früher als in der Karte. Standard beim Ansage-Blueprint.
+* **Raumlokal (nur dieser Raum)** – folgt `freshairiq_room_action`, also dem, was für diesen Raum allein sinnvoll wäre; reagiert früher. Standard beim Lüfter-Blueprint (bisheriges Verhalten).
+
+Bereits importierte Blueprints aktualisiert Home Assistant nicht von selbst: Blueprint erneut importieren (gleiche URL, „überschreiben“) und danach in der Automation die Grundlage wählen.
+
 Import: **Einstellungen → Automationen & Szenen → Blueprints → Blueprint importieren** und die Raw-URL der Datei auf GitHub einfügen.
+
+### Automatische Steuerung ohne Blueprint (ab 0.26.5.1)
+
+Für Rollos und Ablüfter brauchst du keinen Blueprint: unter **Einstellungen → Geräte & Dienste → FreshAirIQ → Raum bearbeiten** kann FreshAirIQ sie selbst steuern. Alles ist standardmäßig **aus**; nutze für dasselbe Gerät nicht gleichzeitig einen Blueprint.
+
+* **Je Fenster/Tür** (Öffnungseinstellungen, dort ordnest du auch die Rollos zu): **„Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird“** – beim Öffnen (auch Kippen) fährt das Rollo ganz hoch, beim Schließen zurück in die vorherige Position. Hat jemand das Rollo zwischendurch bewegt, bleibt es, wie es ist. Die Position wird auch über einen Neustart von Home Assistant gemerkt.
+* **Durchgangstür** („Durchgang“ aktiviert): Das Rollo schließt nie, solange der Kontakt nicht „geschlossen“ meldet (auch nicht bei unbekanntem Zustand). In Räumen mit automatischer Rollo-Steuerung wird ein Schließen durch andere (Taster, Szene, Automation) gestoppt und das Rollo wieder geöffnet – Schutz davor, auf Balkon oder Terrasse ausgesperrt zu werden.
+* **Je Raum, Abschnitt „Automatische Steuerung“:**
+  * **„Rollos automatisch gegen die Sonne schließen“** – wie der Blueprint „Rollos gegen die Sonne“: nur im Modus „Sommer kühlen“, nur Fenster mit direkter Sonne; geöffnet wird wieder, wenn die Sonne weg ist – aber nur Rollos, die FreshAirIQ selbst geschlossen hat. Ist das Fenster gerade offen und „Rollo öffnen …“ aktiv, schließt das Rollo erst, wenn das Fenster zu ist.
+  * **„Ablüfter automatisch schalten“** – *Nach Feuchtequelle* (wie der Blueprint „Lüfter nach Feuchtequelle“, mit Nachlaufzeit) oder *Nach Lüftungsempfehlung* (an, solange Lüften empfohlen wird und kein Fenster offen ist), jeweils mit Höchstlaufzeit. FreshAirIQ schaltet nur aus, was es selbst eingeschaltet hat; schaltest du den Lüfter aus, bleibt er aus, bis der Anlass vorbei ist.
 
 ### Node-RED
 
@@ -226,4 +273,4 @@ Ab 0.26.4.6 sendet FreshAirIQ keine Schimmel-Push-Nachricht mehr, solange im Rau
 
 ## Empfehlung passend zur Hausentscheidung (ab 0.26.4.7)
 
-Der Sensor **Aktion** eines Raums beschreibt, was physikalisch für diesen Raum allein sinnvoll wäre. Der zusätzliche Sensor **Empfehlung** (`sensor.<raum>_empfehlung`) berücksichtigt die Entscheidung für das ganze Haus: Wartet das Haus bewusst (besseres Lüftungsfenster später, Pollen/Feinstaub, Nachtstrategie), zeigt er `ventilate_later` („Lüften möglich · noch warten“) statt `ventilate`. Für Ansagen und Lüfter-Automationen ist meist dieser Sensor die bessere Wahl. Im Ereignis `freshairiq_room_action` steht derselbe Wert im Feld `house_aligned_action`.
+Der Sensor **Aktion** eines Raums beschreibt, was physikalisch für diesen Raum allein sinnvoll wäre. Der zusätzliche Sensor **Empfehlung** (`sensor.<raum>_empfehlung`) berücksichtigt die Entscheidung für das ganze Haus: Wartet das Haus bewusst (besseres Lüftungsfenster später, Pollen/Feinstaub, Nachtstrategie), zeigt er `ventilate_later` („Lüften möglich · noch warten“) statt `ventilate`. Toleriert das Haus eine lange, thermisch stabile Öffnung („Daueröffnung wird beobachtet“), zeigt er für diese Räume `monitor_open` statt `close`. Für Ansagen und Lüfter-Automationen ist meist dieser Sensor die bessere Wahl. Im Ereignis `freshairiq_room_action` steht derselbe Wert im Feld `house_aligned_action`; ändert sich nur dieser Wert, feuert `freshairiq_room_recommendation`.

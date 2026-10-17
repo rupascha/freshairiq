@@ -31,6 +31,15 @@ def async_track_time_interval(hass, action, interval):
     hass.tracked = (action, interval)
     return lambda: setattr(hass, "unsubscribed", True)
 event.async_track_time_interval = async_track_time_interval
+TRACKED_POINTS = []
+
+
+def async_track_point_in_time(hass, action, point):
+    TRACKED_POINTS.append(point)
+    return lambda: None
+
+
+event.async_track_point_in_time = async_track_point_in_time
 sys.modules["homeassistant.helpers.event"] = event
 
 storage = types.ModuleType("homeassistant.helpers.storage")

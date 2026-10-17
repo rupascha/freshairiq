@@ -1,0 +1,98 @@
+blueprint:
+  name: FreshAirIQ – Lüfter nach Feuchtequelle (z. B. Duschen)
+  description: >-
+    Schaltet ein Gerät (z. B. den Badlüfter) ein, sobald FreshAirIQ in einem Raum
+    eine innere Feuchtequelle erkennt (Dusche, Bad, Kochen …), und schaltet es
+    nach einer Nachlaufzeit wieder aus, wenn die Quelle beendet ist. Die
+    allgemeinen Lüftungsempfehlungen (z. B. die Vorlüftung am Abend) lösen diesen
+    Blueprint nicht aus. Ohne Blueprint geht es auch direkt in FreshAirIQ: Raum bearbeiten →
+    „Automatische Steuerung“. Bitte nicht beides gleichzeitig nutzen.
+  domain: automation
+  source_url: https://github.com/rupascha/freshairiq/blob/main/blueprints/automation/freshairiq/fan_after_moisture_source.yaml
+  input:
+    moisture_source:
+      name: Feuchtequelle
+      description: Der FreshAirIQ-Sensor „Feuchtequelle aktiv“ des Raums (z. B. „Badezimmer Feuchtequelle aktiv“).
+      selector:
+        entity:
+          integration: freshairiq
+          domain: binary_sensor
+    device:
+      name: Gerät
+      selector:
+        entity:
+          domain: [switch, fan, humidifier, input_boolean, light]
+    sources:
+      name: Nur bei diesen Quellen
+      description: >-
+        Leer lassen = bei jeder erkannten Feuchtequelle. Wird eine Quelle nicht
+        eindeutig erkannt, gilt sie als „Feuchtequelle (unbestimmt)“.
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - { label: "Dusche", value: shower }
+            - { label: "Bad", value: bath }
+            - { label: "Sauna", value: sauna }
+            - { label: "Kochen", value: cooking }
+            - { label: "Waschmaschine", value: washing_machine }
+            - { label: "Trockner", value: dryer }
+            - { label: "Bügelstation", value: ironing_station }
+            - { label: "Wäsche trocknen", value: laundry_drying }
+            - { label: "Feuchtequelle (unbestimmt)", value: unknown }
+    follow_up:
+      name: Nachlaufzeit
+      description: So lange läuft das Gerät weiter, nachdem die Feuchtequelle beendet ist.
+      default: 10
+      selector:
+        number: { min: 0, max: 60, unit_of_measurement: min, mode: slider }
+    max_runtime:
+      name: Höchstlaufzeit
+      description: Spätestens nach dieser Zeit wird das Gerät ausgeschaltet.
+      default: 60
+      selector:
+        number: { min: 5, max: 240, unit_of_measurement: min, mode: slider }
+mode: restart
+triggers:
+  - trigger: state
+    entity_id: !input moisture_source
+    to: "on"
+    id: start
+  - trigger: state
+    entity_id: !input moisture_source
+    to: "off"
+    for:
+      minutes: !input follow_up
+    id: stop
+variables:
+  sources: !input sources
+  source: "{{ state_attr(trigger.entity_id, 'source') or 'unknown' }}"
+  follow_up: !input follow_up
+  max_runtime: !input max_runtime
+actions:
+  - choose:
+      - conditions:
+          - "{{ trigger.id == 'start' and (sources | length == 0 or source in sources) }}"
+        sequence:
+          - action: homeassistant.turn_on
+            target:
+              entity_id: !input device
+          - wait_for_trigger:
+              - trigger: state
+                entity_id: !input moisture_source
+                to: "off"
+                for:
+                  minutes: "{{ follow_up }}"
+            timeout:
+              minutes: "{{ max_runtime }}"
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input device
+      - conditions:
+          - "{{ trigger.id == 'stop' }}"
+        sequence:
+          # Also covers a restart of Home Assistant while the device was running.
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input device

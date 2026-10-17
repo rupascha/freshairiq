@@ -5,6 +5,7 @@ Added after a refactoring step lost the fallback value of ``status`` (read via
 Reports names that are read at a point where they are not bound on every path
 (top-level flow of the function body; compound statements bind only 'maybe')."""
 import ast
+from pathlib import Path
 SCOPES=(ast.ListComp,ast.SetComp,ast.DictComp,ast.GeneratorExp,ast.Lambda,ast.FunctionDef,ast.AsyncFunctionDef)
 def loads(node):
     out=[]
@@ -35,7 +36,7 @@ def block_binds(stmts):
     for st in stmts: b|=definite_binds(st)
     return b
 def check(path, fname):
-    src=open(path,encoding='utf-8').read(); t=ast.parse(src)
+    src=Path(path).read_text(encoding='utf-8'); t=ast.parse(src)
     fn=[n for n in ast.walk(t) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and n.name==fname][0]
     locals_={x.id for x in ast.walk(fn) if isinstance(x,ast.Name) and isinstance(x.ctx,ast.Store)} | {n.name for n in fn.body if isinstance(n,(ast.FunctionDef,))}
     bound={a.arg for a in fn.args.args+fn.args.kwonlyargs}

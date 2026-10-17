@@ -12,7 +12,7 @@ class Hass:
 def st(value, options=None):
     return SimpleNamespace(state=value, attributes={"options": options or []}, last_changed=datetime.now(timezone.utc)-timedelta(seconds=10))
 
-# test_real_and_helper_three_state_are_selectable_on_both_surfaces: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_real_and_helper_three_state_are_selectable_on_both_surfaces: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_contact_picker_offers_real_and_helper_three_state_sources
 
 def test_mixed_binary_and_three_state_capability_stays_per_contact():
     h=Hass({'binary_sensor.window':st('on'), 'input_select.door':st('tilted',['closed','open','tilted'])})

@@ -555,6 +555,10 @@ class LearningStore:
         room["learning_sample_credit"] = 0.0 if sample_credit is None else min(max(sample_credit, 0.0), 0.999999)
         opening_learning = room.get("opening_learning") if isinstance(room.get("opening_learning"), dict) else {}
         defaults = {"open": 0.03, "tilted": 0.015, "cross": 0.04}
+        # The exhaust-fan model is learned by the coordinator but has no stored
+        # default; keep it (bounded) once it exists instead of dropping it.
+        if isinstance(opening_learning.get("mechanical_exhaust"), dict):
+            defaults["mechanical_exhaust"] = 0.02
         clean_opening_learning = {}
         for mode, default_rate in defaults.items():
             row = opening_learning.get(mode) if isinstance(opening_learning.get(mode), dict) else {}

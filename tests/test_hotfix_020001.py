@@ -95,7 +95,7 @@ def test_legacy_contradictions_are_repaired_to_safe_ordering():
     assert repaired["co2_warn"] < repaired["co2_critical"]
 
 
-# test_dashboard_room_contacts_update_detail_controls_without_saving_first: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_room_contacts_update_detail_controls_without_saving_first: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_changed_contacts_drive_the_following_opening_pages
 
 
 def _flatten(value, prefix=""):

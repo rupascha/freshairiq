@@ -28,6 +28,19 @@ blueprint:
           integration: freshairiq
           domain: sensor
           multiple: true
+    basis:
+      name: Basis
+      description: >-
+        "House decision" follows the recommendation the card shows (it takes all
+        rooms aired at the same time into account, e.g. "Keep airing" while the
+        house is still airing). "Room only" follows what would be right for this
+        room alone and therefore reacts earlier.
+      default: house
+      selector:
+        select:
+          options:
+            - { label: "House decision (as shown on the card)", value: house }
+            - { label: "Room only (this room alone)", value: room }
     actions_filter:
       name: Announce these recommendations
       default: [close, ventilate]
@@ -40,6 +53,9 @@ blueprint:
             - { label: "Air for cooling", value: ventilate_for_cooling }
             - { label: "Do not air", value: do_not_ventilate }
             - { label: "Check sensor", value: check_sensor }
+            - { label: "Keep airing", value: continue_ventilating }
+            - { label: "Airing possible · wait a little", value: ventilate_later }
+            - { label: "Open window is monitored", value: monitor_open }
     quiet_start:
       name: Quiet time starts at
       default: "22:00:00"
@@ -58,15 +74,23 @@ max: 10
 triggers:
   - trigger: event
     event_type: freshairiq_room_action
+    id: room
+  - trigger: event
+    event_type: freshairiq_room_recommendation
+    id: house
 variables:
+  basis: !input basis
   rooms: !input rooms
   actions_filter: !input actions_filter
   room_keys: >-
     {{ rooms | map('state_attr', 'freshairiq_room_key') | reject('none') | list }}
   message: "{{ trigger.event.data.message }}"
   room_name: "{{ trigger.event.data.room_name }}"
-  action_code: "{{ trigger.event.data.action }}"
+  # House decision: effective recommendation (as on the card); room only: raw room action.
+  action_code: >-
+    {{ trigger.event.data.recommendation if trigger.id == 'house' else trigger.event.data.action }}
 conditions:
+  - "{{ trigger.id == basis }}"
   - "{{ action_code in actions_filter }}"
   - "{{ rooms | length == 0 or trigger.event.data.room_key in room_keys }}"
   - condition: not

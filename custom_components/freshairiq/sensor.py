@@ -92,6 +92,10 @@ ACTION_STATE_MAP = {
     "Okay": "okay",
     "Ventilate for cooling": "ventilate_for_cooling",
     "Monitor only": "monitor_only",
+    # F10 (2026-10-16): produced for rooms without an opening contact
+    # (coordinator) resp. part of the shared event vocabulary; formerly "unknown".
+    "Ventilate indirectly": "ventilate_indirectly",
+    "Open fully": "open_fully",
 }
 
 MOULD_STATE_MAP = {
@@ -109,6 +113,19 @@ LEARNING_STATE_MAP = {
     "Usable": "usable",
     "Learning": "learning",
     "Base estimate": "base_estimate",
+}
+
+
+# 0.26.5.1 (community: the automation editor only offered "any state /
+# unavailable / unknown" for the action entity): the state sensors declare
+# their fixed vocabulary as an enum, so state triggers and conditions offer
+# the translated states. The values themselves are unchanged ("unknown" stays
+# a regular option).
+ROOM_ENUM_OPTIONS: dict[str, list[str]] = {
+    "action": [*dict.fromkeys(ACTION_STATE_MAP.values()), "unknown"],
+    "house_aligned_action": [*sorted(HOUSE_ALIGNED_STATES), "unknown"],
+    "mould_level": list(dict.fromkeys(MOULD_STATE_MAP.values())),
+    "learning_status": list(dict.fromkeys(LEARNING_STATE_MAP.values())),
 }
 
 
@@ -306,6 +323,9 @@ class RoomSensor(FreshAirIQEntity, SensorEntity):
         self.field = field
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
+        if field in ROOM_ENUM_OPTIONS:
+            self._attr_device_class = SensorDeviceClass.ENUM
+            self._attr_options = list(ROOM_ENUM_OPTIONS[field])
         self._attr_entity_registry_enabled_default = enabled_default
 
     @property

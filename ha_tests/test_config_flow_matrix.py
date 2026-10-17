@@ -69,9 +69,9 @@ async def _open_options_path(hass, entry: MockConfigEntry, *steps: str):
     ("section", "expected_options"),
     [
         ("home_setup", {"outdoor", "building", "residents", "levels", "rooms", "back_to_main"}),
-        ("ventilation_settings", {"profile", "forecast", "air_quality", "cross_ventilation", "model", "back_to_main"}),
+        ("ventilation_settings", {"profile", "recommendation_priorities", "threshold", "forecast", "air_quality", "cross_ventilation", "model", "back_to_main"}),
         ("notification_energy_settings", {"notifications", "energy", "back_to_main"}),
-        ("data_learning_settings", {"statistics", "back_to_main"}),
+        ("data_learning_settings", {"statistics", "diagnostics_sharing", "back_to_main"}),
         ("maintenance", {"reset_learning", "reset_defaults", "back_to_main"}),
     ],
 )
@@ -120,7 +120,8 @@ async def test_options_leaf_pages_render_without_configuration_errors(
     assert result["type"] in {FlowResultType.FORM, FlowResultType.MENU}
     assert result["step_id"] == leaf
     if result["type"] is FlowResultType.FORM:
-        assert result.get("errors", {}) == {}
+        # Home Assistant 2026.x reports a form without errors as ``errors=None``.
+        assert not result.get("errors")
 
 
 async def test_options_rooms_menu_exposes_structural_actions(hass) -> None:
@@ -134,6 +135,7 @@ async def test_options_rooms_menu_exposes_structural_actions(hass) -> None:
     assert result["step_id"] == "rooms"
     assert set(result["menu_options"]) == {
         "add_room",
+        "import_ha_rooms",
         "edit_room_select",
         "sort_rooms",
         "remove_room",
@@ -150,7 +152,38 @@ async def test_options_empty_rooms_menu_only_offers_add(hass) -> None:
 
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "rooms"
-    assert set(result["menu_options"]) == {"add_room", "back_to_home_setup"}
+    assert set(result["menu_options"]) == {"add_room", "import_ha_rooms", "back_to_home_setup"}
+
+
+def _room_sections(name: str, prefix: str, volume: float) -> dict:
+    """Input of the sectioned quick-add room form (identity/sensors/geometry)."""
+    return {
+        "identity": {CONF_ROOM_NAME: name, CONF_ROOM_FLOOR: "EG", CONF_ROOM_INCLUDE_CALCULATIONS: True},
+        "sensors": {
+            CONF_ROOM_TEMPERATURE: [f"sensor.{prefix}_temperature"],
+            CONF_ROOM_HUMIDITY: [f"sensor.{prefix}_humidity"],
+            CONF_ROOM_CONTACTS: [],
+            CONF_CONTACT_MODE: CONTACT_MODE_ANY,
+        },
+        "geometry": {CONF_ROOM_VOLUME: volume},
+    }
+
+
+async def _open_create_room(hass, entry: MockConfigEntry):
+    """The native room flow starts with a menu: create manually or import from HA."""
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "room"),
+        context={"source": config_entries.SOURCE_USER},
+    )
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "user"
+    assert set(result["menu_options"]) == {"create_room", "import_ha_room"}
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "create_room"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "create_room"
+    return result
 
 
 async def test_native_room_subentry_can_add_room_without_contacts(hass) -> None:
@@ -158,71 +191,37 @@ async def test_native_room_subentry_can_add_room_without_contacts(hass) -> None:
     entry = _entry()
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.subentries.async_init(
-        (entry.entry_id, "room"),
-        context={"source": config_entries.SOURCE_USER},
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "user"
-
+    result = await _open_create_room(hass, entry)
     result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"],
-        {
-            CONF_ROOM_NAME: "Schlafzimmer",
-            CONF_ROOM_TEMPERATURE: "sensor.schlafzimmer_temperature",
-            CONF_ROOM_HUMIDITY: "sensor.schlafzimmer_humidity",
-            CONF_ROOM_CONTACTS: [],
-            CONF_CONTACT_MODE: CONTACT_MODE_ANY,
-            CONF_ROOM_VOLUME: 42.0,
-            CONF_ROOM_FLOOR: "EG",
-            CONF_ROOM_INCLUDE_CALCULATIONS: True,
-        },
+        result["flow_id"], _room_sections("Schlafzimmer", "schlafzimmer", 42.0)
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Schlafzimmer"
     assert result["data"][CONF_ROOM_NAME] == "Schlafzimmer"
+    await hass.async_block_till_done()  # the room list is synchronised by the entry update listener
     assert entry.data["rooms"][0][CONF_ROOM_NAME] == "Schlafzimmer"
 
 
-async def test_native_room_subentry_duplicate_name_recovers(hass) -> None:
-    """Duplicate room validation remains correctable in the same subentry flow."""
+async def test_native_room_subentry_validation_error_recovers(hass) -> None:
+    """Validation errors stay correctable in the same subentry flow; a duplicate
+    room name is accepted with a unique key (behaviour since the first release)."""
     entry = _entry(rooms=[_room()])
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.subentries.async_init(
-        (entry.entry_id, "room"),
-        context={"source": config_entries.SOURCE_USER},
-    )
-    result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"],
-        {
-            CONF_ROOM_NAME: "Wohnzimmer",
-            CONF_ROOM_TEMPERATURE: "sensor.other_temperature",
-            CONF_ROOM_HUMIDITY: "sensor.other_humidity",
-            CONF_ROOM_CONTACTS: [],
-            CONF_CONTACT_MODE: CONTACT_MODE_ANY,
-            CONF_ROOM_VOLUME: 30.0,
-            CONF_ROOM_FLOOR: "EG",
-            CONF_ROOM_INCLUDE_CALCULATIONS: True,
-        },
-    )
+    result = await _open_create_room(hass, entry)
+    missing_volume = _room_sections("Wohnzimmer", "other", 30.0)
+    missing_volume["geometry"] = {}
+    result = await hass.config_entries.subentries.async_configure(result["flow_id"], missing_volume)
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "user"
-    assert result["errors"]
+    assert result["step_id"] == "create_room"
+    assert result["errors"] == {"base": "room_volume_required"}
 
     result = await hass.config_entries.subentries.async_configure(
-        result["flow_id"],
-        {
-            CONF_ROOM_NAME: "Büro",
-            CONF_ROOM_TEMPERATURE: "sensor.office_temperature",
-            CONF_ROOM_HUMIDITY: "sensor.office_humidity",
-            CONF_ROOM_CONTACTS: [],
-            CONF_CONTACT_MODE: CONTACT_MODE_ANY,
-            CONF_ROOM_VOLUME: 30.0,
-            CONF_ROOM_FLOOR: "EG",
-            CONF_ROOM_INCLUDE_CALCULATIONS: True,
-        },
+        result["flow_id"], _room_sections("Wohnzimmer", "other", 30.0)
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "Büro"
+    assert result["title"] == "Wohnzimmer"
+    await hass.async_block_till_done()
+    keys = [room["key"] for room in entry.data["rooms"]]
+    assert keys == ["wohnzimmer", "wohnzimmer_2"]

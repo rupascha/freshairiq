@@ -149,9 +149,11 @@ def test_required_source_availability_logs_only_transitions(caplog) -> None:
     fake = SimpleNamespace(
         hass=SimpleNamespace(states=SimpleNamespace(get=lambda entity_id: states.get(entity_id))),
         _unavailable_required_sources=set(),
-        _required_source_entities=lambda: {
-            "sensor.outdoor_temperature", "sensor.outdoor_humidity"
-        },
+        # Availability is tracked per logical source group (redundant sensors).
+        _required_source_groups=lambda: [
+            ("outdoor:temperature", ["sensor.outdoor_temperature"]),
+            ("outdoor:humidity", ["sensor.outdoor_humidity"]),
+        ],
     )
 
     with caplog.at_level("INFO"):
@@ -162,8 +164,9 @@ def test_required_source_availability_logs_only_transitions(caplog) -> None:
         FreshAirIQCoordinator._log_required_source_availability(fake)
 
     messages = [record.getMessage() for record in caplog.records]
-    assert messages.count("Required FreshAirIQ source sensor.outdoor_temperature is unavailable") == 1
-    assert messages.count("Required FreshAirIQ source sensor.outdoor_temperature is available again") == 1
+    assert messages.count("Required FreshAirIQ source group outdoor:temperature is unavailable") == 1
+    assert messages.count("Required FreshAirIQ source group outdoor:temperature is available again") == 1
+    assert not any("outdoor:humidity" in m for m in messages)
 
 
 @pytest.mark.asyncio

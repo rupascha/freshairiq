@@ -16,7 +16,8 @@ def _undefined_names(path: Path) -> list[str]:
     tree = ast.parse(src)
     top = symtable.symtable(src, str(path), "exec")
     defined = {s.get_name() for s in top.get_symbols() if s.is_assigned() or s.is_imported() or s.is_namespace()}
-    defined |= set(dir(builtins)) | {"__file__", "__name__", "__doc__", "__package__", "__path__", "__spec__"}
+    # Python 3.14 (PEP 649) adds the implicit module name __conditional_annotations__.
+    defined |= set(dir(builtins)) | {"__file__", "__name__", "__doc__", "__package__", "__path__", "__spec__", "__conditional_annotations__"}
     for node in ast.walk(tree):
         if isinstance(node, ast.Global):
             defined.update(node.names)

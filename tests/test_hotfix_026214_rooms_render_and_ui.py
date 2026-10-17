@@ -29,7 +29,7 @@ def test_goal_tracker_uses_existing_language_helper():
     assert "this._uiLanguage()" in CARD[start:start + 600]
 
 
-# test_save_room_handler_does_not_use_an_undefined_room_variable: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_save_room_handler_does_not_use_an_undefined_room_variable: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); not applicable: it guarded a JS bug in the removed card room-save handler
 
 
 def test_goal_tracker_styles_live_in_the_card_stylesheet_not_only_in_the_editor():

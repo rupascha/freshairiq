@@ -6,6 +6,12 @@
       },
       "close_recommended": {
         "default": "mdi:window-closed-variant"
+      },
+      "shading": {
+        "default": "mdi:blinds-open",
+        "state": {
+          "on": "mdi:blinds"
+        }
       }
     },
     "button": {
@@ -128,7 +134,8 @@
           "sensors": "mdi:thermometer-water",
           "geometry": "mdi:ruler-square",
           "optional_sensors": "mdi:access-point-plus",
-          "optional_actuators": "mdi:hvac"
+          "optional_actuators": "mdi:hvac",
+          "automation": "mdi:home-automation"
         }
       },
       "edit_room": {
@@ -138,7 +145,8 @@
           "sensors": "mdi:thermometer-water",
           "geometry": "mdi:ruler-square",
           "optional_sensors": "mdi:access-point-plus",
-          "optional_actuators": "mdi:hvac"
+          "optional_actuators": "mdi:hvac",
+          "automation": "mdi:home-automation"
         }
       },
       "model": {

@@ -14,7 +14,7 @@ def test_laundry_drying_is_localized_in_both_languages():
     assert en["selector"]["moisture_source"]["options"]["laundry_drying"] == "Hang / dry laundry"
 
 
-# test_dashboard_entity_selection_uses_integrated_ha_search_picker: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_entity_selection_uses_integrated_ha_search_picker: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_every_room_entity_field_uses_the_ha_entity_picker
 
 
 def test_primary_room_settings_include_co2_exhaust_thermostat_and_temperature_targets():

@@ -23,7 +23,7 @@ async def test_invalid_operating_profile_is_service_validation_error() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    (entity_cls, method_name, translation_key),
+    ("entity_cls", "method_name", "translation_key"),
     [
         (ResetLearningButton, "async_reset_learning", "reset_learning_failed"),
         (ResetStatisticsButton, "async_reset_statistics", "reset_statistics_failed"),

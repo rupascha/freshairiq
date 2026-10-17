@@ -10,8 +10,8 @@ def test_freshy_is_large_and_clipped_by_hero_not_shrunk():
     assert "overflow:hidden;contain:paint" in CARD
 
 
-# test_leaf_wings_are_compact_horizontal_and_permanent: retired in 0.26.4.1, the CSS-drawn mascot was replaced by the animated
-# Freshy SVG (see test_hotfix_026401_freshy_animations_in_iq.py).
+# test_leaf_wings_are_compact_horizontal_and_permanent: retired — CSS-drawn mascot replaced by the animated Freshy SVG in 0.26.4.1
+# (see test_hotfix_026401_freshy_animations_in_iq.py); not applicable: it pinned the size/rotation of the old CSS leaf wings
 
 def test_continuous_ventilation_is_visually_quiet():
     assert ".ai-compact.continuous .ai-airflow,.ai-compact.continuous .ai-air-leaf{display:none!important}" in CARD
@@ -24,8 +24,8 @@ def test_wait_has_no_airflow_or_particles():
     assert "display:none!important" in CARD
 
 
-# test_pre_night_is_tired_not_asleep_and_night_has_moon: retired in 0.26.4.1, the CSS-drawn mascot was replaced by the animated
-# Freshy SVG (see test_hotfix_026401_freshy_animations_in_iq.py).
+# test_pre_night_is_tired_not_asleep_and_night_has_moon: retired — CSS-drawn mascot replaced by the animated Freshy SVG in 0.26.4.1
+# (see test_hotfix_026401_freshy_animations_in_iq.py); covered by tests/test_freshy_026408.py::test_mood_selection_in_the_real_card_code (pre-night -> sleepy, night -> night) and ::test_night_cap_and_morning_belong_to_the_time_of_day
 
 def test_new_animation_loops_are_closed():
     for name in ("faiqWingFlight18", "faiqWingFlightRight18", "faiqGentleFlow18", "faiqWingGentle18", "faiqWingGentleRight18"):

@@ -122,7 +122,10 @@ def evaluate_guardian(data: Mapping[str, Any] | None) -> dict[str, Any]:
         repairs.append({"repair": "clear_completed_sensor_recovery", "safe": True, "reversible": True})
 
     learning_v2 = state.get("learning_v2") if isinstance(state.get("learning_v2"), Mapping) else {}
-    if bool(learning_v2.get("drift_detected")):
+    safety = learning_v2.get("safety") if isinstance(learning_v2.get("safety"), Mapping) else {}
+    # F36 (2026-10-16): drift with learned terms disabled is the protection
+    # working (physics fallback), not a violated invariant.
+    if bool(learning_v2.get("drift_detected")) and safety.get("learned_terms_allowed") is not False:
         findings.append(GuardianFinding("FAIQ-GUARDIAN-LEARNING-001", "high", "learned_model_must_not_override_regressing_evidence", "learning_v2", {"physics_fallback_rooms": int(learning_v2.get("physics_fallback_rooms") or 0)}))
     lv2_confidence = _num(learning_v2.get("confidence_percent"))
     lv2_maturity = _num(learning_v2.get("maturity_percent"))

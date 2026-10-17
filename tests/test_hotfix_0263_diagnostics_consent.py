@@ -35,7 +35,11 @@ def test_granted_consent_keeps_the_chosen_cadence(mode):
 
 def test_granted_daily_upload_runs_in_its_slot():
     options = {"diagnostics_consent": "granted", "diagnostics_reporting_mode": "daily"}
-    assert upload_due(effective_reporting_mode(options), datetime(2026, 10, 8, 23, 59), "install-1") is True
+    # E09 (2026-10-16): regular uploads run in the installation's own night slot (00:30-06:00).
+    from custom_components.freshairiq.diagnostic_transport import nightly_upload_time
+    slot = nightly_upload_time(datetime(2026, 10, 8, 12, 0), "install-1")
+    assert upload_due(effective_reporting_mode(options), slot, "install-1") is True
+    assert upload_due(effective_reporting_mode({"diagnostics_reporting_mode": "daily"}), slot, "install-1") is False
 
 
 def test_existing_installations_without_a_decision_are_paused_not_assumed():

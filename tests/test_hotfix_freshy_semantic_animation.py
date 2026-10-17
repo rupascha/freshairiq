@@ -6,8 +6,8 @@ def test_passive_open_monitor_has_distinct_gentle_ventilation_state():
     assert '"continuous"' in CARD
     assert 'faiqGentleVent' in CARD and 'faiqGentleFlow' in CARD
 
-# test_active_ventilation_has_airflow_and_sailing_freshy: retired in 0.26.4.1, the CSS-drawn mascot was replaced by the animated
-# Freshy SVG (see test_hotfix_026401_freshy_animations_in_iq.py).
+# test_active_ventilation_has_airflow_and_sailing_freshy: retired — CSS-drawn mascot replaced by the animated Freshy SVG in 0.26.4.1
+# (see test_hotfix_026401_freshy_animations_in_iq.py); intent now covered by tests/test_retired_replacements_20261016.py::test_active_ventilation_shows_the_moving_run_freshy
 
 def test_new_animation_loops_explicitly_return_to_start_state():
     for name in ['faiqSailSmooth','faiqFlowA','faiqFlowB','faiqFlowC','faiqAirLeafA','faiqAirLeafB','faiqGentleVent','faiqGentleFlow','faiqGentleLeaf','faiqCoolFlow','faiqCelebrateSmooth','faiqZzzSmooth']:

@@ -2,13 +2,22 @@
   "schema": 1,
   "approved_from_version": "0.26.2.14",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
-  "config_flow_sha256": "e942947e4f3d090462d4d732a0cd569b9d51bc301c2acb9f5762082eea7210f9",
-  "de_configuration_sha256": "44388e79929c69894de5d256c76adeb74495c23ec34c7bfa346cf60d74dc7086",
-  "en_configuration_sha256": "38751c879d953b2c2d3a7d19a674606de4c7956220cb06e71a1c7a557f5af0a8",
-  "strings_configuration_sha256": "38751c879d953b2c2d3a7d19a674606de4c7956220cb06e71a1c7a557f5af0a8",
+  "config_flow_sha256": "c8161781b51552944a480a20cfb1447c8a6787104641c21ce5ac1e478fc79d8b",
+  "de_configuration_sha256": "5fc4bc6dc81a4480b1555a1f0eac94107f76787135dbc53f47e4c4db20d59f63",
+  "en_configuration_sha256": "61c1ae5e4f44a2311b90d591292aa9da3a134027a7eea47b360da234efb71ee3",
+  "strings_configuration_sha256": "61c1ae5e4f44a2311b90d591292aa9da3a134027a7eea47b360da234efb71ee3",
   "approved_changes": [
     "0.26.4.6: one-dropdown reordering for goals/rooms, overnight presence hold option, several pollen sensors (user feedback)",
     "0.26.4.7: outdoor fine dust protection – PM2.5 sensors under Outdoor air source, 'Consider outdoor fine dust' and limit under Air quality (user feedback; pending maintainer approval)",
-    "0.26.5.0: test notification text in the server language (English for non-German servers); no schema change (user request: English readiness before the community launch)"
+    "0.26.5.0: test notification text in the server language (English for non-German servers); no schema change (user request: English readiness before the community launch)",
+    "2026-10-16 (F12, owner-approved): options-flow room wizard applies its deferred structural reload so a newly added room gets its entities; no schema, form or text change",
+    "2026-10-16 (F12 trace, owner-approved work package): rejected room creation also traces the fixed form error codes (no names/entities); no schema, form or text change",
+    "0.26.5.1 (A-26, owner-approved): editing an existing room in the options flow is applied to the running integration (listeners rebuilt, refresh); no schema, form or text change",
+    "0.26.5.1 (feedback FAIQ-FB-7C943C054B43, owner-approved): notifications page gains 'Only notify recipients who are at home' (default off) and 'Send important warnings while away' (default on)",
+    "0.26.5.1 (owner request, approved): goal priorities 2 and 3 offer 'Off' – a switched-off CO2/temperature goal is hidden and starts no airing of its own; dehumidification cannot be switched off",
+    "0.26.5.1 (support case IKEA VINDSTYRKA, owner-approved): the VOC/TVOC picker accepts every sensor so unitless VOC index sensors can be chosen; field description explains the index scale",
+    "0.26.5.1 (A-27, owner-approved): temperature and humidity pickers offer sensors with the device class or a matching unit (°C/°F/K, %), so template/MQTT sensors without device class can be chosen; no text change",
+    "0.26.5.1 (owner request 2026-10-17, approved): optional automatic control – opening form 'Open the cover when this window/door opens' (restores the previous position on close; passage-door lock-out protection) and room section 'Automatic control' (sun protection, exhaust fan after a moisture source / following the recommendation, follow-up time, maximum runtime); all off by default; exhaust-fan texts no longer say the fan is never switched",
+    "0.26.5.1 (owner request 2026-10-17, approved): sun protection options 'Close covers ahead of the sun' (lead time, default 15 min), 'Warm day from forecast high' (default 25 °C) and 'No sun protection from cloud cover' (default 80 %)"
   ]
 }

@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.5.0";
+const FAIQ_VERSION = "0.26.5.1";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -53,7 +53,7 @@ const FAIQ_UI = Object.freeze({
   "support.please_wait": { de: "bitte warten", en: "please wait" },
   "support.sent": { de: "Erfolgreich gesendet", en: "Sent successfully" },
   "support.cooldown_active": { de: "60 Min. Sperre aktiv", en: "60 min lock active" },
-  "support.success": { de: "Diagnose erfolgreich an den FreshAirIQ-Support gesendet.{caseLine}\nEin erneuter Versand ist in 60 Minuten möglich.", en: "Diagnostic report successfully sent to FreshAirIQ Support.{caseLine}\nAnother upload will be available in 60 minutes." },
+  "support.success": { de: "Diagnose erfolgreich an den FreshAirIQ-Support gesendet.{caseLine}\nDu musst nichts weiter tun. Falls danach noch etwas auffällt, kannst du frühestens in 60 Minuten eine weitere Diagnose senden.", en: "Diagnostic report successfully sent to FreshAirIQ Support.{caseLine}\nNothing else to do. If something else comes up, you can send another report in 60 minutes at the earliest." },
   "support.failed": { de: "Senden fehlgeschlagen", en: "Upload failed" },
   "support.failure_alert": { de: "Die Diagnose konnte nicht an den FreshAirIQ-Support übertragen werden. Es wurde keine 60-Minuten-Sperre gestartet.\n\nAlternativ erreichst du uns unter support@freshairiq.com.", en: "The diagnostic report could not be sent to FreshAirIQ Support. No 60-minute lock was started.\n\nAlternatively, you can reach us at support@freshairiq.com." },
   "settings.confirm_delete_room": { de: "Diesen Raum wirklich aus FreshAirIQ entfernen?", en: "Really remove this room from FreshAirIQ?" },
@@ -144,7 +144,7 @@ const faiqEnglishText = value => {
     .replace(/(\d+) TAGE\b/g, "$1 DAYS")
     .replace(/(\d+) Raum braucht Aufmerksamkeit/g, "$1 room needs attention")
     .replace(/(\d+) Räume brauchen Aufmerksamkeit/g, "$1 rooms need attention");
-  for (const [re, en] of FAIQ_EN_PATTERNS) out = out.replace(re, en); // 0.26.5.0: numbered phrases from the module
+  for (const [re, en] of FAIQ_EN_PATTERNS) out = out.replace(re, en); // 0.26.5.1: numbered phrases from the module
   if (!faiqEnglishReady()) faiqLoadEnglish().catch(() => {});
   for (const [de, en] of (FAIQ_EN_RULES || [])) out = typeof de === "string" ? out.split(de).join(en) : out.replace(de, () => en);
 
@@ -191,11 +191,13 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
 };
 // 0.26.4.7: rooms the whole-house decision deliberately holds back.
 const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
-// 0.26.5.0: a room aired only by its exhaust fan has nothing to close.
+// 0.26.5.1: a room aired only by its exhaust fan has nothing to close.
 const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
-const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : (r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action);
+// F02 (2026-10-16): the house tolerates this long opening; never show "Schließen" here.
+const houseMonitoredRoom = r => !!r && !!r.active && String(r.house_aligned_action || "") === "monitor_open";
+const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : houseMonitoredRoom(r) ? "Daueröffnung überwachen" : (r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action);
 const roomStyleAction = r => houseHeldRoom(r) ? "Wait" : (r && r.action);
-const actionDE = v => ({ "Ventilate": "Lüften", "Continue ventilating": "Weiterlüften", "Close": "Schließen", "Do not ventilate": "Nicht lüften", "Wait": "Warten", "Okay": "Alles okay", "Check sensor": "Sensor prüfen", "Ventilate for cooling": "Zum Kühlen lüften", "Monitor only": "Nur anzeigen", "Open fully": "Vollständig öffnen" }[v] || v || "–");
+const actionDE = v => ({ "Ventilate": "Lüften", "Continue ventilating": "Weiterlüften", "Close": "Schließen", "Do not ventilate": "Nicht lüften", "Wait": "Warten", "Okay": "Alles okay", "Check sensor": "Sensor prüfen", "Ventilate for cooling": "Zum Kühlen lüften", "Monitor only": "Nur anzeigen", "Open fully": "Vollständig öffnen", "Ventilate indirectly": "Über Nachbarraum lüften" }[v] || v || "–");
 const mouldDE = v => ({ "Very high": "Sehr hoch", "High": "Hoch", "Elevated": "Erhöht", "Slightly elevated": "Leicht erhöht", "Low": "Niedrig", "Unknown": "Unbekannt" }[v] || v || "Unbekannt");
 const learnDE = v => ({ "Very stable": "Sehr stabil", "Stable": "Stabil", "Usable": "Brauchbar", "Learning": "Lernt", "Base estimate": "Grundschätzung" }[v] || v || "–");
 const profileDE = v => ({ dehumidify: "Entfeuchten", comfort: "Komfort", summer_cooling: "Sommer kühlen" }[v] || v || "Komfort");
@@ -740,7 +742,7 @@ const FAIQ_FRESHY_CSS = `
 .ai-mascot-wrap.fr-wrap .fr{width:112px;height:98px}
 @media(max-width:520px){.ai-assistant{grid-template-columns:96px minmax(0,1fr) 22px}.ai-mascot-wrap.fr-wrap,.ai-mascot-wrap.fr-wrap .fr{width:96px;height:84px}}
 `;
-// 0.26.5.0: larger room view text and the per-tile explanation window.
+// 0.26.5.1: larger room view text and the per-tile explanation window.
 const FAIQ_ROOM_VIEW_CSS = `
 .room-detail h3{font-size:19px}
 .room-detail .tiny{font-size:calc(9.5px * var(--faiq-font-meta,1));line-height:calc(12px * var(--faiq-font-meta,1));white-space:normal}
@@ -860,7 +862,7 @@ class FreshAirIQCard extends HTMLElement {
     static getStubConfig() { return { dashboard_variant: "classic" }; }
     constructor() { super(); this.attachShadow({ mode: "open" }); this._onEnglishReady = () => { this._englishFailed = false; if (this._hass && this.isConnected && this._uiLanguage() === "en") this._render(); }; try { window.addEventListener(FAIQ_EN_READY_EVENT, this._onEnglishReady); } catch (_) { /* ignore */ } this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._lastSupportError = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; this._compactExpanded = null; this._classicDisclosureOpen = new Set(); }
     _uiLanguage() {
-        // 0.26.5.0: speak the language of FreshAirIQ's own texts (server language) – a German
+        // 0.26.5.1: speak the language of FreshAirIQ's own texts (server language) – a German
         // profile on an English server mixed German headings with English recommendations.
         if (this._hass && this._langHass !== this._hass) {
             this._langHass = this._hass;
@@ -950,13 +952,41 @@ class FreshAirIQCard extends HTMLElement {
         this._infoScrollByView.set(view, top);
         return top;
     }
+    // E08: Back keeps the opened room at its visible offset (per card instance).
+    _rememberRoomAnchor(el) {
+        const view = this._info;
+        const scroller = el && el.closest ? el.closest(".subdialog") : null;
+        if (!view || !scroller || !el.dataset || !el.dataset.room) return;
+        if (!this._roomAnchors) this._roomAnchors = new Map();
+        this._roomAnchors.set(view, { key: String(el.dataset.room), offset: el.getBoundingClientRect().top - scroller.getBoundingClientRect().top });
+    }
+    _applyRoomAnchor(scroller) {
+        const anchor = this._pendingRoomAnchor;
+        this._pendingRoomAnchor = null;
+        if (!anchor || !scroller) return null;
+        const target = Array.from(scroller.querySelectorAll("[data-room]")).find(node => node.dataset.room === anchor.key);
+        if (!target) return null; // room removed meanwhile: keep the restored position
+        const max = Math.max(scroller.scrollHeight - scroller.clientHeight, 0);
+        const desired = Math.min(Math.max(Math.round(scroller.scrollTop + (target.getBoundingClientRect().top - scroller.getBoundingClientRect().top) - anchor.offset), 0), max);
+        if (Math.abs(desired - scroller.scrollTop) >= 1) scroller.scrollTop = desired;
+        return desired;
+    }
+    // A-34: iOS WebKit may drop scrollTop on a new scroller; re-apply until touched.
+    _settleSubdialogScroll(el, wanted) {
+        if (!el || !(wanted > 0)) return;
+        let touched = false;
+        ["touchstart", "wheel", "mousedown", "keydown"].forEach(t => el.addEventListener(t, () => { touched = true; }, { passive: true, once: true }));
+        const apply = () => { if (touched || !el.isConnected) return; const t = Math.min(wanted, Math.max(el.scrollHeight - el.clientHeight, 0)); if (Math.abs(el.scrollTop - t) >= 1) el.scrollTop = t; };
+        requestAnimationFrame(() => { apply(); requestAnimationFrame(apply); });
+        [120, 300].forEach(ms => setTimeout(apply, ms));
+    }
     _pushInfoViewport() {
         if (this._info) {
             this._infoStack.push(this._info);
             this._infoScrollStack.push(this._rememberInfoViewport(this._info));
         }
     }
-    _resetInfoNavigation() { this._infoStack = []; this._infoScrollStack = []; if (this._infoScrollByView) this._infoScrollByView.clear(); this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; }
+    _resetInfoNavigation() { this._pendingRoomAnchor = null; if (this._roomAnchors) this._roomAnchors.clear(); this._infoStack = []; this._infoScrollStack = []; if (this._infoScrollByView) this._infoScrollByView.clear(); this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; }
     _installAndroidTouchScroll(scroller) {
         if (!scroller || !/Android/i.test(navigator.userAgent || "")) return;
         let startY = 0, startTop = 0, dragging = false;
@@ -1002,7 +1032,7 @@ class FreshAirIQCard extends HTMLElement {
         this.shadowRoot.appendChild(template.content);
         this._syncExplainSheet();
     }
-    // 0.26.5.0: tap a tile in the room view → a small window explains the value.
+    // 0.26.5.1: tap a tile in the room view → a small window explains the value.
     _bindExplainOnce() {
         if (this._explainBound || !this.shadowRoot) return;
         this._explainBound = true;
@@ -1418,7 +1448,7 @@ class FreshAirIQCard extends HTMLElement {
         this._liveHtmlCache[cacheKey] = html;
         const template = document.createElement("template");
         template.innerHTML = html;
-        this._localizeLegacyFragment(template.content); // 0.26.5.0: live updates stay English
+        this._localizeLegacyFragment(template.content); // 0.26.5.1: live updates stay English
         return template.content.querySelector(selector);
     }
     _refreshOpenViewsLive() {
@@ -2531,7 +2561,7 @@ class FreshAirIQCard extends HTMLElement {
         if (this._info === "support") {
             const mode = String(((st && st.diagnostics_upload) || {}).configured_reporting_mode || "daily");
             const modeLabel = {off:"Aus",errors:"Nur bei erkannten Problemen",daily:"Täglich nachts",weekly:"Wöchentlich"}[mode] || mode;
-            // 0.26.5.0: one feedback per 15 minutes; the remaining time is shown.
+            // 0.26.5.1: one feedback per 15 minutes; the remaining time is shown.
             const feedbackMins = this._feedbackCooldownMinutes(st);
             return `<section class="info-panel settings-panel"><div class="tiny info-kicker">FRESHAIRIQ SUPPORT</div><h3>Hilfe, Diagnose & Feedback</h3><p>Alle Support-Funktionen sind hier zentral gebündelt.</p><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">DIAGNOSE</div><span>Diagnosedaten lokal exportieren oder direkt an den FreshAirIQ-Support senden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Nachricht an den Support (optional)</b><span>Die Diagnose wird verschlüsselt über Home Assistant direkt an den FreshAirIQ-Diagnose-Server übertragen – nicht an die hier angezeigte lokale Home-Assistant-Adresse. Zugangsdaten und Tokens werden nicht übertragen.</span></div><textarea id="diagnostics-message" class="settings-input settings-textarea" rows="4" maxlength="4000" placeholder="Optional: Was ist passiert?"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="settings-save" id="diagnostics-send"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>Diagnosedaten</b><span>an Support senden</span></button></div></section><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">FEEDBACK</div><span>Fehler und Verbesserungsvorschläge direkt melden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Art der Meldung</b></div><select id="feedback-type" class="settings-input"><option value="bug">Fehler / Bug</option><option value="improvement">Verbesserungsvorschlag</option><option value="other">Sonstiges</option></select></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Beschreibung</b><span>Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.</span></div><textarea id="feedback-message" class="settings-input settings-textarea" rows="6" maxlength="10000"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="feedback-send"${feedbackMins ? " disabled" : ""}><ha-icon icon="mdi:${feedbackMins ? "timer-sand" : "send-outline"}"></ha-icon> ${feedbackMins ? esc(this._t("feedback.cooldown_button", { mins: feedbackMins })) : "Meldung senden"}</button></div><div id="feedback-result" class="muted">${esc(feedbackMins ? this._t("feedback.cooldown_next", { mins: feedbackMins }) : this._t("feedback.cooldown_hint"))}</div></section><section class="settings-group support-contact"><div class="settings-field-copy"><b>Support per E-Mail</b><span class="support-email">support@freshairiq.com</span></div><div class="settings-field"><div class="settings-field-copy"><b>Automatische Diagnoseübertragung</b><span>Aktuell: ${esc(modeLabel)}. Ändern unter Geräte & Dienste → FreshAirIQ → Konfigurieren → Daten & Lernen → Diagnose-Freigabe.</span></div></div></section></section>`;
         }
@@ -2539,7 +2569,7 @@ class FreshAirIQCard extends HTMLElement {
         if (r) {
             const optionalSensorRows = [];
             if (this._config.info_voc !== false && r.voc_enabled !== false && r.voc_configured)
-                optionalSensorRows.push(`<div><b><ha-icon icon="mdi:molecule"></ha-icon> ${r.voc_available ? fmt(r.voc, 0) : "–"}</b><span>VOC / TVOC · ${r.voc_available ? "Zusatzdaten aktiv" : "Sensor aktuell nicht verfügbar"}</span></div>`);
+                optionalSensorRows.push(`<div><b><ha-icon icon="mdi:molecule"></ha-icon> ${r.voc_available ? fmt(r.voc, 0) : "–"}</b><span>${r.voc_scale === "index" ? (this._uiLanguage() === "en" ? "VOC index" : "VOC-Index") : "VOC / TVOC"} · ${r.voc_available ? "Zusatzdaten aktiv" : "Sensor aktuell nicht verfügbar"}</span></div>`);
             if (this._config.info_pm25 !== false && r.pm25_enabled !== false && r.pm25_configured)
                 optionalSensorRows.push(`<div><b><ha-icon icon="mdi:blur"></ha-icon> ${r.pm25_available ? `${fmt(r.pm25, 1)} µg/m³` : "–"}</b><span>PM2.5 · ${r.pm25_available ? "Zusatzdaten aktiv" : "Sensor aktuell nicht verfügbar"}</span></div>`);
             if (this._config.info_illuminance !== false && r.illuminance_enabled !== false && r.illuminance_configured)
@@ -2809,7 +2839,7 @@ class FreshAirIQCard extends HTMLElement {
             await this._registerFieldTestClient(true);
             const stamp = new Date().toISOString().split(":").join("-").replace(/\.\d{3}Z$/, "Z");
             let blob, filename;
-            // 0.26.5.0: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
+            // 0.26.5.1: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
             // the browser no longer parses and re-indents tens of MiB.
             const zipResponse = typeof this._hass.callApiRaw === "function" ? await this._hass.callApiRaw("GET", "freshairiq/diagnostics?format=zip") : null;
             if (zipResponse && zipResponse.ok && String(zipResponse.headers?.get?.("Content-Type") || "").includes("zip")) {
@@ -2921,11 +2951,7 @@ class FreshAirIQCard extends HTMLElement {
             this._dialogScrollTop = oldDialog.scrollTop;
         const oldSubdialog = this.shadowRoot.querySelector(".subdialog");
         if (oldSubdialog) {
-            // The DOM still represents the view that was rendered before a navigation
-            // event changed this._info. Navigation handlers persist that old view
-            // explicitly before changing this._info. Never write oldSubdialog.scrollTop
-            // into the *new* logical view here, otherwise Back overwrites the parent's
-            // saved position with the child's scroll position (usually 0).
+            // Old DOM = previous view; never store its scrollTop under the new this._info.
             this._subdialogScrollTop = oldSubdialog.scrollTop;
         }
         const oldScroll = this._forceDialogTop ? 0 : this._dialogScrollTop;
@@ -3075,11 +3101,11 @@ class FreshAirIQCard extends HTMLElement {
             el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(e); } });
         });
         (_s = this.shadowRoot.getElementById("info-close")) === null || _s === void 0 ? void 0 : _s.addEventListener("click", e => { e.stopPropagation(); this._info = null; this._resetInfoNavigation(); this._render(); if (!this._dialogOpen) this._restoreOverlayViewport(); });
-        (_t = this.shadowRoot.getElementById("info-back")) === null || _t === void 0 ? void 0 : _t.addEventListener("click", e => { e.stopPropagation(); clearTimeout(this._deferredRender); this._deferredRender = null; this._rememberInfoViewport(this._info); const stackTop = this._infoScrollStack.length ? this._infoScrollStack.pop() : 0; const parent = this._infoStack.length ? this._infoStack.pop() : null; const restoreTop = parent ? ((this._infoScrollByView && this._infoScrollByView.get(parent)) ?? stackTop) : 0; this._info = parent; this._pendingSubdialogScrollTop = restoreTop; this._render(); });
+        (_t = this.shadowRoot.getElementById("info-back")) === null || _t === void 0 ? void 0 : _t.addEventListener("click", e => { e.stopPropagation(); clearTimeout(this._deferredRender); this._deferredRender = null; this._rememberInfoViewport(this._info); const stackTop = this._infoScrollStack.length ? this._infoScrollStack.pop() : 0; const parent = this._infoStack.length ? this._infoStack.pop() : null; const restoreTop = parent ? ((this._infoScrollByView && this._infoScrollByView.get(parent)) ?? stackTop) : 0; this._pendingRoomAnchor = parent && this._roomAnchors ? (this._roomAnchors.get(parent) || null) : null; this._info = parent; this._pendingSubdialogScrollTop = restoreTop; this._render(); });
         this.shadowRoot.querySelectorAll("[data-info]").forEach(el => el.addEventListener("click", async e => { e.stopPropagation(); const next = el.dataset.info; if (!next || next === this._info) return; if (this._info) this._pushInfoViewport(); else { if (!this._dialogOpen) this._captureOverlayViewport(); this._resetInfoNavigation(); } this._pendingSubdialogScrollTop = 0; this._info = next; this._render(); }));
         this.shadowRoot.querySelectorAll('[data-info][role="button"]').forEach(el => el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); } }));
         this.shadowRoot.querySelectorAll('[data-room][role="button"]').forEach(el => el.addEventListener("keydown", e => { if (e.target === el && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); el.click(); } }));
-        this.shadowRoot.querySelectorAll("[data-room]").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); clearTimeout(this._deferredRender); this._deferredRender = null; const next = `room:${el.dataset.room}`; if (this._info && this._info !== next) this._pushInfoViewport(); else if (!this._info) { if (!this._dialogOpen) this._captureOverlayViewport(); this._resetInfoNavigation(); } this._pendingSubdialogScrollTop = 0; this._info = next; this._render(); }));
+        this.shadowRoot.querySelectorAll("[data-room]").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); clearTimeout(this._deferredRender); this._deferredRender = null; const next = `room:${el.dataset.room}`; this._rememberRoomAnchor(el); if (this._info && this._info !== next) this._pushInfoViewport(); else if (!this._info) { if (!this._dialogOpen) this._captureOverlayViewport(); this._resetInfoNavigation(); } this._pendingSubdialogScrollTop = 0; this._info = next; this._render(); }));
         (_u = this.shadowRoot.getElementById("submodal")) === null || _u === void 0 ? void 0 : _u.addEventListener("click", e => { if (e.target.id === "submodal") {
             this._info = null;
             this._resetInfoNavigation();
@@ -3136,24 +3162,22 @@ class FreshAirIQCard extends HTMLElement {
         }
         const newSubdialog = this.shadowRoot.querySelector(".subdialog");
         if (newSubdialog) {
-            // Hotfix 0.9.4.3: keep the room-detail viewport stable on iOS/WebView.
-            // In addition to preserving scrollTop, stop scroll chaining/rubber-band
-            // gestures at the top/bottom edge from being handed to Home Assistant's
-            // page scroller. That was the remaining sporadic jump-to-top path.
+            // Hotfix 0.9.4.3: stable room-detail viewport; no scroll chaining to HA's page.
             newSubdialog.scrollTop = oldSubScroll;
-            this._subdialogScrollTop = newSubdialog.scrollTop;
-            // Native pan scrolling is intentionally left untouched. Android
-            // WebView can stop scrolling when a nested touchmove handler calls
-            // preventDefault at container boundaries. CSS overscroll containment
-            // prevents scroll chaining without cancelling the gesture.
+            const anchored = this._applyRoomAnchor(newSubdialog);
+            // A-34: store the intended position (WebKit may read back 0).
+            const intended = anchored ?? (newSubdialog.scrollTop > 0 ? newSubdialog.scrollTop : oldSubScroll);
+            this._subdialogScrollTop = intended;
+            if (this._info) { if (!this._infoScrollByView) this._infoScrollByView = new Map(); this._infoScrollByView.set(this._info, intended); }
+            this._settleSubdialogScroll(newSubdialog, intended);
+            // Native pan scrolling stays untouched (Android WebView); CSS overscroll containment.
             this._installAndroidTouchScroll(newSubdialog);
             newSubdialog.addEventListener("scroll", () => {
                 this._subdialogScrollTop = newSubdialog.scrollTop;
                 if (this._info) { if (!this._infoScrollByView) this._infoScrollByView = new Map(); this._infoScrollByView.set(this._info, newSubdialog.scrollTop); }
                 this._lastScrollAt = Date.now();
             }, { passive: true });
-            // Desktop HA can hand wheel events through the shadow-DOM overlay to
-            // the page behind it. Keep wheel movement inside the detail scrollport.
+            // Keep desktop wheel movement inside the detail scrollport.
             newSubdialog.addEventListener("wheel", e => {
                 if (!e.deltaY || newSubdialog.scrollHeight <= newSubdialog.clientHeight) return;
                 const before = newSubdialog.scrollTop;

@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
 
-# test_grouped_settings_route_to_group_menu: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_grouped_settings_route_to_group_menu: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); covered by ha_tests/test_config_flow_matrix.py::test_options_main_sections_are_reachable
 
 
 def test_iq_time_zero_is_not_reported_as_over_target():

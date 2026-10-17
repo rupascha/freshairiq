@@ -1,0 +1,73 @@
+blueprint:
+  name: FreshAirIQ – Rollos gegen die Sonne (Sommer kühlen)
+  description: >-
+    Schließt im Betriebsmodus „Sommer kühlen“ die Rollos der Fenster, auf die
+    gleich die Sonne scheint (standardmäßig 15 Minuten vorher), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnet
+    sie wieder, wenn die Sonne diese Fenster verlassen hat. Grundlage ist der
+    FreshAirIQ-Sensor „Sonnenschutz empfohlen“ des Raums: er kennt die
+    Himmelsrichtung jeder Öffnung, die zugeordneten Rollos und den Sonnenstand
+    (aus dem Home-Assistant-Standort). Kühlt der Raum dank der Rollos ab, bleiben sie trotzdem zu, bis
+    die Sonne weg ist. Ohne Blueprint geht es auch direkt in FreshAirIQ: Raum bearbeiten →
+    „Automatische Steuerung“. Bitte nicht beides gleichzeitig nutzen.
+  domain: automation
+  source_url: https://github.com/rupascha/freshairiq/blob/main/blueprints/automation/freshairiq/covers_follow_sun_protection.yaml
+  input:
+    shading:
+      name: Sonnenschutz-Sensor
+      description: Der FreshAirIQ-Sensor „Sonnenschutz empfohlen“ des Raums (z. B. „Wohnzimmer Sonnenschutz empfohlen“).
+      selector:
+        entity:
+          integration: freshairiq
+          domain: binary_sensor
+    covers:
+      name: Nur diese Rollos
+      description: Leer lassen = alle Rollos, die in FreshAirIQ den Öffnungen dieses Raums zugeordnet sind.
+      default: []
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+    reopen:
+      name: Wieder öffnen, wenn die Sonne weg ist
+      default: true
+      selector:
+        boolean: {}
+    reopen_at_night:
+      name: Auch nach Sonnenuntergang öffnen
+      description: Aus = Rollos, deren Fenster erst mit dem Sonnenuntergang aus der Sonne kommen, bleiben über Nacht geschlossen.
+      default: true
+      selector:
+        boolean: {}
+mode: queued
+max_exceeded: silent
+triggers:
+  # without "to"/"from" the trigger also fires when only the cover list changes
+  - trigger: state
+    entity_id: !input shading
+variables:
+  selected: !input covers
+  reopen: !input reopen
+  reopen_at_night: !input reopen_at_night
+  before: >-
+    {{ (trigger.from_state.attributes.covers_to_close | default([]))
+       if trigger.from_state is not none and trigger.from_state.state in ['on', 'off'] else [] }}
+  after: >-
+    {{ (trigger.to_state.attributes.covers_to_close | default([]))
+       if trigger.to_state is not none and trigger.to_state.state in ['on', 'off'] else before }}
+  to_close: >-
+    {{ after | reject('in', before) | select('in', selected if selected | count > 0 else after) | list }}
+  to_open: >-
+    {{ before | reject('in', after) | select('in', selected if selected | count > 0 else before) | list }}
+actions:
+  - if:
+      - "{{ to_close | count > 0 }}"
+    then:
+      - action: cover.close_cover
+        target:
+          entity_id: "{{ to_close }}"
+  - if:
+      - "{{ reopen and to_open | count > 0 and (reopen_at_night or is_state('sun.sun', 'above_horizon')) }}"
+    then:
+      - action: cover.open_cover
+        target:
+          entity_id: "{{ to_open }}"

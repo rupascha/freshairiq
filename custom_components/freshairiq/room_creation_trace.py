@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import re
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -13,6 +14,18 @@ def _digest(value: Any) -> str | None:
     if not text:
         return None
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+_ERROR_CODE_RE = re.compile(r"^[a-z0-9_]{1,64}$")
+
+
+def validation_error_codes(errors: dict[str, Any]) -> list[str]:
+    """Return the form error codes (translation keys such as ``room_volume_required``).
+
+    F12: the trace must say *why* a room was rejected without storing user input,
+    so only fixed code identifiers pass; anything else is dropped.
+    """
+    return sorted({str(code) for code in (errors or {}).values() if _ERROR_CODE_RE.match(str(code))})
 
 
 def _room_subentries(entry: Any) -> list[Any]:
@@ -63,7 +76,7 @@ def trace_room_creation(
     }
     if extra:
         for key, value in extra.items():
-            if key in {"attempt", "commit_wait_ms", "reload_scheduled", "validation_error_keys"}:
+            if key in {"attempt", "commit_wait_ms", "reload_scheduled", "validation_error_keys", "validation_error_codes"}:
                 event[key] = value
     hass.async_create_task(recorder.async_record_room_creation_trace(event))
 

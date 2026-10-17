@@ -58,7 +58,7 @@ _SAFE_OPTION_KEYS = (
     "co2_warn", "co2_critical", "voc_sensor_enabled", "pm25_sensor_enabled",
     "illuminance_sensor_enabled", "voc_warn", "voc_critical", "pm25_warn",
     "pm25_critical", "humidify_below_rh", "shade_above_temp_c",
-    "shade_min_illuminance_lx", "learning_enabled", "learning_max_duration_min",
+    "shade_min_illuminance_lx", "shade_lead_min", "shade_forecast_max_c", "shade_max_cloud_coverage", "learning_enabled", "learning_max_duration_min",
     "cover_position_zero_means", "cover_learning_max_closed_percent",
     "cross_ventilation_pairs", "cross_zone_connections", "operating_profile",
     "personalisation_enabled", "thermal_preference", "personal_priority",
@@ -79,7 +79,8 @@ _SAFE_OPTION_KEYS = (
     "notification_scope", "notification_room_keys", "notify_ventilate",
     "notify_close", "notify_complete", "notify_mould", "notify_sensor",
     "notify_night", "notify_learning", "notify_cooling",
-    "notification_cooldown_min", "suppress_notifications_at_night", "statistics_days", "dashboard_show_temperature",
+    "notification_cooldown_min", "suppress_notifications_at_night", "notify_only_when_home",
+    "notify_important_when_away", "statistics_days", "dashboard_show_temperature",
     "dashboard_show_time", "dashboard_show_next5", "dashboard_show_night",
     "dashboard_show_mould", "dashboard_show_history",
     "diagnostics_reporting_mode", "diagnostics_consent", "diagnostics_include_client_context",
@@ -514,7 +515,10 @@ class FreshAirIQDiagnosticsRecorder:
         installation_id = str(identity.get("installation_id") or "")
         if not installation_id.startswith("faiq-install-"):
             installation_id = f"faiq-install-{uuid4().hex}"
-            identity_status = "created" if not identity else "recreated_invalid_identity"
+            # A broken identity file stays reported as such (A-22); only a missing
+            # or empty identity counts as newly created.
+            if identity_status != "recreated_invalid_identity":
+                identity_status = "created" if not identity else "recreated_invalid_identity"
         created_at = identity.get("created_at")
         if not isinstance(created_at, str) or not created_at:
             created_at = now.isoformat()

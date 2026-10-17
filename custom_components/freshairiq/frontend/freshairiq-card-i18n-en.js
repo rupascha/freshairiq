@@ -59,7 +59,7 @@ const FAIQ_UI_EN = [
   ["FreshAirIQ zeigt die echten Sensorwerte dieses Raums an. Der Raum ist bewusst von Empfehlungen, Prognosen, Hausbilanz und Lernen ausgeschlossen.", "FreshAirIQ shows the real sensor values for this room. The room is intentionally excluded from recommendations, forecasts, whole-home balance and learning."],
   ["Der Raum ist auf „Nur anzeigen“ gestellt, aber mindestens ein zugeordneter Klimasensor liefert aktuell keinen gültigen Wert.", "The room is set to ‘Monitor only’, but at least one assigned climate sensor currently has no valid value."],
   ["Dieser Strukturraum bleibt im Gebäudemodell erhalten. Es werden keine Klimawerte geschätzt oder erfunden.", "This structural room remains in the building model. No climate values are estimated or invented."],
-  ["keine Richtung hinterlegt", "no direction configured"], ["Daueröffnung überwachen", "Monitor long-term opening"],
+  ["keine Richtung hinterlegt", "no direction configured"], ["Daueröffnung überwachen", "Monitor long-term opening"], ["Über Nachbarraum lüften", "Ventilate via a connected room"],
   ["MECHANISCHE LÜFTUNG AKTIV", "MECHANICAL VENTILATION ACTIVE"], ["LÜFTUNG AKTIV", "VENTILATION ACTIVE"], ["PASSIV MITGELÜFTET", "PASSIVELY VENTILATED"], ["GESCHLOSSEN", "CLOSED"],
   ["würde Feuchtigkeit eintragen", "would add moisture"], ["Automatisch nach Hausgröße & Nutzung", "Automatic based on home size & usage"],
   ["Intelligente Lüftungsschwelle", "Smart ventilation threshold"], ["Temperaturänderung", "Temperature change"], ["Lüftungszeit", "Ventilation time"],

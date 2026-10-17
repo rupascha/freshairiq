@@ -8,6 +8,9 @@ from math import isfinite
 from typing import Any
 
 GOALS = ("humidity", "co2", "temperature")
+# Goals a user may switch off per room. Humidity stays: moisture and mould
+# protection is the core of every room evaluation.
+SWITCHABLE_GOALS = ("co2", "temperature")
 
 def _f(v: Any, default: float | None = None) -> float | None:
     try:
@@ -26,6 +29,11 @@ def normalise_priorities(value: Any, available: Any = None) -> list[str]:
     out = [str(x) for x in vals if str(x) in allowed]
     return out + [x for x in allowed if x not in out]
 
+def normalise_disabled_goals(value: Any) -> list[str]:
+    """Return the switched-off goals of a room (unknown or protected ids dropped)."""
+    vals = value if isinstance(value, (list, tuple, set)) else []
+    return [g for g in SWITCHABLE_GOALS if g in {str(x) for x in vals}]
+
 def effective_temperature_target(*, manual: Any=None, session_target: Any=None, thermostat_target: Any=None, fallback: Any=None) -> tuple[float|None,str]:
     """Resolve a plausible comfort target without accepting frost-protection values."""
     for value, source in ((manual,"manual"),(session_target,"session"),(thermostat_target,"thermostat"),(fallback,"fallback")):
@@ -37,7 +45,8 @@ def effective_temperature_target(*, manual: Any=None, session_target: Any=None, 
 def evaluate_goals(*, humidity: Any, target_rh: Any, co2: Any, co2_warn: Any,
                    temperature: Any, temperature_target: Any, temperature_rate_c_min: Any=None,
                    co2_rate_ppm_min: Any=None, humidity_rate_pct_min: Any=None,
-                   priorities: Any=None, available_goals: Any=None, hard_close: bool=False) -> dict[str,Any]:
+                   priorities: Any=None, available_goals: Any=None, hard_close: bool=False,
+                   disabled_goals: Any=None) -> dict[str,Any]:
     rh=_f(humidity); rh_target=_f(target_rh,55.0) or 55.0
     c=_f(co2); c_target=_f(co2_warn,1000.0) or 1000.0
     t=_f(temperature); tt=_f(temperature_target)
@@ -53,11 +62,19 @@ def evaluate_goals(*, humidity: Any, target_rh: Any, co2: Any, co2_warn: Any,
                  "value":c,"target":c_target,"eta_min":eta(None if c is None else c-c_target, co2_rate_ppm_min)})
     rows.append({"id":"temperature","active":t is not None and tt is not None,"reached":t is not None and tt is not None and t <= tt+0.3,
                  "value":t,"target":tt,"eta_min":eta(None if t is None or tt is None else t-tt, temperature_rate_c_min)})
+    disabled = normalise_disabled_goals(disabled_goals)
+    for r in rows:
+        if r["id"] in disabled:
+            # A switched-off goal is neither shown nor allowed to drive airing.
+            r.update({"active":False,"reached":False,"disabled":True,"eta_min":None})
     active_ids = [r["id"] for r in rows if r["active"]]
     allowed = [g for g in (available_goals if isinstance(available_goals, (list, tuple, set)) else active_ids) if g in active_ids]
     order=normalise_priorities(priorities, allowed); rank={g:i for i,g in enumerate(order)}
     rows.sort(key=lambda r: rank.get(r["id"], 99))
     open_goals=[r for r in rows if r["active"] and not r["reached"]]
-    return {"priorities":order,"goals":rows,"all_active_goals_reached":not open_goals,
-            "highest_open_goal":open_goals[0]["id"] if open_goals else None,
-            "hard_close":bool(hard_close)}
+    out = {"priorities":order,"goals":rows,"all_active_goals_reached":not open_goals,
+           "highest_open_goal":open_goals[0]["id"] if open_goals else None,
+           "hard_close":bool(hard_close)}
+    if disabled:
+        out["disabled_goals"] = disabled
+    return out

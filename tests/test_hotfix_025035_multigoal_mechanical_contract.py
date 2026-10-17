@@ -23,7 +23,7 @@ def test_co2_and_exhaust_are_in_primary_native_room_section():
     optional=section[section.index('vol.Optional("optional_sensors")'):]
     assert 'CONF_ROOM_CO2' not in optional.split('vol.Optional("optional_actuators")')[0]
 
-# test_dashboard_has_goal_tracker_and_all_room_edit_fields: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services).
+# test_dashboard_has_goal_tracker_and_all_room_edit_fields: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_room_form_has_goal_ranking_target_temperature_and_mechanical_ventilation (goal tracker: tests/test_hotfix_026214_rooms_render_and_ui.py::test_goal_tracker_uses_existing_language_helper)
 
 def test_de_en_native_translations_cover_new_contract():
     for lang in ('de','en'):

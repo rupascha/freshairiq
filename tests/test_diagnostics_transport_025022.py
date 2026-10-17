@@ -23,6 +23,7 @@ from custom_components.freshairiq.diagnostic_transport import (
     build_cloud_payload,
     build_upload_chunks,
     deterministic_upload_slot,
+    nightly_upload_time,
     normalise_reporting_mode,
     problem_fingerprint,
     record_cursor,
@@ -186,21 +187,21 @@ def test_constants_and_mode_normalisation_fail_closed():
     assert normalise_reporting_mode("bogus") == "off"
 
 
-def test_deterministic_slot_is_stable_and_inside_two_hour_window():
+def test_deterministic_slot_is_stable_and_inside_the_night_window():
+    # E09 (2026-10-16): the window is 00:30-06:00 local HA time (was 02:00-03:59).
     first = deterministic_upload_slot("faiq-install-one")
     second = deterministic_upload_slot("faiq-install-one")
     other = deterministic_upload_slot("faiq-install-two")
     assert first == second
     assert first != other
-    assert first[0] in {2, 3}
-    assert 0 <= first[1] <= 59
-    assert deterministic_upload_slot("")[0] in {2, 3}
+    for hour, minute in (first, other, deterministic_upload_slot("")):
+        assert (0, 30) <= (hour, minute) <= (5, 59)
+        assert 0 <= minute <= 59
 
 
 def test_daily_weekly_error_and_off_cadence():
     install = "faiq-install-abc123"
-    hour, minute = deterministic_upload_slot(install)
-    now = datetime(2026, 9, 16, hour, minute, tzinfo=timezone.utc)
+    now = nightly_upload_time(datetime(2026, 9, 16, 12, 0, tzinfo=timezone.utc), install)
     assert upload_due("off", now, install) is False
     assert upload_due("daily", now - timedelta(minutes=1), install) is False
     assert upload_due("daily", now, install) is True
@@ -215,7 +216,7 @@ def test_daily_weekly_error_and_off_cadence():
     import hashlib
     weekday = hashlib.sha256(install.encode()).digest()[2] % 7
     monday = datetime(2026, 9, 14, tzinfo=timezone.utc)
-    weekly_target = monday + timedelta(days=weekday, hours=hour, minutes=minute)
+    weekly_target = nightly_upload_time(monday + timedelta(days=weekday), install)
     assert upload_due("weekly", weekly_target - timedelta(minutes=1), install) is False
     assert upload_due("weekly", weekly_target, install) is True
     assert upload_due("weekly", weekly_target + timedelta(minutes=1), install, last_success_at=weekly_target.isoformat()) is False

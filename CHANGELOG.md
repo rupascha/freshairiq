@@ -1,3 +1,53 @@
+## 0.26.5.1
+Maintenance release on top of 0.26.5.0: steadier recommendations, a consistent action vocabulary, room setup fixes, learning fixes, nightly diagnostics uploads and Home Assistant 2026.10 compatibility. Golden master: recommendations are unchanged except where described below (one exhaust-fan airing now keeps its real duration); German and English verified.
+
+### Recommendations
+- No more flip-flopping between "keep ventilating" and "close": when several rooms are open, a close that was already published needs a clearly better return (125 %) before it is withdrawn, so small sensor noise no longer toggles every 30 seconds.
+- Automations: the room action, recommendation, mould risk and learning status sensors are now enum sensors, so the automation editor offers their states ("Close", "Ventilate", …) for state triggers and conditions; before, only "any state / unavailable / unknown" was offered. State values are unchanged.
+- The raw room action (`freshairiq_room_action`, `sensor.<room>_action`, Node-RED and blueprints) no longer toggles between "Continue ventilating" and "Close" every 30 seconds when the expected return hovers around the close threshold: a published close is kept for the running airing until the next five minutes beat the threshold by at least 25 % (maximum duration and heat loss still close). Golden master: recommendations unchanged.
+- Rooms with a permanently tilted or open window that FreshAirIQ is monitoring now show "Monitor open window" (`monitor_open`) consistently in the room list, the room sensor and the house summary instead of a contradicting "Close".
+- Complete action vocabulary: "Ventilate indirectly" and "Open fully" are known to the room action sensor, the bus events, the dashboard and both languages (no more `unknown`).
+- New additive bus event `freshairiq_room_recommendation` fires when the house-aligned room recommendation changes; the raw `freshairiq_room_action` stream is unchanged. Documented in the automation guides.
+- Notifications can respect presence (feedback FAIQ-FB-7C943C054B43): new options "Only notify recipients who are at home" (default off) and "Send important warnings while away" (default on). A resident's own phone only receives messages while that resident's tracker (person/device_tracker from the residents page, in the same order) is home; general targets receive nothing while every tracker reports away; unknown tracker states count as home; mould and sensor warnings still go out unless switched off. Bus events for automations are unchanged.
+- Blueprints: both blueprints let you choose the basis – "House decision (as shown on the card)" or "Room only". The announce blueprint now defaults to the house decision, so it no longer announces "close" while the card still says "keep airing" (feedback FAIQ-FB-EE8489B6176D); the fan blueprint keeps "Room only" as default. New announce options: keep airing, airing possible · wait, open window monitored. Re-import the blueprints to get the new option.
+- Internal moisture sources for automations (community request: run the bathroom fan only after showering): new entity `binary_sensor.<room>_moisture_source_active` (on while a shower, bath, cooking … is detected; attributes source, confidence, ml/min, start/end), new bus event `freshairiq_moisture_source` (`started` / `ended`) and new blueprint "Fan after a moisture source" (DE/EN) with follow-up time, maximum runtime and optional source filter. The evening pre-airing recommendation does not trigger it.
+- Summer cooling (community feedback): night airing in the "summer cooling" profile is no longer ended by the maximum airing duration while the outdoor air is still clearly cooler and the room is warm – the room reason now says "cooling still works". Instead FreshAirIQ recommends closing explicitly once the outdoor air is no longer cooler than the room, so the collected coolness stays inside. Other profiles and switched-off temperature goals keep the maximum duration.
+- Sun protection by window direction and sun position: the shading recommendation now only names covers whose opening gets direct sun right now (window direction from the room setup, sun position from `sun.sun`; without either it works as before). New entity `binary_sensor.<room>_sun_protection_recommended` (summer cooling profile only; attributes `covers_to_close`, `sunlit_covers`, `shaded_side_covers`, `sun_tracking`): a cover enters when the room is warm, it is bright and the sun shines on its window, and leaves once the sun has left that window – a room that cooled down thanks to the covers does not open them. New blueprint "Covers against the sun" (DE/EN) closes these covers and opens them again when the sun is gone (optionally not after sunset).
+- Sun protection ahead of the sun (owner request): in the "summer cooling" mode a cover now closes a set lead time (default 15 min, 0–60) before the sun reaches its window; the sun position is calculated from the Home Assistant location for every window. A warm day is enough – today's forecast high from the weather entity (default from 25 °C), a room above its comfort target or a room already above the sun protection temperature – the room no longer has to heat up first. Dense cloud cover (weather entity, default from 80 %) keeps open covers open; closed covers stay closed until the sun has left their window. New attribute `sun_soon_covers`; new options "Close covers ahead of the sun", "Warm day from forecast high", "No sun protection from cloud cover".
+- Automatic control of covers and exhaust fans (owner request, off by default): per window/door "Open the cover when this window/door opens" – the cover goes fully up when the opening is opened (also tilted) and returns to its previous position when it is closed, unless someone moved it in between (remembered across restarts). A cover of a passage door never closes while the door is not reported closed; in rooms with automatic cover control a close started by anyone else is stopped and the cover reopened (lock-out protection). Per room, new section "Automatic control": close covers against the sun automatically (summer cooling, reopens only what FreshAirIQ closed) and switch the exhaust fan after a moisture source or following the recommendation, with follow-up time and maximum runtime; FreshAirIQ only switches off what it switched on. The blueprints remain as an alternative.
+- Room goals can be switched off (owner request): from priority 2 on, the goal page offers "Off". A switched-off CO₂ or temperature goal is no longer shown and starts or prolongs no airing of its own – temperature off means no "Ventilate for cooling", CO₂ off means no CO₂ airing (the CO₂ reading stays visible). Dehumidification cannot be switched off; protection limits still apply. Choosing a goal again switches it back on.
+
+### Room setup (Devices & services)
+- A room added in the options flow gets its entities right away; before, it needed a manual reload.
+- Editing an existing room (for example adding a window contact or a sensor) is applied to the running integration immediately; before, a new contact was only listened to after a restart.
+- A rejected room form records the reason as a fixed error code in the diagnostics trace (no names or entity IDs).
+- VOC index sensors without a unit (for example IKEA VINDSTYRKA via Zigbee2MQTT, scale 1–500, 100 = average) can be selected as VOC/TVOC sensor. They are shown as "VOC index" and rated against an index threshold of 250 instead of the ppb/µg/m³ limit.
+- Temperature and humidity sensors that have a unit but no device class (typical for template and MQTT sensors) can now be picked in the room forms; before, they were only accepted by the calculation.
+
+### Learning
+- The separate learning models for open, tilted, cross and exhaust-fan ventilation learn again: closing the window no longer marked every airing as "mixed".
+- A learned exhaust-fan model is kept in storage instead of being dropped on the next save.
+- An airing done only with the exhaust fan in a room that also has window contacts keeps its real duration (it was logged as 0 minutes and never learned).
+- The guardian no longer reports an active physics fallback as an invariance violation.
+- Runtime metric anomalies recover after ten normal readings, and sub-millisecond jitter is no longer reported as an incident.
+
+### Diagnostics
+- Scheduled uploads (daily/weekly) use an individual slot between 00:30 and 06:00 Home Assistant local time, armed by a timer; missed or failed uploads wait for the next night. Retries are spread individually and honour the server's `Retry-After`.
+- Pseudonymisation keeps FAIQ-/HUB- codes and version numbers readable while IP addresses, entity IDs and e-mail addresses stay redacted.
+- A damaged identity file is reported as recreated in the export.
+- The confirmation after sending a diagnostic report to support now says that nothing else is needed; the 60-minute limit is explained as the earliest time for an additional report (it read like a request to send again).
+
+### Dashboard
+- Navigating between rooms restores the exact scroll position per card instance.
+- iPhone/iPad (Safari and the companion app): going back from a room to the room list no longer jumps to the top. WebKit could drop the restored scroll position of the freshly rebuilt list; the card now re-applies it for a few frames unless you are already scrolling.
+
+### Compatibility
+- Home Assistant 2026.10 device-registry deprecations resolved (devices iteration, `async_get_device_by_identifier`), ahead of the removals in 2027.8/2027.9.
+
+### Quality
+- Real Home Assistant runtime coverage gate passes (combined ≥ 99 %, `config_flow.py` 100 %, every module ≥ 98 %); pure logic stays at 100 %.
+- New tests: `ha_tests/test_options_add_room_reload_20261016.py`, `ha_tests/test_learning_fixes_20261016.py`, `ha_tests/test_room_trace_error_codes_20261016.py`, `ha_tests/test_room_icon_goals_20261016.py`, `ha_tests/test_retired_replacements_20261016.py`, `ha_tests/test_cov_*.py`, `tests/test_arbeitsauftrag_20261014_*.py`.
+
 ## 0.26.5.0
 Launch readiness for English-speaking users. Recommendations are unchanged (golden master: the only new value is the language marker `output_language: "de"`; German and English verified).
 
