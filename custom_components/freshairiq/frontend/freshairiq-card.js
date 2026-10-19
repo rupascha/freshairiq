@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.5.1";
+const FAIQ_VERSION = "0.26.5.2";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -144,7 +144,7 @@ const faiqEnglishText = value => {
     .replace(/(\d+) TAGE\b/g, "$1 DAYS")
     .replace(/(\d+) Raum braucht Aufmerksamkeit/g, "$1 room needs attention")
     .replace(/(\d+) Räume brauchen Aufmerksamkeit/g, "$1 rooms need attention");
-  for (const [re, en] of FAIQ_EN_PATTERNS) out = out.replace(re, en); // 0.26.5.1: numbered phrases from the module
+  for (const [re, en] of FAIQ_EN_PATTERNS) out = out.replace(re, en); // 0.26.5.2: numbered phrases from the module
   if (!faiqEnglishReady()) faiqLoadEnglish().catch(() => {});
   for (const [de, en] of (FAIQ_EN_RULES || [])) out = typeof de === "string" ? out.split(de).join(en) : out.replace(de, () => en);
 
@@ -191,7 +191,7 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
 };
 // 0.26.4.7: rooms the whole-house decision deliberately holds back.
 const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
-// 0.26.5.1: a room aired only by its exhaust fan has nothing to close.
+// 0.26.5.2: a room aired only by its exhaust fan has nothing to close.
 const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
 // F02 (2026-10-16): the house tolerates this long opening; never show "Schließen" here.
 const houseMonitoredRoom = r => !!r && !!r.active && String(r.house_aligned_action || "") === "monitor_open";
@@ -285,7 +285,9 @@ const styleFor = a => ({
     "Check sensor": ["#ff7770", "rgba(220,90,80,.07)", "mdi:alert-circle-outline"],
     "Monitor only": ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:eye-outline"]
 }[a] || ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:check-circle-outline"]);
-const FAIQ_FONT_SCALE_STEPS = Object.freeze([0.8,0.9,1,1.1,1.2,1.3,1.4,1.5]);
+const FAIQ_FONT_SCALE_STEPS = Object.freeze([0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2]);
+// 0.26.5.2: fixed small text sizes follow the text size settings too (learning pages, info panels, labels).
+const faiqScaleCss = css => css.replace(/([^{}]*)\{([^{}]*font-size:[\d.]+px[^{}]*)\}/g, (r,s,b) => { const k=/learn|longterm|season-|info-/.test(s)?"learning":/goal/.test(s)?"goals":/room|floor/.test(s)?"rooms":/metric|kpi/.test(s)?"metrics":/decision|reason|why|explain|detail/.test(s)?"details":"meta"; return k!=="learning"&&/font-size:(1[4-9]|[2-9]\d)/.test(b)?r:`${s}{${b.replace(/(font-size|line-height):([\d.]+)px/g,`$1:calc($2px*var(--faiq-font-${k},1))`)}}`; });
 const normalizeFontScale = value => { const n=Number(value); if(!Number.isFinite(n)) return 1; return FAIQ_FONT_SCALE_STEPS.reduce((best,step)=>Math.abs(step-n)<Math.abs(best-n)?step:best,1); };
 const normalizeDashboardConfig = input => {
     const raw = input || {};
@@ -322,6 +324,7 @@ const normalizeDashboardConfig = input => {
         font_scale_metrics: normalizeFontScale(raw.font_scale_metrics),
         font_scale_details: normalizeFontScale(raw.font_scale_details),
         font_scale_meta: normalizeFontScale(raw.font_scale_meta),
+        font_scale_learning: normalizeFontScale(raw.font_scale_learning),
     });
     ["show_moisture", "show_temperature", "show_time", "show_next5", "show_night", "show_mould", "show_energy", "show_pollen", "show_cross_ventilation"].forEach(key => delete out[key]);
     return out;
@@ -742,7 +745,7 @@ const FAIQ_FRESHY_CSS = `
 .ai-mascot-wrap.fr-wrap .fr{width:112px;height:98px}
 @media(max-width:520px){.ai-assistant{grid-template-columns:96px minmax(0,1fr) 22px}.ai-mascot-wrap.fr-wrap,.ai-mascot-wrap.fr-wrap .fr{width:96px;height:84px}}
 `;
-// 0.26.5.1: larger room view text and the per-tile explanation window.
+// 0.26.5.2: larger room view text and the per-tile explanation window.
 const FAIQ_ROOM_VIEW_CSS = `
 .room-detail h3{font-size:19px}
 .room-detail .tiny{font-size:calc(9.5px * var(--faiq-font-meta,1));line-height:calc(12px * var(--faiq-font-meta,1));white-space:normal}
@@ -862,7 +865,7 @@ class FreshAirIQCard extends HTMLElement {
     static getStubConfig() { return { dashboard_variant: "classic" }; }
     constructor() { super(); this.attachShadow({ mode: "open" }); this._onEnglishReady = () => { this._englishFailed = false; if (this._hass && this.isConnected && this._uiLanguage() === "en") this._render(); }; try { window.addEventListener(FAIQ_EN_READY_EVENT, this._onEnglishReady); } catch (_) { /* ignore */ } this._config = {}; this._pageScrollSnapshot = null; this._viewportRestoreToken = 0; this._hass = null; this._dialogOpen = false; this._info = null; this._infoStack = []; this._infoScrollStack = []; this._dialogScrollTop = 0; this._subdialogScrollTop = 0; this._pendingSubdialogScrollTop = null; this._forceDialogTop = false; this._postResultTimer = null; this._settingsData = null; this._settingsLoading = false; this._settingsSaving = false; this._settingsError = null; this._settingsNotice = null; this._lastSupportError = null; this._renderFrame = null; this._renderFrameIsRaf = false; this._liveRefreshFrame = null; this._liveRefreshFrameIsRaf = false; this._statusEntityId = null; this._statusRescanNeeded = false; this._relevantStateIds = null; this._roomEntityIds = null; this._roomConfigSignature = null; this._entityCache = {}; this._profileOverride = null; this._forecastOverride = null; this._fieldTestRegistrationPromise = null; this._fieldTestSessionClientId = null; this._liveViewSnapshot = null; this._liveHtmlCache = {}; this._chartCache = { bars: new WeakMap(), line: new WeakMap() }; this._learningCardCache = null; this._compactExpanded = null; this._classicDisclosureOpen = new Set(); }
     _uiLanguage() {
-        // 0.26.5.1: speak the language of FreshAirIQ's own texts (server language) – a German
+        // 0.26.5.2: speak the language of FreshAirIQ's own texts (server language) – a German
         // profile on an English server mixed German headings with English recommendations.
         if (this._hass && this._langHass !== this._hass) {
             this._langHass = this._hass;
@@ -1013,6 +1016,7 @@ class FreshAirIQCard extends HTMLElement {
             style = document.createElement("style");
             style.id = "faiq-static-style";
             style.textContent = FAIQ_CARD_CSS + FAIQ_AI_COMPACT_CSS + FAIQ_COMPACT_DISCLOSURE_CSS + FAIQ_DESIGN_CSS + FAIQ_FRESHY_CSS + FAIQ_ROOM_VIEW_CSS;
+            style.textContent = faiqScaleCss(style.textContent);
             this.shadowRoot.prepend(style);
         }
         return style;
@@ -1032,7 +1036,7 @@ class FreshAirIQCard extends HTMLElement {
         this.shadowRoot.appendChild(template.content);
         this._syncExplainSheet();
     }
-    // 0.26.5.1: tap a tile in the room view → a small window explains the value.
+    // 0.26.5.2: tap a tile in the room view → a small window explains the value.
     _bindExplainOnce() {
         if (this._explainBound || !this.shadowRoot) return;
         this._explainBound = true;
@@ -1448,7 +1452,7 @@ class FreshAirIQCard extends HTMLElement {
         this._liveHtmlCache[cacheKey] = html;
         const template = document.createElement("template");
         template.innerHTML = html;
-        this._localizeLegacyFragment(template.content); // 0.26.5.1: live updates stay English
+        this._localizeLegacyFragment(template.content); // 0.26.5.2: live updates stay English
         return template.content.querySelector(selector);
     }
     _refreshOpenViewsLive() {
@@ -2561,7 +2565,7 @@ class FreshAirIQCard extends HTMLElement {
         if (this._info === "support") {
             const mode = String(((st && st.diagnostics_upload) || {}).configured_reporting_mode || "daily");
             const modeLabel = {off:"Aus",errors:"Nur bei erkannten Problemen",daily:"Täglich nachts",weekly:"Wöchentlich"}[mode] || mode;
-            // 0.26.5.1: one feedback per 15 minutes; the remaining time is shown.
+            // 0.26.5.2: one feedback per 15 minutes; the remaining time is shown.
             const feedbackMins = this._feedbackCooldownMinutes(st);
             return `<section class="info-panel settings-panel"><div class="tiny info-kicker">FRESHAIRIQ SUPPORT</div><h3>Hilfe, Diagnose & Feedback</h3><p>Alle Support-Funktionen sind hier zentral gebündelt.</p><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">DIAGNOSE</div><span>Diagnosedaten lokal exportieren oder direkt an den FreshAirIQ-Support senden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Nachricht an den Support (optional)</b><span>Die Diagnose wird verschlüsselt über Home Assistant direkt an den FreshAirIQ-Diagnose-Server übertragen – nicht an die hier angezeigte lokale Home-Assistant-Adresse. Zugangsdaten und Tokens werden nicht übertragen.</span></div><textarea id="diagnostics-message" class="settings-input settings-textarea" rows="4" maxlength="4000" placeholder="Optional: Was ist passiert?"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="settings-save" id="diagnostics-send"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>Diagnosedaten</b><span>an Support senden</span></button></div></section><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">FEEDBACK</div><span>Fehler und Verbesserungsvorschläge direkt melden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Art der Meldung</b></div><select id="feedback-type" class="settings-input"><option value="bug">Fehler / Bug</option><option value="improvement">Verbesserungsvorschlag</option><option value="other">Sonstiges</option></select></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Beschreibung</b><span>Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.</span></div><textarea id="feedback-message" class="settings-input settings-textarea" rows="6" maxlength="10000"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="feedback-send"${feedbackMins ? " disabled" : ""}><ha-icon icon="mdi:${feedbackMins ? "timer-sand" : "send-outline"}"></ha-icon> ${feedbackMins ? esc(this._t("feedback.cooldown_button", { mins: feedbackMins })) : "Meldung senden"}</button></div><div id="feedback-result" class="muted">${esc(feedbackMins ? this._t("feedback.cooldown_next", { mins: feedbackMins }) : this._t("feedback.cooldown_hint"))}</div></section><section class="settings-group support-contact"><div class="settings-field-copy"><b>Support per E-Mail</b><span class="support-email">support@freshairiq.com</span></div><div class="settings-field"><div class="settings-field-copy"><b>Automatische Diagnoseübertragung</b><span>Aktuell: ${esc(modeLabel)}. Ändern unter Geräte & Dienste → FreshAirIQ → Konfigurieren → Daten & Lernen → Diagnose-Freigabe.</span></div></div></section></section>`;
         }
@@ -2839,7 +2843,7 @@ class FreshAirIQCard extends HTMLElement {
             await this._registerFieldTestClient(true);
             const stamp = new Date().toISOString().split(":").join("-").replace(/\.\d{3}Z$/, "Z");
             let blob, filename;
-            // 0.26.5.1: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
+            // 0.26.5.2: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
             // the browser no longer parses and re-indents tens of MiB.
             const zipResponse = typeof this._hass.callApiRaw === "function" ? await this._hass.callApiRaw("GET", "freshairiq/diagnostics?format=zip") : null;
             if (zipResponse && zipResponse.ok && String(zipResponse.headers?.get?.("Content-Type") || "").includes("zip")) {
@@ -3044,6 +3048,7 @@ class FreshAirIQCard extends HTMLElement {
         this.style.setProperty("--faiq-font-metrics", String(this._config.font_scale_metrics));
         this.style.setProperty("--faiq-font-details", String(this._config.font_scale_details));
         this.style.setProperty("--faiq-font-meta", String(this._config.font_scale_meta));
+        this.style.setProperty("--faiq-font-learning", String(this._config.font_scale_learning));
         this._replaceRenderedContent(`<ha-card><div class="card ${dashboardVariant === "iq" ? "iq-variant" : "classic-variant"}">${topBar}${consentPrompt}${intelligentPanel}${(this._config.show_details_button !== false || this._config.show_guests_button !== false || this._config.show_rooms_button !== false || this._config.show_support_button !== false) ? `<div class="actions compact-actions">${this._config.show_details_button === false ? "" : `<button class="details-btn" id="details"><ha-icon icon="mdi:chart-box-outline"></ha-icon><span>${esc(this._t("shell.details"))}</span></button>`}${this._config.show_guests_button === false ? "" : `<button class="details-btn" id="guests"><ha-icon icon="mdi:account-group-outline"></ha-icon><span>${esc(this._t("shell.guests"))}</span></button>`}${this._config.show_rooms_button === false ? "" : `<button class="details-btn" id="rooms"><ha-icon icon="mdi:floor-plan"></ha-icon><span>${esc(this._t("shell.rooms"))}</span></button>`}${this._config.show_support_button === false ? "" : `<button class="details-btn" id="support"><ha-icon icon="mdi:lifebuoy"></ha-icon><span>${esc(this._t("shell.support"))}</span></button>`}</div>` : ""}</div>${this._dialogOpen ? this._details(st, rooms) : ""}${this._info ? `<div class="submodal" id="submodal"><div class="subdialog">${this._infoNav()}${this._infoPanel(st, rooms)}${this._info === "profile" ? this._profileControls(st) : ""}${this._info === "next5" ? this._forecastControls(st) : ""}${this._info === "guests" ? this._guestControls(st) : ""}</div></div>` : ""}</ha-card>`);
         this.shadowRoot.querySelector("[data-consent-open]")?.addEventListener("click", e => {
             e.stopPropagation();
@@ -3292,6 +3297,7 @@ class FreshAirIQCardEditor extends HTMLElement {
             ["font_scale_metrics","Kennzahlen","Werte in Kennzahlen- und Informationskacheln."],
             ["font_scale_details","Begründungen & Details","Begründungen, Alternativen und ausführliche Entscheidungstexte."],
             ["font_scale_meta","Kleine Zusatztexte","Labels, Hinweise und andere kleine Metatexte."],
+            ["font_scale_learning","Lernmodell & Analyse","Lernfortschritt, Modellqualität, Langzeitlernen und Infoseiten."],
         ] : [
             ["font_scale_recommendation","Main recommendation","Heading, action and summary of the current recommendation."],
             ["font_scale_goals","Goals","Humidity, temperature and CO₂ goals including impact and time."],
@@ -3299,6 +3305,7 @@ class FreshAirIQCardEditor extends HTMLElement {
             ["font_scale_metrics","Metrics","Values in metric and information tiles."],
             ["font_scale_details","Reasons & details","Reasons, alternatives and detailed decision text."],
             ["font_scale_meta","Small supporting text","Labels, hints and other small metadata text."],
+            ["font_scale_learning","Learning model & analysis","Learning progress, model quality, long-term learning and info pages."],
         ];
         const scaleRow = ([key,label,description]) => { const options=FAIQ_FONT_SCALE_STEPS.map(step => `<option value="${step}" ${this._config[key] === step ? "selected" : ""}>${Math.round(step*100)} %</option>`).join(""); return `<div class="row scale-row"><div><label>${label}</label><span>${description}</span></div><select class="scale-select" data-scale-key="${key}">${options}</select></div>`; };
         this.shadowRoot.innerHTML = `<style>
@@ -3310,7 +3317,7 @@ class FreshAirIQCardEditor extends HTMLElement {
 <section class="section"><div class="section-head"><b>EMPFEHLUNGEN</b><span>Wähle, welche Arten von raumspezifischen Empfehlungen diese Karte wiedergibt.</span></div>${recommendationFields.map(row).join("")}</section>
             <section class="section"><div class="section-head"><b>INFORMATIONEN DIESER KARTE</b><span>Diese Schalter ändern nur die Darstellung dieser einzelnen Dashboard-Karte. Globale FreshAirIQ-Einstellungen werden ausschließlich unter Geräte & Dienste → FreshAirIQ → Konfigurieren verwaltet.</span></div>${infoFields.map(row).join("")}</section>
             <section class="section"><div class="section-head"><b>DARSTELLUNG & KOMPAKTHEIT</b><span>Blende feste Bereiche und Schnellzugriffe aus, bis nur noch die Empfehlung übrig bleibt.</span></div>${layoutFields.map(row).join("")}</section>
-            <section class="section"><div class="section-head"><b>${this._editorDE() ? "SCHRIFTGRÖSSEN DIESER KARTE" : "TEXT SIZES FOR THIS CARD"}</b><span>${this._editorDE() ? "Jeder Bereich lässt sich unabhängig in festen 10-%-Stufen von 80 bis 150 % einstellen. Die Einstellung gilt nur für diese Dashboard-Karte; 100 % entspricht exakt der bisherigen Größe." : "Set each area independently in fixed 10% steps from 80 to 150%. These settings apply only to this dashboard card; 100% exactly matches the previous size."}</span></div>${scaleFields.map(scaleRow).join("")}</section>
+            <section class="section"><div class="section-head"><b>${this._editorDE() ? "SCHRIFTGRÖSSEN DIESER KARTE" : "TEXT SIZES FOR THIS CARD"}</b><span>${this._editorDE() ? "Jeder Bereich lässt sich unabhängig in festen 10-%-Stufen von 80 bis 200 % einstellen. Die Einstellung gilt nur für diese Dashboard-Karte; 100 % entspricht exakt der bisherigen Größe." : "Set each area independently in fixed 10% steps from 80 to 200%. These settings apply only to this dashboard card; 100% exactly matches the previous size."}</span></div>${scaleFields.map(scaleRow).join("")}</section>
           </div>`;
         // 0.26.4.6: the editor had German-only sections; translate its text in English.
         if (!this._editorDE()) {

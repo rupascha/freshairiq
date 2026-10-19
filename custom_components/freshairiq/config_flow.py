@@ -189,8 +189,14 @@ def _outdoor_schema(data: dict[str, Any] | None = None) -> vol.Schema:
             selector.EntitySelectorConfig(domain="sensor", multiple=True)
         ),
         # 0.26.4.7 (user feedback): outdoor fine dust, e.g. Sensor.Community.
+        # 0.26.5.2 (community: WAQI "sensor.heilbronn_germany_pm25" was not offered):
+        # air-quality services often publish PM2.5 without the pm25 device class.
         _optional(CONF_OUTDOOR_PM25_ENTITY, entity_ids(data.get(CONF_OUTDOOR_PM25_ENTITY)) or None): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", device_class="pm25", multiple=True)
+            selector.EntitySelectorConfig(filter=[
+                {"domain": "sensor", "device_class": "pm25"},
+                {"domain": "sensor", "unit_of_measurement": ["µg/m³", "μg/m³"]},
+                {"domain": "sensor", "integration": "waqi"},
+            ], multiple=True)
         ),
     })
 
@@ -1757,6 +1763,10 @@ class FreshAirIQRoomSubentryFlow(config_entries.ConfigSubentryFlow):
         async def _apply() -> None:
             await coordinator.async_rebuild_listeners()
             await coordinator.async_request_refresh()
+            # 0.26.5.2: automatic cover/fan control follows the edit at once
+            controller = getattr(coordinator, "actuator_controller", None)
+            if controller is not None:
+                await controller.async_reload()
 
         self.hass.async_create_task(_apply())
 

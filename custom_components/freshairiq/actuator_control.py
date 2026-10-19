@@ -28,7 +28,9 @@ FAN_CONTROL_OFF = "off"
 FAN_CONTROL_MOISTURE_SOURCE = "moisture_source"
 FAN_CONTROL_RECOMMENDATION = "recommendation"
 FAN_CONTROL_MODES = [FAN_CONTROL_OFF, FAN_CONTROL_MOISTURE_SOURCE, FAN_CONTROL_RECOMMENDATION]
-FAN_RECOMMENDATION_ON = {"ventilate", "continue_ventilating"}
+# 0.26.5.2: a room without its own window contact is told "ventilate
+# indirectly" - for a room with an exhaust fan that is exactly the fan's job.
+FAN_RECOMMENDATION_ON = {"ventilate", "continue_ventilating", "ventilate_indirectly"}
 DEFAULT_FAN_FOLLOW_UP_MIN = 10
 DEFAULT_FAN_MAX_RUNTIME_MIN = 60
 

@@ -17,7 +17,7 @@
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
           "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled. Several sensors are allowed (e.g. one per pollen type); the highest current value counts.",
-          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
+          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community or WAQI. Note: WAQI reports an index value instead of µg/m³ – then set the limit under Air quality to about 100. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
         }
       },
       "room": {
@@ -163,7 +163,7 @@
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
           "pollen_entity": "Optional. Evaluated only when pollen consideration is enabled. Several sensors are allowed (e.g. one per pollen type); the highest current value counts.",
-          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
+          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community or WAQI. Note: WAQI reports an index value instead of µg/m³ – then set the limit under Air quality to about 100. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
         }
       }
     },
@@ -422,7 +422,7 @@
           "outdoor_temperature": "Optional. Use only together with an outdoor humidity sensor. This sensor pair then replaces the weather entity for current outdoor air.",
           "outdoor_humidity": "Optional. Use only together with an outdoor temperature sensor.",
           "pollen_entity": "Optional numeric pollen index. Used only when pollen consideration is enabled. Several sensors are allowed (e.g. one per pollen type); the highest current value counts.",
-          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
+          "outdoor_pm25_entity": "Optional, e.g. Sensor.Community or WAQI. Note: WAQI reports an index value instead of µg/m³ – then set the limit under Air quality to about 100. If outdoor fine dust is above the limit (Air quality), FreshAirIQ postpones normal airing like it does for pollen. Several sensors allowed; the highest current value counts."
         }
       },
       "rooms": {

@@ -2,10 +2,10 @@ from pathlib import Path
 CARD=Path('custom_components/freshairiq/frontend/freshairiq-card.js').read_text(encoding='utf-8')
 
 def test_font_scale_uses_fixed_steps_and_selects():
-    assert 'FAIQ_FONT_SCALE_STEPS = Object.freeze([0.8,0.9,1,1.1,1.2,1.3,1.4,1.5])' in CARD
+    assert 'FAIQ_FONT_SCALE_STEPS = Object.freeze([0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2])' in CARD
     assert '<select class="scale-select" data-scale-key="${key}">' in CARD
     assert 'input type="range" min="0.8" max="1.5"' not in CARD
-    assert 'festen 10-%-Stufen von 80 bis 150 %' in CARD
+    assert 'festen 10-%-Stufen von 80 bis 200 %' in CARD
 
 def test_100_percent_preserves_established_classic_baselines():
     expected=(

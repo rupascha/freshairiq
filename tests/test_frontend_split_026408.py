@@ -19,7 +19,8 @@ INIT = (ROOT / "custom_components/freshairiq/__init__.py").read_text(encoding="u
 def test_english_tables_moved_out_of_the_card():
     assert "const FAIQ_NATIVE_EN = [" not in CARD and "const FAIQ_UI_EN = [" not in CARD
     assert ENGLISH.count("const FAIQ_NATIVE_EN = [") == 1 and "export const FAIQ_EN_RULES =" in ENGLISH
-    assert len(CARD.encode("utf-8")) < 430_000  # 0.26.4.7: 553 kB
+    # 0.26.4.7: 553 kB with the English tables; 0.26.5.2: +1 kB for scalable small text
+    assert len(CARD.encode("utf-8")) < 435_000
     assert len(ENGLISH.encode("utf-8")) > 150_000
 
 

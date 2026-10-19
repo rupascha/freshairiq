@@ -67,14 +67,19 @@ class ActuatorController:
         ]
 
     async def async_start(self) -> None:
+        if await self._async_attach():
+            await self._async_evaluate(fans=True)
+
+    async def _async_attach(self) -> bool:
         self._rooms = self._configured_rooms()
         if not self._rooms:
-            return
-        self._store = Store(self.hass, STORAGE_VERSION, f"{DOMAIN}.actuators.{self.entry.entry_id}")
-        stored = await self._store.async_load()
-        if isinstance(stored, dict):
-            self._memory["covers"] = dict(stored.get("covers") or {})
-            self._memory["fans"] = dict(stored.get("fans") or {})
+            return False
+        if self._store is None:
+            self._store = Store(self.hass, STORAGE_VERSION, f"{DOMAIN}.actuators.{self.entry.entry_id}")
+            stored = await self._store.async_load()
+            if isinstance(stored, dict):
+                self._memory["covers"] = dict(stored.get("covers") or {})
+                self._memory["fans"] = dict(stored.get("fans") or {})
         watched: set[str] = set()
         for room in self._rooms:
             if room_controls_covers(room):
@@ -84,7 +89,28 @@ class ActuatorController:
         if watched:
             self._unsubs.append(async_track_state_change_event(self.hass, sorted(watched), self._on_state_change))
         self._unsubs.append(self.coordinator.async_add_listener(self._on_update))
-        await self._async_evaluate(fans=True)
+        return True
+
+    async def async_reload(self) -> None:
+        """Pick up an edited room setup without restarting Home Assistant (0.26.5.2).
+
+        Before, switching the control on for an existing room only took effect
+        after a restart. A fan FreshAirIQ switched on in a room whose fan
+        control was switched off again is switched off.
+        """
+        async with self._lock:
+            while self._unsubs:
+                self._unsubs.pop()()
+            before = {str(room["key"]): room for room in self._rooms}
+            await self._async_attach()
+            still = {str(room["key"]) for room in self._rooms if _room_controls_fan(room)}
+            for key, room in before.items():
+                mem = self._memory["fans"].get(key)
+                if key not in still and isinstance(mem, dict) and mem.get("owned"):
+                    mem["owned"] = False
+                    await self._async_call("homeassistant", "turn_off", {"entity_id": _fan_entities(room)})
+        if self._rooms:
+            await self._async_evaluate(fans=True)
 
     async def async_stop(self) -> None:
         while self._unsubs:

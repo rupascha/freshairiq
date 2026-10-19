@@ -2,10 +2,10 @@
   "schema": 1,
   "approved_from_version": "0.26.2.14",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
-  "config_flow_sha256": "c8161781b51552944a480a20cfb1447c8a6787104641c21ce5ac1e478fc79d8b",
-  "de_configuration_sha256": "5fc4bc6dc81a4480b1555a1f0eac94107f76787135dbc53f47e4c4db20d59f63",
-  "en_configuration_sha256": "61c1ae5e4f44a2311b90d591292aa9da3a134027a7eea47b360da234efb71ee3",
-  "strings_configuration_sha256": "61c1ae5e4f44a2311b90d591292aa9da3a134027a7eea47b360da234efb71ee3",
+  "config_flow_sha256": "a9e0beb121b3b37d5bf43c0a6b9a92f317bf9856632ec9790d7afd6b9f3071ef",
+  "de_configuration_sha256": "ead1dcd1898cc8d761392914e07a31133b0d112daf90d2877fa9a699a75cd436",
+  "en_configuration_sha256": "45c327149a020b6366f196fa13059473154ae2f8cb631e70dab35fd55d055d49",
+  "strings_configuration_sha256": "45c327149a020b6366f196fa13059473154ae2f8cb631e70dab35fd55d055d49",
   "approved_changes": [
     "0.26.4.6: one-dropdown reordering for goals/rooms, overnight presence hold option, several pollen sensors (user feedback)",
     "0.26.4.7: outdoor fine dust protection – PM2.5 sensors under Outdoor air source, 'Consider outdoor fine dust' and limit under Air quality (user feedback; pending maintainer approval)",
@@ -18,6 +18,8 @@
     "0.26.5.1 (support case IKEA VINDSTYRKA, owner-approved): the VOC/TVOC picker accepts every sensor so unitless VOC index sensors can be chosen; field description explains the index scale",
     "0.26.5.1 (A-27, owner-approved): temperature and humidity pickers offer sensors with the device class or a matching unit (°C/°F/K, %), so template/MQTT sensors without device class can be chosen; no text change",
     "0.26.5.1 (owner request 2026-10-17, approved): optional automatic control – opening form 'Open the cover when this window/door opens' (restores the previous position on close; passage-door lock-out protection) and room section 'Automatic control' (sun protection, exhaust fan after a moisture source / following the recommendation, follow-up time, maximum runtime); all off by default; exhaust-fan texts no longer say the fan is never switched",
-    "0.26.5.1 (owner request 2026-10-17, approved): sun protection options 'Close covers ahead of the sun' (lead time, default 15 min), 'Warm day from forecast high' (default 25 °C) and 'No sun protection from cloud cover' (default 80 %)"
+    "0.26.5.1 (owner request 2026-10-17, approved): sun protection options 'Close covers ahead of the sun' (lead time, default 15 min), 'Warm day from forecast high' (default 25 °C) and 'No sun protection from cloud cover' (default 80 %)",
+    "0.26.5.2 (owner request 2026-10-18, approved): outdoor PM2.5 picker also offers sensors in µg/m³ and WAQI sensors; field description explains the WAQI index value",
+    "0.26.5.2 (owner request 2026-10-19, approved): editing a room applies the automatic cover/fan control at once (no visible change to the forms)"
   ]
 }

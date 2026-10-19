@@ -103,16 +103,14 @@ def _room_opening_plan(
         # contact into both keep and close, producing a contradictory command.
         # Preserve the established close_delta behaviour for weak-but-positive
         # ventilation paths; only remove true keep/close self-conflicts.
+        # 0.26.5.2 (community: "Fenster Schlafzimmer offen lassen · Fenster
+        # Schlafzimmer schließen", alternating with "Schließen" every few
+        # minutes): an opening that is kept open is never also told to close.
+        # With a single weak opening there is nothing to re-route, so the
+        # canonical close stays instead of flipping to "keep ventilating".
         keep_ids = {id(x) for x in (preferred_open or useful_open)}
-        bad_open = [
-            x for x in bad_open
-            if not (
-                id(x) in keep_ids
-                and bool(x.get("cooling_candidate"))
-                and not bool(x.get("ventilation_candidate"))
-                and _f(x.get("moisture_effect_next_5_min_ml")) <= 0.0
-            )
-        ]
+        keep_names = {_name(x) for x in (preferred_open or useful_open)}
+        bad_open = [x for x in bad_open if id(x) not in keep_ids and _name(x) not in keep_names]
         # Do not invent a route change during an active session unless there is
         # already at least one useful open path that can keep ventilating.
         if bad_open and useful_open:
@@ -262,6 +260,62 @@ def enrich_opening_recommendation(
             brain["why"] = why[:6]
             brain["opening_guidance"] = metadata
     return recommendation
+
+
+def keep_moisture_sources_open(
+    recommendation: dict[str, Any],
+    rooms: dict[str, dict[str, Any]],
+    options: dict[str, Any],
+) -> None:
+    """Final invariant: never tell a room with a running moisture source to close.
+
+    0.26.5.2 (owner: "Schließen" while the sauna runs is a no-go). The room
+    engine keeps such a room open while the reference air is drier, but the
+    house/floor aggregate that runs later closed every open room together.
+    Rooms whose own decision is "Continue ventilating" because of an active
+    source are taken out of a close; when no other room is left, the close
+    becomes "keep ventilating".
+    """
+    if not isinstance(recommendation, dict) or not isinstance(rooms, dict):
+        return
+    if str(recommendation.get("kind") or "") != "close":
+        return
+    close_delta = _f(options.get("close_delta"), 0.4) if isinstance(options, dict) else 0.4
+    selected = [str(key) for key in (recommendation.get("room_keys") or [])]
+    sources = [
+        key for key in selected
+        if isinstance(rooms.get(key), dict)
+        and rooms[key].get("active")
+        and rooms[key].get("moisture_source_active")
+        and str(rooms[key].get("action") or "") == "Continue ventilating"
+        and _f(rooms[key].get("delta_g_m3")) > close_delta
+    ]
+    if not sources:
+        return
+    names = " + ".join(str(rooms[key].get("name") or key) for key in sources)
+    labels = "/".join(dict.fromkeys(str(rooms[key].get("moisture_source_label") or "Feuchtequelle") for key in sources))
+    keep = f"{names} offen lassen ({labels} aktiv)"
+    remaining = [key for key in selected if key not in sources]
+    reason = f"{names}: {labels} läuft; die trocknere Außen-/Referenzluft führt die entstehende Feuchte weiter ab"
+    reasons = [str(x) for x in (recommendation.get("reasons") or []) if str(x).strip()]
+    recommendation["moisture_source_kept_open"] = sources
+    if remaining:
+        recommendation["room_keys"] = remaining
+        recommendation["instruction"] = f"{recommendation.get('instruction') or 'Jetzt schließen'} · {keep}"
+    else:
+        recommendation.update({
+            "kind": "continue", "status": "moisture_source_active", "room_keys": sources,
+            "title": f"{labels} erkannt", "instruction": keep,
+            "summary": "Während die interne Feuchte- und Wärmequelle aktiv ist, hat die trocknere Außen-/Referenzluft Vorrang vor einer Schließempfehlung.",
+            "duration_min": None,
+        })
+    recommendation["reasons"] = [reason, *[x for x in reasons if x != reason]][:6]
+    brain = recommendation.get("decision_brain")
+    if isinstance(brain, dict):
+        brain["headline"] = recommendation.get("title")
+        brain["action_line"] = recommendation["instruction"]
+        brain["summary"] = recommendation.get("summary")
+        brain["why"] = list(recommendation["reasons"])
 
 
 def synchronize_room_presentation_actions(

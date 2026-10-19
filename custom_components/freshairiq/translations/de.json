@@ -17,7 +17,7 @@
           "outdoor_temperature": "Optional. Ohne Wetter-Entität nur gemeinsam mit Außenluftfeuchtigkeit verwenden.",
           "outdoor_humidity": "Optional. Ohne Wetter-Entität nur gemeinsam mit Außentemperatur verwenden.",
           "pollen_entity": "Optional. Wird nur bei aktivierter Pollenberücksichtigung ausgewertet. Mehrere Sensoren möglich (z. B. je Pollenart); der höchste aktuelle Wert zählt.",
-          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
+          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community oder WAQI. Hinweis: WAQI liefert einen Indexwert statt µg/m³ – dann den Grenzwert unter Luftqualität z. B. auf 100 setzen. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
         }
       },
       "room": {
@@ -163,7 +163,7 @@
           "outdoor_temperature": "Optional. Nur zusammen mit einem Außen-Feuchtesensor verwenden.",
           "outdoor_humidity": "Optional. Nur zusammen mit einem Außen-Temperatursensor verwenden.",
           "pollen_entity": "Optional. Wird später nur bei aktivierter Pollenberücksichtigung ausgewertet. Mehrere Sensoren möglich (z. B. je Pollenart); der höchste aktuelle Wert zählt.",
-          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
+          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community oder WAQI. Hinweis: WAQI liefert einen Indexwert statt µg/m³ – dann den Grenzwert unter Luftqualität z. B. auf 100 setzen. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
         }
       }
     },
@@ -422,7 +422,7 @@
           "outdoor_temperature": "Optional. Nur zusammen mit einem Außen-Feuchtesensor verwenden. Dann ersetzt dieses Sensorpaar die Wetter-Entität für die aktuelle Außenluft.",
           "outdoor_humidity": "Optional. Nur zusammen mit einem Außen-Temperatursensor verwenden.",
           "pollen_entity": "Optionaler numerischer Pollenindex. Wird nur genutzt, wenn „Pollen berücksichtigen“ aktiviert ist. Mehrere Sensoren möglich (z. B. je Pollenart); der höchste aktuelle Wert zählt.",
-          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
+          "outdoor_pm25_entity": "Optional, z. B. Sensor.Community oder WAQI. Hinweis: WAQI liefert einen Indexwert statt µg/m³ – dann den Grenzwert unter Luftqualität z. B. auf 100 setzen. Liegt der Feinstaubwert draußen über dem Grenzwert (Luftqualität), verschiebt FreshAirIQ normales Lüften wie bei Pollen. Mehrere Sensoren möglich; der höchste aktuelle Wert zählt."
         }
       },
       "rooms": {

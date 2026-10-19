@@ -652,6 +652,34 @@ class FreshAirIQDiagnosticsRecorder:
             "last_error": self.last_error,
         }
 
+    def _contact_profile(self, contact: str, three_state: set[str]) -> dict[str, Any]:
+        """Kind and origin of one window/door contact, without its name (0.26.5.2).
+
+        Shows e.g. a self-built three-state template next to the two plain
+        contacts it was made from.
+        """
+        try:
+            from homeassistant.helpers import entity_registry as er  # noqa: PLC0415 - optional at runtime
+
+            entity = er.async_get(self.hass).async_get(contact)
+        except Exception:  # noqa: BLE001 - a missing registry must not break the snapshot
+            entity = None
+        return {
+            "entity_domain": contact.split(".", 1)[0],
+            "platform": _json_safe(getattr(entity, "platform", None)),
+            # proven once (options or a reported tilt) and remembered by the room
+            "three_state": contact in three_state,
+        }
+
+    def _duplicate_contact_names(self, contacts: list[Any]) -> int:
+        """Contacts of one room that share a display name with another one."""
+        states = getattr(self.hass, "states", None)
+        names = []
+        for contact in contacts:
+            state = states.get(str(contact)) if states is not None else None
+            names.append(str((state.attributes.get("friendly_name") if state is not None else None) or contact).strip().casefold())
+        return sum(1 for name in names if names.count(name) > 1)
+
     def update_configuration_snapshot(
         self, entry_data: dict[str, Any], options: dict[str, Any], data: dict[str, Any], now: datetime
     ) -> None:
@@ -680,6 +708,7 @@ class FreshAirIQDiagnosticsRecorder:
             contact_covers = raw.get("contact_covers") if isinstance(raw.get("contact_covers"), dict) else {}
             passage_doors = raw.get("contact_passage_doors") if isinstance(raw.get("contact_passage_doors"), dict) else {}
             openings = []
+            three_state = {str(x) for x in (live.get("three_state_contacts") or [])} if isinstance(live, dict) else set()
             for index, contact in enumerate(contacts, 1):
                 covers = contact_covers.get(contact) or []
                 if not isinstance(covers, list):
@@ -692,6 +721,7 @@ class FreshAirIQDiagnosticsRecorder:
                     "reference_humidity_configured": bool(contact_ref_h.get(contact)),
                     "cover_count": len([item for item in covers if item]),
                     "passage_door": bool(passage_doors.get(contact, False)),
+                    **self._contact_profile(str(contact), three_state),
                 })
             room_rows.append({
                 "key": key,
@@ -715,6 +745,7 @@ class FreshAirIQDiagnosticsRecorder:
                 "window_orientation": _json_safe(raw.get("window_orientation") or live.get("window_orientation")),
                 "contact_orientations": direction_values,
                 "contact_count": len(contacts),
+                "contacts_sharing_a_name": self._duplicate_contact_names(contacts),
                 "openings": openings,
                 "temperature_sensor_configured": bool(raw.get("temperature")),
                 "humidity_sensor_configured": bool(raw.get("humidity")),

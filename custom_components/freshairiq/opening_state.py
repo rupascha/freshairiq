@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 TILT_STATES = {"tilted", "tilt", "kip", "kipp", "gekippt", "vent", "ventilation"}
-OPEN_STATES = {"on", "open", "opening", "opened", "auf", "offen"}
+# 0.26.5.2: "geöffnet" (user template: geöffnet / gekippt / geschlossen)
+OPEN_STATES = {"on", "open", "opening", "opened", "auf", "offen", "geöffnet"}
 CLOSED_STATES = {"off", "closed", "closing", "shut", "zu", "geschlossen"}
 UNKNOWN_STATES = {"unknown", "unavailable", "none", "", "null"}
 

@@ -142,7 +142,7 @@ Für Energieabschätzungen können Wärmepumpe, Gas, Heizöl, Fernwärme oder Di
 
 ## Eigene Automationen (Node-RED, Alexa, Lüfter)
 
-FreshAirIQ schaltet nie selbst – aber du kannst auf jede Empfehlung reagieren: über die Raum-Entitäten (z. B. `sensor.schlafzimmer_aktion`) oder über die Ereignisse `freshairiq_room_action`, `freshairiq_house_recommendation` und `freshairiq_mould_risk`, die einen fertigen Ansagetext („Schlafzimmer: Bitte Fenster schließen.“) mitliefern. Beispiele für Alexa, Ablüfter und Node-RED, zwei fertige Blueprints sowie Tipps zu Kipp-Kontakten und Räumen ohne Fenster: **[docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)**. Die Blueprints gibt es zusätzlich auf Englisch (`*_en.yaml`).
+FreshAirIQ schaltet von sich aus keine Geräte – nur Rollos und Ablüfter, und nur, wenn du für einen Raum die „Automatische Steuerung“ einschaltest (Rollo öffnet mit dem Fenster, Aussperrschutz an der Durchgangstür, Sonnenschutz, Ablüfter nach dem Duschen oder nach Empfehlung). Darüber hinaus kannst du auf jede Empfehlung reagieren: über die Raum-Entitäten (z. B. `sensor.schlafzimmer_aktion`) oder über die Ereignisse `freshairiq_room_action`, `freshairiq_house_recommendation`, `freshairiq_mould_risk` und `freshairiq_moisture_source`, die einen fertigen Ansagetext („Schlafzimmer: Bitte Fenster schließen.“) mitliefern. Beispiele für Alexa, Ablüfter und Node-RED, vier fertige Blueprints (Empfehlungen ansagen, Lüfter folgt dem Raum, Lüfter nach Feuchtequelle, Rollos gegen die Sonne) sowie Tipps zu Kipp-Kontakten und Räumen ohne Fenster: **[docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)**. Die Blueprints gibt es zusätzlich auf Englisch (`*_en.yaml`).
 
 ## Voraussetzungen
 

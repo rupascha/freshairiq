@@ -111,7 +111,10 @@ def test_moisture_source_headline_is_not_replaced_by_a_generic_airing_phrase():
 def test_configuration_and_translations_offer_the_sensor_and_limit():
     flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
     assert 'CONF_OUTDOOR_PM25_ENTITY, entity_ids(data.get(CONF_OUTDOOR_PM25_ENTITY))' in flow
-    assert 'device_class="pm25", multiple=True' in flow
+    # 0.26.5.2: device class pm25 *or* the µg/m³ unit *or* a WAQI sensor
+    assert '{"domain": "sensor", "device_class": "pm25"}' in flow
+    assert '{"domain": "sensor", "unit_of_measurement": ["µg/m³", "μg/m³"]}' in flow
+    assert '{"domain": "sensor", "integration": "waqi"}' in flow
     assert 'native_option_key("outdoor_pm25_max")' in flow and 'native_option_key("outdoor_pm25_enabled")' in flow
     for name in ("translations/de.json", "translations/en.json", "strings.json"):
         data = json.loads((COMP / name).read_text(encoding="utf-8"))

@@ -33,7 +33,7 @@ from .moisture_source import update_moisture_source
 from .notifications import process_notifications
 from .presence import presence_diagnostics, resolve_occupancy
 from .recommendation import build_recommendation
-from .opening_strategy import enrich_opening_recommendation, house_aligned_room_actions, synchronize_room_presentation_actions
+from .opening_strategy import enrich_opening_recommendation, house_aligned_room_actions, keep_moisture_sources_open, synchronize_room_presentation_actions
 from .opening_state import normalize_opening_state, opening_contact_profile, aggregate_opening_mode, specialist_opening_provenance, stabilise_explicit_mode, update_passage_pattern, stable_state_seconds
 from .personal_context import build_resident_context, personalise_recommendation
 from .language_confidence import adapt_language_confidence
@@ -1899,6 +1899,9 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         intelligent_recommendation = enrich_opening_recommendation(
             intelligent_recommendation, results, options
         )
+        # 0.26.5.2: after the house/floor aggregate and the opening overlay, a
+        # room with a running moisture source (sauna, shower ...) is never closed.
+        keep_moisture_sources_open(intelligent_recommendation, results, options)
         # Three-state mode selection is the last action-specific presentation
         # layer so generic wording/personalisation cannot erase the explicit
         # tilt-vs-shock recommendation or a running user's selected mode.
@@ -3513,6 +3516,10 @@ class FreshAirIQCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result.ventilation_candidate = False
             result.cooling_candidate = False
         result.action = action; result.reason = reason
+        if action == "Continue ventilating" and result.moisture_source_active:
+            # 0.26.5.2: a room kept open for its running moisture source sends
+            # no room-level close either (also with a close threshold below 0.4)
+            result.close_recommended = False
         if mem["session_active"] and result.data_quality == "ok":
             if abs(float(mem.get("session_result_ml", 0.0)) - float(result.result_ml)) >= 0.01:
                 mem["session_result_ml"] = float(result.result_ml); changed = True
