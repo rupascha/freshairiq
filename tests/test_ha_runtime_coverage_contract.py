@@ -30,11 +30,13 @@ def _complete_report(percent: float = 100.0) -> dict:
 
 
 def test_ha_runtime_ci_persists_machine_readable_coverage() -> None:
-    workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+    # 2026-10-23: the coverage run lives in quality.yml (job ha-runtime) – once per push
+    workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+    assert "uses: ./.github/workflows/quality.yml" in (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
     assert "--cov-report=json:ha_tests/coverage-ha.json" in workflow
     assert "python tools/report_ha_coverage.py ha_tests/coverage-ha.json" in workflow
-    assert "--min-total 99" in workflow
-    assert "--min-module 98" in workflow
+    assert "--min-total 100" in workflow
+    assert "--min-module 100" in workflow
     assert "--config-flow 100" in workflow
     assert "actions/upload-artifact@v7" in workflow
     assert "freshairiq-ha-runtime-coverage" in workflow

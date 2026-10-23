@@ -107,121 +107,13 @@ def finalise_ventilation_group(
     if not sessions:
         return None
 
-    room_map: dict[str, dict[str, Any]] = {}
-    for event in sessions:
-        key = str(event.get("key") or event.get("name") or "unknown")
-        room = room_map.setdefault(
-            key,
-            {
-                "key": key,
-                "name": str(event.get("name") or key),
-                "floor": event.get("floor"),
-                "sort_order": int(event.get("sort_order", 9999) or 9999),
-                "removed_ml": 0.0,
-                "moisture_measured_sessions": 0,
-                "moisture_unmeasured_sessions": 0,
-                "duration_min": 0.0,
-                "cost": 0.0,
-                "energy_kwh": 0.0,
-                "temp_pairs": [],
-                "predicted_removed_ml": 0.0,
-                "predicted_removed_samples": 0,
-                "prediction_actual_removed_ml": 0.0,
-                "prediction_comparable_sessions": 0,
-                "aligned_predicted_removed_ml": 0.0,
-                "aligned_predicted_removed_samples": 0,
-                "aligned_prediction_actual_removed_ml": 0.0,
-                "prediction_time_aligned_sessions": 0,
-                "predicted_temp_pairs": [],
-                "recommendation_followed": False,
-                "learning_valid_sessions": 0,
-                "session_count": 0,
-                "moisture_source_contaminated": False,
-                "cross_ventilation_minutes": 0.0,
-                "outcome_feedback_actions": [],
-                "outcome_feedback_reasons": [],
-            },
-        )
-        volume = max(_number(event.get("volume_m3")) or 0.0, 0.0)
-        weight = volume if volume > 0 else 1.0
-        measured_removed = _number(event.get("removed_ml")) if bool(event.get("moisture_measurement_valid", event.get("removed_ml") is not None)) else None
-        if measured_removed is None:
-            room["moisture_unmeasured_sessions"] += 1
-        else:
-            room["removed_ml"] += measured_removed
-            room["moisture_measured_sessions"] += 1
-        room["duration_min"] += max(_number(event.get("duration_min")) or 0.0, 0.0)
-        room["cost"] += max(_number(event.get("cost")) or 0.0, 0.0)
-        room["energy_kwh"] += max(_number(event.get("energy_kwh")) or 0.0, 0.0)
-        temp_delta = _number(event.get("temp_delta_c"))
-        if temp_delta is not None:
-            room["temp_pairs"].append((temp_delta, weight))
-        predicted_removed = _number(event.get("predicted_removed_ml"))
-        actual_removed = measured_removed
-        if predicted_removed is not None and actual_removed is not None and bool(event.get("prediction_time_aligned")):
-            room["aligned_predicted_removed_ml"] += predicted_removed
-            room["aligned_predicted_removed_samples"] += 1
-            room["aligned_prediction_actual_removed_ml"] += actual_removed
-            room["prediction_time_aligned_sessions"] += 1
-        if predicted_removed is not None and actual_removed is not None and bool(event.get("prediction_comparable")):
-            room["predicted_removed_ml"] += predicted_removed
-            room["predicted_removed_samples"] += 1
-            room["prediction_actual_removed_ml"] += actual_removed
-            room["prediction_comparable_sessions"] += 1
-        predicted_temp = _number(event.get("predicted_temperature_change_c"))
-        if predicted_temp is not None:
-            room["predicted_temp_pairs"].append((predicted_temp, weight))
-        room["recommendation_followed"] = bool(room["recommendation_followed"] or event.get("recommendation_followed"))
-        room["learning_valid_sessions"] += 1 if event.get("learning_valid") else 0
-        room["session_count"] += 1
-        room["moisture_source_contaminated"] = bool(room["moisture_source_contaminated"] or event.get("moisture_source_contaminated"))
-        room["cross_ventilation_minutes"] += max(_number(event.get("cross_ventilation_minutes")) or 0.0, 0.0)
-        if event.get("outcome_feedback_action"):
-            room["outcome_feedback_actions"].append(str(event.get("outcome_feedback_action")))
-        if event.get("outcome_feedback_reason"):
-            room["outcome_feedback_reasons"].append(str(event.get("outcome_feedback_reason")))
+    (room_map,) = _merge_room_sessions(
+        sessions=sessions,
+    )
 
-    room_results: list[dict[str, Any]] = []
-    for room in room_map.values():
-        temp_delta = _weighted_average(room.pop("temp_pairs"))
-        predicted_temp = _weighted_average(room.pop("predicted_temp_pairs"))
-        predicted_samples = int(room.pop("predicted_removed_samples"))
-        aligned_predicted_samples = int(room.pop("aligned_predicted_removed_samples"))
-        measured_sessions = int(room.get("moisture_measured_sessions", 0))
-        unmeasured_sessions = int(room.get("moisture_unmeasured_sessions", 0))
-        room["removed_ml"] = round(float(room["removed_ml"]), 1) if measured_sessions > 0 else None
-        room["moisture_result_complete"] = bool(measured_sessions > 0 and unmeasured_sessions == 0)
-        room["duration_min"] = round(float(room["duration_min"]), 1)
-        room["cost"] = round(float(room["cost"]), 3)
-        room["energy_kwh"] = round(float(room["energy_kwh"]), 4)
-        room["cross_ventilation_minutes"] = round(float(room["cross_ventilation_minutes"]), 1)
-        room["temp_delta_c"] = round(temp_delta, 2) if temp_delta is not None else None
-        room["predicted_removed_ml"] = round(float(room["predicted_removed_ml"]), 1) if predicted_samples else None
-        room["prediction_actual_removed_ml"] = round(float(room["prediction_actual_removed_ml"]), 1) if predicted_samples else None
-        room["prediction_comparable_sessions"] = int(room.get("prediction_comparable_sessions", 0))
-        room["aligned_predicted_removed_ml"] = round(float(room["aligned_predicted_removed_ml"]), 1) if aligned_predicted_samples else None
-        room["aligned_prediction_actual_removed_ml"] = round(float(room["aligned_prediction_actual_removed_ml"]), 1) if aligned_predicted_samples else None
-        room["prediction_time_aligned_sessions"] = int(room.get("prediction_time_aligned_sessions", 0))
-        # v0.25.0.36: classify forecast evidence per room. A room with strict
-        # comparable sessions remains useful even when another room in the same
-        # house ventilation reported asynchronously.
-        aligned_count = room["prediction_time_aligned_sessions"]
-        comparable_count = room["prediction_comparable_sessions"]
-        if aligned_count <= 0:
-            room["prediction_validation_status"] = "unavailable"
-        elif comparable_count == aligned_count:
-            room["prediction_validation_status"] = "valid"
-        elif comparable_count > 0:
-            room["prediction_validation_status"] = "restricted"
-        else:
-            room["prediction_validation_status"] = "not_comparable"
-        room["predicted_temperature_change_c"] = round(predicted_temp, 2) if predicted_temp is not None else None
-        actions = room.pop("outcome_feedback_actions", [])
-        reasons = room.pop("outcome_feedback_reasons", [])
-        priority = {"guarded_observation": 6, "cautious_confirmation": 5, "confirmed_outlier": 4, "guarded": 4, "cautious": 3, "applied": 2, "skipped": 1}
-        room["outcome_feedback_action"] = max(actions, key=lambda x: priority.get(x, 0)) if actions else None
-        room["outcome_feedback_reason"] = reasons[-1] if reasons else None
-        room_results.append(room)
+    (room_results,) = _room_session_results(
+        room_map=room_map,
+    )
     room_results.sort(key=lambda item: (int(item.get("sort_order", 9999)), str(item.get("name", ""))))
 
     measured_room_values = [float(item["removed_ml"]) for item in room_results if item.get("removed_ml") is not None]
@@ -298,6 +190,170 @@ def finalise_ventilation_group(
     if duration_min <= 0:
         duration_min = max((float(item.get("duration_min", 0.0)) for item in room_results), default=0.0)
 
+    return _group_result_payload(
+        aligned_predicted_removed=aligned_predicted_removed,
+        aligned_prediction_accuracy=aligned_prediction_accuracy,
+        aligned_prediction_actual_removed=aligned_prediction_actual_removed,
+        aligned_prediction_error=aligned_prediction_error, avg_temp=avg_temp, display_minutes=display_minutes,
+        duration_min=duration_min, ended_at=ended_at, measured_removed_partial=measured_removed_partial,
+        moisture_measured_sessions=moisture_measured_sessions,
+        moisture_result_complete=moisture_result_complete,
+        moisture_unmeasured_sessions=moisture_unmeasured_sessions, predicted_removed=predicted_removed,
+        prediction_accuracy=prediction_accuracy, prediction_actual_removed=prediction_actual_removed,
+        prediction_comparable_rooms=prediction_comparable_rooms,
+        prediction_comparable_sessions=prediction_comparable_sessions, prediction_error=prediction_error,
+        prediction_excluded_rooms=prediction_excluded_rooms,
+        prediction_excluded_sessions=prediction_excluded_sessions,
+        prediction_time_aligned_rooms=prediction_time_aligned_rooms,
+        prediction_time_aligned_sessions=prediction_time_aligned_sessions, room_results=room_results,
+        sessions=sessions, started=started, total_cost=total_cost, total_energy=total_energy,
+        total_removed=total_removed, total_room_minutes=total_room_minutes,
+    )
+
+
+def _merge_room_sessions(
+    *,
+    sessions: Any,
+) -> Any:
+    """Merge every session event of the group into one accumulator per room."""
+    room_map: dict[str, dict[str, Any]] = {}
+    for event in sessions:
+        key = str(event.get("key") or event.get("name") or "unknown")
+        room = room_map.setdefault(
+            key,
+            {
+                "key": key,
+                "name": str(event.get("name") or key),
+                "floor": event.get("floor"),
+                "sort_order": int(event.get("sort_order", 9999) or 9999),
+                "removed_ml": 0.0,
+                "moisture_measured_sessions": 0,
+                "moisture_unmeasured_sessions": 0,
+                "duration_min": 0.0,
+                "cost": 0.0,
+                "energy_kwh": 0.0,
+                "temp_pairs": [],
+                "predicted_removed_ml": 0.0,
+                "predicted_removed_samples": 0,
+                "prediction_actual_removed_ml": 0.0,
+                "prediction_comparable_sessions": 0,
+                "aligned_predicted_removed_ml": 0.0,
+                "aligned_predicted_removed_samples": 0,
+                "aligned_prediction_actual_removed_ml": 0.0,
+                "prediction_time_aligned_sessions": 0,
+                "predicted_temp_pairs": [],
+                "recommendation_followed": False,
+                "learning_valid_sessions": 0,
+                "session_count": 0,
+                "moisture_source_contaminated": False,
+                "cross_ventilation_minutes": 0.0,
+                "outcome_feedback_actions": [],
+                "outcome_feedback_reasons": [],
+            },
+        )
+        volume = max(_number(event.get("volume_m3")) or 0.0, 0.0)
+        weight = volume if volume > 0 else 1.0
+        measured_removed = _number(event.get("removed_ml")) if bool(event.get("moisture_measurement_valid", event.get("removed_ml") is not None)) else None
+        if measured_removed is None:
+            room["moisture_unmeasured_sessions"] += 1
+        else:
+            room["removed_ml"] += measured_removed
+            room["moisture_measured_sessions"] += 1
+        room["duration_min"] += max(_number(event.get("duration_min")) or 0.0, 0.0)
+        room["cost"] += max(_number(event.get("cost")) or 0.0, 0.0)
+        room["energy_kwh"] += max(_number(event.get("energy_kwh")) or 0.0, 0.0)
+        temp_delta = _number(event.get("temp_delta_c"))
+        if temp_delta is not None:
+            room["temp_pairs"].append((temp_delta, weight))
+        predicted_removed = _number(event.get("predicted_removed_ml"))
+        actual_removed = measured_removed
+        if predicted_removed is not None and actual_removed is not None and bool(event.get("prediction_time_aligned")):
+            room["aligned_predicted_removed_ml"] += predicted_removed
+            room["aligned_predicted_removed_samples"] += 1
+            room["aligned_prediction_actual_removed_ml"] += actual_removed
+            room["prediction_time_aligned_sessions"] += 1
+        if predicted_removed is not None and actual_removed is not None and bool(event.get("prediction_comparable")):
+            room["predicted_removed_ml"] += predicted_removed
+            room["predicted_removed_samples"] += 1
+            room["prediction_actual_removed_ml"] += actual_removed
+            room["prediction_comparable_sessions"] += 1
+        predicted_temp = _number(event.get("predicted_temperature_change_c"))
+        if predicted_temp is not None:
+            room["predicted_temp_pairs"].append((predicted_temp, weight))
+        room["recommendation_followed"] = bool(room["recommendation_followed"] or event.get("recommendation_followed"))
+        room["learning_valid_sessions"] += 1 if event.get("learning_valid") else 0
+        room["session_count"] += 1
+        room["moisture_source_contaminated"] = bool(room["moisture_source_contaminated"] or event.get("moisture_source_contaminated"))
+        room["cross_ventilation_minutes"] += max(_number(event.get("cross_ventilation_minutes")) or 0.0, 0.0)
+        if event.get("outcome_feedback_action"):
+            room["outcome_feedback_actions"].append(str(event.get("outcome_feedback_action")))
+        if event.get("outcome_feedback_reason"):
+            room["outcome_feedback_reasons"].append(str(event.get("outcome_feedback_reason")))
+    return (room_map,)
+
+
+def _room_session_results(
+    *,
+    room_map: Any,
+) -> Any:
+    """One result row per room: duration, moisture, energy, prediction and learning totals."""
+    room_results: list[dict[str, Any]] = []
+    for room in room_map.values():
+        temp_delta = _weighted_average(room.pop("temp_pairs"))
+        predicted_temp = _weighted_average(room.pop("predicted_temp_pairs"))
+        predicted_samples = int(room.pop("predicted_removed_samples"))
+        aligned_predicted_samples = int(room.pop("aligned_predicted_removed_samples"))
+        measured_sessions = int(room.get("moisture_measured_sessions", 0))
+        unmeasured_sessions = int(room.get("moisture_unmeasured_sessions", 0))
+        room["removed_ml"] = round(float(room["removed_ml"]), 1) if measured_sessions > 0 else None
+        room["moisture_result_complete"] = bool(measured_sessions > 0 and unmeasured_sessions == 0)
+        room["duration_min"] = round(float(room["duration_min"]), 1)
+        room["cost"] = round(float(room["cost"]), 3)
+        room["energy_kwh"] = round(float(room["energy_kwh"]), 4)
+        room["cross_ventilation_minutes"] = round(float(room["cross_ventilation_minutes"]), 1)
+        room["temp_delta_c"] = round(temp_delta, 2) if temp_delta is not None else None
+        room["predicted_removed_ml"] = round(float(room["predicted_removed_ml"]), 1) if predicted_samples else None
+        room["prediction_actual_removed_ml"] = round(float(room["prediction_actual_removed_ml"]), 1) if predicted_samples else None
+        room["prediction_comparable_sessions"] = int(room.get("prediction_comparable_sessions", 0))
+        room["aligned_predicted_removed_ml"] = round(float(room["aligned_predicted_removed_ml"]), 1) if aligned_predicted_samples else None
+        room["aligned_prediction_actual_removed_ml"] = round(float(room["aligned_prediction_actual_removed_ml"]), 1) if aligned_predicted_samples else None
+        room["prediction_time_aligned_sessions"] = int(room.get("prediction_time_aligned_sessions", 0))
+        # v0.25.0.36: classify forecast evidence per room. A room with strict
+        # comparable sessions remains useful even when another room in the same
+        # house ventilation reported asynchronously.
+        aligned_count = room["prediction_time_aligned_sessions"]
+        comparable_count = room["prediction_comparable_sessions"]
+        if aligned_count <= 0:
+            room["prediction_validation_status"] = "unavailable"
+        elif comparable_count == aligned_count:
+            room["prediction_validation_status"] = "valid"
+        elif comparable_count > 0:
+            room["prediction_validation_status"] = "restricted"
+        else:
+            room["prediction_validation_status"] = "not_comparable"
+        room["predicted_temperature_change_c"] = round(predicted_temp, 2) if predicted_temp is not None else None
+        actions = room.pop("outcome_feedback_actions", [])
+        reasons = room.pop("outcome_feedback_reasons", [])
+        priority = {"guarded_observation": 6, "cautious_confirmation": 5, "confirmed_outlier": 4, "guarded": 4, "cautious": 3, "applied": 2, "skipped": 1}
+        room["outcome_feedback_action"] = max(actions, key=lambda x: priority.get(x, 0)) if actions else None
+        room["outcome_feedback_reason"] = reasons[-1] if reasons else None
+        room_results.append(room)
+    return (room_results,)
+
+
+def _group_result_payload(
+    *,
+    aligned_predicted_removed: Any, aligned_prediction_accuracy: Any, aligned_prediction_actual_removed: Any,
+    aligned_prediction_error: Any, avg_temp: Any, display_minutes: Any, duration_min: Any, ended_at: Any,
+    measured_removed_partial: Any, moisture_measured_sessions: Any, moisture_result_complete: Any,
+    moisture_unmeasured_sessions: Any, predicted_removed: Any, prediction_accuracy: Any,
+    prediction_actual_removed: Any, prediction_comparable_rooms: Any, prediction_comparable_sessions: Any,
+    prediction_error: Any, prediction_excluded_rooms: Any, prediction_excluded_sessions: Any,
+    prediction_time_aligned_rooms: Any, prediction_time_aligned_sessions: Any, room_results: Any,
+    sessions: Any, started: Any, total_cost: Any, total_energy: Any, total_removed: Any,
+    total_room_minutes: Any,
+) -> Any:
+    """Learning/feedback summary and the published house ventilation result."""
     followed = sum(1 for item in room_results if item.get("recommendation_followed"))
     learning_valid = sum(int(item.get("learning_valid_sessions", 0)) for item in room_results)
     contaminated = sum(1 for item in room_results if item.get("moisture_source_contaminated"))

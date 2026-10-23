@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -33,7 +34,8 @@ def _configuration_surface(path: Path) -> str:
 
 
 def test_devices_services_schema_matches_the_approved_baseline():
-    source = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    # The hash covers config_flow.py and every config_flow_* module split off from it.
+    source = module_source("config_flow")
     assert _sha(source) == BASELINE["config_flow_sha256"], (
         "Geräte-&-Dienste-Schema wurde gegenüber dem freigegebenen Stand verändert."
     )

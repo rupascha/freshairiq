@@ -15,6 +15,7 @@ import sys
 import types
 from datetime import datetime, timezone
 from pathlib import Path
+from tests._source import module_source
 
 if "homeassistant" not in sys.modules:  # pure-logic CI runs without Home Assistant
     _ha = types.ModuleType("homeassistant")
@@ -173,7 +174,7 @@ def test_english_home_assistant_gets_english_payload_with_identical_learning_sta
 
 
 def test_coordinator_translates_only_the_published_copy():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert "return self._localize_output(data)" in source
     assert 'localized["output_language"] = "en"' in source
     assert "if not isinstance(language, str) or is_german(language):" in source
@@ -294,7 +295,7 @@ def test_api_errors_and_repairs_follow_the_language():
 # --------------------------------------------------------------------------- setup flow
 
 def _load(names, extra=""):
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     tree = ast.parse(flow)
     src = []
     for node in tree.body:
@@ -326,7 +327,7 @@ def test_resident_slots_are_english_for_other_languages_too():
 
 
 def test_select_options_use_translated_selectors_instead_of_german_labels():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     for key in ("diagnostics_consent", "diagnostics_reporting_mode", "level_action"):
         assert f'translation_key="{key}"' in flow
     for german in ("Noch nicht entschieden (nichts wird gesendet)", "Nur bei erkannten Problemen", "Bereich hinzufügen"):
@@ -360,10 +361,15 @@ def test_card_understands_english_backend_texts_and_room_names():
 # (entities use translation keys), and modules with their own language switch.
 _GUARD_SKIP = {
     "config_flow.py", "flow_errors.py", "flow_error_signature.py", "const.py", "__init__.py",
-    "text_en.py", "localize.py", "diagnostics.py", "diagnostic_transport.py", "telemetry.py",
+    "text_en.py", "text_en_templates.py", "localize.py", "diagnostics.py", "diagnostic_transport.py", "telemetry.py",
     "support_incident.py", "support_replay.py", "guardian.py", "runtime_health.py",
     "ventilation_log.py", "ventilation_log_api.py", "feedback_api.py", "repairs.py",
+    "ventilation_daily.py",  # 0.26.5.3: own language switch (CSV/PDF texts DE+EN, tested in test_ventilation_daily_026503)
     "number.py", "select.py", "energy.py",
+    # 0.26.5.2 maintenance: config_flow.py split into these modules.
+    "config_flow_fields.py", "config_flow_schemas.py", "config_flow_goals.py", "config_flow_rooms.py",
+    "config_flow_subentry.py", "config_flow_options.py", "config_flow_options_rooms.py",
+    "config_flow_options_settings.py",
 }
 # Fragments that are glued to room names; checked in their assembled form below.
 _GUARD_FRAGMENTS = {" schließen", " und ", " öffnen · ca. 7 min", " schließen · CO₂ neu bewerten",

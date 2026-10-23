@@ -1,10 +1,11 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_sensorless_room_shell_is_supported_without_weakening_partial_setup_guard():
-    flow = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     api = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
     assert "if include and not has_temperature and not has_humidity and not contacts:" in flow
     assert "include = False" in flow

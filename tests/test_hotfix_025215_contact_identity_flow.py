@@ -1,7 +1,8 @@
 from pathlib import Path
 import json
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
-FLOW=(ROOT/"custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+FLOW=module_source("config_flow")
 
 def test_no_failed_multi_opening_schema_is_used_anymore():
     assert "def _contact_reference_schema" not in FLOW

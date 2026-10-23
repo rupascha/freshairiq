@@ -262,6 +262,24 @@ def build_recommendation(
                       "Eine belastbare Lüftungsentscheidung ist erst mit plausiblen Messwerten möglich.",
                       selected=bad[:3], reasons=["Messwerte fehlen oder sind unplausibel"], severity="danger")
 
+    return _protection_recommendation(
+        _goal_state=_goal_state, _has_nonhumidity_opportunity=_has_nonhumidity_opportunity,
+        _open_achievable_goals=_open_achievable_goals, _outdoor_burden=_outdoor_burden, active=active,
+        closing=closing, night_forecast_ml=night_forecast_ml, options=options, outdoor_pm25=outdoor_pm25,
+        pm25_only=pm25_only, pollen_blocked=pollen_blocked, pollen_index=pollen_index,
+        pollen_only=pollen_only, recommended_duration_min=recommended_duration_min, result=result,
+        threshold_ml=threshold_ml, total_potential_ml=total_potential_ml, valid=valid, veto=veto,
+    )
+
+
+def _protection_recommendation(
+    *,
+    _goal_state: Any, _has_nonhumidity_opportunity: Any, _open_achievable_goals: Any, _outdoor_burden: Any,
+    active: Any, closing: Any, night_forecast_ml: Any, options: Any, outdoor_pm25: Any, pm25_only: Any,
+    pollen_blocked: Any, pollen_index: Any, pollen_only: Any, recommended_duration_min: Any, result: Any,
+    threshold_ml: Any, total_potential_ml: Any, valid: Any, veto: Any,
+) -> Any:
+    """Critical CO2/mould protection before comfort optimisation."""
     # Protection-priority contract (v0.26.2.13)
     # --------------------------------------------
     # Critical health/protection limits must be resolved before normal comfort
@@ -395,6 +413,24 @@ def build_recommendation(
             secondary="Sobald die Außen-/Referenzluft wirksam entfeuchten kann, wird Lüften zur höchsten Priorität.",
         )
 
+    return _live_session_recommendation(
+        _goal_state=_goal_state, _has_nonhumidity_opportunity=_has_nonhumidity_opportunity,
+        _open_achievable_goals=_open_achievable_goals, active=active, closing=closing,
+        night_forecast_ml=night_forecast_ml, options=options, outdoor_pm25=outdoor_pm25, pm25_only=pm25_only,
+        pollen_blocked=pollen_blocked, pollen_index=pollen_index, pollen_only=pollen_only,
+        recommended_duration_min=recommended_duration_min, result=result, threshold_ml=threshold_ml,
+        total_potential_ml=total_potential_ml, valid=valid, veto=veto,
+    )
+
+
+def _live_session_recommendation(
+    *,
+    _goal_state: Any, _has_nonhumidity_opportunity: Any, _open_achievable_goals: Any, active: Any,
+    closing: Any, night_forecast_ml: Any, options: Any, outdoor_pm25: Any, pm25_only: Any,
+    pollen_blocked: Any, pollen_index: Any, pollen_only: Any, recommended_duration_min: Any, result: Any,
+    threshold_ml: Any, total_potential_ml: Any, valid: Any, veto: Any,
+) -> Any:
+    """Moisture sources, running sessions and the candidate rooms for a new airing."""
     # Moisture-source events outrank a normal close/continue message. During a
     # shower, bath or sauna event the measured room balance may rise even while
     # ventilation is physically removing water. FreshAirIQ therefore explains
@@ -502,6 +538,29 @@ def build_recommendation(
     ]
     house_ready = total_potential_ml >= threshold_ml
 
+    return _chosen_room_recommendation(
+        _has_nonhumidity_opportunity=_has_nonhumidity_opportunity,
+        _open_achievable_goals=_open_achievable_goals, blocked_problem_rooms=blocked_problem_rooms,
+        candidate_by_key=candidate_by_key, candidates=candidates,
+        house_physics_favourable=house_physics_favourable, house_ready=house_ready,
+        night_forecast_ml=night_forecast_ml, options=options, outdoor_pm25=outdoor_pm25, pm25_only=pm25_only,
+        pollen_blocked=pollen_blocked, pollen_index=pollen_index, pollen_only=pollen_only,
+        problem_rooms=problem_rooms, recommended_duration_min=recommended_duration_min, result=result,
+        room_by_key=room_by_key, room_threshold=room_threshold, targeted=targeted, threshold_ml=threshold_ml,
+        total_potential_ml=total_potential_ml, valid=valid, veto=veto,
+    )
+
+
+def _chosen_room_recommendation(
+    *,
+    _has_nonhumidity_opportunity: Any, _open_achievable_goals: Any, blocked_problem_rooms: Any,
+    candidate_by_key: Any, candidates: Any, house_physics_favourable: Any, house_ready: Any,
+    night_forecast_ml: Any, options: Any, outdoor_pm25: Any, pm25_only: Any, pollen_blocked: Any,
+    pollen_index: Any, pollen_only: Any, problem_rooms: Any, recommended_duration_min: Any, result: Any,
+    room_by_key: Any, room_threshold: Any, targeted: Any, threshold_ml: Any, total_potential_ml: Any,
+    valid: Any, veto: Any,
+) -> Any:
+    """Pick the rooms (cross-ventilation pair first) and build the ventilation recommendation."""
     # A configured cross-ventilation pair is preferred when both rooms can use
     # the outside air and it improves the utility of the selected action.
     chosen: list[Candidate] = []
@@ -623,6 +682,22 @@ def build_recommendation(
                       selected=selected_rooms, reasons=reason_pool, severity="good",
                       duration=recommended_duration_min, removed=removed, secondary=secondary)
 
+    return _deferred_or_quiet_recommendation(
+        blocked_problem_rooms=blocked_problem_rooms, candidate_by_key=candidate_by_key, candidates=candidates,
+        chosen=chosen, house_physics_favourable=house_physics_favourable, night_forecast_ml=night_forecast_ml,
+        problem_rooms=problem_rooms, recommended_duration_min=recommended_duration_min, result=result,
+        room_threshold=room_threshold, threshold_ml=threshold_ml, total_potential_ml=total_potential_ml,
+        valid=valid,
+    )
+
+
+def _deferred_or_quiet_recommendation(
+    *,
+    blocked_problem_rooms: Any, candidate_by_key: Any, candidates: Any, chosen: Any,
+    house_physics_favourable: Any, night_forecast_ml: Any, problem_rooms: Any, recommended_duration_min: Any,
+    result: Any, room_threshold: Any, threshold_ml: Any, total_potential_ml: Any, valid: Any,
+) -> Any:
+    """Deferred problem rooms, outdoor-air vetoes, night preparation or no action needed."""
     # A room can be humid/problematic while ventilation is still physically
     # not worthwhile yet. Explain that state instead of selecting that room just
     # because it has the highest problem score.

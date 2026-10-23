@@ -135,6 +135,70 @@ def build_interventions(
             )
         )
 
+    _air_and_moisture_interventions(
+        action=action, add=add, co2=co2, config=config, humidity=humidity, is_active=is_active,
+        options=options, pm25=pm25, pm25_outdoor=pm25_outdoor, pollen_blocked=pollen_blocked,
+        pollen_only=pollen_only, room=room, source_active=source_active, voc=voc,
+    )
+
+    # Shading is a passive first-line cooling measure.  It never replaces a
+    # ventilation recommendation; it complements it without consuming energy.
+    contact_cover_map = config.get("contact_covers") or {}
+    cover_pairs: list[tuple[str | None, str]] = []
+    if isinstance(contact_cover_map, dict):
+        for contact_id, raw_covers in contact_cover_map.items():
+            for cover in _entity_list(raw_covers):
+                cover_pairs.append((str(contact_id), cover))
+    if not cover_pairs:
+        # Compatibility only: old multi-opening rooms could have a room-wide
+        # list that cannot be migrated to one opening without guessing.
+        cover_pairs = [(None, cover) for cover in _entity_list(config.get("covers"))]
+    hot = temperature >= _f(options.get("shade_above_temp_c"), 24.0)
+    bright = illuminance is None or illuminance >= _f(options.get("shade_min_illuminance_lx"), 10000.0)
+    # 0.26.5.1: a cover whose opening has no direct sun right now is not offered
+    shaded_side = set((room.get("shading") or {}).get("shaded_side_covers") or [])
+    if cover_pairs and hot and bright:
+        for contact_id, cover in cover_pairs:
+            if cover in shaded_side:
+                continue
+            add(
+                "shade",
+                "Sonnenschutz schließen",
+                ("Der Raum ist warm und der dieser Öffnung zugeordnete Sonnenschutz steht zur Verfügung." if contact_id else "Der Raum ist warm und Sonnenschutz steht zur Verfügung."),
+                76,
+                cover,
+                service="cover.close_cover",
+                service_data={"entity_id": cover},
+                category="cooling",
+                automatic_safe=True,
+            )
+
+    # Climate systems are recommended only when the room is hot and natural
+    # cooling is not already the canonical preferred action.  FreshAirIQ does
+    # not choose an HVAC mode/target automatically because comfort settings are
+    # device- and household-specific.
+    climate = str(config.get("climate") or "") or None
+    if climate and hot and action != "Ventilate for cooling":
+        add(
+            "climate_cooling",
+            "Klimaanlage prüfen",
+            "Der Raum ist warm und natürliche Kühlung ist aktuell nicht die bevorzugte Maßnahme.",
+            68,
+            climate,
+            category="cooling",
+            automatic_safe=False,
+        )
+
+    interventions.sort(key=lambda item: (-item.priority, item.key, item.entity_id or ""))
+    return [item.as_dict() for item in interventions]
+
+
+def _air_and_moisture_interventions(
+    *,
+    action: Any, add: Any, co2: Any, config: Any, humidity: Any, is_active: Any, options: Any, pm25: Any,
+    pm25_outdoor: Any, pollen_blocked: Any, pollen_only: Any, room: Any, source_active: Any, voc: Any,
+) -> Any:
+    """Supply air, exhaust fan, dehumidifier, air purifier and humidifier options."""
     # Mechanical ventilation / supply air can substitute for a window when the
     # canonical room decision wants fresh air or when CO2 is critical.
     wants_fresh_air = action in {"Ventilate", "Continue ventilating", "Ventilate for cooling"}
@@ -239,57 +303,6 @@ def build_interventions(
             category="humidification",
             automatic_safe=True,
         )
-
-    # Shading is a passive first-line cooling measure.  It never replaces a
-    # ventilation recommendation; it complements it without consuming energy.
-    contact_cover_map = config.get("contact_covers") or {}
-    cover_pairs: list[tuple[str | None, str]] = []
-    if isinstance(contact_cover_map, dict):
-        for contact_id, raw_covers in contact_cover_map.items():
-            for cover in _entity_list(raw_covers):
-                cover_pairs.append((str(contact_id), cover))
-    if not cover_pairs:
-        # Compatibility only: old multi-opening rooms could have a room-wide
-        # list that cannot be migrated to one opening without guessing.
-        cover_pairs = [(None, cover) for cover in _entity_list(config.get("covers"))]
-    hot = temperature >= _f(options.get("shade_above_temp_c"), 24.0)
-    bright = illuminance is None or illuminance >= _f(options.get("shade_min_illuminance_lx"), 10000.0)
-    # 0.26.5.1: a cover whose opening has no direct sun right now is not offered
-    shaded_side = set((room.get("shading") or {}).get("shaded_side_covers") or [])
-    if cover_pairs and hot and bright:
-        for contact_id, cover in cover_pairs:
-            if cover in shaded_side:
-                continue
-            add(
-                "shade",
-                "Sonnenschutz schließen",
-                ("Der Raum ist warm und der dieser Öffnung zugeordnete Sonnenschutz steht zur Verfügung." if contact_id else "Der Raum ist warm und Sonnenschutz steht zur Verfügung."),
-                76,
-                cover,
-                service="cover.close_cover",
-                service_data={"entity_id": cover},
-                category="cooling",
-                automatic_safe=True,
-            )
-
-    # Climate systems are recommended only when the room is hot and natural
-    # cooling is not already the canonical preferred action.  FreshAirIQ does
-    # not choose an HVAC mode/target automatically because comfort settings are
-    # device- and household-specific.
-    climate = str(config.get("climate") or "") or None
-    if climate and hot and action != "Ventilate for cooling":
-        add(
-            "climate_cooling",
-            "Klimaanlage prüfen",
-            "Der Raum ist warm und natürliche Kühlung ist aktuell nicht die bevorzugte Maßnahme.",
-            68,
-            climate,
-            category="cooling",
-            automatic_safe=False,
-        )
-
-    interventions.sort(key=lambda item: (-item.priority, item.key, item.entity_id or ""))
-    return [item.as_dict() for item in interventions]
 
 
 def executable_intervention(interventions: list[dict[str, Any]], key: str | None = None) -> dict[str, Any] | None:

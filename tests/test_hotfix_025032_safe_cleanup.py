@@ -5,6 +5,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 import ast
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -21,7 +22,7 @@ def test_release_version_and_cleanup_suffix_are_consistent():
 
 
 def test_removed_config_helpers_are_replaced_by_active_unified_schemas():
-    text = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    text = module_source("config_flow")
     assert "def _personalisation_schema(" not in text
     assert "def _house_schema(" not in text
     assert "def _building_schema(" in text
@@ -30,7 +31,7 @@ def test_removed_config_helpers_are_replaced_by_active_unified_schemas():
 
 
 def test_timestamp_learning_gate_stays_direct_and_unchanged():
-    text = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert 'session_activity_eligible = bool(session_quality.get("timestamp_gate_passed"))' in text
     assert "frame_learning_eligible = session_activity_eligible" in text
     assert "session_activity_eligible and end_frame_eligible" not in text
@@ -39,9 +40,9 @@ def test_timestamp_learning_gate_stays_direct_and_unchanged():
 
 
 def test_diagnostics_hub_and_diagnostics_ha_compatibility_surface_is_preserved():
-    transport = (COMP / "diagnostic_transport.py").read_text(encoding="utf-8")
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
-    diagnostics = (COMP / "diagnostics.py").read_text(encoding="utf-8")
+    transport = module_source("diagnostic_transport")
+    telemetry = module_source("telemetry")
+    diagnostics = module_source("diagnostics")
     settings_api = (COMP / "feedback_api.py").read_text(encoding="utf-8")
 
     # Hub upload v2 + resumable cursor contract.
@@ -74,6 +75,6 @@ def test_cleanup_does_not_remove_diagnostics_files_or_migration_paths():
     ):
         assert (COMP / relative).is_file()
 
-    config = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    config = module_source("config_flow")
     init = (COMP / "__init__.py").read_text(encoding="utf-8")
     assert "async_migrate_entry" in init or "async_migrate_entry" in config

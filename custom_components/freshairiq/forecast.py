@@ -264,6 +264,57 @@ def horizon_forecast(
     optimal_close_reason: str | None = None
     temperature_path: list[dict[str, float]] = []
 
+    (
+        forecast_max_temp_loss, forecast_min_efficiency, forecast_min_return, max_cumulative_temp_loss,
+        min_forecast_end_temp, profile,
+    ) = _forecast_end_thresholds(
+        max_temp_loss_next_5_min_c=max_temp_loss_next_5_min_c,
+        min_efficiency_ml_per_01c=min_efficiency_ml_per_01c,
+        min_return_next_5_min_ml=min_return_next_5_min_ml, operating_profile=operating_profile,
+    )
+
+    (
+        fraction, internal_change_ml, net_removed_ml, observed_projection_ml, optimal_close_in_min,
+        optimal_close_reason, physical_removed_ml, simulated_final_ah, simulation_steps, target_cap_ml,
+        temp_delta, uncapped_physical_removed_ml, ventilation_effect_ml, weather_confidence,
+    ) = _forecast_path(
+        _effective_residual_minutes=_effective_residual_minutes, _future_boundary=_future_boundary,
+        bonus=bonus, cap_positive_to_target=cap_positive_to_target, current_ah=current_ah,
+        current_temp_c=current_temp_c, exchanged_air_fraction=exchanged_air_fraction,
+        forecast_max_temp_loss=forecast_max_temp_loss, forecast_min_efficiency=forecast_min_efficiency,
+        forecast_min_return=forecast_min_return, horizon=horizon,
+        learned_thermal_residual_c_min=learned_thermal_residual_c_min, learned_weight=learned_weight,
+        live_adapted=live_adapted, live_observation_weight=live_observation_weight,
+        max_cumulative_temp_loss=max_cumulative_temp_loss, max_duration_min=max_duration_min,
+        min_duration_min=min_duration_min, min_forecast_end_temp=min_forecast_end_temp,
+        optimal_close_in_min=optimal_close_in_min, optimal_close_reason=optimal_close_reason, profile=profile,
+        rate_per_min=rate_per_min, recent_observed_removed_ml_min=recent_observed_removed_ml_min,
+        running=running, session_elapsed_min=session_elapsed_min, source_ah=source_ah,
+        source_rate=source_rate, source_temp_c=source_temp_c, target_ah=target_ah,
+        temperature_path=temperature_path, volume=volume,
+    )
+
+    return _forecast_result(
+        fraction=fraction, horizon=horizon, internal_change_ml=internal_change_ml, live_adapted=live_adapted,
+        live_observation_weight=live_observation_weight, max_cumulative_temp_loss=max_cumulative_temp_loss,
+        measurement_frame_quality=measurement_frame_quality, min_forecast_end_temp=min_forecast_end_temp,
+        model_maturity_pct=model_maturity_pct, net_removed_ml=net_removed_ml,
+        observed_projection_ml=observed_projection_ml, optimal_close_in_min=optimal_close_in_min,
+        optimal_close_reason=optimal_close_reason, physical_removed_ml=physical_removed_ml, running=running,
+        samples=samples, session_elapsed_min=session_elapsed_min, simulated_final_ah=simulated_final_ah,
+        simulation_steps=simulation_steps, source_rate=source_rate, target_cap_ml=target_cap_ml,
+        temp_delta=temp_delta, temperature_path=temperature_path,
+        uncapped_physical_removed_ml=uncapped_physical_removed_ml,
+        ventilation_effect_ml=ventilation_effect_ml, weather_confidence=weather_confidence,
+    )
+
+
+def _forecast_end_thresholds(
+    *,
+    max_temp_loss_next_5_min_c: Any, min_efficiency_ml_per_01c: Any, min_return_next_5_min_ml: Any,
+    operating_profile: Any,
+) -> Any:
+    """Advisory forecast end-point thresholds adjusted to the operating profile."""
     # Forecast-side end-point thresholds mirror the existing 5-minute close
     # criteria, but are advisory only. The real-time room model remains the
     # authority for an actual "close now" decision.
@@ -283,7 +334,24 @@ def horizon_forecast(
     # cumulative guard from the already profile-adjusted thermal tolerance.
     max_cumulative_temp_loss = max(forecast_max_temp_loss * 2.0, 1.0)
     min_forecast_end_temp = 17.0
+    return (
+        forecast_max_temp_loss, forecast_min_efficiency, forecast_min_return, max_cumulative_temp_loss,
+        min_forecast_end_temp, profile,
+    )
 
+
+def _forecast_path(
+    *,
+    _effective_residual_minutes: Any, _future_boundary: Any, bonus: Any, cap_positive_to_target: Any,
+    current_ah: Any, current_temp_c: Any, exchanged_air_fraction: Any, forecast_max_temp_loss: Any,
+    forecast_min_efficiency: Any, forecast_min_return: Any, horizon: Any, learned_thermal_residual_c_min: Any,
+    learned_weight: Any, live_adapted: Any, live_observation_weight: Any, max_cumulative_temp_loss: Any,
+    max_duration_min: Any, min_duration_min: Any, min_forecast_end_temp: Any, optimal_close_in_min: Any,
+    optimal_close_reason: Any, profile: Any, rate_per_min: Any, recent_observed_removed_ml_min: Any,
+    running: Any, session_elapsed_min: Any, source_ah: Any, source_rate: Any, source_temp_c: Any,
+    target_ah: Any, temperature_path: Any, volume: Any,
+) -> Any:
+    """Moisture and temperature path over the horizon (single slice or stepped simulation)."""
     if horizon <= 5.0:
         fraction = exchanged_air_fraction(rate_per_min, horizon, bonus)
         physical_removed_ml = (float(current_ah) - float(source_ah)) * volume * fraction
@@ -348,112 +416,30 @@ def horizon_forecast(
         elapsed_before_forecast = float(session_elapsed_min) if running else 0.0
         hard_max_in = max(total_max_duration - elapsed_before_forecast, 0.0)
 
-        while cumulative_min < horizon - 1e-9:
-            step = min(step_size, horizon - cumulative_min)
-            step_end = cumulative_min + step
-            step_source_ah, step_source_temp, boundary_conf = _future_boundary(step_end)
-            if boundary_conf is not None:
-                weather_confidences.append(boundary_conf)
-
-            step_fraction = exchanged_air_fraction(rate_per_min, step, bonus)
-            exchange_remaining *= (1.0 - step_fraction)
-            model_removed = (state_ah - step_source_ah) * volume * step_fraction
-            uncapped_physical_removed_ml += model_removed
-
-            prev_effective = _effective_residual_minutes(cumulative_min)
-            next_effective = _effective_residual_minutes(step_end)
-            effective_step_min = max(next_effective - prev_effective, 0.0)
-            step_internal = source_rate * effective_step_min
-            internal_change_ml += step_internal
-
-            # Recent measured net drying is most trustworthy near "now".
-            # As the simulation advances, its influence fades and is also scaled
-            # by the remaining moisture gradient, preventing a measured 5-minute
-            # rate from being copied unchanged over a full hour.
-            step_effect = model_removed
-            if live_adapted:
-                gradient = abs(state_ah - step_source_ah)
-                gradient_ratio = min(max(gradient / max(initial_gradient, 0.15), 0.0), 1.5)
-                observed_step = float(recent_observed_removed_ml_min) * step * gradient_ratio
-                distance_decay = max(0.97, 1.0 - 0.03 * (cumulative_min / max(horizon, 1.0)))
-                step_weight = live_observation_weight * distance_decay
-                scale = max(abs(model_removed), 5.0)
-                observed_step = min(max(observed_step, -scale), scale * 1.5)
-                step_effect = model_removed * (1.0 - step_weight) + observed_step * step_weight
-                observed_projection_ml += observed_step
-
-            ventilation_effect_uncapped_ml += step_effect
-
-            if volume > 0.0:
-                # The next step sees the predicted result of this step. Internal
-                # moisture is added after exchange, then may be removed by later
-                # steps, unlike the former one-shot extrapolation.
-                state_ah -= step_effect / volume
-                state_ah += step_internal / volume
-                state_ah = min(max(state_ah, 0.0), 40.0)
-
-            step_room_start_temp = state_temp
-            physical_dt = (step_source_temp - state_temp) * step_fraction
-            state_temp += physical_dt
-            thermal_step = 0.0
-            if learned_thermal_residual_c_min is not None:
-                thermal_step = min(max(float(learned_thermal_residual_c_min), -0.20), 0.20) * learned_weight * effective_step_min
-                state_temp += thermal_step
-            state_temp = min(max(state_temp, -10.0), 50.0)
-            temperature_path.append({
-                "start_min": float(cumulative_min), "end_min": float(step_end), "duration_min": float(step),
-                "room_start_c": float(step_room_start_temp), "source_c": float(step_source_temp),
-                "room_end_c": float(state_temp),
-            })
-
-            # Hotfix 0.20.2.2: derive the first efficient end point inside the
-            # selected horizon from the same rolling future state. This does not
-            # issue a close command; it only tells the UI when the simulation
-            # expects the marginal benefit to stop justifying more ventilation.
-            if optimal_close_in_min is None:
-                total_elapsed_at_step = elapsed_before_forecast + step_end
-                step_temp_delta = physical_dt + thermal_step
-                positive_step_effect = max(step_effect, 0.0)
-                step_efficiency = 999.0 if step_temp_delta >= -0.05 else positive_step_effect / (abs(step_temp_delta) * 10.0)
-                reached_target = bool(target_ah is not None and state_ah <= float(target_ah) + 0.02)
-                low_return = positive_step_effect < forecast_min_return
-                thermal_bad = (
-                    profile != "summer_cooling"
-                    and step_temp_delta <= -forecast_max_temp_loss
-                    and step_efficiency < forecast_min_efficiency
-                )
-                cumulative_temp_loss = max(float(current_temp_c) - state_temp, 0.0)
-                cumulative_thermal_bad = (
-                    profile != "summer_cooling"
-                    and cumulative_temp_loss >= max_cumulative_temp_loss
-                )
-                projected_end_too_cold = (
-                    profile != "summer_cooling"
-                    and state_temp <= min_forecast_end_temp
-                )
-                hard_max = hard_max_in <= horizon and step_end >= hard_max_in - 1e-9
-                decision_ready_by_time = total_elapsed_at_step >= total_min_duration
-                if hard_max:
-                    # A hard configured maximum is not rounded to the next
-                    # 5-minute simulation point. Example: after 19 min of a
-                    # 20-min maximum the advisory end point is exactly 1 min.
-                    optimal_close_in_min = hard_max_in
-                    optimal_close_reason = "max_duration"
-                elif decision_ready_by_time and (
-                    reached_target or low_return or thermal_bad
-                    or cumulative_thermal_bad or projected_end_too_cold
-                ):
-                    optimal_close_in_min = step_end
-                    optimal_close_reason = (
-                        "target_reached" if reached_target else
-                        "projected_end_temperature" if projected_end_too_cold else
-                        "cumulative_temperature_loss" if cumulative_thermal_bad else
-                        "thermal_efficiency" if thermal_bad else
-                        "marginal_return"
-                    )
-
-            cumulative_min = step_end
-            simulation_steps += 1
+        (
+            exchange_remaining, internal_change_ml, observed_projection_ml, optimal_close_in_min,
+            optimal_close_reason, simulation_steps, state_ah, state_temp, uncapped_physical_removed_ml,
+            ventilation_effect_uncapped_ml,
+        ) = _simulate_forecast_steps(
+            _effective_residual_minutes=_effective_residual_minutes, _future_boundary=_future_boundary,
+            bonus=bonus, cumulative_min=cumulative_min, current_temp_c=current_temp_c,
+            elapsed_before_forecast=elapsed_before_forecast, exchange_remaining=exchange_remaining,
+            exchanged_air_fraction=exchanged_air_fraction, forecast_max_temp_loss=forecast_max_temp_loss,
+            forecast_min_efficiency=forecast_min_efficiency, forecast_min_return=forecast_min_return,
+            hard_max_in=hard_max_in, horizon=horizon, initial_gradient=initial_gradient,
+            internal_change_ml=internal_change_ml,
+            learned_thermal_residual_c_min=learned_thermal_residual_c_min, learned_weight=learned_weight,
+            live_adapted=live_adapted, live_observation_weight=live_observation_weight,
+            max_cumulative_temp_loss=max_cumulative_temp_loss, min_forecast_end_temp=min_forecast_end_temp,
+            observed_projection_ml=observed_projection_ml, optimal_close_in_min=optimal_close_in_min,
+            optimal_close_reason=optimal_close_reason, profile=profile, rate_per_min=rate_per_min,
+            recent_observed_removed_ml_min=recent_observed_removed_ml_min, simulation_steps=simulation_steps,
+            source_rate=source_rate, state_ah=state_ah, state_temp=state_temp, step_size=step_size,
+            target_ah=target_ah, temperature_path=temperature_path, total_min_duration=total_min_duration,
+            uncapped_physical_removed_ml=uncapped_physical_removed_ml,
+            ventilation_effect_uncapped_ml=ventilation_effect_uncapped_ml, volume=volume,
+            weather_confidences=weather_confidences,
+        )
 
         target_cap_ml = None
         physical_removed_ml = uncapped_physical_removed_ml
@@ -469,7 +455,24 @@ def horizon_forecast(
         temp_delta = state_temp - float(current_temp_c)
         weather_confidence = min(weather_confidences) if weather_confidences else None
         simulated_final_ah = state_ah
+    return (
+        fraction, internal_change_ml, net_removed_ml, observed_projection_ml, optimal_close_in_min,
+        optimal_close_reason, physical_removed_ml, simulated_final_ah, simulation_steps, target_cap_ml,
+        temp_delta, uncapped_physical_removed_ml, ventilation_effect_ml, weather_confidence,
+    )
 
+
+def _forecast_result(
+    *,
+    fraction: Any, horizon: Any, internal_change_ml: Any, live_adapted: Any, live_observation_weight: Any,
+    max_cumulative_temp_loss: Any, measurement_frame_quality: Any, min_forecast_end_temp: Any,
+    model_maturity_pct: Any, net_removed_ml: Any, observed_projection_ml: Any, optimal_close_in_min: Any,
+    optimal_close_reason: Any, physical_removed_ml: Any, running: Any, samples: Any, session_elapsed_min: Any,
+    simulated_final_ah: Any, simulation_steps: Any, source_rate: Any, target_cap_ml: Any, temp_delta: Any,
+    temperature_path: Any, uncapped_physical_removed_ml: Any, ventilation_effect_ml: Any,
+    weather_confidence: Any,
+) -> Any:
+    """Confidence (model maturity and measurement frame caps) and the forecast payload."""
     base_confidence = 35.0 + min(samples, 6) * 8.0
     if running:
         base_confidence += min(max(float(session_elapsed_min), 0.0), 20.0) * 1.0
@@ -537,3 +540,130 @@ def horizon_forecast(
             ("hybrid_live_model_target_limited" if target_cap_ml is not None else "hybrid_live_model")
         ),
     }
+
+
+def _simulate_forecast_steps(
+    *,
+    _effective_residual_minutes: Any, _future_boundary: Any, bonus: Any, cumulative_min: Any,
+    current_temp_c: Any, elapsed_before_forecast: Any, exchange_remaining: Any, exchanged_air_fraction: Any,
+    forecast_max_temp_loss: Any, forecast_min_efficiency: Any, forecast_min_return: Any, hard_max_in: Any,
+    horizon: Any, initial_gradient: Any, internal_change_ml: Any, learned_thermal_residual_c_min: Any,
+    learned_weight: Any, live_adapted: Any, live_observation_weight: Any, max_cumulative_temp_loss: Any,
+    min_forecast_end_temp: Any, observed_projection_ml: Any, optimal_close_in_min: Any,
+    optimal_close_reason: Any, profile: Any, rate_per_min: Any, recent_observed_removed_ml_min: Any,
+    simulation_steps: Any, source_rate: Any, state_ah: Any, state_temp: Any, step_size: Any, target_ah: Any,
+    temperature_path: Any, total_min_duration: Any, uncapped_physical_removed_ml: Any,
+    ventilation_effect_uncapped_ml: Any, volume: Any, weather_confidences: Any,
+) -> Any:
+    """Advance the moisture/temperature state in 5-minute steps through the future weather boundaries."""
+    while cumulative_min < horizon - 1e-9:
+        step = min(step_size, horizon - cumulative_min)
+        step_end = cumulative_min + step
+        step_source_ah, step_source_temp, boundary_conf = _future_boundary(step_end)
+        if boundary_conf is not None:
+            weather_confidences.append(boundary_conf)
+
+        step_fraction = exchanged_air_fraction(rate_per_min, step, bonus)
+        exchange_remaining *= (1.0 - step_fraction)
+        model_removed = (state_ah - step_source_ah) * volume * step_fraction
+        uncapped_physical_removed_ml += model_removed
+
+        prev_effective = _effective_residual_minutes(cumulative_min)
+        next_effective = _effective_residual_minutes(step_end)
+        effective_step_min = max(next_effective - prev_effective, 0.0)
+        step_internal = source_rate * effective_step_min
+        internal_change_ml += step_internal
+
+        # Recent measured net drying is most trustworthy near "now".
+        # As the simulation advances, its influence fades and is also scaled
+        # by the remaining moisture gradient, preventing a measured 5-minute
+        # rate from being copied unchanged over a full hour.
+        step_effect = model_removed
+        if live_adapted:
+            gradient = abs(state_ah - step_source_ah)
+            gradient_ratio = min(max(gradient / max(initial_gradient, 0.15), 0.0), 1.5)
+            observed_step = float(recent_observed_removed_ml_min) * step * gradient_ratio
+            distance_decay = max(0.97, 1.0 - 0.03 * (cumulative_min / max(horizon, 1.0)))
+            step_weight = live_observation_weight * distance_decay
+            scale = max(abs(model_removed), 5.0)
+            observed_step = min(max(observed_step, -scale), scale * 1.5)
+            step_effect = model_removed * (1.0 - step_weight) + observed_step * step_weight
+            observed_projection_ml += observed_step
+
+        ventilation_effect_uncapped_ml += step_effect
+
+        if volume > 0.0:
+            # The next step sees the predicted result of this step. Internal
+            # moisture is added after exchange, then may be removed by later
+            # steps, unlike the former one-shot extrapolation.
+            state_ah -= step_effect / volume
+            state_ah += step_internal / volume
+            state_ah = min(max(state_ah, 0.0), 40.0)
+
+        step_room_start_temp = state_temp
+        physical_dt = (step_source_temp - state_temp) * step_fraction
+        state_temp += physical_dt
+        thermal_step = 0.0
+        if learned_thermal_residual_c_min is not None:
+            thermal_step = min(max(float(learned_thermal_residual_c_min), -0.20), 0.20) * learned_weight * effective_step_min
+            state_temp += thermal_step
+        state_temp = min(max(state_temp, -10.0), 50.0)
+        temperature_path.append({
+            "start_min": float(cumulative_min), "end_min": float(step_end), "duration_min": float(step),
+            "room_start_c": float(step_room_start_temp), "source_c": float(step_source_temp),
+            "room_end_c": float(state_temp),
+        })
+
+        # Hotfix 0.20.2.2: derive the first efficient end point inside the
+        # selected horizon from the same rolling future state. This does not
+        # issue a close command; it only tells the UI when the simulation
+        # expects the marginal benefit to stop justifying more ventilation.
+        if optimal_close_in_min is None:
+            total_elapsed_at_step = elapsed_before_forecast + step_end
+            step_temp_delta = physical_dt + thermal_step
+            positive_step_effect = max(step_effect, 0.0)
+            step_efficiency = 999.0 if step_temp_delta >= -0.05 else positive_step_effect / (abs(step_temp_delta) * 10.0)
+            reached_target = bool(target_ah is not None and state_ah <= float(target_ah) + 0.02)
+            low_return = positive_step_effect < forecast_min_return
+            thermal_bad = (
+                profile != "summer_cooling"
+                and step_temp_delta <= -forecast_max_temp_loss
+                and step_efficiency < forecast_min_efficiency
+            )
+            cumulative_temp_loss = max(float(current_temp_c) - state_temp, 0.0)
+            cumulative_thermal_bad = (
+                profile != "summer_cooling"
+                and cumulative_temp_loss >= max_cumulative_temp_loss
+            )
+            projected_end_too_cold = (
+                profile != "summer_cooling"
+                and state_temp <= min_forecast_end_temp
+            )
+            hard_max = hard_max_in <= horizon and step_end >= hard_max_in - 1e-9
+            decision_ready_by_time = total_elapsed_at_step >= total_min_duration
+            if hard_max:
+                # A hard configured maximum is not rounded to the next
+                # 5-minute simulation point. Example: after 19 min of a
+                # 20-min maximum the advisory end point is exactly 1 min.
+                optimal_close_in_min = hard_max_in
+                optimal_close_reason = "max_duration"
+            elif decision_ready_by_time and (
+                reached_target or low_return or thermal_bad
+                or cumulative_thermal_bad or projected_end_too_cold
+            ):
+                optimal_close_in_min = step_end
+                optimal_close_reason = (
+                    "target_reached" if reached_target else
+                    "projected_end_temperature" if projected_end_too_cold else
+                    "cumulative_temperature_loss" if cumulative_thermal_bad else
+                    "thermal_efficiency" if thermal_bad else
+                    "marginal_return"
+                )
+
+        cumulative_min = step_end
+        simulation_steps += 1
+    return (
+        exchange_remaining, internal_change_ml, observed_projection_ml, optimal_close_in_min,
+        optimal_close_reason, simulation_steps, state_ah, state_temp, uncapped_physical_removed_ml,
+        ventilation_effect_uncapped_ml,
+    )

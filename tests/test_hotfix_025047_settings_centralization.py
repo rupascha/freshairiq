@@ -2,10 +2,11 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from custom_components.freshairiq.const import *
 from custom_components.freshairiq.moisture_source import _source_signatures
+from tests._source import module_source
 
 ROOT=Path(__file__).parents[1]
 CARD=(ROOT/'custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
-FLOW=(ROOT/'custom_components/freshairiq/config_flow.py').read_text()
+FLOW=module_source("config_flow")
 
 def test_dashboard_support_tile_and_editor_visibility():
     assert 'show_support_button' in CARD

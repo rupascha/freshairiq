@@ -16,12 +16,13 @@ def test_main_card_uses_one_persistent_static_stylesheet():
     assert "const FAIQ_CARD_CSS = `" in CARD
     assert "_ensureStaticStyle()" in block
     assert 'style.id = "faiq-static-style"' in block
-    assert "style.textContent = FAIQ_CARD_CSS" in block
+    # 0.26.5.3: built once per theme from the same CSS constants (themes: freshairiq-card-style.js)
+    assert "faiqThemeCss(faiqScaleCss(FAIQ_CARD_CSS + " in block and "style.textContent = faiqCardCssCache[theme];" in block
     assert "_replaceRenderedContent(html)" in block
     # Full renders may replace card content, but must no longer rebuild the 46 KB CSS.
     assert 'this.shadowRoot.innerHTML = `<style>' not in block
     assert "var(--faiq-hero-color)" in CARD
-    assert 'this.style.setProperty("--faiq-hero-color", hero.color)' in block
+    assert 'this.style.setProperty("--faiq-hero-color", faiqThemeColor(hero.color, this._themeAuto()))' in block
 
 
 def test_open_views_deduplicate_state_and_identical_html_before_dom_patch():

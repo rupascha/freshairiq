@@ -4,6 +4,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -19,7 +20,7 @@ def test_release_is_scoped_to_the_private_staging_hub_and_remains_opt_in():
 
 
 def test_client_matches_hub_v03_enrollment_and_authenticated_chunk_contract():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert 'self.enroll_endpoint = f"{self.endpoint}/v1/enroll"' in telemetry
     assert 'self.upload_endpoint = f"{self.endpoint}/v1/diagnostics/chunks"' in telemetry
     assert '"anonymous_installation_id": installation_id' in telemetry
@@ -30,7 +31,7 @@ def test_client_matches_hub_v03_enrollment_and_authenticated_chunk_contract():
 
 
 def test_client_credential_is_persisted_before_enrollment_but_never_exposed_in_status():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert 'self._state["client_token"] = token' in telemetry
     assert 'if not await self._save_state()' in telemetry
     status_block = telemetry.split("def status", 1)[1].split("async def async_start", 1)[0]
@@ -39,7 +40,7 @@ def test_client_credential_is_persisted_before_enrollment_but_never_exposed_in_s
 
 
 def test_plain_http_is_explicitly_limited_to_private_or_loopback_addresses():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert 'parsed.scheme == "http"' in telemetry
     assert "ipaddress.ip_address(host)" in telemetry
     assert "address.is_private or address.is_loopback" in telemetry
@@ -47,7 +48,7 @@ def test_plain_http_is_explicitly_limited_to_private_or_loopback_addresses():
 
 
 def test_first_explicit_daily_or_weekly_opt_in_can_sync_immediately():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert 'first_sync_due = not self._state.get("last_success_at")' in telemetry
     assert 'mode in {"daily", "weekly"} or current_problem is not None' in telemetry
     # Off (including "no consent") is still checked before identity/export/enrollment.
@@ -57,9 +58,9 @@ def test_first_explicit_daily_or_weekly_opt_in_can_sync_immediately():
 
 
 def test_live_settings_change_requests_an_immediate_nonblocking_upload_check():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     settings_api = (COMP / "feedback_api.py").read_text(encoding="utf-8")
-    config_flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    config_flow = module_source("config_flow")
     assert "def request_check" in telemetry
     # removed: dashboard-side check (dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services)).

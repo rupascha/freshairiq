@@ -30,6 +30,7 @@ from custom_components.freshairiq.diagnostic_transport import (
     retry_delay_seconds,
     upload_due,
 )
+from tests._source import module_source
 
 BERLIN = ZoneInfo("Europe/Berlin")
 INSTALLS = [f"faiq-synthetic-{i:05d}" for i in range(10_000)]
@@ -172,7 +173,7 @@ def test_error_mode_opt_out_and_manual_paths_are_unchanged():
     assert upload_due("errors", noon, INSTALLS[0], problem_fingerprint="a", last_problem_fingerprint="b") is True
     assert effective_reporting_mode({"diagnostics_reporting_mode": "daily"}) == "off"
     assert upload_due("off", nightly_upload_time(noon, INSTALLS[0]), INSTALLS[0]) is False
-    telemetry = (ROOT / "custom_components/freshairiq/telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     # Manual/support sends bypass the cadence (force/manual) exactly as before.
     assert "if not force and not first_sync_due and not upload_due(" in telemetry
     assert "async_track_point_in_time(self.hass, self._slot_reached, target)" in telemetry

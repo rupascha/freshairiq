@@ -1,13 +1,14 @@
 from pathlib import Path
 import json
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / 'custom_components' / 'freshairiq'
 
 
 def test_threshold_settings_are_guided_and_unambiguous():
-    flow = (COMP / 'config_flow.py').read_text(encoding='utf-8')
+    flow = module_source("config_flow")
     assert 'async def async_step_threshold(' in flow
     assert 'async def async_step_threshold_percent(' in flow
     assert 'async def async_step_threshold_fixed(' in flow

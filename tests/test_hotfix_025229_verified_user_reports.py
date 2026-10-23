@@ -5,6 +5,7 @@ from custom_components.freshairiq.guardian import evaluate_guardian
 from custom_components.freshairiq.opening_state import advertises_three_states, normalize_opening_state
 from custom_components.freshairiq.opening_strategy import synchronize_room_presentation_actions
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -61,8 +62,8 @@ def test_attic_apartment_english_copy_is_top_floor_without_migrating_internal_id
 
 def test_support_upload_uses_dedicated_long_timeout_and_exposes_only_safe_failure_detail():
     const = (COMP / "const.py").read_text()
-    telemetry = (COMP / "telemetry.py").read_text()
-    diagnostics = (COMP / "diagnostics.py").read_text()
+    telemetry = module_source("telemetry")
+    diagnostics = module_source("diagnostics")
     method = telemetry.split('async def async_submit_support_diagnostics', 1)[1].split('async def async_maybe_upload', 1)[0]
     assert 'SUPPORT_DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS = 90' in const
     assert 'ClientTimeout(total=SUPPORT_DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS)' in method

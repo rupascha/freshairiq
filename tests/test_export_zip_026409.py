@@ -8,6 +8,7 @@ import zipfile
 
 from custom_components.freshairiq.export_zip import export_filename, zip_json_document
 from tests.frontend_source import CARD_FILE
+from tests._source import module_source
 
 CARD = CARD_FILE.read_text(encoding="utf-8")
 
@@ -29,7 +30,7 @@ def test_filenames():
 def test_view_and_card_use_the_zip_export():
     from pathlib import Path
 
-    view = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    view = module_source("diagnostics")
     assert 'if str(request.query.get("format", "")).lower() == "zip":' in view
     assert "await hass.async_add_executor_job(zip_json_document, exported, basename)" in view
     assert 'this._hass.callApiRaw("GET", "freshairiq/diagnostics?format=zip")' in CARD

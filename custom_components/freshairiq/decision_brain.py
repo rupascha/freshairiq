@@ -112,6 +112,78 @@ def build_unified_decision(
     headline = str(out.get("title") or "")
     summary = str(out.get("summary") or "")
 
+    (action_line, alternative, comparison, decision_label, headline, summary) = _decision_wording(
+        action_line=action_line, alternative=alternative, comparison=comparison, cross_active=cross_active,
+        kind=kind, names=names, now_long=now_long, now_short=now_short, out=out, plan=plan,
+        plan_selected=plan_selected, selected_rooms=selected_rooms, short_options=short_options,
+        short_selected=short_selected, summary=summary, why=why,
+    )
+
+    # Evening/night strategy becomes the primary story only when there is no
+    # stronger immediate action. Urgent ventilation, close, pollen and sensor
+    # decisions retain precedence and the night strategy remains contextual.
+    ns = night_strategy if isinstance(night_strategy, dict) else {}
+    if ns.get("active") and kind in {"okay", "wait"} and str(out.get("status") or "") != "passive_open_monitor" and ns.get("action") in {"close", "open_selected", "pre_ventilate", "closed_monitor"}:
+        decision_label = str(ns.get("label") or "NACHTSTRATEGIE")
+        headline = str(ns.get("headline") or headline)
+        action_line = str(ns.get("instruction") or action_line)
+        summary = str(ns.get("summary") or summary)
+        why = list(ns.get("reasons") or []) + why
+        confidence = max(confidence, _f(ns.get("confidence")))
+        night_names = [str(x) for x in (ns.get("selected_rooms") or []) if str(x)]
+        if night_names:
+            names = night_names
+        out["night_strategy_primary"] = True
+    elif ns.get("active"):
+        out["night_strategy_primary"] = False
+
+    # Existing engine reasons are still useful, but the new user-facing reasons
+    # lead with concrete physical/learned evidence instead of engine narration.
+    existing = [str(x) for x in (out.get("reasons") or []) if x]
+    why = _unique(why + existing, 5)
+
+    impact = {
+        "moisture_ml": round(_f(out.get("estimated_removed_ml"))),
+        "temperature_c": round(_f(out.get("expected_temperature_change_c")), 2),
+        "cost": round(max(_f(out.get("estimated_reheat_cost")), 0.0), 2),
+        "duration_min": round(_f(out.get("duration_min")), 1) if out.get("duration_min") is not None else None,
+        "confidence": round(min(max(confidence,0.0),100.0)),
+    }
+
+    out.update({
+        "title": headline,
+        "instruction": action_line,
+        "summary": summary,
+        "reasons": why,
+        "decision_brain": {
+            "version": "v1",
+            "decision_label": decision_label,
+            "headline": headline,
+            "action_line": action_line,
+            "summary": summary,
+            "why": why,
+            "impact": impact,
+            "comparison": comparison,
+            "alternative": alternative,
+            "selected_rooms": names,
+            "short_term_options": len(short_options),
+            "long_term_options": len(long_options),
+            "cross_ventilation": bool(cross_active and len(names) >= 2),
+            "night_strategy": ns,
+            "night_strategy_primary": bool(out.get("night_strategy_primary", False)),
+        },
+        "decision_brain_engine": "v1",
+    })
+    return out
+
+
+def _decision_wording(
+    *,
+    action_line: Any, alternative: Any, comparison: Any, cross_active: Any, kind: Any, names: Any,
+    now_long: Any, now_short: Any, out: Any, plan: Any, plan_selected: Any, selected_rooms: Any,
+    short_options: Any, short_selected: Any, summary: Any, why: Any,
+) -> Any:
+    """Headline, instruction, alternative and comparison texts for the final action."""
     if kind == "ventilate" and str(out.get("status")) == "moisture_source_active":
         # 0.26.4.7 (support case): a moisture source (shower, bath, cooking …)
         # is a local event, not "the best ventilation window" for the house.
@@ -250,60 +322,4 @@ def build_unified_decision(
             "Die aktuellen Risiken und das entfernbar berechnete Feuchtepotenzial rechtfertigen derzeit "
             "keine Lüftungsaktion. FreshAirIQ bewertet Wetter und Raumverlauf weiter."
         )
-
-    # Evening/night strategy becomes the primary story only when there is no
-    # stronger immediate action. Urgent ventilation, close, pollen and sensor
-    # decisions retain precedence and the night strategy remains contextual.
-    ns = night_strategy if isinstance(night_strategy, dict) else {}
-    if ns.get("active") and kind in {"okay", "wait"} and str(out.get("status") or "") != "passive_open_monitor" and ns.get("action") in {"close", "open_selected", "pre_ventilate", "closed_monitor"}:
-        decision_label = str(ns.get("label") or "NACHTSTRATEGIE")
-        headline = str(ns.get("headline") or headline)
-        action_line = str(ns.get("instruction") or action_line)
-        summary = str(ns.get("summary") or summary)
-        why = list(ns.get("reasons") or []) + why
-        confidence = max(confidence, _f(ns.get("confidence")))
-        night_names = [str(x) for x in (ns.get("selected_rooms") or []) if str(x)]
-        if night_names:
-            names = night_names
-        out["night_strategy_primary"] = True
-    elif ns.get("active"):
-        out["night_strategy_primary"] = False
-
-    # Existing engine reasons are still useful, but the new user-facing reasons
-    # lead with concrete physical/learned evidence instead of engine narration.
-    existing = [str(x) for x in (out.get("reasons") or []) if x]
-    why = _unique(why + existing, 5)
-
-    impact = {
-        "moisture_ml": round(_f(out.get("estimated_removed_ml"))),
-        "temperature_c": round(_f(out.get("expected_temperature_change_c")), 2),
-        "cost": round(max(_f(out.get("estimated_reheat_cost")), 0.0), 2),
-        "duration_min": round(_f(out.get("duration_min")), 1) if out.get("duration_min") is not None else None,
-        "confidence": round(min(max(confidence,0.0),100.0)),
-    }
-
-    out.update({
-        "title": headline,
-        "instruction": action_line,
-        "summary": summary,
-        "reasons": why,
-        "decision_brain": {
-            "version": "v1",
-            "decision_label": decision_label,
-            "headline": headline,
-            "action_line": action_line,
-            "summary": summary,
-            "why": why,
-            "impact": impact,
-            "comparison": comparison,
-            "alternative": alternative,
-            "selected_rooms": names,
-            "short_term_options": len(short_options),
-            "long_term_options": len(long_options),
-            "cross_ventilation": bool(cross_active and len(names) >= 2),
-            "night_strategy": ns,
-            "night_strategy_primary": bool(out.get("night_strategy_primary", False)),
-        },
-        "decision_brain_engine": "v1",
-    })
-    return out
+    return (action_line, alternative, comparison, decision_label, headline, summary)

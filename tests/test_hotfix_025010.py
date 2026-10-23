@@ -5,9 +5,10 @@ from pathlib import Path
 from custom_components.freshairiq.consolidation import aggregate_close_allowed
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.model import RoomInput, evaluate_room
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8") + (ROOT / "custom_components/freshairiq/house_decision.py").read_text(encoding="utf-8")  # rules moved in 0.26.3.2
+COORD = module_source("coordinator") + (ROOT / "custom_components/freshairiq/house_decision.py").read_text(encoding="utf-8")  # rules moved in 0.26.3.2
 
 
 def _result(*, fresh: int, elapsed: float = 10.0):

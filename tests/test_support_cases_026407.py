@@ -13,6 +13,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 import sys
 import types
+from tests._source import module_source
 
 if "homeassistant" not in sys.modules:  # pragma: no cover - depends on test order
     ha = types.ModuleType("homeassistant")
@@ -450,7 +451,7 @@ def test_small_bathroom_is_no_longer_closed_at_the_minimum_duration_by_an_unreac
 def test_repeat_cooldown_now_also_applies_to_the_room_action():
     from pathlib import Path
 
-    source = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     block = source[source.index("recently_ventilated = minutes_since_vent"):][:1600]
     assert 'cooldown_demoted = bool(recently_ventilated and result.action == "Ventilate" and not is_open and not mem["session_active"])' in block
     assert 'result.action = "Wait"' in block
@@ -477,7 +478,7 @@ def test_review_fixes_are_wired():
     from pathlib import Path
 
     comp = Path(__file__).resolve().parents[1] / "custom_components/freshairiq"
-    coordinator = (comp / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert "result.ventilation_candidate and has_ventilation_contact and not mem[\"session_active\"]" in coordinator
     assert "Empfehlung bleibt trotz leichter Schwankung bestehen" in coordinator
     validation = (comp / "forecast_validation.py").read_text(encoding="utf-8")

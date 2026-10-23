@@ -62,8 +62,9 @@ async def test_room_with_contacts_added_in_options_gets_entities(hass) -> None:
     )
     assert result["step_id"] == "contact_references"
     await hass.async_block_till_done()
-    # no reload while the wizard is still collecting contact details
-    assert not _room_entity_ids(hass, entry, "kuche")
+    # 0.26.5.3 (owner requirement: every saved change works at once): the saved
+    # room has its entities right away, the wizard simply continues
+    assert _room_entity_ids(hass, entry, "kuche")
 
     result = await _submit(hass, result, {"delay_seconds": 10, "orientation": "s"})
     assert result["type"] is FlowResultType.MENU and result["step_id"] == "rooms"

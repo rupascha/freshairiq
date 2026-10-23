@@ -1,9 +1,10 @@
 from pathlib import Path
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = card_text()
-FLOW = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+FLOW = module_source("config_flow")
 
 
 def test_dashboard_contact_reference_pickers_are_searchable_and_filtered():

@@ -7,6 +7,7 @@ import importlib.util
 import json
 import re
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -26,7 +27,7 @@ def _contract_keys() -> set[str]:
 
 def test_every_native_config_flow_option_field_is_bound_to_the_executable_contract():
     expected = _contract_keys()
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     bound = set(re.findall(r'native_option_key\(["\']([^"\']+)["\']\)', flow))
     assert bound == expected
     assert "from .settings_contract import native_option_key" in flow

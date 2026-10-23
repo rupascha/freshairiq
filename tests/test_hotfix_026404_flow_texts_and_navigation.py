@@ -3,9 +3,10 @@ import ast
 import json
 import re
 from pathlib import Path
+from tests._source import module_source
 
 COMP = Path(__file__).resolve().parents[1] / "custom_components/freshairiq"
-FLOW_SRC = (COMP / "config_flow.py").read_text(encoding="utf-8")
+FLOW_SRC = module_source("config_flow")
 FLOW = ast.parse(FLOW_SRC)
 SECTIONS = {"FreshAirIQConfigFlow": ("config",), "FreshAirIQOptionsFlow": ("options",), "FreshAirIQRoomSubentryFlow": ("config_subentries", "room")}
 KNOWN_HELPERS = {"_resident_placeholders": {"resident_slots", *(f"{r}_{i}" for r in ("adult", "child") for i in range(1, 5))}}

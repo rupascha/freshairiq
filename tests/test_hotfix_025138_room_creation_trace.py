@@ -1,10 +1,11 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_025138_trace_is_wired_into_all_room_creation_surfaces():
-    config = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    config = module_source("config_flow")
     settings = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
     assert 'source="native_subentry"' in config
     assert 'stage="subentry_commit_timeout"' in config
@@ -18,7 +19,7 @@ def test_025138_trace_is_wired_into_all_room_creation_surfaces():
 
 def test_025138_trace_privacy_contract_and_export_record_type():
     trace = (ROOT / "custom_components/freshairiq/room_creation_trace.py").read_text(encoding="utf-8")
-    diagnostics = (ROOT / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     assert "parent_room_fingerprints" in trace
     assert "room_subentry_fingerprints" in trace
     assert '"record_type": "room_creation_trace"' in diagnostics

@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 from tests.frontend_source import card_text
+from tests._source import module_source
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_devices_services_passage_option_is_precise_and_bilingual():
@@ -20,7 +21,7 @@ def test_dashboard_passage_option_has_same_hardware_warning_and_english_bridge()
         assert text in ui
 
 def test_passage_logic_and_storage_contract_unchanged():
-    cfg = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
-    coord = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    cfg = module_source("config_flow")
+    coord = module_source("coordinator")
     assert "CONF_CONTACT_PASSAGE_DOORS" in cfg
     assert "proven_three_state" in coord and "active_passage_contacts" in coord and "passage_behavior" in coord

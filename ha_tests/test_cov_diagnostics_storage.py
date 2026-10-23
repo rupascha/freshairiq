@@ -18,6 +18,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from homeassistant.util import dt as dt_util
 
 from custom_components.freshairiq import diagnostics as diag
+from custom_components.freshairiq import diagnostics_export as diag_export
 from custom_components.freshairiq.const import DOMAIN, LEGACY_DOMAIN, STORAGE_KEY
 from custom_components.freshairiq.diagnostics import (
     FreshAirIQDiagnosticsRecorder,
@@ -437,7 +438,7 @@ async def test_export_summarises_records_and_reports_damage(hass, cfg, monkeypat
     assert field_test["observation"]["truncated"] is False
 
     # Record cap and identity storage error.
-    monkeypatch.setattr(diag, "DIAGNOSTICS_MAX_EXPORT_RECORDS", 2)
+    monkeypatch.setattr(diag_export, "DIAGNOSTICS_MAX_EXPORT_RECORDS", 2)
 
     def broken_identity(_now):
         raise PermissionError("ro")
@@ -458,11 +459,11 @@ async def test_export_byte_cap_and_unreadable_day(hass, cfg, monkeypatch) -> Non
         + json.dumps({"timestamp": "2026-10-14T02:00:00", "reason": "y", "record_type": "trend", "pad": "z" * 400}) + "\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr(diag, "DIAGNOSTICS_MAX_EXPORT_BYTES", 300)
+    monkeypatch.setattr(diag_export, "DIAGNOSTICS_MAX_EXPORT_BYTES", 300)
     exported = recorder._export_sync(dt_util.now())
     assert exported["record_count"] == 0
     assert exported["truncated"] is True
-    monkeypatch.setattr(diag, "DIAGNOSTICS_MAX_EXPORT_BYTES", 10_000)
+    monkeypatch.setattr(diag_export, "DIAGNOSTICS_MAX_EXPORT_BYTES", 10_000)
     exported = recorder._export_sync(dt_util.now())
     assert exported["record_count"] == 2
     assert "2026-10-12.jsonl" in exported["read_errors"]

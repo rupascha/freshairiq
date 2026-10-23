@@ -2,6 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from custom_components.freshairiq.opening_state import opening_contact_profile
+from tests._source import module_source
 
 
 class _States:
@@ -36,7 +37,7 @@ def test_replacement_explicit_three_state_contact_is_detected_without_old_capabi
 
 
 def test_coordinator_prunes_all_contact_scoped_runtime_memory_and_quarantines_mid_session_change():
-    text = Path("custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert 'remembered_three_state = remembered_all & configured_contacts' in text
     assert 'if str(k) in configured_contacts' in text
     assert 'session_passage_contacts = [str(x) for x in session_passage_raw if str(x) in configured_contacts]' in text

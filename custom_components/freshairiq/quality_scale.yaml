@@ -53,7 +53,7 @@ rules:
     comment: "FreshAirIQ has no authentication or remote account."
   test-coverage:
     status: todo
-    comment: "Pure logic is measured at 100%. The v1 canonical HA CI gate requires >=99% combined, >=98% for every Python integration module and 100% for config_flow.py; project target is 100%. Real HA runtime measurement must still pass before this can be marked done."
+    comment: "Pure logic is measured at 100%. The v1 canonical HA CI gate requires 100% combined, 100% for every Python integration module and 100% for config_flow.py. Real HA runtime measurement must still pass before this can be marked done."
 
   # Gold
   devices: done

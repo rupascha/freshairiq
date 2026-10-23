@@ -1,9 +1,10 @@
 from pathlib import Path
 import json
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
-FLOW = (COMP / "config_flow.py").read_text(encoding="utf-8")
+FLOW = module_source("config_flow")
 
 
 def test_room_sort_is_all_at_once_and_has_back_path():

@@ -2,10 +2,11 @@ from pathlib import Path
 
 from custom_components.freshairiq.climate_sources import entity_ids
 from custom_components.freshairiq.intervention import build_interventions, executable_intervention
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-FLOW = (ROOT / 'custom_components/freshairiq/config_flow.py').read_text()
-COORD = (ROOT / 'custom_components/freshairiq/coordinator.py').read_text()
+FLOW = module_source("config_flow")
+COORD = module_source("coordinator")
 DE = (ROOT / 'custom_components/freshairiq/translations/de.json').read_text()
 
 

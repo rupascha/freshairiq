@@ -1,7 +1,8 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text()
+COORD = module_source("coordinator")
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
 
 def test_sensor_recovery_guard_has_grace_and_two_valid_cycles():

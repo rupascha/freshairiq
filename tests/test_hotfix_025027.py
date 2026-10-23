@@ -2,6 +2,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 from custom_components.freshairiq.forecast_validation import build_validation_record
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -35,7 +36,7 @@ def test_validation_prefers_time_aligned_objective_outcome_fields():
 
 
 def test_coordinator_has_independent_validation_clock_and_strict_timestamp_gate():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert 'mem["session_validation_started"] = now.isoformat()' in source
     assert 'measurement_frame.get("validation_eligible")' in source
     assert 'session_activity_eligible = bool(session_quality.get("timestamp_gate_passed"))' in source

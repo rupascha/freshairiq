@@ -5,6 +5,7 @@ import ast
 import json
 from pathlib import Path
 import re
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 PKG = ROOT / "custom_components" / "freshairiq"
@@ -26,7 +27,7 @@ def _editable_option_keys() -> set[str]:
 def test_optional_sensor_controls_share_the_integration_settings_store() -> None:
     """VOC/PM2.5/illuminance controls must be global integration options."""
     frontend = (PKG / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
-    flow = (PKG / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     editable = _editable_option_keys()
 
     for key in ("voc_sensor_enabled", "pm25_sensor_enabled", "illuminance_sensor_enabled"):
@@ -42,7 +43,7 @@ def test_optional_sensor_controls_share_the_integration_settings_store() -> None
 def test_dashboard_and_native_editable_option_surfaces_remain_in_parity() -> None:
     """Every ordinary editable option has a dashboard field and native-flow key."""
     frontend = (PKG / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
-    flow = (PKG / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     editable = _editable_option_keys()
     dashboard_fields = set(re.findall(r'_settingsField\(\{[^{}]*?key:\s*"([^"]+)"', frontend))
 
@@ -54,7 +55,7 @@ def test_dashboard_and_native_editable_option_surfaces_remain_in_parity() -> Non
 
 def test_optional_sensor_diagnostics_contract_is_exportable_for_30_days() -> None:
     """Beta diagnostics must retain the new optional sensor signals and state."""
-    diagnostics = (PKG / "diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     assert "from .const import DIAGNOSTICS_SCHEMA_VERSION" in diagnostics
     assert "DIAGNOSTICS_RETENTION_DAYS = 30" in diagnostics
     for prefix in ("voc", "pm25", "illuminance"):
@@ -81,7 +82,7 @@ def test_devices_services_sections_have_icons_and_german_optional_sensor_copy() 
 
 def test_initial_setup_no_longer_forces_room_configuration() -> None:
     """Initial setup creates the integration before any room is required."""
-    flow = (PKG / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     start = flow.index("async def async_step_user")
     end = flow.index("async def async_step_reconfigure", start)
     user_step = flow[start:end]

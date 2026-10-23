@@ -11,12 +11,15 @@ import subprocess
 import pytest
 
 from custom_components.freshairiq.weather_now import minutes_until_rain, weather_now
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 CSS = CARD[CARD.index("const FAIQ_FRESHY_CSS = `"):CARD.index("`;", CARD.index("const FAIQ_FRESHY_CSS = `"))]
-FRESHY = CARD[CARD.index("const FRESHY_MOODS"):CARD.index("class FreshAirIQCard extends HTMLElement")]
-MOODS = json.loads(re.search(r"const FRESHY_MOODS = (\[[^\]]*\]);", CARD).group(1))
+# 0.26.5.3: the drawing lives in its own module, imported by the card with its version
+FRESHY_JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card-freshy.js").read_text(encoding="utf-8")
+FRESHY = FRESHY_JS[FRESHY_JS.index("export const FRESHY_MOODS"):]
+MOODS = json.loads(re.search(r"export const FRESHY_MOODS = (\[[^\]]*\]);", FRESHY_JS).group(1))
 NOW = datetime(2026, 10, 9, 18, 0, tzinfo=timezone.utc)
 
 
@@ -56,8 +59,8 @@ def test_frost_and_heat_thresholds():
 
 
 def test_weather_now_is_published_for_the_dashboard():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
-    sensor = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
+    sensor = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="utf-8") + (ROOT / "custom_components/freshairiq/dashboard_live.py").read_text(encoding="utf-8")  # 0.26.5.3: built by dashboard_live (live channel)
     assert '"weather_now": weather_situation,' in coordinator
     assert '"weather_now": self.coordinator.data.get("weather_now", {}),' in sensor
 
@@ -86,7 +89,7 @@ def test_both_eyes_always_share_one_drawing():
             continue
         assert "freshyEyePair(" in body, name
     # the old happy face mixed a filled eye with an open arc
-    assert 'C 77 58, 99 58, 99 72 C 92 68.5' not in CARD
+    assert 'C 77 58, 99 58, 99 72 C 92 68.5' not in CARD + FRESHY_JS
 
 
 def test_every_loop_is_anchored_and_never_waits_visibly():
@@ -164,3 +167,9 @@ def test_mood_selection_in_the_real_card_code(kind, extra, weather, time_kind, e
     script = f"const o = {{ {method} }};\nprocess.stdout.write(o._freshyMood({json.dumps(st)}, {json.dumps(ctx)}));"
     result = subprocess.run([NODE, "-e", script], capture_output=True, text=True, timeout=30, check=True)
     assert result.stdout == expected
+
+
+def test_the_card_loads_the_freshy_module_with_its_version():
+    assert 'const faiqModule = name => import(new URL(`./${name}?v=${FAIQ_VERSION}`, import.meta.url).href);' in CARD
+    assert 'faiqModule("freshairiq-card-freshy.js")' in CARD and "{ FRESHY_EPOCH, freshyClock, freshySvg }" in CARD
+    assert "function freshySvg(" not in CARD and "export function freshySvg(" in FRESHY_JS

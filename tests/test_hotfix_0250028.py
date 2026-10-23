@@ -1,8 +1,9 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORD = module_source("coordinator")
 
 def test_android_details_scroll_keeps_vertical_touch_chain():
     assert "overflow:hidden}.dialog{" in JS

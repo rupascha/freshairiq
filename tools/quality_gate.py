@@ -85,12 +85,22 @@ def static_gate(policy: dict) -> tuple[dict, list[str]]:
     else:
         failures.append("node executable missing; frontend syntax gate cannot run")
 
+    # Owner request 2026-10-19: files and functions stay small enough to change
+    # safely; existing exceptions may only shrink (quality/maintainability_baseline.json).
+    maintainability = _run(
+        "maintainability: file, function and frontend size",
+        [sys.executable, "tools/maintainability_gate.py"],
+    )
+    if maintainability["returncode"]:
+        failures.append("maintainability gate failed (tools/maintainability_gate.py)")
+
     result = {
         "name": "static-and-version",
         "status": "PASS" if not failures else "FAIL",
         "python_files": py_count,
         "json_files": json_count,
         "node_checks": node_checks,
+        "maintainability": maintainability,
     }
     return result, failures
 

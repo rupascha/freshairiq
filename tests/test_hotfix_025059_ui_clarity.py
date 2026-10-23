@@ -1,4 +1,5 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -16,7 +17,7 @@ def test_night_comparison_is_one_user_facing_comparison():
     assert "kein messbarer Feuchtevorteil" in s
 
 def test_floor_selector_keeps_ids_but_uses_native_translation():
-    s = (COMP / "config_flow.py").read_text()
+    s = module_source("config_flow")
     assert 'options=levels, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True, translation_key="floor"' in s
     de = (COMP / "translations/de.json").read_text()
     assert '"ground_floor": "Erdgeschoss"' in de

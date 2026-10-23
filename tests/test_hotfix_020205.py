@@ -6,6 +6,7 @@ import pytest
 from custom_components.freshairiq.energy import ventilation_cost_for_temperature_path
 from custom_components.freshairiq.forecast import horizon_forecast
 from custom_components.freshairiq.passive_ventilation import evaluate_passive_ventilation
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -60,7 +61,7 @@ def test_passive_requires_stable_multi_sample_trend_and_start_reference():
 
 
 def test_house_mode_is_aggregate_not_presentation_only():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8") + (ROOT / "custom_components/freshairiq/house_decision.py").read_text(encoding="utf-8")  # rules moved in 0.26.3.2
+    coordinator = module_source("coordinator") + (ROOT / "custom_components/freshairiq/house_decision.py").read_text(encoding="utf-8")  # rules moved in 0.26.3.2
     assert 'house_should_close' in coordinator
     assert 'house_next5_removed' in coordinator
     assert '"room_keys"] = active_room_keys' in coordinator

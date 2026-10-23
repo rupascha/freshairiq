@@ -1,13 +1,14 @@
 """Regression contracts for 0.25.0.9 battery-sensor learning hotfix."""
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
 
 
 def test_strict_accuracy_and_adaptive_learning_are_separate_gates():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     start = source.index("prediction_learning_eligible = bool(")
     end = source.index('mem["session_prediction_snapshot_valid"]', start)
     block = source[start:end]
@@ -19,7 +20,7 @@ def test_strict_accuracy_and_adaptive_learning_are_separate_gates():
 
 
 def test_timestamp_activity_gate_supersedes_legacy_held_frame_shortcut():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert 'snapshot_frame_valid = bool(session_activity_eligible)' in source
     assert 'start_learning_valid = session_activity_eligible' in source
     assert 'end_learning_valid = session_activity_eligible' in source
@@ -27,7 +28,7 @@ def test_timestamp_activity_gate_supersedes_legacy_held_frame_shortcut():
 
 
 def test_uncertain_and_stale_are_not_promoted_by_room_only_fallback():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     start = source.index("start_learning_valid =")
     end = source.index('mem["session_prediction_snapshot_valid"]', start)
     block = source[start:end]

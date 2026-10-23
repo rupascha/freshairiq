@@ -5,6 +5,7 @@ import json
 import re
 import symtable
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -53,7 +54,7 @@ def test_no_module_reads_an_undefined_name():
 
 
 def test_single_contact_reference_schema_has_no_wizard_back_flag():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     start = flow.index("def _single_contact_reference_schema(")
     body = flow[start:flow.index("\ndef ", start + 10)]
     assert "include_back" not in body
@@ -61,7 +62,7 @@ def test_single_contact_reference_schema_has_no_wizard_back_flag():
 
 def test_heartbeat_needs_consent_and_reporting_not_off():
     # GitHub #10.
-    text = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    text = module_source("telemetry")
     start = text.index("async def async_activity_heartbeat")
     body = text[start:text.index("    def _health(", start)]
     assert body.index('== "off"') < body.index("/v1/activity")
@@ -89,7 +90,7 @@ def test_diagnostics_buttons_have_a_clean_two_line_layout():
 def test_resident_placeholders_are_never_stored_or_used_as_names():
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     assert 'data-resident-name="${esc(r.name)}"' not in CARD
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert '"name": names[idx] if idx < len(names) else "",' in flow
     assert '"resident_slots": _resident_slot_overview(self._working_options, language),' in flow
     assert "description_placeholders=self._resident_placeholders()" in flow
@@ -99,7 +100,7 @@ def test_resident_placeholders_are_never_stored_or_used_as_names():
 
 
 def test_slot_overview_names_each_numbered_profile():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     src = flow[flow.index("def _resident_name_list("):flow.index("\ndef ", flow.index("def _resident_name_list(") + 5)]
     src += flow[flow.index("def _resident_slot_overview("):flow.index("\ndef ", flow.index("def _resident_slot_overview(") + 5)]
     ns = {"Any": object}

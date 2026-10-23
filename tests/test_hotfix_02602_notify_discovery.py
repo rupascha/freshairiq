@@ -1,8 +1,9 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 NOTIFICATIONS = (ROOT / "custom_components/freshairiq/notifications.py").read_text(encoding="utf-8")
-CONFIG_FLOW = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+CONFIG_FLOW = module_source("config_flow")
 SETTINGS_API = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
 
 def test_backend_discovery_covers_state_registry_and_persisted_targets():

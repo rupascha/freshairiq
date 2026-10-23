@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]; COMP=ROOT/'custom_components/freshairiq'
-FLOW=(COMP/'config_flow.py').read_text(); CARD=(COMP/'frontend/freshairiq-card.js').read_text(); COORD=(COMP/'coordinator.py').read_text()
+FLOW=module_source("config_flow"); CARD=(COMP/'frontend/freshairiq-card.js').read_text(); COORD=module_source("coordinator")
 def test_optional_selectors_use_suggested_value_not_default_so_clear_persists():
     block=FLOW[FLOW.index('def _optional'):FLOW.index('def _time_default')]
     assert 'suggested_value' in block

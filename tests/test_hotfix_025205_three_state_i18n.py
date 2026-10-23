@@ -1,5 +1,6 @@
 from pathlib import Path
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js"
@@ -29,7 +30,7 @@ def test_open_fully_action_uses_existing_language_adapter():
 
 
 def test_all_new_three_state_user_visible_backend_copy_is_covered():
-    coordinator = COORD.read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     card = card_text()
     expected = [
         "Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet",

@@ -2,6 +2,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 from custom_components.freshairiq.passive_ventilation import evaluate_passive_ventilation
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,7 +68,7 @@ def test_passive_ventilation_needs_time_and_signal():
 
 def test_passive_display_is_estimate_and_separate_from_house_balance():
     js = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'PASSIV MITGELÜFTET' in js
     assert '≈ ${m.text}' in js
     assert 'vent-passive' in js

@@ -1,12 +1,13 @@
 """Static release contracts for optional room-climate entities in 0.25.0.7."""
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
 
 
 def test_optional_entity_fields_are_available_in_native_and_dashboard_editors():
-    config = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    config = module_source("config_flow")
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     for key in (
         "CONF_ROOM_VOC", "CONF_ROOM_PM25", "CONF_ROOM_ILLUMINANCE",

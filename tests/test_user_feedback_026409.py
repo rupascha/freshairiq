@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 from types import SimpleNamespace
+from tests._source import module_source
 
 if "homeassistant" not in sys.modules:  # notifications.py only needs the HomeAssistant type
     import types as _types
@@ -77,7 +78,7 @@ def test_short_or_small_share_never_blocks_and_odd_timestamps_are_safe():
 
 
 def test_coordinator_uses_the_time_based_guard():
-    text = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert "cover_guard.tick(mem, cover_learning_guard, now)" in text
     assert "diagnosis = cover_guard.diagnosis(cover_session)" in text
     assert 'if state is not None and str(getattr(state, "state", "")) in {"opening", "closing"}:' in text
@@ -91,7 +92,7 @@ def test_two_contacts_per_window_use_a_template_helper_not_a_native_pairing():
     # contacts are combined by a Home Assistant template helper (guide in the README).
     assert not (COMP / "tilt_pairs.py").exists()
     for name in ("coordinator.py", "config_flow.py", "strings.json", "translations/de.json", "translations/en.json"):
-        text = (COMP / name).read_text(encoding="utf-8")
+        text = module_source(name[:-3]) if name.endswith(".py") else (COMP / name).read_text(encoding="utf-8")
         assert "contact_tilt_sensors" not in text and "tilt_contact" not in text, name
     for name in ("README.md", "README_DE.md", "README_EN.md", "docs/AUTOMATIONEN.md", "docs/AUTOMATIONS.md"):
         text = (ROOT / name).read_text(encoding="utf-8")

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from custom_components.freshairiq.opening_state import stable_state_seconds
+from tests._source import module_source
 
 
 def test_stable_state_age_uses_stable_timestamp_not_new_raw_candidate_time():
@@ -18,7 +19,7 @@ def test_stable_state_age_is_non_negative_and_defensive():
 
 
 def test_coordinator_pairs_debounced_mode_with_persisted_timestamp():
-    source = Path("custom_components/freshairiq/coordinator.py").read_text()
+    source = module_source("coordinator")
     assert 'mem.get("stable_opening_since")' in source
     assert 'mem["stable_opening_since"]' in source
     assert 'contact_since=stable_since' in source
@@ -27,6 +28,6 @@ def test_coordinator_pairs_debounced_mode_with_persisted_timestamp():
 
 
 def test_stable_timestamp_is_pruned_to_current_contacts_and_binary_path_unchanged():
-    source = Path("custom_components/freshairiq/coordinator.py").read_text()
+    source = module_source("coordinator")
     assert 'if str(k) in configured_contacts' in source
     assert 'sec = _open_seconds(hass, entity_id, now)' in source

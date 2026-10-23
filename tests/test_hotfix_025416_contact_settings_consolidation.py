@@ -1,8 +1,9 @@
 from pathlib import Path
 import json
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
-FLOW=(ROOT/'custom_components/freshairiq/config_flow.py').read_text()
+FLOW=module_source("config_flow")
 DE=json.loads((ROOT/'custom_components/freshairiq/translations/de.json').read_text())
 EN=json.loads((ROOT/'custom_components/freshairiq/translations/en.json').read_text())
 

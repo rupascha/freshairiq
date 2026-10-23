@@ -118,6 +118,23 @@ def refine_live_recommendation(
 
     target = baseline_target * (1.0 - learning_weight) + adaptive_target * learning_weight
     target = _clamp(target, min_duration, max_duration)
+    return _coach_close_or_extend(
+        active=active, actual_removed=actual_removed, all_close_decisions_ready=all_close_decisions_ready,
+        baseline_target=baseline_target, confidence=confidence, elapsed=elapsed, expected_now=expected_now,
+        feedback_samples=feedback_samples, learning_weight=learning_weight, max_duration=max_duration,
+        min_duration=min_duration, next5=next5, next5_temp=next5_temp, options=options,
+        progress_ratio=progress_ratio, recommendation=recommendation, target=target,
+    )
+
+
+def _coach_close_or_extend(
+    *,
+    active: Any, actual_removed: Any, all_close_decisions_ready: Any, baseline_target: Any, confidence: Any,
+    elapsed: Any, expected_now: Any, feedback_samples: Any, learning_weight: Any, max_duration: Any,
+    min_duration: Any, next5: Any, next5_temp: Any, options: Any, progress_ratio: Any, recommendation: Any,
+    target: Any,
+) -> Any:
+    """Close/hold/extend decision from the marginal benefit, health and goal priorities."""
 
     # Marginal benefit can shorten a session even when the initial target was
     # longer; conversely a useful next 5 min can justify a limited extension.

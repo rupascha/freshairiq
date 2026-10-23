@@ -14,6 +14,7 @@ from pathlib import Path
 from custom_components.freshairiq.measurement_frame import build_measurement_frame
 from custom_components.freshairiq.model import RoomInput, evaluate_room
 from custom_components.freshairiq.robustness import finite_float, sanitize_runtime_session
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -194,9 +195,9 @@ def test_corrupt_truthy_string_cannot_create_phantom_active_session():
 
 
 def test_production_paths_use_finite_guards_before_weather_and_session_math():
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     weather = (COMP / "weather_future.py").read_text(encoding="utf-8")
-    storage = (COMP / "storage.py").read_text(encoding="utf-8")
+    storage = module_source("storage")
     assert "return finite_float(state.state)" in coordinator
     assert 'temperature = finite_float(state.attributes.get("temperature"))' in coordinator
     assert "persisted_start_temp = finite_float" in coordinator

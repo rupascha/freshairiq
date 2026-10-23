@@ -1,6 +1,7 @@
 from pathlib import Path
 import json, importlib.util
 from datetime import datetime, timezone, timedelta
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 
 def test_forum_instruction_and_visible_error_help_removed():
@@ -9,7 +10,7 @@ def test_forum_instruction_and_visible_error_help_removed():
     assert "${this._supportStatusCard(st)}" not in s
 
 def test_native_notifications_has_test_action():
-    s=(ROOT/"custom_components/freshairiq/config_flow.py").read_text()
+    s=module_source("config_flow")
     assert 'vol.Optional("test_notification_now", default=False): bool' in s
     assert 'submitted.pop("test_notification_now", False)' in s
     assert "_send_targets(" in s

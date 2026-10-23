@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from custom_components.freshairiq.guardian import evaluate_guardian
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -21,7 +22,7 @@ def test_guardian_decision_incident_explains_mismatch_class_without_identity():
 
 
 def test_sensor_quality_diagnostics_export_reason_age_and_recovery_aggregates():
-    source = (COMP / "diagnostics.py").read_text()
+    source = module_source("diagnostics")
     for token in (
         '"issue_reason_counts"', '"issue_age_buckets"',
         '"sensor_recovery_active"', '"sensor_recovery_unavailable_sources"',
@@ -31,7 +32,7 @@ def test_sensor_quality_diagnostics_export_reason_age_and_recovery_aggregates():
 
 
 def test_coordinator_records_phase_specific_runtime_metrics():
-    source = (COMP / "coordinator.py").read_text()
+    source = module_source("coordinator")
     for metric in (
         "coordinator_phase_core_ms", "coordinator_phase_guardian_ms",
         "coordinator_phase_notifications_ms", "coordinator_phase_persistence_ms",

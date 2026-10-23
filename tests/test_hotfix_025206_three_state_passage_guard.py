@@ -1,6 +1,7 @@
 from pathlib import Path
 from custom_components.freshairiq.opening_state import stabilise_explicit_mode
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 def test_open_to_tilt_transient_is_suppressed():
     assert stabilise_explicit_mode("tilted", "open", 0.4) == ("open", True)
@@ -15,10 +16,10 @@ def test_binary_and_closed_are_not_reinterpreted():
 
 def test_passage_door_is_available_in_both_configuration_surfaces_and_diagnostics():
     root=Path(__file__).parents[1]
-    cfg=(root/'custom_components/freshairiq/config_flow.py').read_text()
+    cfg=module_source("config_flow")
     ui=card_text()
-    diag=(root/'custom_components/freshairiq/diagnostics.py').read_text()
-    coord=(root/'custom_components/freshairiq/coordinator.py').read_text()
+    diag=module_source("diagnostics")
+    coord=module_source("coordinator")
     assert 'CONF_CONTACT_PASSAGE_DOORS' in cfg
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     assert 'passage_door' in diag

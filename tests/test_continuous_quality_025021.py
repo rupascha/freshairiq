@@ -54,10 +54,15 @@ def test_ci_enforces_ha_python_frontend_hacs_and_clean_release_matrix():
         "ha-edge-watch:",
     ):
         assert job in workflow
-    assert '["3.13", "3.14"]' in workflow
+    # 2026-10-23: Python 3.13 runs in core-quality (with coverage), 3.14 in the matrix
+    assert '["3.14"]' in workflow and 'python-version: "3.13"' in workflow.split("python-compatibility:")[0]
     assert '>=2026.8,<2026.9' in workflow
     assert '>=2026.9,<2026.10' in workflow
     assert "chromium webkit firefox" in workflow
+    # all browsers everywhere except plain pushes to work branches
+    assert "startsWith(github.ref, 'refs/heads/arbeitsauftrag-')" in workflow
+    assert "--project=chromium --project=android-webview" in workflow
+    assert "cancel-in-progress: true" in workflow
     assert "tools/build_release.py --skip-quality" in workflow
 
 

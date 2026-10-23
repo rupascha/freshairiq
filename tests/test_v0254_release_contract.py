@@ -1,8 +1,9 @@
 from pathlib import Path
 from custom_components.freshairiq.consolidation import aggregate_close_allowed
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8") + (ROOT / "custom_components/freshairiq/house_decision.py").read_text(encoding="utf-8")  # rules moved in 0.26.3.2
+COORD = module_source("coordinator") + (ROOT / "custom_components/freshairiq/house_decision.py").read_text(encoding="utf-8")  # rules moved in 0.26.3.2
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
 

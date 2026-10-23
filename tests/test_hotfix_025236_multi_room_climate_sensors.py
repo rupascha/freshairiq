@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from custom_components.freshairiq.climate_sources import aggregate_states, entity_ids
+from tests._source import module_source
 
 
 class States:
@@ -56,7 +57,7 @@ def test_duplicates_are_removed_without_reordering():
 def test_dashboard_and_native_flow_are_multi_select_but_legacy_storage_is_supported():
     from pathlib import Path
     root = Path(__file__).resolve().parents[1]
-    config = (root / "custom_components/freshairiq/config_flow.py").read_text()
+    config = module_source("config_flow")
     card = (root / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
     assert 'device_class="temperature", multiple=True' in config
     assert 'device_class="humidity", multiple=True' in config

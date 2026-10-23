@@ -2,12 +2,13 @@ from pathlib import Path
 import json
 
 from custom_components.freshairiq.passive_ventilation import learn_passive_exchange
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_contactless_calculated_room_no_longer_requires_opening():
-    flow = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert 'if include and not has_temperature:' in flow
     assert 'if include and not has_humidity:' in flow
     assert 'if include and not contacts:' not in flow
@@ -18,12 +19,12 @@ def test_dashboard_keeps_climate_pair_validation_without_contact_requirement():
     api = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
     # removed: dashboard-side check (dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services)).
-    flow = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert 'errors[CONF_ROOM_CONTACTS] = "ventilation_contact_required"' not in flow
 
 
 def test_contactless_room_uses_separate_passive_model_and_is_not_directly_actionable():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'effective_learning_rate = float(mem["learning_rate"] if has_ventilation_contact else mem.get("passive_learning_rate", 0.03))' in coordinator
     assert 'result.ventilation_candidate = False' in coordinator
     assert 'action = "Ventilate indirectly"' in coordinator
@@ -41,7 +42,7 @@ def test_passive_learning_is_bounded_and_separate():
 
 
 def test_passive_learning_defaults_and_repair_are_persisted():
-    storage = (ROOT / "custom_components/freshairiq/storage.py").read_text(encoding="utf-8")
+    storage = module_source("storage")
     assert '"passive_learning_rate": 0.03' in storage
     assert '"passive_learning_samples": 0' in storage
     assert 'room["passive_learning_rate"] = 0.03 if passive_rate is None' in storage

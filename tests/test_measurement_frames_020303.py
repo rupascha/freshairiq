@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from custom_components.freshairiq.measurement_frame import build_measurement_frame
+from tests._source import module_source
 
 
 class FakeState:
@@ -83,8 +84,8 @@ def test_measurement_frame_held_is_learning_only_and_truly_stale_is_rejected():
     assert stale["learning_eligible"] is False
 
     root = Path(__file__).resolve().parents[1]
-    coordinator = (root / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
-    diagnostics = (root / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
+    diagnostics = module_source("diagnostics")
     assert 'frame_learning_eligible = session_activity_eligible' in coordinator
     # 0.25.0.48: legacy frame classes remain diagnostic context; actual
     # in-session report timestamps are now the mandatory learning/validation gate.

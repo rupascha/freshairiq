@@ -58,6 +58,7 @@ from .feedback_api import FreshAirIQFeedbackView
 from .ventilation_log_api import FreshAirIQVentilationLogView
 from .room_history_api import FreshAirIQRoomHistoryView
 from .frontend_assets import ensure_precompressed
+from .dashboard_live import async_register_dashboard_live, async_track_dashboard
 from .validation import RELATION_OPTION_KEYS, repair_option_relationships
 from .runtime import clear_runtime_coordinator, get_runtime_coordinator, iter_runtime_coordinators, set_runtime_coordinator
 from .intervention import executable_intervention
@@ -243,6 +244,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         hass.http.register_view(FreshAirIQVentilationLogView())
         hass.http.register_view(FreshAirIQRoomHistoryView())
         hass.data[f"{DOMAIN}_settings_view_registered"] = True
+    if not hass.data.get(f"{DOMAIN}_dashboard_live_registered"):
+        async_register_dashboard_live(hass)  # 0.26.5.3: live channel of the dashboard
+        hass.data[f"{DOMAIN}_dashboard_live_registered"] = True
     if not hass.services.has_service(DOMAIN, "execute_intervention"):
         hass.services.async_register(
             DOMAIN,
@@ -544,7 +548,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -
         except Exception:  # noqa: BLE001 - preserve original platform setup error
             _LOGGER.debug("Could not clear FreshAirIQ repair issue after setup failure", exc_info=True)
         raise
+    try:  # 0.26.5.3: live channel of the dashboard
+        entry.async_on_unload(async_track_dashboard(hass, entry))
+    except Exception:  # noqa: BLE001 - an open dashboard then updates after reopening; setup must not fail
+        _LOGGER.debug("Could not connect the FreshAirIQ dashboard live channel", exc_info=True)
+    # 0.26.5.3: every saved change reaches the running integration at once
+    try:
+        _async_follow_entry_updates(hass, entry)
+    except Exception:  # noqa: BLE001 - convenience; the cover control still follows coordinator updates
+        _LOGGER.debug("Could not watch FreshAirIQ configuration updates", exc_info=True)
     return True
+
+
+def _async_follow_entry_updates(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> None:
+    """Apply each saved configuration change to listeners and actuator control live.
+
+    A config-entry update listener is not allowed next to OptionsFlowWithReload,
+    so the generic config-entry change signal is used, like the room watcher.
+    """
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    @callback
+    def _changed(_change: Any, changed_entry: Any) -> None:
+        coordinator = getattr(entry, "runtime_data", None)
+        if getattr(changed_entry, "entry_id", None) == entry.entry_id and coordinator is not None:
+            hass.async_create_task(coordinator.async_sync_runtime_config())
+
+    entry.async_on_unload(async_dispatcher_connect(hass, config_entries.SIGNAL_CONFIG_ENTRY_CHANGED, _changed))
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> bool:

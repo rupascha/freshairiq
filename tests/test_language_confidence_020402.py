@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from custom_components.freshairiq import language_confidence as module
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 MOD = ROOT / "custom_components/freshairiq/language_confidence.py"
@@ -52,7 +53,7 @@ def test_close_action_keeps_action_summary_first():
 
 
 def test_layer_is_after_personal_context_and_before_sync():
-    text = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert text.index("personalise_recommendation(") < text.index("adapt_language_confidence(") < text.index("sync_active_recommendation(")
 
 

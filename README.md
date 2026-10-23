@@ -27,6 +27,12 @@ The FreshAirIQ Community Dashboard card includes **two dashboard views**. In the
 > [!NOTE]
 > **Experimental FreshAirIQ IQ / Freshy dashboard:** This dashboard is still in an experimental phase. Its graphics, animations, layout, and visual presentation may change from version to version while the design is being refined. The **Classic** dashboard remains available as the more established view.
 
+### Colours & theme
+
+By default the card keeps its own dark FreshAirIQ design. With **Colours & theme → Home Assistant theme** in the card editor (YAML: `theme: auto`) it uses background, border, radius, shadow, text and accent colours of your active Home Assistant theme – glass themes with a transparent background included. Coloured hints are adjusted to the theme's text colour so they stay readable on light and dark themes.
+
+For your own styling (theme, card-mod, UIX) the card reads CSS variables such as `--freshairiq-card-background`, `--freshairiq-card-border-radius`, `--freshairiq-text-color`, `--freshairiq-secondary-text-color`, `--freshairiq-overlay-rgb` (tiles and lines, e.g. `255,255,255`), `--freshairiq-accent` and `--freshairiq-color-ventilate`, `-wait`, `-close`, `-ok`, `-alert`. Styles from card-mod and UIX are kept on every refresh.
+
 FreshAirIQ also has its own mascot: **Freshy**. Freshy keeps an eye on your home's climate and makes the current situation easier to understand at a glance. During ventilation Freshy rides the wind, shortly before night Freshy gets ready for bed with a sleeping cap, and at night Freshy sleeps. Other states react to the current situation in your home as well.
 
 <p align="center">

@@ -2,9 +2,10 @@
 from __future__ import annotations
 import json
 from pathlib import Path
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/'custom_components/freshairiq'
-FLOW=(COMP/'config_flow.py').read_text(encoding='utf-8')
+FLOW=module_source("config_flow")
 CARD=(COMP/'frontend/freshairiq-card.js').read_text(encoding='utf-8')
 
 def test_room_subentry_is_add_only_and_quick_setup_offers_manual_or_ha_import():
@@ -20,7 +21,8 @@ def test_room_subentry_is_add_only_and_quick_setup_offers_manual_or_ha_import():
 def test_parent_options_remain_complete_including_residents_and_room_lifecycle():
     for step in ('residents','rooms','add_room','import_ha_rooms','edit_room_select','remove_room','sort_rooms'):
         assert f'async def async_step_{step}' in FLOW
-    assert 'menu_options=["outdoor", "building", "residents", "levels", "rooms", "back_to_main"]' in FLOW
+    # 0.26.5.3: + open connections between rooms without a door
+    assert 'menu_options=["outdoor", "building", "residents", "levels", "rooms", "open_connections", "back_to_main"]' in FLOW
 
 def test_dashboard_has_no_duplicate_integration_settings_entry_point():
     assert 'id="settings-gear"' not in CARD

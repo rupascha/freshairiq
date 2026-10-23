@@ -42,8 +42,10 @@ def test_legacy_translation_happens_before_fragment_is_mounted():
     s = source()
     fn = block(s, "    _replaceRenderedContent(html) {", "    disconnectedCallback()")
     localize = fn.index("this._localizeLegacyFragment(template.content)")
-    append = fn.index("this.shadowRoot.appendChild(template.content)")
-    assert localize < append
+    # 0.26.5.3: mounted into the kept ha-card (or the shadow root) only after translation
+    append = fn.index("this._ownNodes.forEach(node => card.appendChild(node))")
+    insert = fn.index("this.shadowRoot.insertBefore(content, style.nextSibling)")
+    assert localize < insert and localize < append
     assert "_localizeRenderedUi" not in s
 
 

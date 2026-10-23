@@ -6,11 +6,12 @@ diagnostics were switched off. GitHub issue #10 (0.26.4.1) showed users expect
 reporting mode other than "off" (consent gate since 0.26.3.1).
 """
 from pathlib import Path
+from tests._source import module_source
 ROOT = Path(__file__).parents[1]
 
 
 def _heartbeat():
-    text = (ROOT / 'custom_components/freshairiq/telemetry.py').read_text()
+    text = module_source("telemetry")
     start = text.index('async def async_activity_heartbeat')
     return text[start:text.index('    def _health(', start)]
 

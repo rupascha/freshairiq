@@ -12,6 +12,7 @@ from custom_components.freshairiq.robustness import (
     prepare_runtime_rooms,
     safe_options,
 )
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -70,7 +71,7 @@ def test_robustness_monitor_resets_failure_streak_after_success():
 
 
 def test_coordinator_has_fail_closed_update_wrapper_and_initialized_debounce_handle():
-    text = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert "self._refresh_coalesce_unsub = None" in text
     assert "except Exception as exc" in text
     assert "raise UpdateFailed(" in text
@@ -88,7 +89,7 @@ def test_runtime_data_is_the_single_config_entry_runtime_source():
 
 
 def test_storage_hardening_guards_nonfinite_learning_state():
-    text = (COMP / "storage.py").read_text(encoding="utf-8")
+    text = module_source("storage")
     assert "_sanitize_room_learning" in text
     assert "isfinite(number)" in text
     assert 'min(max(rate, 0.002), 0.25)' in text

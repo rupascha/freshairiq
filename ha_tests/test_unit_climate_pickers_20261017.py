@@ -12,6 +12,7 @@ from homeassistant.helpers import config_validation as cv, selector
 
 from custom_components.freshairiq import config_flow as cf
 from custom_components.freshairiq.const import CONF_ROOM_HUMIDITY, CONF_ROOM_TEMPERATURE
+from tests._source import module_source
 
 EXPECTED = {
     "temperature": [{"domain": ["sensor"], "device_class": ["temperature"]},
@@ -55,8 +56,7 @@ def test_room_form_climate_pickers_use_unit_fallback() -> None:
 
 
 def test_no_climate_picker_filters_on_the_device_class_alone() -> None:
-    with open(cf.__file__, encoding="utf-8") as handle:
-        source = handle.read()
+    source = module_source("config_flow")
     assert 'EntitySelectorConfig(domain="sensor", device_class="temperature"' not in source
     assert 'EntitySelectorConfig(domain="sensor", device_class="humidity"' not in source
-    assert source.count("_climate_sensor_selector(device_class=") == 8
+    assert source.count("_climate_sensor_selector(device_class=") == 12  # 0.26.5.3: + exhaust-fan neighbouring-room pair (flat + section)

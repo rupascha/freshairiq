@@ -4,11 +4,12 @@ from pathlib import Path
 from custom_components.freshairiq.measurement_frame import report_timestamp_after_boundary
 from custom_components.freshairiq.ventilation_result import finalise_ventilation_group, new_ventilation_group
 from custom_components.freshairiq.house_strategy import learn_house_outcome
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORDINATOR = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORDINATOR = module_source("coordinator")
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-STORAGE = (ROOT / "custom_components/freshairiq/storage.py").read_text(encoding="utf-8")
+STORAGE = module_source("storage")
 
 
 def _event(start, end, *, key="living", removed=100.0, valid=True):

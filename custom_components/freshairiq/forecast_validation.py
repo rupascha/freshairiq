@@ -307,6 +307,87 @@ def build_validation_record(
     timeline_improved_flags: list[bool] = []
     room_rows: list[dict[str, Any]] = []
 
+    _collect_session_validation(
+        confidences=confidences, cost_errors=cost_errors, duration_errors=duration_errors,
+        room_rows=room_rows, sessions=sessions, temp_errors=temp_errors,
+        timeline_improved_flags=timeline_improved_flags, timeline_latest_errors=timeline_latest_errors,
+        timeline_start_errors=timeline_start_errors,
+    )
+
+    valid = bool(moisture_pairs)
+    invalid_code = None
+    if valid:
+        invalid_reason = None
+    elif sessions:
+        session_rows = [item for item in sessions if isinstance(item, dict)]
+        if any(bool(item.get("prediction_time_aligned")) for item in session_rows):
+            if any(bool(item.get("moisture_source_contaminated")) for item in session_rows):
+                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber wegen erkannter interner Feuchtequelle nicht objektiv bewertbar."
+                invalid_code = "moisture_source_during_session"
+            elif any(
+                item.get("session_timestamp_activity_gate_passed") is False
+                for item in session_rows
+                if bool(item.get("prediction_time_aligned"))
+            ):
+                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber Temperatur und Luftfeuchtigkeit lieferten während der Lüftung nicht beide einen neueren Sensor-Zeitstempel. Die Session bleibt deshalb von Lernen und objektiver Prognosebewertung ausgeschlossen."
+                invalid_code = "no_fresh_sensor_timestamps"
+            else:
+                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber keine Session erfüllte alle objektiven Validierungskriterien."
+                invalid_code = "validation_criteria_not_met"
+        elif any(item.get("prediction_reference") == "session_start_curve_v2" for item in session_rows):
+            invalid_reason = "Eingefrorene Startprognose vorhanden, konnte aber nicht auf dieselbe Messdauer der abgeschlossenen Lüftung ausgewertet werden."
+            invalid_code = "duration_mismatch"
+        else:
+            invalid_reason = "Keine Startprognose mit eingefrorener, verlässlicher Zeitbasis für die abgeschlossene Lüftung vorhanden."
+            invalid_code = "no_frozen_start_forecast"
+    else:
+        invalid_reason = "Keine abgeschlossenen Raum-Sessions vorhanden."
+        invalid_code = "no_completed_room_sessions"
+
+    return {
+        "validation_version": 2,
+        "model_version": str(model_version),
+        "started_at": result.get("started_at"),
+        "ended_at": result.get("ended_at"),
+        "valid": valid,
+        "invalid_reason": invalid_reason,
+        "invalid_code": invalid_code,
+        "session_count": len([item for item in sessions if isinstance(item, dict)]),
+        "comparable_session_count": len(comparable),
+        "comparable_room_count": len({str(item.get("key") or "unknown") for item in comparable}),
+        "predicted_removed_ml": round(predicted_total, 1) if predicted_total is not None else None,
+        "actual_removed_ml": round(actual_total, 1) if actual_total is not None else None,
+        "moisture_error_ml": round(moisture_error, 1) if moisture_error is not None else None,
+        "moisture_abs_error_ml": round(moisture_abs_error, 1) if moisture_abs_error is not None else None,
+        "moisture_relative_error_percent": round(moisture_rel_error, 1) if moisture_rel_error is not None else None,
+        "direction_correct": (
+            _same_direction(predicted_total, actual_total)
+            if predicted_total is not None and actual_total is not None
+            else None
+        ),
+        "temperature_mae_c": round(_mean([abs(value) for value in temp_errors]), 3) if temp_errors else None,
+        "temperature_rmse_c": round(_rmse(temp_errors), 3) if temp_errors else None,
+        "cost_mae": round(_mean([abs(value) for value in cost_errors]), 4) if cost_errors else None,
+        "close_time_mae_min": round(_mean([abs(value) for value in duration_errors]), 2) if duration_errors else None,
+        "forecast_confidence_mean": round(_mean(confidences), 1) if confidences else None,
+        "timeline_start_mae_ml": round(_mean(timeline_start_errors), 1) if timeline_start_errors else None,
+        "timeline_latest_mae_ml": round(_mean(timeline_latest_errors), 1) if timeline_latest_errors else None,
+        "timeline_improvement_percent": (
+            round(sum(timeline_improved_flags) / len(timeline_improved_flags) * 100.0, 1)
+            if timeline_improved_flags else None
+        ),
+        "total_result_removed_ml": result.get("removed_ml"),
+        "total_result_duration_min": result.get("duration_min"),
+        "room_results": room_rows,
+    }
+
+
+def _collect_session_validation(
+    *,
+    confidences: Any, cost_errors: Any, duration_errors: Any, room_rows: Any, sessions: Any, temp_errors: Any,
+    timeline_improved_flags: Any, timeline_latest_errors: Any, timeline_start_errors: Any,
+) -> Any:
+    """Per-session forecast errors, timeline comparison and room rows."""
     for item in sessions:
         if not isinstance(item, dict):
             continue
@@ -425,73 +506,6 @@ def build_validation_record(
             timeline_improved_flags.append(bool(row.get("timeline_improved")))
 
         room_rows.append(row)
-
-    valid = bool(moisture_pairs)
-    invalid_code = None
-    if valid:
-        invalid_reason = None
-    elif sessions:
-        session_rows = [item for item in sessions if isinstance(item, dict)]
-        if any(bool(item.get("prediction_time_aligned")) for item in session_rows):
-            if any(bool(item.get("moisture_source_contaminated")) for item in session_rows):
-                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber wegen erkannter interner Feuchtequelle nicht objektiv bewertbar."
-                invalid_code = "moisture_source_during_session"
-            elif any(
-                item.get("session_timestamp_activity_gate_passed") is False
-                for item in session_rows
-                if bool(item.get("prediction_time_aligned"))
-            ):
-                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber Temperatur und Luftfeuchtigkeit lieferten während der Lüftung nicht beide einen neueren Sensor-Zeitstempel. Die Session bleibt deshalb von Lernen und objektiver Prognosebewertung ausgeschlossen."
-                invalid_code = "no_fresh_sensor_timestamps"
-            else:
-                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber keine Session erfüllte alle objektiven Validierungskriterien."
-                invalid_code = "validation_criteria_not_met"
-        elif any(item.get("prediction_reference") == "session_start_curve_v2" for item in session_rows):
-            invalid_reason = "Eingefrorene Startprognose vorhanden, konnte aber nicht auf dieselbe Messdauer der abgeschlossenen Lüftung ausgewertet werden."
-            invalid_code = "duration_mismatch"
-        else:
-            invalid_reason = "Keine Startprognose mit eingefrorener, verlässlicher Zeitbasis für die abgeschlossene Lüftung vorhanden."
-            invalid_code = "no_frozen_start_forecast"
-    else:
-        invalid_reason = "Keine abgeschlossenen Raum-Sessions vorhanden."
-        invalid_code = "no_completed_room_sessions"
-
-    return {
-        "validation_version": 2,
-        "model_version": str(model_version),
-        "started_at": result.get("started_at"),
-        "ended_at": result.get("ended_at"),
-        "valid": valid,
-        "invalid_reason": invalid_reason,
-        "invalid_code": invalid_code,
-        "session_count": len([item for item in sessions if isinstance(item, dict)]),
-        "comparable_session_count": len(comparable),
-        "comparable_room_count": len({str(item.get("key") or "unknown") for item in comparable}),
-        "predicted_removed_ml": round(predicted_total, 1) if predicted_total is not None else None,
-        "actual_removed_ml": round(actual_total, 1) if actual_total is not None else None,
-        "moisture_error_ml": round(moisture_error, 1) if moisture_error is not None else None,
-        "moisture_abs_error_ml": round(moisture_abs_error, 1) if moisture_abs_error is not None else None,
-        "moisture_relative_error_percent": round(moisture_rel_error, 1) if moisture_rel_error is not None else None,
-        "direction_correct": (
-            _same_direction(predicted_total, actual_total)
-            if predicted_total is not None and actual_total is not None
-            else None
-        ),
-        "temperature_mae_c": round(_mean([abs(value) for value in temp_errors]), 3) if temp_errors else None,
-        "temperature_rmse_c": round(_rmse(temp_errors), 3) if temp_errors else None,
-        "cost_mae": round(_mean([abs(value) for value in cost_errors]), 4) if cost_errors else None,
-        "close_time_mae_min": round(_mean([abs(value) for value in duration_errors]), 2) if duration_errors else None,
-        "forecast_confidence_mean": round(_mean(confidences), 1) if confidences else None,
-        "timeline_start_mae_ml": round(_mean(timeline_start_errors), 1) if timeline_start_errors else None,
-        "timeline_latest_mae_ml": round(_mean(timeline_latest_errors), 1) if timeline_latest_errors else None,
-        "timeline_improvement_percent": (
-            round(sum(timeline_improved_flags) / len(timeline_improved_flags) * 100.0, 1)
-            if timeline_improved_flags else None
-        ),
-        "total_result_removed_ml": result.get("removed_ml"),
-        "total_result_duration_min": result.get("duration_min"),
-        "room_results": room_rows,
-    }
 
 
 def prune_validation_history(

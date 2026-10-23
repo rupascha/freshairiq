@@ -30,12 +30,12 @@ def test_rh_is_explained_in_both_languages():
 
 
 def test_explanation_window_survives_rerender_and_closes_cleanly():
-    assert "        this.shadowRoot.appendChild(template.content);\n        this._syncExplainSheet();" in CARD
+    assert "            this._ownNodes.forEach(node => card.appendChild(node));\n        }\n        this._syncExplainSheet();" in CARD
     assert 'data-explain-close aria-label="${de ? "Schließen" : "Close"}"' in CARD
     assert 'e.key === "Escape" && this._explain' in CARD
     # above the room window (.submodal z-index 10010)
     assert ".explain-backdrop{position:fixed;inset:0;z-index:10050;" in CARD
-    assert "+ FAIQ_FRESHY_CSS + FAIQ_ROOM_VIEW_CSS;" in CARD
+    assert "+ FAIQ_FRESHY_CSS + FAIQ_ROOM_VIEW_CSS)" in CARD
 
 
 def test_room_view_text_is_larger_and_respects_font_scales():

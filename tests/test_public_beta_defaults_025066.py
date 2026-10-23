@@ -2,6 +2,7 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -9,7 +10,7 @@ COMP = ROOT / "custom_components" / "freshairiq"
 
 def test_public_beta_diagnostics_defaults():
     const = (COMP / "const.py").read_text(encoding="utf-8")
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert '"diagnostics_reporting_mode": "daily"' in const
     assert '"diagnostics_include_client_context": True' in const
     assert 'current.get("diagnostics_reporting_mode", "daily")' in flow

@@ -28,7 +28,7 @@ Die Release-Prüfung ist in fünf feste Qualitätsachsen aufgeteilt: **Korrekthe
 ## Test & CI
 - Python-Kompilierung, JSON-Validierung, Frontend-Syntax und Regressionstests bei jedem Commit.
 - **Pure Logic: 100 % Line-Coverage als hartes CI-Gate.** Kein Release bei 99,99 %.
-- **Kanonische reale HA-Coverage für den v1-Kandidaten:** kombiniert mindestens **99 %**, jedes einzelne Python-Integrationsmodul mindestens **98 %**, `config_flow.py` **100 %**. Projektziel bleibt **100 %**, soweit der Pfad sinnvoll testbar ist.
+- **Kanonische reale HA-Coverage für den v1-Kandidaten:** kombiniert **100 %**, jedes einzelne Python-Integrationsmodul **100 %**, `config_flow.py` **100 %** (seit 2026-10-19 hartes Gate, ANALYSIS A-23).
 - Kein Modul darf durch einen unvollständigen Coverage-Report aus dem Nenner verschwinden; fehlende Integrationsmodule gelten als 0 % und lassen das Gate scheitern.
 - Coverage darf nicht durch `# pragma: no cover` oder künstliches Ausblenden fachlich erreichbarer Pfade beschönigt werden. Unerreichbarer Code wird begründet entfernt.
 - Browser-E2E: iPhone/iPad WebView, Android WebView, Chromium und Firefox.

@@ -2,15 +2,15 @@
 from __future__ import annotations
 import ast
 from pathlib import Path
+from tests._source import class_body, module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+SOURCE = module_source("config_flow")
 
 
 def _options_method(name: str) -> ast.AsyncFunctionDef:
-    tree = ast.parse(SOURCE)
-    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "FreshAirIQOptionsFlow")
-    return next(n for n in cls.body if isinstance(n, ast.AsyncFunctionDef) and n.name == name)
+    body = class_body("config_flow", "FreshAirIQOptionsFlow")
+    return next(n for n in body if isinstance(n, ast.AsyncFunctionDef) and n.name == name)
 
 
 def test_room_wizard_defers_structural_reload_until_final_step() -> None:

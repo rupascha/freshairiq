@@ -13,6 +13,7 @@ from custom_components.freshairiq.dashboard_transport import (
 )
 from custom_components.freshairiq.opening_strategy import HOUSE_ALIGNED_STATES, house_aligned_room_actions
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -54,9 +55,9 @@ def test_on_demand_payload_serves_one_or_all_rooms():
 
 
 def test_sensor_view_and_card_use_the_on_demand_path():
-    sensor = (COMP / "sensor.py").read_text(encoding="utf-8")
+    sensor = (COMP / "sensor.py").read_text(encoding="utf-8") + (COMP / "dashboard_live.py").read_text(encoding="utf-8")  # 0.26.5.3: built by dashboard_live (live channel)
     assert '"rooms": slim_rooms(self.coordinator.data["rooms"])' in sensor
-    assert '"freshairiq_room_payload": slim_room(room)' in sensor
+    assert 'payload, self._held_source = hold_source_details(stable_room_payload(room)' in sensor and '"freshairiq_room_payload": payload' in sensor
     assert '"freshairiq_details_api": DETAILS_API' in sensor
     view = (COMP / "room_history_api.py").read_text(encoding="utf-8")
     assert 'url = "/api/freshairiq/room-history/{entry_id}"' in view and "requires_auth = True" in view
@@ -103,13 +104,13 @@ def test_room_recommendation_follows_a_waiting_house():
 
 
 def test_new_sensor_is_translated_and_wired():
-    sensor = (COMP / "sensor.py").read_text(encoding="utf-8")
+    sensor = (COMP / "sensor.py").read_text(encoding="utf-8") + (COMP / "dashboard_live.py").read_text(encoding="utf-8")  # 0.26.5.3: built by dashboard_live (live channel)
     assert '("house_aligned_action", "Recommendation", None, "mdi:home-switch-outline", None, True)' in sensor
     assert 'return value if value in HOUSE_ALIGNED_STATES else "unknown"' in sensor
     for name in ("translations/de.json", "translations/en.json", "strings.json"):
         entity = json.loads((COMP / name).read_text(encoding="utf-8"))["entity"]["sensor"]["house_aligned_action"]
         assert entity["name"] and set(HOUSE_ALIGNED_STATES) | {"unknown"} == set(entity["state"])
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert "house_aligned_room_actions(intelligent_recommendation, results)" in coordinator
     events = (COMP / "automation_events.py").read_text(encoding="utf-8")
     assert '"house_aligned_action": room.get("house_aligned_action")' in events

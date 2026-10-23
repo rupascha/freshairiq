@@ -1,9 +1,10 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = (ROOT / 'custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
-FLOW = (ROOT / 'custom_components/freshairiq/config_flow.py').read_text()
-COORD = (ROOT / 'custom_components/freshairiq/coordinator.py').read_text()
+FLOW = module_source("config_flow")
+COORD = module_source("coordinator")
 CONST = (ROOT / 'custom_components/freshairiq/const.py').read_text()
 
 def test_support_upload_uses_embedded_ui_not_browser_origin_prompt():

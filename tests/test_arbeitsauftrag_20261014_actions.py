@@ -23,6 +23,7 @@ from custom_components.freshairiq.opening_strategy import (
     house_aligned_room_actions,
     synchronize_room_presentation_actions,
 )
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -97,7 +98,7 @@ def test_f01_hysteresis_only_applies_to_the_rooms_it_closed():
 
 
 def test_f01_coordinator_feeds_last_final_recommendation():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert 'previous=getattr(self, "_last_final_recommendation", None)' in source
     assert "self._last_final_recommendation = {" in source
 
@@ -193,7 +194,7 @@ def _produced_actions() -> set[str]:
     found: set[str] = set()
     pattern = re.compile(r'action(?:, reason)?\s*=\s*"([A-Z][A-Za-z ]+)"')
     for name in ("model.py", "coordinator.py"):
-        found |= set(pattern.findall((COMP / name).read_text(encoding="utf-8")))
+        found |= set(pattern.findall(module_source("coordinator") if name == "coordinator.py" else (COMP / name).read_text(encoding="utf-8")))
     return found
 
 

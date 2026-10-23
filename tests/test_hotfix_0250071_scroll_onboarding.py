@@ -1,7 +1,8 @@
 from pathlib import Path
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 JS=(ROOT/"custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
-DIAG=(ROOT/"custom_components/freshairiq/diagnostics.py").read_text()
+DIAG=module_source("diagnostics")
 
 def test_setup_requires_real_room_configuration():
     assert "setup_completed = configured_rooms > 0" in DIAG

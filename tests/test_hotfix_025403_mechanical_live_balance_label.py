@@ -1,11 +1,12 @@
 from pathlib import Path
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_coordinator_exposes_mechanical_exhaust_state_to_room_payload():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert '"mechanical_exhaust_active": mechanical_exhaust_active' in source
     assert '"ventilation_type": mem.get("session_specialist_opening_mode") if mem.get("session_active") else None' in source
 

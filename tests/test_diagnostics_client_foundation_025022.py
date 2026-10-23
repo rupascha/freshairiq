@@ -4,6 +4,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -19,7 +20,7 @@ def test_remote_diagnostics_is_opt_in_and_local_staging_endpoint_is_explicit():
 
 
 def test_coordinator_owns_client_and_starts_and_stops_it_with_runtime():
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert "FreshAirIQDiagnosticsClient" in coordinator
     assert "await self.telemetry.async_start()" in coordinator
     assert "await self.telemetry.async_stop()" in coordinator
@@ -27,7 +28,7 @@ def test_coordinator_owns_client_and_starts_and_stops_it_with_runtime():
 
 
 def test_native_and_dashboard_settings_expose_same_reporting_preferences():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     contract = (COMP / "settings_contract.py").read_text(encoding="utf-8")
     card = (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
@@ -39,13 +40,13 @@ def test_native_and_dashboard_settings_expose_same_reporting_preferences():
 
 
 def test_diagnostics_identity_can_be_reused_without_full_export():
-    diagnostics = (COMP / "diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     assert "async def async_get_identity" in diagnostics
     assert "_load_or_create_field_test_identity" in diagnostics
 
 
 def test_transport_module_is_pure_and_telemetry_module_is_excluded_from_pure_coverage():
-    transport = (COMP / "diagnostic_transport.py").read_text(encoding="utf-8")
+    transport = module_source("diagnostic_transport")
     assert "homeassistant" not in transport
     coverage = (ROOT / ".coveragerc-pure").read_text(encoding="utf-8")
     assert "custom_components/freshairiq/telemetry.py" in coverage

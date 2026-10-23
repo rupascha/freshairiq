@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from custom_components.freshairiq.measurement_frame import trusted_session_end_baseline
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -54,7 +55,7 @@ def test_nonfinite_repeat_baselines_are_rejected() -> None:
 
 
 def test_coordinator_uses_strict_baseline_helper() -> None:
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert "repeat_baseline = trusted_session_end_baseline(" in source
     assert "timestamp_gate_passed=session_activity_eligible" in source
     assert 'mem["last_ventilation_end_humidity"] = (' in source

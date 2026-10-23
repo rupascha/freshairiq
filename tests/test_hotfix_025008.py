@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from custom_components.freshairiq.ventilation_result import finalise_ventilation_group
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -76,7 +77,7 @@ def test_frontend_uses_only_strict_prediction_metrics_for_accuracy_card():
 
 
 def test_forecast_accuracy_remains_strict_after_followup_learning_hotfix():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert 'snapshot_frame_valid = bool(session_activity_eligible)' in source
     assert 'session_activity_eligible\n            and validation_end_ah is not None' in source
 

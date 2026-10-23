@@ -1,4 +1,5 @@
 from pathlib import Path
+from tests._source import module_source
 
 
 def test_room_goal_cards_are_forced_to_one_three_column_row():
@@ -8,7 +9,7 @@ def test_room_goal_cards_are_forced_to_one_three_column_row():
 
 
 def test_options_room_wizard_has_back_contract_without_leaking_to_other_flows():
-    src = Path("custom_components/freshairiq/config_flow.py").read_text()
+    src = module_source("config_flow")
     assert "_goal_priority_schema(room, include_back=True)" in src
     assert "_schema_with_wizard_back(_single_contact_reference_schema(room, contact))" in src
     assert 'if bool(user_input.get("wizard_back")):' in src

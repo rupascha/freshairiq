@@ -66,6 +66,12 @@ class RoomInput:
     # 0.26.5.1: False when the room's temperature goal is switched off – no
     # airing for cooling is started or prolonged.
     cooling_allowed: bool = True
+    # 0.26.5.3 (community: "Fenster schließen" although temperature has
+    # priority 1): the room's comfort target when it has a temperature goal.
+    comfort_target_c: float | None = None
+    # 0.26.5.3 (community: fan stuck at 59 % for half an hour): the humidity did
+    # not fall noticeably during the last 15 minutes of this airing.
+    humidity_plateau: bool = False
 
 
 @dataclass(slots=True)
@@ -105,6 +111,8 @@ class RoomResult:
     moisture_source_label: str = "Feuchtequelle"
     moisture_source_confidence: int = 0
     moisture_source_rate_ml_min: float = 0.0
+    # 0.26.5.3: the open window still cools the room towards its comfort target
+    comfort_cooling_active: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -130,6 +138,8 @@ CLOSE_RELEASE_FACTOR = 1.25
 # that still cools is not ended by the maximum duration; it is ended once the
 # outdoor air is no longer at least this much cooler than a warm room.
 SUMMER_WARMING_MARGIN_C = 0.5
+# 0.26.5.3: cooling towards the comfort target counts until 0.5 K above it.
+COMFORT_COOLING_MARGIN_C = 0.5
 SUMMER_WARMING_CLOSE_REASON = "Outdoor air is no longer cooler than the room; closing keeps the coolness inside"
 
 
@@ -175,6 +185,34 @@ def _learning_status(samples: int) -> str:
     if samples > 0:
         return "Learning"
     return "Base estimate"
+
+
+def _comfort_cooling(room: RoomInput, options: dict[str, Any], cooling_delta: float, moisture_effect_next5: float) -> bool:
+    """0.26.5.3: an open window still cools the room towards its comfort target.
+
+    Only for rooms with a temperature goal: above the target, clearly cooler
+    reference air, not too humid inside – and, outside the summer profile,
+    without bringing in any moisture. The house-wide 24 °C summer threshold
+    knows nothing about a 19 °C bedroom, so it is not used here.
+    """
+    return (
+        room.cooling_allowed
+        and room.comfort_target_c is not None
+        and room.temperature >= float(room.comfort_target_c) + COMFORT_COOLING_MARGIN_C
+        and cooling_delta >= float(options.get("cooling_min_outdoor_delta_c", 2.0))
+        and room.humidity <= float(options.get("cooling_max_indoor_rh", 70.0))
+        and moisture_effect_next5 >= 0.0
+    )
+
+
+def _plateau_close(room: RoomInput, *, keep_open: bool) -> bool:
+    """0.26.5.3: airing has done what it can – the humidity stopped falling.
+
+    A sliding 15-minute window (``humidity_plateau``) instead of a fixed start
+    value. Never while a moisture source or its recovery is running, CO₂ or
+    cooling still need the air, or protection is urgent.
+    """
+    return bool(room.humidity_plateau and not room.moisture_source_active and not room.moisture_source_recovery and not keep_open)
 
 
 def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: bool) -> RoomResult:
@@ -286,8 +324,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     pm25_blocked = _outdoor_pm25_blocked(options, room.outdoor_pm25) and not urgent
     outdoor_blocked = pollen_blocked or pm25_blocked
     min_return = scaled_min_return(options["min_return_next_5_min_ml"], room.volume_m3)
-    max_temp_loss = float(options["max_temp_loss_next_5_min_c"])
-    min_efficiency = float(options["min_efficiency_ml_per_01c"])
+    max_temp_loss, min_efficiency = float(options["max_temp_loss_next_5_min_c"]), float(options["min_efficiency_ml_per_01c"])
     if profile == "dehumidify":
         min_return *= 0.60
         max_temp_loss *= 1.50
@@ -296,9 +333,9 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         # Cooling is the desired thermal effect; do not close merely because
         # temperature falls. Moisture safety still applies.
         min_return *= 0.50
-    cooling_still_useful = (
-        room.cooling_allowed
-        and profile == "summer_cooling"
+    comfort_cooling = running and _comfort_cooling(room, options, cooling_delta, moisture_effect_next5)
+    cooling_still_useful = comfort_cooling or (
+        room.cooling_allowed and profile == "summer_cooling"
         and room.temperature >= float(options.get("cooling_start_temp_c", 24.0))
         and cooling_delta >= float(options.get("cooling_min_outdoor_delta_c", 2.0))
         and moisture_effect_next5 >= -float(options.get("cooling_max_moisture_gain_5min_ml", 60.0))
@@ -310,7 +347,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         and not cooling_still_useful
     )
     thermal_bad = (
-        profile != "summer_cooling"
+        profile != "summer_cooling" and not comfort_cooling
         and dt <= -max_temp_loss
         and efficiency < min_efficiency
         and not urgent
@@ -357,12 +394,13 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     # minutes look small or the room cools down as forecast.
     moisture_ingress = moisture_effect_next5 <= 0.0 or delta <= float(options.get("close_delta", 0.4))
     planned_phase = running and room.session_target_min is not None and mins < float(room.session_target_min)
-    soft_close_allowed = not planned_phase or moisture_ingress
+    plateau_close = _plateau_close(room, keep_open=source_keep_open or co2_high or cooling_still_useful or urgent)
+    soft_close_allowed = not planned_phase or moisture_ingress or plateau_close
     # 0.26.4.10 (community: "Garage schließen", although only the exhaust fan
     # runs): a fan may run for hours on purpose. There is nothing to close, and
     # neither the maximum window duration nor a small return is a reason to stop
     # it – only moisture coming in is ("Lüfter ausschalten").
-    summer_night_cooling = profile == "summer_cooling" and cooling_still_useful
+    summer_night_cooling = (profile == "summer_cooling" and cooling_still_useful) or comfort_cooling
     summer_warming = (
         profile == "summer_cooling"
         and running
@@ -373,7 +411,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         and room.reference_temperature >= room.temperature - SUMMER_WARMING_MARGIN_C
     )
     if room.mechanical_only:
-        should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and moisture_ingress
+        should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and (moisture_ingress or plateau_close)
     else:
         should_close = running and close_decision_ready and not source_keep_open and not room.close_notified and (
             (mins >= float(options["max_duration_min"]) and not summer_night_cooling)
@@ -383,7 +421,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
                 and soft_close_allowed
                 and (
                     moisture_close
-                    or thermal_bad
+                    or thermal_bad or plateau_close
                 )
             )
         )
@@ -408,7 +446,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     elif running:
         if source_keep_open:
             action, reason = "Continue ventilating", f"Active internal moisture source ({room.moisture_source_label}); ventilation is offsetting ongoing moisture generation"
-        elif profile == "summer_cooling" and cooling_still_useful and not candidate:
+        elif (profile == "summer_cooling" or comfort_cooling) and cooling_still_useful and not candidate:
             action, reason = "Continue ventilating", f"Cooling remains useful; outdoor air is {cooling_delta:.1f} °C cooler"
         else:
             action, reason = "Continue ventilating", f"Short-term 5-minute close check expects {round(next5)} ml moisture removal"
@@ -456,7 +494,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         close_recommended=bool(close_signal),
         result_ml=round(result_ml),
         water_in_air_ml=round(ah * room.volume_m3),
-        cooling_candidate=cooling_candidate,
+        cooling_candidate=cooling_candidate, comfort_cooling_active=bool(comfort_cooling and action == "Continue ventilating"),
         moisture_effect_next_5_min_ml=round(moisture_effect_next5),
         ventilation_candidate=candidate,
         fresh_measurements=fresh_measurements,

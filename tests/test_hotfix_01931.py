@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import ast
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -15,7 +16,7 @@ def test_details_uses_compact_last_ventilation_tile_before_full_result():
 
 def test_close_confirmation_is_fixed_three_seconds_and_reopen_keeps_active_session():
     const = (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert "SESSION_CLOSE_CONFIRM_SECONDS = 3.0" in const
     # 0.26.3: the per-room body lives in _async_evaluate_room (one indentation level less).
     assert "if is_open:\n                session_should = True" in coordinator
@@ -26,7 +27,7 @@ def test_close_confirmation_is_fixed_three_seconds_and_reopen_keeps_active_sessi
 def test_close_confirmation_helper_respects_any_and_all_contact_modes():
     # Parse/extract the pure helper so this regression test stays independent of
     # a full Home Assistant runtime.
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     module = ast.parse(source)
     helper = next(node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "_room_closed_for_seconds")
     mini = ast.Module(body=[helper], type_ignores=[])

@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+from tests._source import module_source
 
 
 def _config_flow_tree() -> ast.Module:
     path = Path(__file__).resolve().parents[1] / "custom_components/freshairiq/config_flow.py"
-    return ast.parse(path.read_text(encoding="utf-8"))
+    return ast.parse(module_source("config_flow"))
 
 
 def test_contact_delay_forms_do_not_cast_persisted_values_with_raw_int() -> None:

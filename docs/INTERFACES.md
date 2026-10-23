@@ -11,6 +11,7 @@ Status: **verifiziert** = am Code beider Seiten bzw. per Test geprüft; **offen*
 | **`freshairiq_room_recommendation`** (schema 1, neu 2026-10-16) | feuert bei Änderung von `house_aligned_action`; Felder wie room_action + `recommendation`, `previous_recommendation`, `recommendation_label`, `message` | verifiziert (Unit); Live-HA offen |
 | `freshairiq_house_recommendation`, `freshairiq_mould_risk`, `freshairiq_notification` | siehe `docs/AUTOMATIONEN.md` | unverändert |
 | Blueprints | triggern auf `freshairiq_room_action` | unverändert; neues Event dokumentiert, Blueprint nicht umgestellt |
+| Dashboard-Live-Kanal (0.26.5.3) | Websocket `freshairiq/dashboard/subscribe` (optional `entry_id`) → Ergebnis, dann Ereignisse mit dem Dashboard-Zustand (bis 0.26.5.2 die Attribute des Statussensors, Inhalt unverändert), nur bei Änderung; Abo folgt dem Config-Entry über Reloads; Statussensor: `freshairiq_live_api: dashboard_ws_v1` + Zusammenfassung | verifiziert (HA-Runtime + Browser) |
 
 ## Diagnose-Upload (Integration ↔ Hub)
 | Contract | Detail | Status |
@@ -19,6 +20,7 @@ Status: **verifiziert** = am Code beider Seiten bzw. per Test geprüft; **offen*
 | Retry | exponentiell 5 min…6 h + individueller Versatz ≤ 25 %; `Retry-After` (429/503) als Untergrenze | Client verifiziert; **Hub sendet bei 429 keinen `Retry-After`** (Gegenseite offen) |
 | Pseudonymisierung | Labels nur als ganze Tokens; FAIQ-/HUB-Codes und 0.x-/20xx-Versionen geschützt; IPs/Entities/E-Mails redigiert | verifiziert (Unit) |
 | Feedback-Cooldown (F29) | Hub `/v1/feedback` 429 `detail.retry_after_seconds` ↔ `cooldown.hub_retry_after` | verifiziert (bestehende Tests) |
+| Lüftungsdatensatz (Hub 0.3.3.90) | Hub zieht bei jeder Analyse aus `completed_sessions` je Raum-Lüftung einen Datensatz (Prognose inkl. `learning_effectiveness.forecast_args`, Messung, Vergleich, Kontext aus `rooms`/`house`/`learning.rooms`/`configuration_snapshot`, Verlauf aus den Routine-Records); Export JSON Lines `GET /admin/api/exports/ventilation-dataset`, `GET /v1/read/ventilation-dataset`. Integration unverändert – alle Felder werden schon gesendet | verifiziert (Hub-Tests mit Integration-Feldnamen) |
 
 ## Hub-Quellen (externe Eingänge → To-do)
 | Quelle | Contract | Status |

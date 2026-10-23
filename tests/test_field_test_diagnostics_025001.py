@@ -145,7 +145,7 @@ def test_mixed_timezone_timestamp_history_does_not_break_field_test_export(tmp_p
 
 
 def test_routine_trend_records_keep_home_assistant_version_for_upgrade_history(tmp_path: Path, monkeypatch):
-    import custom_components.freshairiq.diagnostics as diagnostics
+    import custom_components.freshairiq.diagnostics_records as diagnostics
 
     monkeypatch.setattr(diagnostics, "_runtime_environment_snapshot", lambda: {"home_assistant_version": "2026.9.1"})
     recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.25.0.7")

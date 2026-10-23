@@ -1,5 +1,6 @@
 from pathlib import Path
 from custom_components.freshairiq.opening_state import normalize_opening_state
+from tests._source import module_source
 
 
 def test_all_supported_aliases_have_one_canonical_meaning():
@@ -15,7 +16,7 @@ def test_all_supported_aliases_have_one_canonical_meaning():
 
 
 def test_coordinator_uses_central_normalizer_for_close_and_restore_paths():
-    text = Path("custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert 'normalized = normalize_opening_state(state.state)' in text
     assert 'if normalized in {"open", "tilted"}:' in text
     assert 'if normalized != "closed":' in text

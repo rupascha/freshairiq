@@ -1,4 +1,5 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -6,9 +7,9 @@ COMP = ROOT / "custom_components" / "freshairiq"
 
 def test_diagnostics_send_is_explicit_direct_support_upload_with_fallback_contact():
     card = (COMP / "frontend/freshairiq-card.js").read_text()
-    diag = (COMP / "diagnostics.py").read_text()
+    diag = module_source("diagnostics")
     init = (COMP / "__init__.py").read_text()
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     assert 'id="diagnostics-send"' in card
     assert '<b>Diagnosedaten</b><span>an Support senden</span>' in card
     assert 'support@freshairiq.com' in card
@@ -23,7 +24,7 @@ def test_diagnostics_send_is_explicit_direct_support_upload_with_fallback_contac
 
 
 def test_support_upload_cooldown_is_persisted_only_after_success():
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     method = telemetry.split('async def async_submit_support_diagnostics', 1)[1].split('async def async_maybe_upload', 1)[0]
     assert 'support_cooldown_until' in method
     assert 'SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS' in method
@@ -32,7 +33,7 @@ def test_support_upload_cooldown_is_persisted_only_after_success():
 
 
 def test_support_upload_keeps_detailed_export_and_user_message_together():
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     method = telemetry.split('async def async_submit_support_diagnostics', 1)[1].split('async def async_maybe_upload', 1)[0]
     assert 'exported = await self.recorder.async_export()' in method
     assert '"user_message": text' in method

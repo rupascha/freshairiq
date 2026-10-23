@@ -6,7 +6,9 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
+from custom_components.freshairiq import diagnostic_chunks as chunking
 from custom_components.freshairiq import diagnostic_transport as transport
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -54,7 +56,7 @@ def test_release_version_and_private_staging_endpoint_are_fixed():
 
 
 def test_ha_client_offloads_chunk_build_and_compression_from_event_loop():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert "async def _async_cpu_job" in telemetry
     assert 'getattr(self.hass, "async_add_executor_job", None)' in telemetry
     assert "return await asyncio.to_thread(job)" in telemetry
@@ -74,7 +76,7 @@ def test_partitioning_is_linear_in_final_chunk_count(monkeypatch):
         calls += 1
         return original(*args, **kwargs)
 
-    monkeypatch.setattr(transport, "_build_chunk_document", counted)
+    monkeypatch.setattr(chunking, "_build_chunk_document", counted)
     chunks = transport.build_upload_chunks(source, max_chunk_bytes=64 * 1024)
     assert len(chunks) > 1
     # One empty sizing probe plus one build per final chunk. The old quadratic

@@ -11,6 +11,7 @@ It also asserts that no installation contacts the diagnostics hub without consen
 import subprocess
 import sys
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,7 +26,7 @@ def test_coordinator_matches_golden_master_and_stays_offline_without_consent():
 
 
 def test_update_cycle_is_split_into_named_phases():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     for phase in ("_async_evaluate_room", "_apply_passive_ventilation", "_house_recommendation_and_plan",
                   "_async_finalize_cycle"):
         assert f"def {phase}(" in coordinator

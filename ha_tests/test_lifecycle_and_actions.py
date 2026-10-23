@@ -174,6 +174,7 @@ async def test_setup_entry_rolls_back_runtime_after_platform_failure(monkeypatch
     coordinator = SimpleNamespace(
         async_config_entry_first_refresh=AsyncMock(),
         async_start_listeners=AsyncMock(),
+        async_add_listener=Mock(return_value=Mock()),  # 0.26.5.3: cover control always follows updates
         async_stop_listeners=AsyncMock(),
     )
     store = SimpleNamespace(async_load=AsyncMock(), prune_removed_rooms=Mock(return_value=False), async_save=AsyncMock())
@@ -218,6 +219,7 @@ async def test_setup_entry_repairs_failure_does_not_block_platform_setup(monkeyp
     coordinator = SimpleNamespace(
         async_config_entry_first_refresh=AsyncMock(),
         async_start_listeners=AsyncMock(),
+        async_add_listener=Mock(return_value=Mock()),  # 0.26.5.3: cover control always follows updates
     )
     store = SimpleNamespace(async_load=AsyncMock(), prune_removed_rooms=Mock(return_value=False), async_save=AsyncMock())
     entry = SimpleNamespace(entry_id="entry", data={"rooms": []}, options={}, subentries={})

@@ -1,9 +1,10 @@
 from pathlib import Path
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/'custom_components/freshairiq'
 CARD=(COMP/'frontend/freshairiq-card.js').read_text()
 API=(COMP/'feedback_api.py').read_text()
-FLOW=(COMP/'config_flow.py').read_text()
+FLOW=module_source("config_flow")
 
 # test_dashboard_room_order_remains_immediate_tile_controls: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); covered by ha_tests/test_cov_options_flow.py::test_sort_rooms
 

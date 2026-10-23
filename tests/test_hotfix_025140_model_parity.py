@@ -14,6 +14,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.model import RoomInput, evaluate_room
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -70,16 +71,16 @@ def test_water_content_identity_matches_absolute_humidity_times_volume():
         ) <= 1
 
 def test_contactless_routing_only_changes_actionability_not_physical_model_contract():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'indirect_candidate = bool(not has_ventilation_contact and result.ventilation_candidate)' in coordinator
     assert 'result.ventilation_candidate = False' in coordinator
     assert 'action = "Ventilate indirectly"' in coordinator
     assert '"ventilation_path": ("assigned_opening" if has_ventilation_contact else "indirect_unassigned")' in coordinator
 
 def test_direct_and_passive_learning_remain_separate_models():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'mem["learning_rate"] if has_ventilation_contact else mem.get("passive_learning_rate", 0.03)' in coordinator
-    storage = (ROOT / "custom_components/freshairiq/storage.py").read_text(encoding="utf-8")
+    storage = module_source("storage")
     assert '"passive_learning_rate": 0.03' in storage
     assert '"passive_learning_samples": 0' in storage
 

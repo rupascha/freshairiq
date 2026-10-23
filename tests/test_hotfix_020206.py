@@ -3,6 +3,7 @@ from pathlib import Path
 
 from custom_components.freshairiq.intelligence import learn_outcome_feedback
 from custom_components.freshairiq.ventilation_result import finalise_ventilation_group
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,7 +51,7 @@ def test_house_accuracy_uses_only_time_comparable_sessions():
 
 
 def test_house_five_minute_ui_and_explanation_share_signed_net_source():
-    coordinator = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     card = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     assert 'forecast_5_min_net_moisture_change_ml' in coordinator
     assert 'house_next_5_min_moisture_effect_ml' in coordinator

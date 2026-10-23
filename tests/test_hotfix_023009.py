@@ -1,10 +1,11 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
 JS = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
-FLOW = (COMP / "config_flow.py").read_text(encoding="utf-8")
+FLOW = module_source("config_flow")
 CONST = (COMP / "const.py").read_text(encoding="utf-8")
 
 

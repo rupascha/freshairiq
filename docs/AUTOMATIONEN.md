@@ -31,6 +31,8 @@ Ab 0.26.5.1 sind `…_aktion`, `…_empfehlung`, Schimmelrisiko und Lernstatus A
 
 Die Raum-Aktion trägt zusätzlich das komplette Raum-Ergebnis als Attribut `freshairiq_room_payload` (Begründungen, Prognose, Messwerte). In Templates: `{{ state_attr('sensor.bad_aktion', 'freshairiq_room_payload').recommendation_reasons }}`.
 
+Ab 0.26.5.3 enthält das Raum-Ergebnis keine Zähler mehr, die sich bei jedem Rechenlauf ändern, damit der Recorder nur bei echten Änderungen schreibt: statt des Alters der Messwerte (`frame_age_*_s`, `measurement_frame_max_age_s`) stehen die Meldezeiten der Sensoren darin (`frame_temp_reported_at`, `frame_humidity_reported_at`, `frame_reference_temp_reported_at`, `frame_reference_humidity_reported_at`, `measurement_frame_oldest_at`), `last_measurement_at` ist die letzte Meldung der Raumsensoren, statt `humidity_high_duration_min` steht `humidity_high_since` darin, `moisture_source_window_min` entfällt. Solange keine Feuchtequelle aktiv ist (und keine Nachlaufphase läuft), zeigen die Detektorwerte (`moisture_source_rate_ml_min`, `…_ah_rise_g_m3`, `…_observed_change_ml_window`, `…_generated_ml_window`) die Werte der letzten Quelle; das gilt ebenso für die Attribute `rate_ml_min`, `generated_ml`, `source` und `confidence` von `binary_sensor.<raum>_feuchtequelle_aktiv`. Die Sensoren „Nachtprognose“ (50-mL-Schritte), „Feuchtebilanz heute“ (10-mL-Schritte) und „Prognose Temperaturänderung“ (erst ab 0,2 °C Änderung) melden in sinnvollen Schritten; Rechnung, Dashboard und Ereignisse nutzen weiter die vollen Werte. Der Statussensor trägt nur noch eine kurze Zusammenfassung; die Dashboard-Daten bekommen Karte und Panel über den Live-Kanal.
+
 ### Fürs ganze Haus
 
 | Entität | Inhalt |
@@ -48,6 +50,8 @@ Die Raum-Aktion trägt zusätzlich das komplette Raum-Ergebnis als Attribut `fre
 
 FreshAirIQ feuert Ereignisse auf dem Home-Assistant-Event-Bus – nur bei **Änderungen**. Nach einem Neustart wird der aktuelle Zustand still übernommen; alte Ansagen werden nicht wiederholt. Die Texte kommen in der Home-Assistant-Sprache.
 
+**Ab 0.26.5.3: `category` in jedem Ereignis.** `action` = du sollst etwas tun (lüften, schließen, Lüfter an/aus), `status` = nur Information (weiterlüften, warten, beendet), `warning` = Risiko oder Störung (Schimmel steigt, Sensor prüfen). In Node-RED genügt damit ein Filter auf `category`, statt Texte wie „warten“ oder „weiter“ auszusortieren.
+
 ### `freshairiq_room_action` – Raum-Aktion hat sich geändert
 
 Ab 0.26.5.1 bleibt ein einmal gemeldetes „Schließen“ für die laufende Lüftung bestehen, bis die nächsten 5 Minuten die Schließschwelle um mindestens 25 % übertreffen oder das Fenster geschlossen wird. Ein Wechsel „Weiterlüften“ ↔ „Schließen“ im Takt von 30 s kommt dadurch nicht mehr vor.
@@ -57,6 +61,7 @@ Ab 0.26.5.1 bleibt ein einmal gemeldetes „Schließen“ für die laufende Lüf
 | `room_key` | `schlafzimmer` | Interner Raum-Schlüssel (stabil) |
 | `room_name` | `Schlafzimmer` | Dein Raumname |
 | `action` / `previous_action` | `close` / `continue_ventilating` | Gleiche Codes wie `sensor.<raum>_aktion` |
+| `category` | `action` | `action` / `status` / `warning` (ab 0.26.5.3) |
 | `message` | `Schlafzimmer: Bitte Fenster schließen.` | **Fertiger Satz für Alexa/TTS** |
 | `action_label` | `Bitte Fenster schließen` | Nur die Handlung |
 | `reasons` | `["Raumluftfeuchte 64 % …"]` | Bis zu 4 Begründungen |
@@ -72,6 +77,7 @@ Ab 0.26.5.1 bleibt ein einmal gemeldetes „Schließen“ für die laufende Lüf
 | Feld | Beispiel |
 | --- | --- |
 | `kind` / `previous_kind` | `ventilate`, `wait`, `continue`, `close`, `okay`, `prepare`, `pollen_wait` (Außenluft belastet: Pollen und/oder Feinstaub, ab 0.26.4.7), `sensor` |
+| `category` | `action` (`ventilate`, `close`, `start`, `prepare`), `warning` (`sensor`), sonst `status` |
 | `status` | wie `sensor.freshairiq_status` |
 | `title`, `instruction`, `summary` | Texte der Empfehlung |
 | `message` | `Jetzt ist ein guter Zeitpunkt zum Lüften. Wohnzimmer und Bad öffnen` |
@@ -81,6 +87,11 @@ Ab 0.26.5.1 bleibt ein einmal gemeldetes „Schließen“ für die laufende Lüf
 ### `freshairiq_mould_risk` – Schimmelrisiko eines Raums hat sich geändert
 
 Alle Felder von `freshairiq_room_action`, dazu `previous_mould_level` und `rising` (`true` = Risiko steigt). Mit `ventilation_measures_active` kannst du selbst entscheiden, ob eine Warnung während des Duschens sinnvoll ist.
+
+Ab 0.26.5.3:
+- `message` spricht über das Schimmelrisiko („Büro: Schimmelrisiko hoch · Oberflächenfeuchte 82 %.“, beim Sinken „… gesunken auf erhöht …“). Vorher stand hier versehentlich der Aktionssatz des Raums („Büro: Bitte Lüfter ausschalten.“); er bleibt als `action_message` erhalten.
+- `category`: `warning`, wenn das Risiko steigt, sonst `status`.
+- Ein Anstieg wird sofort gemeldet, ein Absinken erst, wenn die niedrigere Stufe 10 Minuten anhält. Pendelt die Oberflächenfeuchte um eine Stufengrenze, kommt also nicht mehr alle 30 Sekunden ein Ereignis. Der Sensor `sensor.<raum>_schimmelrisiko` zeigt weiterhin den aktuellen Wert.
 
 ### `freshairiq_room_recommendation` – wirksame Raum-Empfehlung hat sich geändert (ab 2026-10-16)
 
@@ -98,7 +109,7 @@ Feuert, wenn FreshAirIQ in einem Raum eine innere Feuchtequelle erkennt (`phase:
 | --- | --- | --- | --- |
 | `action` (`sensor.<raum>_aktion`, `freshairiq_room_action`) | Raum-Handlung **nach** Abgleich mit der finalen Hausentscheidung für die dort genannten Räume (Lüften/Weiterlüften/Schließen); die ursprüngliche Raumphysik steht dann im Raum-Payload als `canonical_action` | sofort bei jeder Änderung, kein Cooldown; nach Neustart still übernommen | Geräte im Raum steuern |
 | `house_aligned_action` (`sensor.<raum>_empfehlung`, `freshairiq_room_recommendation`) | wirksame Empfehlung inkl. Haus-Warten (`ventilate_later`) und toleriertem Dauerlüften (`monitor_open`) | sofort bei Änderung, kein Cooldown; nach Neustart still übernommen | Ansagen pro Raum |
-| `freshairiq_house_recommendation` | eine zusammenhängende Empfehlung fürs ganze Haus | bei Änderung von Art/Räumen/Anweisung; nach Neustart still | Ansagen an alle |
+| `freshairiq_house_recommendation` | eine zusammenhängende Empfehlung fürs ganze Haus | bei Änderung von Art/Räumen/Anweisung (ab 0.26.5.3 ohne den laufenden Minuten-Countdown – „noch ca. 18 min“ löst kein neues Ereignis mehr aus); nach Neustart still | Ansagen an alle |
 | `freshairiq_notification` | genau die Push-Texte (Information **und** Handlungsaufforderung, Art in `type`) | höchstens einmal pro Benachrichtigungs-Abstand (Standard 90 min) je Art/Raum | Telegram, Alexa |
 
 Seit 2026-10-16 hält die Hausentscheidung eine bereits ausgegebene Schließempfehlung, solange der gemeinsame 5-Minuten-Ertrag nur knapp um die Schwelle schwankt (Hysterese 125 %); harte Schließgründe (Maximaldauer, Auskühlung) wirken weiterhin sofort.
@@ -110,6 +121,8 @@ Genau die Texte, die FreshAirIQ als Push aufs Handy schicken würde – **auch w
 | Feld | Beispiel | Bedeutung |
 | --- | --- | --- |
 | `type` | `ventilate`, `close`, `cool`, `mould`, `sensor`, `learning`, `complete`, `night`, `house_ventilate`, `house_close`, `house_wait`, `house_continue`, … | Art der Meldung (`house_*` = Empfehlung fürs ganze Haus) |
+| `category` | `action` / `status` / `warning` | ab 0.26.5.3; Statusmeldungen lassen sich unter Benachrichtigungen → „Statusmeldungen ausgeben“ abschalten |
+| `reminder` | `true` | nur bei einer Erinnerung an eine noch offene Aktion (ab 0.26.5.3) |
 | `room_key`, `room_name` | `bad`, `Bad` | Betroffener Raum (bei Haus-Meldungen leer) |
 | `title` | `FreshAirIQ · Bad` | Titel wie beim Push |
 | `message` | `Jetzt lüften. Alternativ den Lüfter einschalten.` | Text wie beim Push |
@@ -117,6 +130,12 @@ Genau die Texte, die FreshAirIQ als Push aufs Handy schicken würde – **auch w
 | `kind`, `room_keys` | `ventilate`, `["bad"]` | nur bei Haus-Meldungen |
 | `night_quiet_hours` | `true` | Ruhezeit laut FreshAirIQ-Einstellung – selbst entscheiden, ob angesagt wird |
 | `created_at` | ISO-Zeit | |
+
+Ab 0.26.5.3:
+- Raum-Meldungen folgen der mit dem Haus abgestimmten Empfehlung: kein „Bitte lüften“, während das Haus bewusst wartet, und kein „Bitte schließen“, solange die Hauslüftung den Raum gemeinsam offen hält.
+- Kein „Bitte schließen“, solange ein offen verbundener Raum noch sinnvoll lüftet (Einstellungen → Zuhause & Räume → Offene Verbindungen).
+- Kein „Lüfter ausschalten“, solange ein anderer Raum denselben Lüfter noch braucht.
+- „Erinnerung an offene Aktion“ (5–60 min, Standard aus) wiederholt eine noch nicht erledigte Aktion mit „Erinnerung:“ davor.
 
 Hat ein Raum einen Ablüfter, enthalten Lüft- und Schimmel-Meldungen den Zusatz „Alternativ den Lüfter einschalten“. Eine laufende Lüftung („Lüftung läuft · weiter beobachten“) wird ab 0.26.4.9 nicht mehr als Push verschickt – sie verlangt nichts vom Nutzer; als Ereignis (`house_continue`) steht sie weiter zur Verfügung.
 

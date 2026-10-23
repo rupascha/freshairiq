@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .runtime import get_runtime_coordinator
+from .ventilation_daily import build_daily_pdf, daily_summary, period_totals, ventilation_csv
 from .ventilation_log import build_ventilation_pdf, filter_ventilation_log
 
 def _language(hass: HomeAssistant) -> str:
@@ -46,12 +47,23 @@ class FreshAirIQVentilationLogView(HomeAssistantView):
         tz = dt_util.DEFAULT_TIME_ZONE
         start = datetime.combine(start_date, time.min, tzinfo=tz)
         end = datetime.combine(end_date, time.max, tzinfo=tz)
+        # 0.26.5.3 (user feedback): one row per day (group=day) and CSV (format=csv)
+        daily = request.query.get("group") == "day"
+        as_csv = request.query.get("format") == "csv"
         try:
             events = filter_ventilation_log(coordinator.store.data.get("ventilation_log", []), start, end)
-            pdf = build_ventilation_pdf(events, start, end, _language(hass))
+            if as_csv:
+                table = ventilation_csv(events, start_date, end_date, tz, language=_language(hass), daily=daily)
+            elif daily:
+                days = daily_summary(events, start_date, end_date, tz, include_empty=False)
+                pdf = build_daily_pdf(days, period_totals(days), start, end, _language(hass))
+            else:
+                pdf = build_ventilation_pdf(events, start, end, _language(hass))
         except Exception as err:  # PDF errors must be screenshot-actionable without exposing private data.
             coordinator.runtime_health.record_exception("ventilation_log", "build_pdf", err, dt_util.now())
             return self.json({"error": _msg(hass, "Lüftungsprotokoll konnte nicht erstellt werden.", "The ventilation log could not be created."), "error_code": "FAIQ-PDF-BUILD-001", "error_type": type(err).__name__}, status_code=500)
-        stem = _msg(hass, "FreshAirIQ-Lueftungsprotokoll", "FreshAirIQ-Ventilation-Log")
-        filename = f"{stem}-{start_date.isoformat()}-{end_date.isoformat()}.pdf"
+        stem = _msg(hass, "FreshAirIQ-Lueftungsprotokoll", "FreshAirIQ-Ventilation-Log") + (_msg(hass, "-pro-Tag", "-per-day") if daily else "")
+        filename = f"{stem}-{start_date.isoformat()}-{end_date.isoformat()}.{'csv' if as_csv else 'pdf'}"
+        if as_csv:
+            return self.json({"filename": filename, "csv": table, "event_count": len(events)})
         return self.json({"filename": filename, "pdf_base64": base64.b64encode(pdf).decode("ascii"), "event_count": len(events)})

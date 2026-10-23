@@ -156,113 +156,11 @@ def floor_ventilation_decision(
     )
 
     if house_ventilation_mode and active:
-        intelligent_recommendation["presentation_scope"] = "house"
-        intelligent_recommendation["presentation_active_rooms"] = len(active)
-        intelligent_recommendation["presentation_total_rooms"] = len(valid)
-
-        # Hotfix 0.20.2.5: house ventilation is a real aggregate decision,
-        # not a presentation wrapper around room-by-room close commands.
-        # The next 5-minute benefit and thermal cost are aggregated across
-        # every actively ventilated room. Individual close requests are
-        # suppressed until the common house endpoint is reached.
-        # Signed NET five-minute effect. Positive means the house loses
-        # moisture, negative means it gains moisture. Previously negative
-        # rooms were discarded here, while the card displayed their signed
-        # contribution; that produced contradictions such as −9 ml in the
-        # tile but "14 ml Entfeuchtung" in the explanation.
-        house_next5_removed = sum(float(r.get("forecast_5_min_net_moisture_change_ml", r.get("forecast_5_min_moisture_effect_ml", 0.0)) or 0.0) for r in active)
-        house_next5_temp_loss = sum(
-            max(-float(r.get("forecast_5_min_temperature_change_c", 0.0)), 0.0) * float(r.get("volume_m3", 0.0))
-            for r in active
-        ) / max(sum(float(r.get("volume_m3", 0.0)) for r in active), 1.0)
-        house_min_return = float(options.get("min_return_next_5_min_ml", 25.0)) * max(len(active) ** 0.5, 1.0) * _mean_volume_factor(active)
-        house_efficiency = 999.0 if house_next5_temp_loss <= 0.05 else house_next5_removed / (house_next5_temp_loss * 10.0)
-        house_thermal_bad = (
-            str(options.get("operating_profile", "comfort")) != "summer_cooling"
-            and house_next5_temp_loss >= float(options.get("max_temp_loss_next_5_min_c", 0.6))
-            and house_efficiency < float(options.get("min_efficiency_ml_per_01c", 8.0))
+        _house_presentation(
+            active=active, cross=cross, forecast_confidence=forecast_confidence, forecast_cost=forecast_cost,
+            intelligent_recommendation=intelligent_recommendation, night_strategy=night_strategy,
+            options=options, valid=valid,
         )
-        house_low_return = house_next5_removed < house_min_return
-        house_close_gate_ready = aggregate_close_gate_ready(active)
-        house_should_close = aggregate_close_allowed(
-            active, low_return=house_low_return, thermal_bad=house_thermal_bad,
-            min_duration_min=float(options.get("min_duration_min", 3.0)),
-            target_min=planned_target_min(active), net_next5_ml=house_next5_removed,
-            close_delta=float(options.get("close_delta", 0.4)),
-        )
-        house_target = planned_target_min(active)
-        house_planned_hold = (not house_should_close and (house_low_return or house_thermal_bad)
-                              and opening_phase_protected(active, house_target))
-        active_room_keys = [str(r.get("key")) for r in active]
-
-        intelligent_recommendation["house_next_5_min_moisture_effect_ml"] = round(house_next5_removed)
-        intelligent_recommendation["house_next_5_min_temperature_loss_c"] = round(house_next5_temp_loss, 2)
-        intelligent_recommendation["house_decision_threshold_ml"] = round(house_min_return)
-        intelligent_recommendation["room_keys"] = active_room_keys
-        active_room_names = [str(r.get("name") or r.get("key")) for r in active]
-        intelligent_recommendation["selected_rooms"] = active_room_names
-        if house_should_close:
-            intelligent_recommendation["kind"] = "close"
-            intelligent_recommendation["status"] = "close_windows"
-            intelligent_recommendation["title"] = "Der sinnvolle Lüftungspunkt ist erreicht"
-            intelligent_recommendation["instruction"] = "Hauslüftung beenden"
-            intelligent_recommendation["summary"] = "Der zusätzliche Gesamtnutzen der Hauslüftung ist gegenüber Feuchteziel und Temperaturverlust nicht mehr ausreichend."
-            intelligent_recommendation["reasons"] = [
-                f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {round(house_next5_removed)} ml Feuchteabbau" if house_next5_removed >= 0 else f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {abs(round(house_next5_removed))} ml Feuchtezunahme",
-                f"Gemeinsamer Schwellwert für diese Hauslüftung: etwa {round(house_min_return)} ml in 5 Minuten",
-                f"Mittlere prognostizierte Abkühlung der aktiven Räume: {house_next5_temp_loss:.1f} °C",
-            ]
-        else:
-            intelligent_recommendation["kind"] = "continue"
-            intelligent_recommendation["status"] = "ventilation_running"
-            intelligent_recommendation["title"] = "Hauslüftung läuft"
-            intelligent_recommendation["instruction"] = "Hausweit weiterlüften"
-            if house_close_gate_ready:
-                intelligent_recommendation["summary"] = "Die Hauslüftung bringt insgesamt noch ausreichend Nutzen. FreshAirIQ bewertet die aktiven Räume gemeinsam und gibt währenddessen keine einzelnen Schließhinweise aus."
-                gate_reason = None
-            else:
-                intelligent_recommendation["summary"] = "Die Schließentscheidung bleibt gesperrt, bis alle aktiven Räume zwei neue Feuchtemeldungen geliefert haben oder die 15-Minuten-Modellfreigabe greift."
-                ready_count = sum(bool(r.get("close_decision_ready", False)) for r in active)
-                gate_reason = f"Schließfreigabe noch nicht vollständig: {ready_count}/{len(active)} aktive Räume freigegeben"
-                if intelligent_recommendation.get("duration_min") in (0, 0.0):
-                    intelligent_recommendation["duration_min"] = None
-            intelligent_recommendation["reasons"] = [
-                *([gate_reason] if gate_reason else []),
-                *([f"Geplante Lüftungsdauer von {round(float(house_target or 0))} min läuft noch – vorher empfiehlt FreshAirIQ das Schließen nur, wenn Feuchte hereinkäme"] if house_planned_hold else []),
-                f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {round(house_next5_removed)} ml Feuchteabbau" if house_next5_removed >= 0 else f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {abs(round(house_next5_removed))} ml Feuchtezunahme",
-                f"Gemeinsamer Schwellwert für diese Hauslüftung: etwa {round(house_min_return)} ml in 5 Minuten",
-                f"Mittlere prognostizierte Abkühlung der aktiven Räume: {house_next5_temp_loss:.1f} °C",
-            ]
-
-        # The frontend deliberately prefers decision_brain over the raw
-        # recommendation fields. Replace the previously room-specific brain
-        # with the aggregate house decision, otherwise stale room chips and
-        # room wording would remain visible despite the correct house logic.
-        intelligent_recommendation["decision_brain"] = {
-            "version": "v1-house",
-            "decision_label": "HAUSLÜFTUNG",
-            "headline": intelligent_recommendation["title"],
-            "action_line": intelligent_recommendation["instruction"],
-            "summary": intelligent_recommendation["summary"],
-            "why": list(intelligent_recommendation.get("reasons") or []),
-            "impact": {
-                "moisture_ml": round(house_next5_removed),
-                "temperature_c": round(-house_next5_temp_loss, 2),
-                "cost": round(float(forecast_cost), 2),
-                "duration_min": intelligent_recommendation.get("duration_min"),
-                "confidence": round(float(forecast_confidence)),
-            },
-            "comparison": {},
-            "alternative": None,
-            "selected_rooms": active_room_names,
-            "presentation_scope": "house",
-            "presentation_floor": None,
-            "short_term_options": 0,
-            "long_term_options": 0,
-            "cross_ventilation": bool(cross),
-            "night_strategy": night_strategy if isinstance(night_strategy, dict) else {},
-            "night_strategy_primary": False,
-        }
     elif floor_ventilation_mode:
         floor_next5_removed = sum(float(r.get("forecast_5_min_net_moisture_change_ml", r.get("forecast_5_min_moisture_effect_ml", 0.0)) or 0.0) for r in floor_active)
         floor_temp_loss = sum(max(-float(r.get("forecast_5_min_temperature_change_c", 0.0)), 0.0) * float(r.get("volume_m3", 0.0)) for r in floor_active) / max(sum(float(r.get("volume_m3", 0.0)) for r in floor_active), 1.0)
@@ -313,6 +211,121 @@ def floor_ventilation_decision(
     else:
         intelligent_recommendation["presentation_scope"] = "rooms"
     return floor_display_name, floor_ventilation_mode
+
+
+def _house_presentation(
+    *,
+    active: Any, cross: Any, forecast_confidence: Any, forecast_cost: Any, intelligent_recommendation: Any,
+    night_strategy: Any, options: Any, valid: Any,
+) -> Any:
+    """Present the active house ventilation as one house action (close gate, planned hold, brain texts)."""
+    intelligent_recommendation["presentation_scope"] = "house"
+    intelligent_recommendation["presentation_active_rooms"] = len(active)
+    intelligent_recommendation["presentation_total_rooms"] = len(valid)
+
+    # Hotfix 0.20.2.5: house ventilation is a real aggregate decision,
+    # not a presentation wrapper around room-by-room close commands.
+    # The next 5-minute benefit and thermal cost are aggregated across
+    # every actively ventilated room. Individual close requests are
+    # suppressed until the common house endpoint is reached.
+    # Signed NET five-minute effect. Positive means the house loses
+    # moisture, negative means it gains moisture. Previously negative
+    # rooms were discarded here, while the card displayed their signed
+    # contribution; that produced contradictions such as −9 ml in the
+    # tile but "14 ml Entfeuchtung" in the explanation.
+    house_next5_removed = sum(float(r.get("forecast_5_min_net_moisture_change_ml", r.get("forecast_5_min_moisture_effect_ml", 0.0)) or 0.0) for r in active)
+    house_next5_temp_loss = sum(
+        max(-float(r.get("forecast_5_min_temperature_change_c", 0.0)), 0.0) * float(r.get("volume_m3", 0.0))
+        for r in active
+    ) / max(sum(float(r.get("volume_m3", 0.0)) for r in active), 1.0)
+    house_min_return = float(options.get("min_return_next_5_min_ml", 25.0)) * max(len(active) ** 0.5, 1.0) * _mean_volume_factor(active)
+    house_efficiency = 999.0 if house_next5_temp_loss <= 0.05 else house_next5_removed / (house_next5_temp_loss * 10.0)
+    house_thermal_bad = (
+        str(options.get("operating_profile", "comfort")) != "summer_cooling"
+        and house_next5_temp_loss >= float(options.get("max_temp_loss_next_5_min_c", 0.6))
+        and house_efficiency < float(options.get("min_efficiency_ml_per_01c", 8.0))
+    )
+    house_low_return = house_next5_removed < house_min_return
+    house_close_gate_ready = aggregate_close_gate_ready(active)
+    house_should_close = aggregate_close_allowed(
+        active, low_return=house_low_return, thermal_bad=house_thermal_bad,
+        min_duration_min=float(options.get("min_duration_min", 3.0)),
+        target_min=planned_target_min(active), net_next5_ml=house_next5_removed,
+        close_delta=float(options.get("close_delta", 0.4)),
+    )
+    house_target = planned_target_min(active)
+    house_planned_hold = (not house_should_close and (house_low_return or house_thermal_bad)
+                          and opening_phase_protected(active, house_target))
+    active_room_keys = [str(r.get("key")) for r in active]
+
+    intelligent_recommendation["house_next_5_min_moisture_effect_ml"] = round(house_next5_removed)
+    intelligent_recommendation["house_next_5_min_temperature_loss_c"] = round(house_next5_temp_loss, 2)
+    intelligent_recommendation["house_decision_threshold_ml"] = round(house_min_return)
+    intelligent_recommendation["room_keys"] = active_room_keys
+    active_room_names = [str(r.get("name") or r.get("key")) for r in active]
+    intelligent_recommendation["selected_rooms"] = active_room_names
+    if house_should_close:
+        intelligent_recommendation["kind"] = "close"
+        intelligent_recommendation["status"] = "close_windows"
+        intelligent_recommendation["title"] = "Der sinnvolle Lüftungspunkt ist erreicht"
+        intelligent_recommendation["instruction"] = "Hauslüftung beenden"
+        intelligent_recommendation["summary"] = "Der zusätzliche Gesamtnutzen der Hauslüftung ist gegenüber Feuchteziel und Temperaturverlust nicht mehr ausreichend."
+        intelligent_recommendation["reasons"] = [
+            f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {round(house_next5_removed)} ml Feuchteabbau" if house_next5_removed >= 0 else f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {abs(round(house_next5_removed))} ml Feuchtezunahme",
+            f"Gemeinsamer Schwellwert für diese Hauslüftung: etwa {round(house_min_return)} ml in 5 Minuten",
+            f"Mittlere prognostizierte Abkühlung der aktiven Räume: {house_next5_temp_loss:.1f} °C",
+        ]
+    else:
+        intelligent_recommendation["kind"] = "continue"
+        intelligent_recommendation["status"] = "ventilation_running"
+        intelligent_recommendation["title"] = "Hauslüftung läuft"
+        intelligent_recommendation["instruction"] = "Hausweit weiterlüften"
+        if house_close_gate_ready:
+            intelligent_recommendation["summary"] = "Die Hauslüftung bringt insgesamt noch ausreichend Nutzen. FreshAirIQ bewertet die aktiven Räume gemeinsam und gibt währenddessen keine einzelnen Schließhinweise aus."
+            gate_reason = None
+        else:
+            intelligent_recommendation["summary"] = "Die Schließentscheidung bleibt gesperrt, bis alle aktiven Räume zwei neue Feuchtemeldungen geliefert haben oder die 15-Minuten-Modellfreigabe greift."
+            ready_count = sum(bool(r.get("close_decision_ready", False)) for r in active)
+            gate_reason = f"Schließfreigabe noch nicht vollständig: {ready_count}/{len(active)} aktive Räume freigegeben"
+            if intelligent_recommendation.get("duration_min") in (0, 0.0):
+                intelligent_recommendation["duration_min"] = None
+        intelligent_recommendation["reasons"] = [
+            *([gate_reason] if gate_reason else []),
+            *([f"Geplante Lüftungsdauer von {round(float(house_target or 0))} min läuft noch – vorher empfiehlt FreshAirIQ das Schließen nur, wenn Feuchte hereinkäme"] if house_planned_hold else []),
+            f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {round(house_next5_removed)} ml Feuchteabbau" if house_next5_removed >= 0 else f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {abs(round(house_next5_removed))} ml Feuchtezunahme",
+            f"Gemeinsamer Schwellwert für diese Hauslüftung: etwa {round(house_min_return)} ml in 5 Minuten",
+            f"Mittlere prognostizierte Abkühlung der aktiven Räume: {house_next5_temp_loss:.1f} °C",
+        ]
+
+    # The frontend deliberately prefers decision_brain over the raw
+    # recommendation fields. Replace the previously room-specific brain
+    # with the aggregate house decision, otherwise stale room chips and
+    # room wording would remain visible despite the correct house logic.
+    intelligent_recommendation["decision_brain"] = {
+        "version": "v1-house",
+        "decision_label": "HAUSLÜFTUNG",
+        "headline": intelligent_recommendation["title"],
+        "action_line": intelligent_recommendation["instruction"],
+        "summary": intelligent_recommendation["summary"],
+        "why": list(intelligent_recommendation.get("reasons") or []),
+        "impact": {
+            "moisture_ml": round(house_next5_removed),
+            "temperature_c": round(-house_next5_temp_loss, 2),
+            "cost": round(float(forecast_cost), 2),
+            "duration_min": intelligent_recommendation.get("duration_min"),
+            "confidence": round(float(forecast_confidence)),
+        },
+        "comparison": {},
+        "alternative": None,
+        "selected_rooms": active_room_names,
+        "presentation_scope": "house",
+        "presentation_floor": None,
+        "short_term_options": 0,
+        "long_term_options": 0,
+        "cross_ventilation": bool(cross),
+        "night_strategy": night_strategy if isinstance(night_strategy, dict) else {},
+        "night_strategy_primary": False,
+    }
 
 def build_night_strategy(
     *,
@@ -388,139 +401,167 @@ def build_night_strategy(
         "hours": round(night_hours, 1),
     }
     if night_strategy_relevant and night_weather_available and night_ah_delta is not None:
-        if night_rain_expected and night_ah_delta > -0.6:
-            night_strategy.update({
-                "action": "close",
-                "label": "NACHT · FENSTER SCHLIESSEN",
-                "headline": "Heute Nacht Fenster geschlossen halten",
-                "instruction": "Alle geöffneten Fenster vor der Nacht schließen" if open_rooms else "Fenster über Nacht geschlossen lassen",
-                "summary": "Die Nachtprognose erwartet Niederschlag und keine ausreichend trockenere Außenluft. Offene Fenster würden den Feuchteschutz daher nicht sinnvoll unterstützen.",
-                "forecast_without_action_ml": night_forecast if open_rooms else night_forecast_closed,
-                "forecast_with_strategy_ml": night_forecast_closed,
-                "strategy_moisture_effect_ml": night_forecast_closed - (night_forecast if open_rooms else night_forecast_closed),
-                "reasons": [
-                    (f"Regenphase beginnt voraussichtlich gegen {rain_start_label} Uhr" if rain_start_label else (f"Niederschlagsrisiko bis {round(night_rain_prob)} %" if night_rain_prob else "Niederschlag wird in der Nacht erwartet")),
-                    f"Nachtluft liegt im Mittel bei {night_avg_ah:.1f} g/m³ absoluter Feuchte",
-                    f"Mit geschlossenen Fenstern werden bis zum Nachtende etwa {night_forecast_closed:+.0f} ml erwartet",
-                ],
-            })
-        elif night_ah_delta <= -0.6 and night_rain_expected:
-            # A rain forecast only justifies pre-ventilation when there is
-            # a real dry window left before precipitation starts. Otherwise
-            # closing is the only actionable, safe statement.
-            dry_before_rain = pre_vent_source_ah is not None and pre_vent_source_ah <= avg_indoor_ah - 0.6
-            enough_time = minutes_until_rain is not None and minutes_until_rain >= prebed_minutes + 5
-            if selected_night and dry_before_rain and enough_time:
-                room_text = " + ".join(selected_night_names)
-                deadline = f" bis spätestens {rain_start_label} Uhr" if rain_start_label else " vor der Regenphase"
-                night_strategy.update({
-                    "action": "pre_ventilate",
-                    "label": "NACHT · VORHER LÜFTEN",
-                    "headline": "Trockene Luft vor dem Regen gezielt nutzen",
-                    "instruction": f"{room_text}{deadline} etwa {prebed_minutes} Minuten stoßlüften und danach schließen",
-                    "summary": "Vor Beginn des Niederschlags bleibt ein ausreichend trockenes Lüftungsfenster. Danach empfiehlt FreshAirIQ wegen des Regens keine unbeaufsichtigte Daueröffnung.",
-                    "forecast_without_action_ml": night_forecast_closed,
-                    "forecast_with_strategy_ml": night_forecast_after_prevent,
-                    "strategy_moisture_effect_ml": round(pre_vent_effect),
-                    "reasons": [
-                        f"Vor der Regenphase ist die Außenluft etwa {abs((pre_vent_source_ah or avg_indoor_ah) - avg_indoor_ah):.1f} g/m³ trockener als die Raumluft",
-                        f"Regenphase beginnt voraussichtlich gegen {rain_start_label} Uhr" if rain_start_label else f"Niederschlagsrisiko bis {round(night_rain_prob)} %",
-                        f"Für das Stoßlüften sind noch etwa {round(minutes_until_rain)} Minuten Zeit" if minutes_until_rain is not None else "Zeitfenster vor dem Regen ist ausreichend",
-                    ],
-                })
-            else:
-                night_strategy.update({
-                    "action": "close",
-                    "label": "NACHT · FENSTER SCHLIESSEN",
-                    "headline": "Regenfenster ist für Vorlüften zu knapp",
-                    "instruction": "Fenster über Nacht geschlossen lassen",
-                    "summary": "Die Nachtluft wäre zeitweise trocken genug, vor dem prognostizierten Regen bleibt aber kein ausreichend belastbares Lüftungsfenster für eine sichere Vorlüftung.",
-                    "forecast_without_action_ml": night_forecast if open_rooms else night_forecast_closed,
-                    "forecast_with_strategy_ml": night_forecast_closed,
-                    "strategy_moisture_effect_ml": night_forecast_closed - (night_forecast if open_rooms else night_forecast_closed),
-                    "reasons": [
-                        f"Regenphase beginnt voraussichtlich gegen {rain_start_label} Uhr" if rain_start_label else f"Niederschlagsrisiko bis {round(night_rain_prob)} %",
-                        f"Benötigtes Stoßlüftungsfenster etwa {prebed_minutes} Minuten plus Sicherheitsreserve",
-                        "FreshAirIQ empfiehlt keine Nachtöffnung ohne ausreichendes trockenes Zeitfenster",
-                    ],
-                })
-        elif night_ah_delta <= -0.6 and thermal_ok and selected_night:
+        _night_strategy_choice(
+            avg_indoor_ah=avg_indoor_ah, max_night_temp_loss_c=max_night_temp_loss_c,
+            minutes_until_rain=minutes_until_rain, night_ah_delta=night_ah_delta, night_avg_ah=night_avg_ah,
+            night_energy_cost=night_energy_cost, night_energy_kwh=night_energy_kwh,
+            night_forecast=night_forecast, night_forecast_after_prevent=night_forecast_after_prevent,
+            night_forecast_closed=night_forecast_closed,
+            night_forecast_with_selected=night_forecast_with_selected, night_max_rh=night_max_rh,
+            night_min_temp=night_min_temp, night_rain_expected=night_rain_expected,
+            night_rain_prob=night_rain_prob, night_strategy=night_strategy,
+            night_temperature_change_c=night_temperature_change_c, open_rooms=open_rooms,
+            pre_vent_effect=pre_vent_effect, pre_vent_source_ah=pre_vent_source_ah,
+            prebed_minutes=prebed_minutes, rain_start_label=rain_start_label, selected_night=selected_night,
+            selected_night_names=selected_night_names, selected_weather_effect=selected_weather_effect,
+            thermal_ok=thermal_ok,
+        )
+    return night_strategy
+
+
+def _night_strategy_choice(
+    *,
+    avg_indoor_ah: Any, max_night_temp_loss_c: Any, minutes_until_rain: Any, night_ah_delta: Any,
+    night_avg_ah: Any, night_energy_cost: Any, night_energy_kwh: Any, night_forecast: Any,
+    night_forecast_after_prevent: Any, night_forecast_closed: Any, night_forecast_with_selected: Any,
+    night_max_rh: Any, night_min_temp: Any, night_rain_expected: Any, night_rain_prob: Any,
+    night_strategy: Any, night_temperature_change_c: Any, open_rooms: Any, pre_vent_effect: Any,
+    pre_vent_source_ah: Any, prebed_minutes: Any, rain_start_label: Any, selected_night: Any,
+    selected_night_names: Any, selected_weather_effect: Any, thermal_ok: Any,
+) -> Any:
+    """Choose the night action from rain, outdoor moisture, thermal impact and the selected rooms."""
+    if night_rain_expected and night_ah_delta > -0.6:
+        night_strategy.update({
+            "action": "close",
+            "label": "NACHT · FENSTER SCHLIESSEN",
+            "headline": "Heute Nacht Fenster geschlossen halten",
+            "instruction": "Alle geöffneten Fenster vor der Nacht schließen" if open_rooms else "Fenster über Nacht geschlossen lassen",
+            "summary": "Die Nachtprognose erwartet Niederschlag und keine ausreichend trockenere Außenluft. Offene Fenster würden den Feuchteschutz daher nicht sinnvoll unterstützen.",
+            "forecast_without_action_ml": night_forecast if open_rooms else night_forecast_closed,
+            "forecast_with_strategy_ml": night_forecast_closed,
+            "strategy_moisture_effect_ml": night_forecast_closed - (night_forecast if open_rooms else night_forecast_closed),
+            "reasons": [
+                (f"Regenphase beginnt voraussichtlich gegen {rain_start_label} Uhr" if rain_start_label else (f"Niederschlagsrisiko bis {round(night_rain_prob)} %" if night_rain_prob else "Niederschlag wird in der Nacht erwartet")),
+                f"Nachtluft liegt im Mittel bei {night_avg_ah:.1f} g/m³ absoluter Feuchte",
+                f"Mit geschlossenen Fenstern werden bis zum Nachtende etwa {night_forecast_closed:+.0f} ml erwartet",
+            ],
+        })
+    elif night_ah_delta <= -0.6 and night_rain_expected:
+        # A rain forecast only justifies pre-ventilation when there is
+        # a real dry window left before precipitation starts. Otherwise
+        # closing is the only actionable, safe statement.
+        dry_before_rain = pre_vent_source_ah is not None and pre_vent_source_ah <= avg_indoor_ah - 0.6
+        enough_time = minutes_until_rain is not None and minutes_until_rain >= prebed_minutes + 5
+        if selected_night and dry_before_rain and enough_time:
             room_text = " + ".join(selected_night_names)
-            night_strategy.update({
-                "action": "open_selected",
-                "label": "NACHT · KONTROLLIERT LÜFTEN",
-                "headline": "Die Nacht eignet sich für kontrollierte Nachtlüftung",
-                "instruction": f"{room_text} über Nacht nur teilweise geöffnet lassen",
-                "summary": "Die prognostizierte Nachtluft bleibt deutlich trockener und das thermische Modell erwartet für genau diese ausgewählten Räume nur eine begrenzte Abkühlung.",
-                "forecast_without_action_ml": night_forecast_closed,
-                "forecast_with_strategy_ml": night_forecast_with_selected,
-                "strategy_moisture_effect_ml": round(selected_weather_effect),
-                "reasons": [
-                    f"Nachtluft ist im Mittel etwa {abs(night_ah_delta):.1f} g/m³ trockener als die Raumluft",
-                    f"Ausgewählt: {room_text}; erwartete mittlere Abkühlung etwa {abs(night_temperature_change_c or 0):.1f} °C (Grenze {max_night_temp_loss_c:.1f} °C)",
-                    f"Geschätzter Wiederaufheizbedarf etwa {night_energy_kwh:.2f} kWh / {night_energy_cost:.2f} €",
-                    f"Fenster zu: {night_forecast_closed:+.0f} ml · mit Strategie: {float(night_forecast_with_selected or 0):+.0f} ml",
-                ],
-            })
-        elif night_ah_delta <= -0.6 and selected_night and not thermal_ok:
-            room_text = " + ".join(selected_night_names)
+            deadline = f" bis spätestens {rain_start_label} Uhr" if rain_start_label else " vor der Regenphase"
             night_strategy.update({
                 "action": "pre_ventilate",
                 "label": "NACHT · VORHER LÜFTEN",
-                "headline": "Trockene Nachtluft nutzen, aber nicht dauerhaft",
-                "instruction": f"Vor dem Schlafengehen {room_text} etwa {prebed_minutes} Minuten stoßlüften und danach schließen",
-                "summary": "Die Nachtluft wäre für den Feuchteabbau geeignet, eine dauerhafte Öffnung würde die ausgewählten Räume laut thermischem Modell jedoch zu stark abkühlen.",
+                "headline": "Trockene Luft vor dem Regen gezielt nutzen",
+                "instruction": f"{room_text}{deadline} etwa {prebed_minutes} Minuten stoßlüften und danach schließen",
+                "summary": "Vor Beginn des Niederschlags bleibt ein ausreichend trockenes Lüftungsfenster. Danach empfiehlt FreshAirIQ wegen des Regens keine unbeaufsichtigte Daueröffnung.",
                 "forecast_without_action_ml": night_forecast_closed,
                 "forecast_with_strategy_ml": night_forecast_after_prevent,
-                "strategy_moisture_effect_ml": round(pre_vent_effect) if pre_vent_effect < -1 else None,
+                "strategy_moisture_effect_ml": round(pre_vent_effect),
                 "reasons": [
-                    f"Nachtluft ist im Mittel etwa {abs(night_ah_delta):.1f} g/m³ trockener als die Raumluft",
-                    f"Dauerlüftung in {room_text} würde dort im Mittel etwa {abs(night_temperature_change_c or 0):.1f} °C Abkühlung verursachen",
-                    f"FreshAirIQ akzeptiert höchstens etwa {max_night_temp_loss_c:.1f} °C prognostizierten Verlust",
-                    f"Tiefste Außentemperatur etwa {night_min_temp:.1f} °C" if night_min_temp is not None else "Die Temperaturprognose wird weiter bewertet",
-                ],
-            })
-        elif night_ah_delta <= -0.6 and not selected_night:
-            night_strategy.update({
-                "action": "closed_monitor",
-                "label": "NACHT · BEOBACHTEN",
-                "headline": "Trockene Nachtluft erkannt, aber kein Fenster sicher auswählbar",
-                "instruction": "Fenster zunächst geschlossen lassen",
-                "summary": "Die Außenluft wäre günstig, FreshAirIQ hat jedoch keinen berechenbaren Raum mit konfiguriertem Lüftungskontakt gefunden. Deshalb wird keine pauschale Nachtöffnung empfohlen.",
-                "reasons": [
-                    f"Nachtluft ist im Mittel etwa {abs(night_ah_delta):.1f} g/m³ trockener als die Raumluft",
-                    "Für kontrollierte Nachtlüftung muss mindestens ein geeigneter Raum mit Fenster-/Türkontakt eindeutig auswählbar sein",
-                ],
-            })
-        elif night_ah_delta >= 0.4:
-            night_strategy.update({
-                "action": "close",
-                "label": "NACHT · FENSTER SCHLIESSEN",
-                "headline": "Feuchte Nachtluft besser draußen lassen",
-                "instruction": "Fenster über Nacht geschlossen lassen",
-                "summary": "Die prognostizierte Außenluft ist feuchter als die aktuelle Raumluft. Dauerhaft offene Fenster würden voraussichtlich zusätzliche Feuchtigkeit eintragen.",
-                "forecast_without_action_ml": night_forecast if open_rooms else night_forecast_closed,
-                "forecast_with_strategy_ml": night_forecast_closed,
-                "strategy_moisture_effect_ml": night_forecast_closed - (night_forecast if open_rooms else night_forecast_closed),
-                "reasons": [
-                    f"Nachtluft ist im Mittel etwa {night_ah_delta:.1f} g/m³ feuchter als die Raumluft",
-                    f"Maximale prognostizierte relative Außenfeuchte etwa {round(night_max_rh or 0)} %",
-                    f"Mit geschlossenen Fenstern werden bis zum Nachtende etwa {night_forecast_closed:+.0f} ml erwartet",
+                    f"Vor der Regenphase ist die Außenluft etwa {abs((pre_vent_source_ah or avg_indoor_ah) - avg_indoor_ah):.1f} g/m³ trockener als die Raumluft",
+                    f"Regenphase beginnt voraussichtlich gegen {rain_start_label} Uhr" if rain_start_label else f"Niederschlagsrisiko bis {round(night_rain_prob)} %",
+                    f"Für das Stoßlüften sind noch etwa {round(minutes_until_rain)} Minuten Zeit" if minutes_until_rain is not None else "Zeitfenster vor dem Regen ist ausreichend",
                 ],
             })
         else:
             night_strategy.update({
-                "action": "closed_monitor",
-                "label": "NACHT · BEOBACHTEN",
-                "headline": "Für die Nacht ist kein Dauerlüften nötig",
-                "instruction": "Fenster zunächst geschlossen lassen",
-                "summary": "Außenfeuchte und Temperatur ergeben aktuell keinen klaren Vorteil für dauerhaft geöffnete Fenster. FreshAirIQ bewertet die Nacht weiter neu.",
-                "forecast_without_action_ml": night_forecast_closed,
+                "action": "close",
+                "label": "NACHT · FENSTER SCHLIESSEN",
+                "headline": "Regenfenster ist für Vorlüften zu knapp",
+                "instruction": "Fenster über Nacht geschlossen lassen",
+                "summary": "Die Nachtluft wäre zeitweise trocken genug, vor dem prognostizierten Regen bleibt aber kein ausreichend belastbares Lüftungsfenster für eine sichere Vorlüftung.",
+                "forecast_without_action_ml": night_forecast if open_rooms else night_forecast_closed,
                 "forecast_with_strategy_ml": night_forecast_closed,
-                "strategy_moisture_effect_ml": 0,
+                "strategy_moisture_effect_ml": night_forecast_closed - (night_forecast if open_rooms else night_forecast_closed),
                 "reasons": [
-                    f"Differenz Außen-/Innenfeuchte nachts nur {night_ah_delta:+.1f} g/m³",
-                    f"Tiefste prognostizierte Außentemperatur etwa {night_min_temp:.1f} °C" if night_min_temp is not None else "Temperaturprognose wird weiter beobachtet",
+                    f"Regenphase beginnt voraussichtlich gegen {rain_start_label} Uhr" if rain_start_label else f"Niederschlagsrisiko bis {round(night_rain_prob)} %",
+                    f"Benötigtes Stoßlüftungsfenster etwa {prebed_minutes} Minuten plus Sicherheitsreserve",
+                    "FreshAirIQ empfiehlt keine Nachtöffnung ohne ausreichendes trockenes Zeitfenster",
                 ],
             })
-    return night_strategy
+    elif night_ah_delta <= -0.6 and thermal_ok and selected_night:
+        room_text = " + ".join(selected_night_names)
+        night_strategy.update({
+            "action": "open_selected",
+            "label": "NACHT · KONTROLLIERT LÜFTEN",
+            "headline": "Die Nacht eignet sich für kontrollierte Nachtlüftung",
+            "instruction": f"{room_text} über Nacht nur teilweise geöffnet lassen",
+            "summary": "Die prognostizierte Nachtluft bleibt deutlich trockener und das thermische Modell erwartet für genau diese ausgewählten Räume nur eine begrenzte Abkühlung.",
+            "forecast_without_action_ml": night_forecast_closed,
+            "forecast_with_strategy_ml": night_forecast_with_selected,
+            "strategy_moisture_effect_ml": round(selected_weather_effect),
+            "reasons": [
+                f"Nachtluft ist im Mittel etwa {abs(night_ah_delta):.1f} g/m³ trockener als die Raumluft",
+                f"Ausgewählt: {room_text}; erwartete mittlere Abkühlung etwa {abs(night_temperature_change_c or 0):.1f} °C (Grenze {max_night_temp_loss_c:.1f} °C)",
+                f"Geschätzter Wiederaufheizbedarf etwa {night_energy_kwh:.2f} kWh / {night_energy_cost:.2f} €",
+                f"Fenster zu: {night_forecast_closed:+.0f} ml · mit Strategie: {float(night_forecast_with_selected or 0):+.0f} ml",
+            ],
+        })
+    elif night_ah_delta <= -0.6 and selected_night and not thermal_ok:
+        room_text = " + ".join(selected_night_names)
+        night_strategy.update({
+            "action": "pre_ventilate",
+            "label": "NACHT · VORHER LÜFTEN",
+            "headline": "Trockene Nachtluft nutzen, aber nicht dauerhaft",
+            "instruction": f"Vor dem Schlafengehen {room_text} etwa {prebed_minutes} Minuten stoßlüften und danach schließen",
+            "summary": "Die Nachtluft wäre für den Feuchteabbau geeignet, eine dauerhafte Öffnung würde die ausgewählten Räume laut thermischem Modell jedoch zu stark abkühlen.",
+            "forecast_without_action_ml": night_forecast_closed,
+            "forecast_with_strategy_ml": night_forecast_after_prevent,
+            "strategy_moisture_effect_ml": round(pre_vent_effect) if pre_vent_effect < -1 else None,
+            "reasons": [
+                f"Nachtluft ist im Mittel etwa {abs(night_ah_delta):.1f} g/m³ trockener als die Raumluft",
+                f"Dauerlüftung in {room_text} würde dort im Mittel etwa {abs(night_temperature_change_c or 0):.1f} °C Abkühlung verursachen",
+                f"FreshAirIQ akzeptiert höchstens etwa {max_night_temp_loss_c:.1f} °C prognostizierten Verlust",
+                f"Tiefste Außentemperatur etwa {night_min_temp:.1f} °C" if night_min_temp is not None else "Die Temperaturprognose wird weiter bewertet",
+            ],
+        })
+    elif night_ah_delta <= -0.6 and not selected_night:
+        night_strategy.update({
+            "action": "closed_monitor",
+            "label": "NACHT · BEOBACHTEN",
+            "headline": "Trockene Nachtluft erkannt, aber kein Fenster sicher auswählbar",
+            "instruction": "Fenster zunächst geschlossen lassen",
+            "summary": "Die Außenluft wäre günstig, FreshAirIQ hat jedoch keinen berechenbaren Raum mit konfiguriertem Lüftungskontakt gefunden. Deshalb wird keine pauschale Nachtöffnung empfohlen.",
+            "reasons": [
+                f"Nachtluft ist im Mittel etwa {abs(night_ah_delta):.1f} g/m³ trockener als die Raumluft",
+                "Für kontrollierte Nachtlüftung muss mindestens ein geeigneter Raum mit Fenster-/Türkontakt eindeutig auswählbar sein",
+            ],
+        })
+    elif night_ah_delta >= 0.4:
+        night_strategy.update({
+            "action": "close",
+            "label": "NACHT · FENSTER SCHLIESSEN",
+            "headline": "Feuchte Nachtluft besser draußen lassen",
+            "instruction": "Fenster über Nacht geschlossen lassen",
+            "summary": "Die prognostizierte Außenluft ist feuchter als die aktuelle Raumluft. Dauerhaft offene Fenster würden voraussichtlich zusätzliche Feuchtigkeit eintragen.",
+            "forecast_without_action_ml": night_forecast if open_rooms else night_forecast_closed,
+            "forecast_with_strategy_ml": night_forecast_closed,
+            "strategy_moisture_effect_ml": night_forecast_closed - (night_forecast if open_rooms else night_forecast_closed),
+            "reasons": [
+                f"Nachtluft ist im Mittel etwa {night_ah_delta:.1f} g/m³ feuchter als die Raumluft",
+                f"Maximale prognostizierte relative Außenfeuchte etwa {round(night_max_rh or 0)} %",
+                f"Mit geschlossenen Fenstern werden bis zum Nachtende etwa {night_forecast_closed:+.0f} ml erwartet",
+            ],
+        })
+    else:
+        night_strategy.update({
+            "action": "closed_monitor",
+            "label": "NACHT · BEOBACHTEN",
+            "headline": "Für die Nacht ist kein Dauerlüften nötig",
+            "instruction": "Fenster zunächst geschlossen lassen",
+            "summary": "Außenfeuchte und Temperatur ergeben aktuell keinen klaren Vorteil für dauerhaft geöffnete Fenster. FreshAirIQ bewertet die Nacht weiter neu.",
+            "forecast_without_action_ml": night_forecast_closed,
+            "forecast_with_strategy_ml": night_forecast_closed,
+            "strategy_moisture_effect_ml": 0,
+            "reasons": [
+                f"Differenz Außen-/Innenfeuchte nachts nur {night_ah_delta:+.1f} g/m³",
+                f"Tiefste prognostizierte Außentemperatur etwa {night_min_temp:.1f} °C" if night_min_temp is not None else "Temperaturprognose wird weiter beobachtet",
+            ],
+        })

@@ -50,6 +50,7 @@ NATIVE_OPTION_KEYS = frozenset({
     "notification_room_keys", "notify_ventilate", "notify_close",
     "notify_complete", "notify_cooling", "notify_mould", "notify_sensor",
     "notify_night", "notify_learning", "notification_cooldown_min",
+    "notify_status_messages", "action_reminder_min",
     "suppress_notifications_at_night", "notify_only_when_home", "notify_important_when_away",
     # statistics / optional diagnostics sharing
     "statistics_days", "diagnostics_reporting_mode", "diagnostics_consent",

@@ -1,6 +1,7 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/"custom_components"/"freshairiq"
@@ -30,7 +31,7 @@ def test_android_scroll_contract_and_parent_position_stack():
     assert "this._infoScrollByView" in js
 
 def test_new_install_upload_has_30_minute_grace_after_enrollment():
-    src=(COMP/"telemetry.py").read_text()
+    src=module_source("telemetry")
     assert "_INITIAL_UPLOAD_GRACE = timedelta(minutes=30)" in src
     assert 'self._runtime_state = "onboarding_grace"' in src
     assert "await self._async_ensure_enrolled(session, installation_id, timeout)" in src

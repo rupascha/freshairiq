@@ -1,16 +1,17 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
 
 
 def _support_method():
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     return telemetry.split("async def async_submit_support_diagnostics", 1)[1].split("async def async_maybe_upload", 1)[0]
 
 
 def test_support_upload_failures_are_queued_privacy_safe():
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     method = _support_method()
     assert "FAIQ-SUPPORT-UPLOAD-001" in method
     assert "_async_queue_client_error(payload)" in method
@@ -20,7 +21,7 @@ def test_support_upload_failures_are_queued_privacy_safe():
 
 
 def test_successful_support_contact_replays_retained_errors():
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     method = _support_method()
     assert "_async_flush_client_error_queue(session, headers, timeout)" in method
     assert "/v1/client-errors" in telemetry
@@ -36,7 +37,7 @@ def test_support_cooldown_still_only_follows_success_and_flush():
 
 
 def test_regular_successful_hub_contact_also_replays_retained_errors():
-    telemetry = (COMP / "telemetry.py").read_text()
+    telemetry = module_source("telemetry")
     regular = telemetry.split("async def async_maybe_upload", 1)[1]
     assert "_async_flush_client_error_queue(session, error_headers, timeout)" in regular
     assert regular.index("_async_flush_client_error_queue") < regular.index('"last_success_at": now.isoformat()')

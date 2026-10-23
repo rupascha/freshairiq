@@ -10,6 +10,7 @@ from custom_components.freshairiq.diagnostic_transport import (
     normalise_resident_names,
 )
 from custom_components.freshairiq.measurement_frame import last_valid_session_measurement, session_measurement_quality
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -73,7 +74,7 @@ def test_resident_parser_is_bounded_and_empty_version_path_is_not_exempt() -> No
 
 
 def test_coordinator_timeout_has_fallback_and_deterministic_unmeasured_close() -> None:
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert "fallback = last_valid_session_measurement(mem)" in source
     assert 'final_measurement_source="last_valid_session_state"' in source
     assert "event = self._finish_session_without_measurement(mem, cfg, session_ended_at)" in source
@@ -118,7 +119,7 @@ def test_transport_redacts_string_resident_names_but_preserves_version_fields() 
 
 
 def test_diagnostics_counts_people_not_characters() -> None:
-    source = (COMP / "diagnostics.py").read_text(encoding="utf-8")
+    source = module_source("diagnostics")
     assert 'len(normalise_resident_names(options.get("adult_resident_names")))' in source
     assert 'len(normalise_resident_names(options.get("child_resident_names")))' in source
     assert 'len(options.get("adult_resident_names") or [])' not in source

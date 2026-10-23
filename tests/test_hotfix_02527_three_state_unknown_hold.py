@@ -1,7 +1,8 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORD = module_source("coordinator")
 
 
 def test_unknown_three_state_holds_last_confirmed_physical_truth():

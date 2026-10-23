@@ -283,6 +283,16 @@ def build_ventilation_pdf(events: list[dict[str, Any]], start: datetime, end: da
     text(42, 58, tr("Es ist keine rechtliche Bewertung oder Garantie fuer ein bestimmtes Lueftungsverhalten."), 7, False, (0.42, 0.49, 0.53))
     finish_page()
 
+    return _serialise_pdf(
+        add=add, catalog=catalog, font=font, font_bold=font_bold, objects=objects, page_streams=page_streams,
+    )
+
+
+def _serialise_pdf(
+    *,
+    add: Any, catalog: Any, font: Any, font_bold: Any, objects: Any, page_streams: Any,
+) -> Any:
+    """Write the page tree, cross-reference table and trailer of the PDF document."""
     page_ids = []
     for cmds in page_streams:
         stream = "\n".join(cmds).encode("latin1")

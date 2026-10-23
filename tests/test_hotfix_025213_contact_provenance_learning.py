@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from custom_components.freshairiq.opening_state import specialist_opening_provenance
+from tests._source import module_source
 
 
 def test_three_state_open_alone_is_specialist_open():
@@ -61,7 +62,7 @@ def test_multiple_proven_contacts_different_modes_are_ambiguous():
 
 
 def test_coordinator_pins_specialist_learning_and_prediction_to_provenance():
-    text = Path("custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert "specialist_opening_provenance(contact_modes, proven_three_state)" in text
     assert 'mem["session_specialist_opening_mode"]' in text
     assert 'mem["session_specialist_opening_signature"]' in text

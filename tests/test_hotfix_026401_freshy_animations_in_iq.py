@@ -31,7 +31,8 @@ def test_iq_hero_uses_the_animated_freshy():
 
 
 def test_eleven_moods_each_have_their_own_face_or_motion():
-    assert f'const FRESHY_MOODS = {str(MOODS).replace(chr(39), chr(34))};' in CARD
+    freshy = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/frontend/freshairiq-card-freshy.js").read_text(encoding="utf-8")
+    assert f'export const FRESHY_MOODS = {str(MOODS).replace(chr(39), chr(34))};' in freshy  # 0.26.5.3: own module
     for mood in MOODS:
         assert re.search(rf"\.fr-{mood} [^{{]*\{{[^}}]*(display:inline|animation|stroke)", CARD), mood
     assert "@media (prefers-reduced-motion: reduce){.fr,.fr *{animation:none!important}}" in CARD

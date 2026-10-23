@@ -1,10 +1,11 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORDINATOR = (ROOT / 'custom_components/freshairiq/coordinator.py').read_text(encoding='utf-8')
-CONFIG_FLOW = (ROOT / 'custom_components/freshairiq/config_flow.py').read_text(encoding='utf-8')
-STORAGE = (ROOT / 'custom_components/freshairiq/storage.py').read_text(encoding='utf-8')
-DIAGNOSTICS = (ROOT / 'custom_components/freshairiq/diagnostics.py').read_text(encoding='utf-8')
+COORDINATOR = module_source("coordinator")
+CONFIG_FLOW = module_source("config_flow")
+STORAGE = module_source("storage")
+DIAGNOSTICS = module_source("diagnostics")
 FRONTEND = (ROOT / 'custom_components/freshairiq/frontend/freshairiq-card.js').read_text(encoding='utf-8')
 
 

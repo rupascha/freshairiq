@@ -1,9 +1,10 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
-COORD = (COMP / "coordinator.py").read_text(encoding="utf-8")
+COORD = module_source("coordinator")
 JS = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
 
 

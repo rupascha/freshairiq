@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from custom_components.freshairiq.presence import current_night_start, resolve_occupancy
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = timezone(timedelta(hours=2))
@@ -75,7 +76,7 @@ def test_night_hold_option_is_wired_into_settings_and_translations():
 
     assert DEFAULT_OPTIONS["presence_night_hold"] is False
     assert "presence_night_hold" in NATIVE_OPTION_KEYS
-    flow = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert 'native_option_key("presence_night_hold")' in flow
     for name in ("translations/de.json", "translations/en.json", "strings.json"):
         text = (ROOT / "custom_components/freshairiq" / name).read_text(encoding="utf-8")
@@ -84,7 +85,7 @@ def test_night_hold_option_is_wired_into_settings_and_translations():
 
 
 def _pollen_level():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     tree = ast.parse(source)
     wanted = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in ("_pollen_level", "_float_state")]
     from custom_components.freshairiq.climate_sources import entity_ids
@@ -104,5 +105,5 @@ def test_several_pollen_sensors_use_the_highest_valid_value():
     assert pollen_level(hass, "sensor.birke") == 3.0  # legacy single entity
     assert pollen_level(hass, ["sensor.offline"]) == 0.0
     assert pollen_level(hass, None) == 0.0
-    flow = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert 'selector.EntitySelectorConfig(domain="sensor", multiple=True)' in flow[flow.index("def _outdoor_schema"):flow.index("def _available_room_goals")]

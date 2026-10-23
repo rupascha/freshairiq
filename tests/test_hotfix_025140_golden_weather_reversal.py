@@ -7,6 +7,7 @@ import pytest
 
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.model import RoomInput, absolute_humidity, evaluate_room, update_learning
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 GOLDEN = json.loads((ROOT / "tests/fixtures/v025138_physics_golden_master.json").read_text(encoding="utf-8"))
@@ -80,7 +81,7 @@ def test_wet_reference_air_is_not_accepted_as_positive_learning_evidence():
 
 
 def test_coordinator_stickily_invalidates_learning_after_reference_weather_reversal():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert 'mem["session_reference_moisture_reversal"] = True' in source
     assert 'learning_contaminated = source_contaminated or reference_moisture_reversal' in source
     assert 'feedback_processed = False if learning_contaminated else learn_outcome_feedback' in source

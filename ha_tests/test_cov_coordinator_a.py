@@ -930,11 +930,12 @@ async def test_second_room_joins_running_house_group_and_wet_air_triggers_close(
 
 
 async def test_mature_routine_and_house_strategy_layers_refine_outputs(hass: HomeAssistant, freezer, monkeypatch) -> None:
-    import custom_components.freshairiq.coordinator as coord_mod
+    import custom_components.freshairiq.coordinator_decision as coord_mod
+    import custom_components.freshairiq.coordinator_night as night_mod
 
     fit = {"signature": "s", "maturity": 60.0, "efficiency_factor": 1.25}
     monkeypatch.setattr(coord_mod, "house_strategy_fit", lambda *a, **k: dict(fit))
-    monkeypatch.setattr(coord_mod, "project_generation_ml", lambda valid, now, minutes: (5000.0, 40.0))
+    monkeypatch.setattr(night_mod, "project_generation_ml", lambda valid, now, minutes: (5000.0, 40.0))
     seen: list[list[str]] = []
     original = coord_mod.stabilise_recommendation
 

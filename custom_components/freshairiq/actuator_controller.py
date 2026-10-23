@@ -72,6 +72,9 @@ class ActuatorController:
 
     async def _async_attach(self) -> bool:
         self._rooms = self._configured_rooms()
+        # 0.26.5.3: always follow coordinator updates, also with no controlled
+        # room yet, so a control switched on later works without a restart.
+        self._unsubs.append(self.coordinator.async_add_listener(self._on_update))
         if not self._rooms:
             return False
         if self._store is None:
@@ -88,8 +91,17 @@ class ActuatorController:
                     watched.update(setup.contacts)
         if watched:
             self._unsubs.append(async_track_state_change_event(self.hass, sorted(watched), self._on_state_change))
-        self._unsubs.append(self.coordinator.async_add_listener(self._on_update))
         return True
+
+    async def async_sync(self) -> None:
+        """Re-read the room setup when it changed since the last attach (0.26.5.3).
+
+        Covers every editor (options flow pages, room sub-entries, dashboard),
+        including a cover, window contact or follow switch added to a room
+        whose control was already on.
+        """
+        if self._configured_rooms() != self._rooms:
+            await self.async_reload()
 
     async def async_reload(self) -> None:
         """Pick up an edited room setup without restarting Home Assistant (0.26.5.2).
@@ -124,7 +136,13 @@ class ActuatorController:
 
     @callback
     def _on_update(self) -> None:
-        self.hass.async_create_task(self._async_evaluate(fans=True), eager_start=True)
+        self.hass.async_create_task(self._async_update(), eager_start=True)
+
+    async def _async_update(self) -> None:
+        if self._configured_rooms() != self._rooms:
+            await self.async_reload()
+        elif self._rooms:
+            await self._async_evaluate(fans=True)
 
     def _room_data(self, key: str) -> dict[str, Any]:
         rooms = (self.coordinator.data or {}).get("rooms") or {}
@@ -158,12 +176,14 @@ class ActuatorController:
 
     async def _async_evaluate_locked(self, *, fans: bool) -> None:
         changed = False
+        demanded = self._fan_demand_by_room() if fans else {}
         for room in self._rooms:
             data = self._room_data(str(room["key"]))
             if room_controls_covers(room):
                 changed |= await self._async_covers(room, data)
             if fans and _room_controls_fan(room):
-                changed |= await self._async_fans(room, data)
+                shared = set().union(*(d for k, d in demanded.items() if k != str(room["key"])))
+                changed |= await self._async_fans(room, data, needed_elsewhere=shared)
         if changed and self._store is not None:
             self._store.async_delay_save(lambda: self._memory, 5)
 
@@ -191,24 +211,39 @@ class ActuatorController:
                 await self._async_call("cover", _COVER_SERVICES[command], service_data)
         return changed
 
-    async def _async_fans(self, room: dict[str, Any], data: dict[str, Any]) -> bool:
+    def _demand(self, room: dict[str, Any], data: dict[str, Any]) -> bool:
+        actuators = data.get("configured_actuators") if isinstance(data.get("configured_actuators"), dict) else {}
+        return fan_demand(
+            str(room.get("exhaust_fan_control") or FAN_CONTROL_OFF),
+            source_active=bool(data.get("moisture_source_active")),
+            recommendation=str(data.get("house_aligned_action") or ""),
+            window_open=bool(actuators.get("window_open")),
+        )
+
+    def _fan_demand_by_room(self) -> dict[str, set[str]]:
+        """Fans each controlled room needs right now (0.26.5.3: one fan, several rooms)."""
+        return {
+            str(room["key"]): set(_fan_entities(room))
+            for room in self._rooms
+            if _room_controls_fan(room) and self._demand(room, self._room_data(str(room["key"])))
+        }
+
+    async def _async_fans(self, room: dict[str, Any], data: dict[str, Any], *, needed_elsewhere: set[str] = frozenset()) -> bool:
         fans = _fan_entities(room)
         states = [self.hass.states.get(fan) for fan in fans]
         known = [state.state for state in states if state is not None and state.state in {"on", "off"}]
         fan_on = ("on" in known) if known else None
-        actuators = data.get("configured_actuators") if isinstance(data.get("configured_actuators"), dict) else {}
         mode = str(room.get("exhaust_fan_control") or FAN_CONTROL_OFF)
         mem = self._memory["fans"].setdefault(str(room["key"]), {})
         before = dict(mem)
+        if fan_on and mem.get("owned") and set(fans) & needed_elsewhere and not self._demand(room, data):
+            # another room still needs this fan: it stays on, this room keeps
+            # trying to switch it off once nobody needs it any more
+            return False
         decision = decide_fan(
             mode=mode,
             fan_on=fan_on,
-            demand=fan_demand(
-                mode,
-                source_active=bool(data.get("moisture_source_active")),
-                recommendation=str(data.get("house_aligned_action") or ""),
-                window_open=bool(actuators.get("window_open")),
-            ),
+            demand=self._demand(room, data),
             now=dt_util.now(),
             follow_up_min=float(room.get("exhaust_fan_follow_up_min", DEFAULT_FAN_FOLLOW_UP_MIN)),
             max_runtime_min=float(room.get("exhaust_fan_max_runtime_min", DEFAULT_FAN_MAX_RUNTIME_MIN)),

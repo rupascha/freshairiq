@@ -1,10 +1,11 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
-COORDINATOR = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
-CONFIG_FLOW = (ROOT / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+COORDINATOR = module_source("coordinator")
+CONFIG_FLOW = module_source("config_flow")
 
 
 # test_020307_runtime_settings_use_lightweight_refresh: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_runtime_option_change_is_applied_live_without_reload

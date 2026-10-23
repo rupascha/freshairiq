@@ -3,9 +3,10 @@ from pathlib import Path
 
 from custom_components.freshairiq.forecast_validation import prediction_duration_comparable
 from custom_components.freshairiq.intelligence import learn_outcome_feedback
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORD = module_source("coordinator")
 
 
 def _room():

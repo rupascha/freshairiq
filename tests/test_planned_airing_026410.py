@@ -16,6 +16,7 @@ from custom_components.freshairiq.consolidation import (
     aggregate_close_allowed, moisture_coming_in, opening_phase_protected, planned_target_min, session_target_min,
 )
 from custom_components.freshairiq.model import RoomInput, evaluate_room
+from tests._source import module_source
 
 OPTIONS = {**DEFAULT_OPTIONS, "operating_profile": "comfort"}
 
@@ -74,16 +75,18 @@ def test_planned_phase_and_target_helpers():
     assert session_target_min({"recommended_duration_min": 9}, OPTIONS) == 9.0
     assert session_target_min({"recommended_duration_min": 1}, OPTIONS) == float(OPTIONS["min_duration_min"])
     assert session_target_min({"recommended_duration_min": 99}, OPTIONS) == float(OPTIONS["max_duration_min"])
-    assert session_target_min({"recommended_duration_min": None}, OPTIONS) is None
-    assert session_target_min({"recommended_duration_min": 0}, OPTIONS) is None
-    assert session_target_min({"recommended_duration_min": float("nan")}, OPTIONS) is None
+    # 0.26.5.3 (GitHub #15): without a FreshAirIQ duration the default plan applies
+    plan = min(max(10.0, float(OPTIONS["min_duration_min"])), float(OPTIONS["max_duration_min"]))
+    assert session_target_min({"recommended_duration_min": None}, OPTIONS) == plan
+    assert session_target_min({"recommended_duration_min": 0}, OPTIONS) == plan
+    assert session_target_min({"recommended_duration_min": float("nan")}, OPTIONS) == plan
     assert session_target_min(None, OPTIONS) is None
 
 
 def test_coordinator_freezes_the_target_when_the_window_opens():
     from pathlib import Path
 
-    text = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert 'mem["session_target_min"] = None if fan_start else _session_target_min(self.data, options)' in text
     # a window opened during a fan-only airing gets its planned time from then on
     assert 'mem["session_target_min"] = round(elapsed + joined, 1) if joined is not None else None' in text

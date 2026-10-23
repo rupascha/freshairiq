@@ -2,6 +2,7 @@ from pathlib import Path
 
 from custom_components.freshairiq.measurement_frame import session_measurement_quality
 from custom_components.freshairiq.robustness import sanitize_runtime_session
+from tests._source import module_source
 
 
 def test_session_quality_requires_two_real_reports():
@@ -24,7 +25,7 @@ def test_final_sensor_feedback_upgrades_quality_without_replacing_activity_gate(
 def test_hotfix_preserves_close_confirm_and_adds_bounded_final_wait():
     root = Path(__file__).resolve().parents[1]
     const = (root / "custom_components/freshairiq/const.py").read_text()
-    coordinator = (root / "custom_components/freshairiq/coordinator.py").read_text()
+    coordinator = module_source("coordinator")
     card = (root / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
     assert "SESSION_CLOSE_CONFIRM_SECONDS = 3.0" in const
     assert "SESSION_END_MEASUREMENT_WAIT_SECONDS = 10.0" in const

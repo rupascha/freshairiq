@@ -7,6 +7,7 @@ from custom_components.freshairiq.const import (
     CONF_ROOM_TEMPERATURE_AGGREGATION,
     CONF_ROOM_HUMIDITY_AGGREGATION,
 )
+from tests._source import module_source
 
 class States:
     def __init__(self, data): self.data = data
@@ -47,7 +48,7 @@ def test_invalid_secondary_source_is_ignored_before_aggregation():
 def test_dashboard_and_native_room_flow_expose_independent_controls_and_multi_select():
     root=Path(__file__).resolve().parents[1]
     card=(root/'custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
-    flow=(root/'custom_components/freshairiq/config_flow.py').read_text()
+    flow=module_source("config_flow")
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).

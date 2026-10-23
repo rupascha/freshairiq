@@ -10,6 +10,7 @@ import time
 
 from tests.test_storage_hardening_024100 import _load_storage
 from tests.test_weather_future_024100 import _Hass as _WeatherHass, _State, _load_module as _load_weather
+from tests._source import module_source
 
 
 # --------------------------------------------------------------------------- weather
@@ -112,7 +113,7 @@ def test_immediate_save_resets_pending_window():
 
 
 def test_coordinator_persists_critical_events_immediately():
-    source = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     block = source[source.index("        if changed:\n            # Completed sessions"):]
     block = block[: block.index("self.runtime_health.observe_metric(\"coordinator_phase_persistence_ms\"")]
     assert "if completed_sessions or notification_changed:" in block

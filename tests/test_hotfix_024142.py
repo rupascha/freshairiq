@@ -3,6 +3,7 @@ from pathlib import Path
 
 from custom_components.freshairiq.intelligence import learn_outcome_feedback
 from custom_components.freshairiq.intervention import build_interventions
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -24,7 +25,7 @@ def test_manual_trustworthy_ventilation_can_teach_forecast_model():
 
 def test_timestamp_quality_learning_weight_is_applied_to_feedback_alpha():
     intelligence = (COMP / "intelligence.py").read_text(encoding="utf-8")
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'base_alpha *= learning_weight' in intelligence
     assert 'activity_weight = float(session_quality.get("learning_weight", 0.0) or 0.0)' in coordinator
     assert 'mem["session_prediction_learning_weight"] = activity_weight if session_activity_eligible else 0.0' in coordinator
@@ -48,10 +49,10 @@ def test_shading_uses_per_contact_cover_mapping_before_legacy_room_list():
 
 def test_hotfix_contracts_are_wired_through_native_dashboard_and_runtime():
     const = (COMP / "const.py").read_text(encoding="utf-8")
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     settings = (COMP / "feedback_api.py").read_text(encoding="utf-8")
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
 
     assert 'CONF_CONTACT_COVERS = "contact_covers"' in const
     assert 'selector.EntitySelectorConfig(domain="cover", multiple=True)' in flow

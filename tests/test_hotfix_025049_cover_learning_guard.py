@@ -3,13 +3,14 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 from tests.frontend_source import card_text
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_helper():
     import ast
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     tree = ast.parse(source)
     nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_cover_learning_guard"]
     module = ast.Module(body=nodes, type_ignores=[])

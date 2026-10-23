@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from custom_components.freshairiq.recommendation import build_recommendation
+from tests._source import module_source
 
 def room(key,potential,rh=63,surface=70,co2=None,urgent=False):
     return {"key":key,"name":key,"calculation_enabled":True,"data_quality":"ok","active":False,"action":"Ventilate","realistic_potential_ml":potential,"potential_ml":potential,"delta_g_m3":2.5,"airflow_factor":1.0,"humidity":rh,"surface_rh":95 if urgent else surface,"humidity_high_duration_min":30,"co2_available":co2 is not None,"co2":co2,"goal_state":{"goals":[{"id":"humidity","active":True,"reached":False,"achievable_now":True}]},"ventilation_threshold_effective_ml":100}
@@ -21,13 +22,13 @@ def test_urgent_room_still_overrides_house_aggregation():
     assert rec["room_keys"]==["kritisch"]
 
 def test_learning_modes_are_explicitly_separate_in_coordinator_source():
-    src=Path('custom_components/freshairiq/coordinator.py').read_text(encoding='utf-8') + Path('custom_components/freshairiq/recommendation.py').read_text(encoding='utf-8')
+    src=module_source("coordinator") + Path('custom_components/freshairiq/recommendation.py').read_text(encoding='utf-8')
     assert 'session_mode in {"open", "tilted", "cross", "mechanical_exhaust"}' in src
     assert 'opening_learning[session_mode]' in src
     assert 'session_opening_mode_mixed' in src
 
 def test_cover_boundary_and_user_hint_contract():
-    src=Path('custom_components/freshairiq/coordinator.py').read_text(encoding='utf-8') + Path('custom_components/freshairiq/recommendation.py').read_text(encoding='utf-8')
+    src=module_source("coordinator") + Path('custom_components/freshairiq/recommendation.py').read_text(encoding='utf-8')
     assert 'if closed_pct > threshold:' in src
     assert 'für bessere Lüftungswirkung weiter öffnen' in src
     assert 'session_cover_learning_blocked' in src

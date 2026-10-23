@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "purpose": "Existing exceptions to the maintainability limits (800 lines per Python file, 150 lines per function, 200000 bytes per frontend module). Entries may only shrink or disappear (tools/maintainability_gate.py --update-baseline); new code must stay within the limits.",
+  "limits": {
+    "file_lines": 800,
+    "function_lines": 150,
+    "frontend_bytes": 200000
+  },
+  "files": {},
+  "functions": {
+    "custom_components/freshairiq/model.py::evaluate_room": {
+      "lines": 292,
+      "reason": "hot path of every cycle and opening assessment; phase helpers with keyword arguments cost about 35 % runtime (performance gate)"
+    },
+    "custom_components/freshairiq/notifications.py::_process_notifications": {
+      "lines": 242,
+      "reason": "dispatch shares the 'changed' flag with the nested emit/publish closures (nonlocal); not split safely without changing the notification flow"
+    }
+  },
+  "frontend": {
+    "custom_components/freshairiq/frontend/freshairiq-card.js": {
+      "bytes": 415184,
+      "reason": "dashboard card (single ES module); split planned as a separate frontend step"
+    }
+  }
+}

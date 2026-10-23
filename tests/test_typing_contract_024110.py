@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 PKG = ROOT / "custom_components" / "freshairiq"
@@ -18,6 +19,22 @@ _TYPED_SURFACE = (
     "sensor.py",
     "repairs.py",
     "coordinator.py",
+    # 0.26.5.2 maintenance: modules split off from coordinator.py
+    "coordinator_sources.py",
+    "coordinator_contacts.py",
+    "room_recommendation.py",
+    "coordinator_listeners.py",
+    "coordinator_house.py",
+    "coordinator_night.py",
+    "coordinator_decision.py",
+    "coordinator_room.py",
+    "coordinator_room_contacts.py",
+    "coordinator_room_session.py",
+    "coordinator_room_model.py",
+    "coordinator_room_result.py",
+    "coordinator_sessions.py",
+    "coordinator_session_validation.py",
+    "coordinator_session_events.py",
     "feedback_api.py",
 )
 
@@ -48,7 +65,7 @@ def test_typed_runtime_surface_has_no_unannotated_function_signatures() -> None:
 
 def test_runtime_data_is_the_only_per_entry_runtime_store() -> None:
     runtime = (PKG / "runtime.py").read_text(encoding="utf-8")
-    config_flow = (PKG / "config_flow.py").read_text(encoding="utf-8")
+    config_flow = module_source("config_flow")
     settings = (PKG / "feedback_api.py").read_text(encoding="utf-8")
 
     assert "entry.runtime_data = coordinator" in runtime

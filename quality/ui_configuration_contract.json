@@ -2,10 +2,10 @@
   "schema": 1,
   "approved_from_version": "0.26.2.14",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
-  "config_flow_sha256": "a9e0beb121b3b37d5bf43c0a6b9a92f317bf9856632ec9790d7afd6b9f3071ef",
-  "de_configuration_sha256": "ead1dcd1898cc8d761392914e07a31133b0d112daf90d2877fa9a699a75cd436",
-  "en_configuration_sha256": "45c327149a020b6366f196fa13059473154ae2f8cb631e70dab35fd55d055d49",
-  "strings_configuration_sha256": "45c327149a020b6366f196fa13059473154ae2f8cb631e70dab35fd55d055d49",
+  "config_flow_sha256": "1e9d6b5b2186f09cfeac9ffd758a97829ba4e02a87b9e80ef300e7c4a237ca95",
+  "de_configuration_sha256": "f9cfc733acf4fe61b33cd8518fc250c683dc612f6ef1f73afd6a63a910f5db3a",
+  "en_configuration_sha256": "1f4443d9593e58c10ea11d6fd308dd7bf1fe7abd73b043996f5c3f545debfdc0",
+  "strings_configuration_sha256": "1f4443d9593e58c10ea11d6fd308dd7bf1fe7abd73b043996f5c3f545debfdc0",
   "approved_changes": [
     "0.26.4.6: one-dropdown reordering for goals/rooms, overnight presence hold option, several pollen sensors (user feedback)",
     "0.26.4.7: outdoor fine dust protection – PM2.5 sensors under Outdoor air source, 'Consider outdoor fine dust' and limit under Air quality (user feedback; pending maintainer approval)",
@@ -20,6 +20,12 @@
     "0.26.5.1 (owner request 2026-10-17, approved): optional automatic control – opening form 'Open the cover when this window/door opens' (restores the previous position on close; passage-door lock-out protection) and room section 'Automatic control' (sun protection, exhaust fan after a moisture source / following the recommendation, follow-up time, maximum runtime); all off by default; exhaust-fan texts no longer say the fan is never switched",
     "0.26.5.1 (owner request 2026-10-17, approved): sun protection options 'Close covers ahead of the sun' (lead time, default 15 min), 'Warm day from forecast high' (default 25 °C) and 'No sun protection from cloud cover' (default 80 %)",
     "0.26.5.2 (owner request 2026-10-18, approved): outdoor PM2.5 picker also offers sensors in µg/m³ and WAQI sensors; field description explains the WAQI index value",
-    "0.26.5.2 (owner request 2026-10-19, approved): editing a room applies the automatic cover/fan control at once (no visible change to the forms)"
+    "0.26.5.2 (owner request 2026-10-19, approved): editing a room applies the automatic cover/fan control at once (no visible change to the forms)",
+    "0.26.5.2 maintenance (owner request 2026-10-19, approved): config flow split into modules, schemas verified identical",
+    "0.26.5.3 (owner request 2026-10-23, approved): room sensors section gains 'Exhaust fan supply air: temperature/humidity (neighbouring room)' as an optional atomic pair, error exhaust_reference_pair_required",
+    "0.26.5.3 (owner request 2026-10-23, approved): stored values of clearable optional fields (entity, text, multi-select) are prefilled via suggested_value and an emptied field is saved as empty, so removed sensors/entries stay removed (per-window reference pair, covers, contacts, residents/presence, cross ventilation, notifications); no visible form or text change",
+    "0.26.5.3 (owner request 2026-10-23, approved): editing a room keeps goals switched 'off' (disabled_goals) and the room window orientation; no form or text change",
+    "0.26.5.3 (owner request 2026-10-23, approved, community feedback HarryP): notifications page gains 'Send status messages' (default on) and 'Reminder of an open action' (0 = off, 5-60 min); home setup gains the 'Open connections' pages (room, then connected rooms) for rooms connected without a door or contact",
+    "0.26.5.3 (owner request 2026-10-23, approved): every saved setting takes effect at once – the options dialog continues from changes saved elsewhere instead of overwriting them, and skips its own end-of-wizard reload when the running integration already reloaded for the room change; no form or text change"
   ]
 }

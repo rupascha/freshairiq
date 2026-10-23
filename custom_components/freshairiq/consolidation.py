@@ -8,7 +8,7 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any
 
-from .close_wording import close_instruction, fan_only
+from .close_wording import close_instruction, fan_only, keep_instruction
 from .model import min_return_volume_factor
 
 
@@ -92,6 +92,9 @@ def _elapsed_min(room: dict[str, Any]) -> float | None:
     return value if value == value and abs(value) != float("inf") else None
 
 
+SELF_STARTED_PLAN_MIN = 10.0
+
+
 def session_target_min(previous_data: Any, options: dict[str, Any]) -> float | None:
     """Planned airing duration shown when the window was opened (clamped).
 
@@ -118,7 +121,12 @@ def session_target_min(previous_data: Any, options: dict[str, Any]) -> float | N
             continue
         if value == value and value > 0:
             return round(min(max(value, low), max(high, low)), 1)
-    return None
+    # 0.26.5.3 (GitHub #15): a window opened without a FreshAirIQ duration used
+    # to have no plan and was closed at the earliest legal moment, every time –
+    # in a small room the absolute 5-minute threshold is never reached. It now
+    # gets a default plan; moisture coming in, a humidity plateau and the
+    # protection limits still end it earlier.
+    return round(min(max(SELF_STARTED_PLAN_MIN, low), max(high, low)), 1)
 
 
 def _timed(rooms: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -276,6 +284,53 @@ def stabilise_recommendation(
         kind = "okay"
         checks.append("unknown_kind_normalised")
 
+    (kind,) = _active_session_invariant(
+        active=active, checks=checks, closing=closing, effective_active=effective_active, kind=kind,
+        options=options, out=out, previous=previous, tolerated_long_open=tolerated_long_open,
+    )
+
+    kind = _comfort_cooling_invariant(active=active, checks=checks, kind=kind, out=out)
+
+    return _finalise_consolidated(
+        active=active, calculated=calculated, checks=checks, kind=kind, options=options,
+        original_kind=original_kind, out=out, rooms=rooms, valid=valid, valid_keys=valid_keys,
+    )
+
+
+def _comfort_cooling_invariant(*, active: list[dict[str, Any]], checks: list[str], kind: str, out: dict[str, Any]) -> str:
+    """0.26.5.3 (community): a room still cooling towards its comfort target is not closed by the house.
+
+    The room model already confirmed that no moisture comes in; the house-wide
+    and floor aggregates or the live coach know nothing of the room's
+    temperature goal. Hard protection limits still close.
+    """
+    if kind != "close" or any(bool((r.get("goal_state") or {}).get("hard_close")) for r in active):
+        return kind
+    keys = [str(k) for k in (out.get("room_keys") or [])] or [str(r.get("key")) for r in active]
+    cooling = [r for r in active if r.get("comfort_cooling_active") and str(r.get("key")) in keys]
+    if not cooling:
+        return kind
+    cooling_keys = {str(r.get("key")) for r in cooling}
+    rest = [r for r in active if str(r.get("key")) in keys and str(r.get("key")) not in cooling_keys]
+    checks.append("comfort_cooling_keeps_rooms_open")
+    if rest:
+        out["room_keys"] = [str(r.get("key")) for r in rest]
+        out["instruction"] = f"{close_instruction(rest)} · {keep_instruction(cooling, None)}"
+        return kind
+    out["room_keys"] = sorted(cooling_keys)
+    out["title"] = "Abkühlen auf die Zieltemperatur"
+    out["instruction"] = keep_instruction(cooling, None)
+    out["summary"] = "Die Außenluft ist deutlich kühler und bringt keine Feuchte herein; der Raum liegt noch über seiner Komfort-Zieltemperatur."
+    out["duration_min"] = None
+    return "continue"
+
+
+def _active_session_invariant(
+    *,
+    active: Any, checks: Any, closing: Any, effective_active: Any, kind: Any, options: Any, out: Any,
+    previous: Any, tolerated_long_open: Any,
+) -> Any:
+    """An already running ventilation session (or moisture source) stays the authoritative action."""
     # Final real-time invariant: an already open ventilation session must never
     # be turned into a future wait/prepare/okay action by a later prediction layer.
     source_running = [r for r in active if r.get("moisture_source_active") and _f(r.get("delta_g_m3")) > _f(options.get("close_delta"), 0.4)]
@@ -396,7 +451,15 @@ def stabilise_recommendation(
         out["instruction"] = "Lüftung weiter beobachten"
         out["summary"] = "Eine reale Lüftung läuft; Zukunftsplanung ist bis zum Abschluss nachgeordnet."
         checks.append("active_session_authoritative")
+    return (kind,)
 
+
+def _finalise_consolidated(
+    *,
+    active: Any, calculated: Any, checks: Any, kind: Any, options: Any, original_kind: Any, out: Any,
+    rooms: Any, valid: Any, valid_keys: Any,
+) -> Any:
+    """Sensor fallback, numeric defaults, close/selection consistency and the consolidation markers."""
     if calculated and not valid:
         kind = "sensor"
         out["room_keys"] = []

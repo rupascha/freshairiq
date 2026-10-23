@@ -1,6 +1,7 @@
 import importlib.util
 import sys
 from pathlib import Path
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 def load(name):
     p=ROOT/'custom_components/freshairiq'/f'{name}.py'; spec=importlib.util.spec_from_file_location(f'lv2_{name}',p); m=importlib.util.module_from_spec(spec); sys.modules[spec.name]=m; spec.loader.exec_module(m); return m
@@ -28,7 +29,7 @@ def test_guardian_detects_learning_drift_without_identifiers():
     assert f["evidence"] == {"physics_fallback_rooms":2}
 
 def test_coordinator_wires_objective_regression_to_physics_fallback():
-    text=(ROOT/'custom_components/freshairiq/coordinator.py').read_text()
+    text=module_source("coordinator")
     assert '_learning_v2_force_physics' in text and 'rate_per_min=(0.03 if _learning_v2_force_physics' in text and 'learned_source_ml_min=(None if _learning_v2_force_physics' in text
 
 def test_learning_v2_uses_room_specific_backtest_when_available():

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from custom_components.freshairiq.opening_state import specialist_opening_provenance
+from tests._source import module_source
 
 
 def test_mixed_three_state_and_binary_never_selects_specialist_model():
@@ -31,25 +32,25 @@ def test_same_proven_mode_can_use_specialist_model():
 
 
 def test_session_source_change_quarantines_specialist_learning_contract():
-    text = Path("custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert 'mem["session_opening_mode_mixed"] = True' in text
     assert 'not mem.get("session_opening_mode_mixed")' in text
     assert 'current_signature != started_signature' in text
 
 
 def test_nightly_diagnostics_exposes_mixed_source_without_entity_ids():
-    text = Path("custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    text = module_source("diagnostics")
     assert '"mixed_source_session": bool(stored.get("session_opening_mode_mixed"))' in text
     assert '"proven_contact_count"' in text
 
 
 def test_recommendation_counters_are_read_from_persistent_room_memory():
-    text = Path("custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    text = module_source("diagnostics")
     assert 'if counter_key in stored_room:' in text
     assert 'room[counter_key] = _json_safe(stored_room.get(counter_key))' in text
     assert '"recommendation_opportunity_count": recommendation_opportunities' in text
 
 
 def test_nightly_transport_carries_recommendation_count():
-    text = Path("custom_components/freshairiq/diagnostic_transport.py").read_text(encoding="utf-8")
+    text = module_source("diagnostic_transport")
     assert '"recommendation_opportunity_count"' in text

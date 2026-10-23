@@ -1,4 +1,5 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -15,7 +16,7 @@ def test_repairs_normalizes_legacy_and_multi_sensor_references():
 
 
 def test_sensor_recovery_is_group_based_for_redundant_room_sources():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text()
+    source = module_source("coordinator")
     assert "def _required_source_groups" in source
     assert "any_available = False" in source
     assert "if not any_available:" in source

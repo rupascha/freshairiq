@@ -11,6 +11,7 @@ from custom_components.freshairiq.forecast_validation import (
     evaluate_start_forecast_at_duration,
     freeze_start_forecast_context,
 )
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -394,9 +395,9 @@ def test_validation_record_persists_effectiveness_only_as_observational_evidence
 
 
 def test_feature_is_observational_and_wired_to_diagnostics_sensor_and_ui():
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
-    diagnostics = (COMP / "diagnostics.py").read_text(encoding="utf-8")
-    sensor = (COMP / "sensor.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
+    diagnostics = module_source("diagnostics")
+    sensor = (COMP / "sensor.py").read_text(encoding="utf-8") + (COMP / "dashboard_live.py").read_text(encoding="utf-8")  # 0.26.5.3: built by dashboard_live (live channel)
     frontend = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     module = (COMP / "learning_effectiveness.py").read_text(encoding="utf-8")
     assert "freeze_learning_effectiveness_context(" in coordinator

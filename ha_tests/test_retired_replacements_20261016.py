@@ -100,6 +100,10 @@ def _default(result, key: str):
                 if found is not None:
                     return found
             elif str(marker) == key:
+                # the value the form shows: clearable fields prefill via suggested_value
+                suggested = (getattr(marker, "description", None) or {}).get("suggested_value")
+                if suggested is not None:
+                    return suggested
                 return marker.default() if callable(marker.default) else marker.default
         return None
 

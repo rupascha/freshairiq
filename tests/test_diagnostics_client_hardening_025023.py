@@ -4,6 +4,7 @@ from tests.release_version import CURRENT_RELEASE_VERSION
 
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -18,7 +19,7 @@ def test_version_and_hub_are_scoped_to_private_local_staging():
 
 
 def test_manual_diagnostics_export_path_is_still_present_and_independent():
-    diagnostics = (COMP / "diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     card = (COMP / "frontend/freshairiq-card.js").read_text(encoding="utf-8")
     assert "async def async_export" in diagnostics
     assert 'url = "/api/freshairiq/diagnostics"' in diagnostics
@@ -28,7 +29,7 @@ def test_manual_diagnostics_export_path_is_still_present_and_independent():
 
 
 def test_runtime_client_uses_chunking_incremental_cursor_and_idempotency():
-    telemetry = (COMP / "telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert "build_upload_chunks" in telemetry
     assert "DEFAULT_MAX_UPLOAD_RECORDS" not in telemetry
     assert 'after_cursor=self._state.get("last_record_cursor")' in telemetry
@@ -39,7 +40,7 @@ def test_runtime_client_uses_chunking_incremental_cursor_and_idempotency():
 
 
 def test_transport_v2_declares_analysis_equivalence_and_no_history_trimming():
-    transport = (COMP / "diagnostic_transport.py").read_text(encoding="utf-8")
+    transport = module_source("diagnostic_transport")
     assert "UPLOAD_SCHEMA_VERSION = 2" in transport
     assert '"analysis_equivalent": True' in transport
     assert '"full_retained_history": True' in transport

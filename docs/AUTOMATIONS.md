@@ -33,6 +33,8 @@ From 0.26.5.1 `…_action`, `…_recommendation`, mould risk and learning status
 
 The room action sensor also carries the complete room result in the attribute `freshairiq_room_payload` (reasons, forecast, readings). In templates: `{{ state_attr('sensor.bathroom_action', 'freshairiq_room_payload').recommendation_reasons }}`.
 
+Since 0.26.5.3 the room result contains no counters that change with every calculation, so the recorder writes only on real changes: instead of the age of the readings (`frame_age_*_s`, `measurement_frame_max_age_s`) it carries the report times of the sensors (`frame_temp_reported_at`, `frame_humidity_reported_at`, `frame_reference_temp_reported_at`, `frame_reference_humidity_reported_at`, `measurement_frame_oldest_at`), `last_measurement_at` is the latest report of the room sensors, `humidity_high_since` replaces `humidity_high_duration_min`, and `moisture_source_window_min` is gone. While no moisture source is active (and no recovery is running), the detector values (`moisture_source_rate_ml_min`, `…_ah_rise_g_m3`, `…_observed_change_ml_window`, `…_generated_ml_window`) show the values of the last source; the same applies to the attributes `rate_ml_min`, `generated_ml`, `source` and `confidence` of `binary_sensor.<room>_moisture_source_active`. The sensors “Overnight moisture forecast” (50 mL steps), “Estimated moisture balance today” (10 mL steps) and “Forecast temperature change” (from a 0.2 °C change) publish in meaningful steps; calculations, the dashboard and the events keep the full values. The status sensor carries a short summary only; card and panel receive the dashboard data over the live channel.
+
 ### For the whole home
 
 | Entity | Content |
@@ -50,6 +52,8 @@ The room action sensor also carries the complete room result in the attribute `f
 
 FreshAirIQ fires events on the Home Assistant event bus – on **changes only**. After a restart, the current state is taken over silently; old announcements are not repeated. Texts follow the FreshAirIQ output language (Home Assistant system language; English for every non-German language).
 
+**From 0.26.5.3: `category` in every event.** `action` = you are asked to do something (air, close, fan on/off), `status` = information only (keep airing, wait, ended), `warning` = a risk or a fault (mould rising, check sensor). In Node-RED one filter on `category` replaces sorting out texts such as "wait" or "keep".
+
 ### `freshairiq_room_action` – a room's action has changed
 
 From 0.26.5.1 a published "Close" is kept for the running airing until the next five minutes beat the close threshold by at least 25 % or the window is closed. The action no longer toggles between "Continue ventilating" and "Close" every 30 seconds.
@@ -59,6 +63,7 @@ From 0.26.5.1 a published "Close" is kept for the running airing until the next 
 | `room_key` | `bedroom` | Internal room key (stable) |
 | `room_name` | `Bedroom` | Your room name |
 | `action` / `previous_action` | `close` / `continue_ventilating` | Same codes as `sensor.<room>_action` |
+| `category` | `action` | `action` / `status` / `warning` (0.26.5.3+) |
 | `message` | `Bedroom: Please close the window.` | **Ready-to-speak sentence for Alexa/TTS** |
 | `action_label` | `Please close the window` | Just the action |
 | `reasons` | `["Room humidity 64 % …"]` | Up to 4 reasons |
@@ -77,6 +82,7 @@ Possible `action_label` texts in English: `Please air the room`, `Keep airing`, 
 | Field | Example |
 | --- | --- |
 | `kind` / `previous_kind` | `ventilate`, `wait`, `continue`, `close`, `okay`, `prepare`, `pollen_wait` (outdoor air polluted: pollen and/or fine dust, 0.26.4.7+), `sensor` |
+| `category` | `action` (`ventilate`, `close`, `start`, `prepare`), `warning` (`sensor`), otherwise `status` |
 | `status` | same as `sensor.freshairiq_status` |
 | `title`, `instruction`, `summary` | Texts of the recommendation |
 | `message` | `Now is a good time to ventilate. Open Living room and Bathroom` |
@@ -86,6 +92,11 @@ Possible `action_label` texts in English: `Please air the room`, `Keep airing`, 
 ### `freshairiq_mould_risk` – a room's mould risk has changed
 
 All fields of `freshairiq_room_action`, plus `previous_mould_level` and `rising` (`true` = risk is going up). With `ventilation_measures_active` you can decide for yourself whether a warning makes sense while someone is showering.
+
+From 0.26.5.3:
+- `message` is about the mould risk ("Office: mould risk high · surface humidity 82 %.", when falling "… down to elevated …"). Before, it accidentally carried the room's action sentence ("Office: Please switch off the fan."); that sentence is kept as `action_message`.
+- `category`: `warning` while the risk rises, otherwise `status`.
+- A rise is reported at once, a fall only once the lower level has held for 10 minutes. A surface humidity hovering around a level boundary therefore no longer fires an event every 30 seconds. The sensor `sensor.<room>_mould_risk` still shows the current value.
 
 ### `freshairiq_room_recommendation` – a room's effective recommendation has changed (2026-10-16+)
 
@@ -103,7 +114,7 @@ Fires when FreshAirIQ detects an internal moisture source in a room (`phase: sta
 | --- | --- | --- | --- |
 | `action` (`sensor.<room>_action`, `freshairiq_room_action`) | Room action **after** alignment with the final whole-home decision for the rooms it names (air/keep airing/close); the original room physics is then kept as `canonical_action` in the room payload | immediately on every change, no cooldown; adopted silently after a restart | control devices in the room |
 | `house_aligned_action` (`sensor.<room>_recommendation`, `freshairiq_room_recommendation`) | effective recommendation incl. house waiting (`ventilate_later`) and tolerated long opening (`monitor_open`) | immediately on change, no cooldown; silent after restart | per-room announcements |
-| `freshairiq_house_recommendation` | one coherent whole-home recommendation | on change of kind/rooms/instruction; silent after restart | announcements to everyone |
+| `freshairiq_house_recommendation` | one coherent whole-home recommendation | on change of kind/rooms/instruction (0.26.5.3+: without the running countdown – "about 18 min left" no longer fires a new event); silent after restart | announcements to everyone |
 | `freshairiq_notification` | exactly the push texts (information **and** calls to action, see `type`) | at most once per notification interval (default 90 min) per type/room | Telegram, Alexa |
 
 Since 2026-10-16 the whole-home decision keeps a close recommendation it already issued while the combined 5-minute return merely wobbles around the threshold (125 % hysteresis); hard close reasons (maximum duration, cooling) still act immediately.
@@ -115,6 +126,8 @@ Exactly the texts FreshAirIQ would send as a push notification to your phone –
 | Field | Example | Meaning |
 | --- | --- | --- |
 | `type` | `ventilate`, `close`, `cool`, `mould`, `sensor`, `learning`, `complete`, `night`, `house_ventilate`, `house_close`, `house_wait`, `house_continue`, … | Kind of message (`house_*` = recommendation for the whole home) |
+| `category` | `action` / `status` / `warning` | 0.26.5.3+; status messages can be switched off under Notifications → "Send status messages" |
+| `reminder` | `true` | only on a reminder of a still open action (0.26.5.3+) |
 | `room_key`, `room_name` | `bathroom`, `Bathroom` | Affected room (empty for whole-home messages) |
 | `title` | `FreshAirIQ · Bathroom` | Title, same as the push |
 | `message` | `Ventilate now. Alternatively switch on the fan.` | Text, same as the push |
@@ -122,6 +135,12 @@ Exactly the texts FreshAirIQ would send as a push notification to your phone –
 | `kind`, `room_keys` | `ventilate`, `["bathroom"]` | Whole-home messages only |
 | `night_quiet_hours` | `true` | Quiet hours according to your FreshAirIQ settings – you decide whether to announce anyway |
 | `created_at` | ISO timestamp | |
+
+From 0.26.5.3:
+- Room messages follow the recommendation aligned with the whole home: no "please air" while the house deliberately waits, and no "please close" while the whole-home airing keeps the room open together with others.
+- No "please close" while an openly connected room is still airing usefully (Settings → Home & rooms → Open connections).
+- No "switch off the fan" while another room still needs the same fan.
+- "Reminder of an open action" (5–60 min, off by default) repeats an action not done yet, prefixed with "Reminder:".
 
 If a room has an exhaust fan, airing and mould messages include the hint "Alternatively switch on the fan". Since 0.26.4.9, airing that is already in progress ("Ventilation running · keep monitoring") is no longer sent as a push – it doesn't ask you to do anything; it is still available as an event (`house_continue`).
 

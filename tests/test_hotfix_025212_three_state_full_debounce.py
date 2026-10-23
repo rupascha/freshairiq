@@ -1,5 +1,6 @@
 from pathlib import Path
 from custom_components.freshairiq.opening_state import stabilise_explicit_mode
+from tests._source import module_source
 
 
 def test_closed_to_open_is_held_for_three_seconds():
@@ -39,7 +40,7 @@ def test_first_observation_without_previous_state_is_not_blocked():
 
 
 def test_event_listener_schedules_confirmation_for_all_known_contact_states():
-    source = Path("custom_components/freshairiq/coordinator.py").read_text()
+    source = module_source("coordinator")
     assert 'in {"closed", "open", "tilted"}' in source
     assert 'SESSION_CLOSE_CONFIRM_SECONDS, _confirm_contact_state' in source
     assert 'newer state' in source.lower()

@@ -3,10 +3,11 @@ from __future__ import annotations
 from tests.release_version import CURRENT_RELEASE_VERSION
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
-FLOW = (COMP / "config_flow.py").read_text(encoding="utf-8")
+FLOW = module_source("config_flow")
 
 
 def _add_flow() -> str:
@@ -40,7 +41,7 @@ def test_native_add_keeps_delay_values_before_reference_and_create():
     apply = block.index("if _apply_single_contact_reference(room, contact, user_input):")
     finalizer = block.index("entry = self._get_entry()", apply)
     assert apply < finalizer
-    helper = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    helper = module_source("config_flow")
     helper = helper[helper.index("def _apply_single_contact_reference("):]
     assert "delays[contact] = _safe_int(" in helper and "orientations[contact] = " in helper
 

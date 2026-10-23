@@ -2,10 +2,11 @@
 from __future__ import annotations
 import ast
 from pathlib import Path
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/"custom_components/freshairiq"
-FLOW=(COMP/"config_flow.py").read_text(encoding="utf-8")
+FLOW=module_source("config_flow")
 API=(COMP/"feedback_api.py").read_text(encoding="utf-8")
 CARD=(COMP/"frontend/freshairiq-card.js").read_text(encoding="utf-8")
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from custom_components.freshairiq.personal_context import build_resident_context, personalise_recommendation
+from tests._source import module_source
 
 
 def _recommendation(room_key="office"):
@@ -107,7 +108,7 @@ def test_dashboard_has_structured_resident_profile_editor_and_diagnostics_scrub_
     root = Path(__file__).resolve().parents[1]
     card = (root / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     settings = (root / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
-    diagnostics = (root / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).

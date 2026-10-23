@@ -12,7 +12,7 @@ npm ci                                                       # Playwright 1.55.0
 # Echte HA-Runtime: HA >= 2026.8 braucht Python 3.14
 uv venv -p 3.14 .ha314 && VIRTUAL_ENV=.ha314 uv pip install pytest-homeassistant-custom-component pytest-cov "home-assistant-frontend==<Pin aus homeassistant/package_constraints.txt>"
 # Pflicht: Frontend-Pin wie in CI (manifest.json hängt von "frontend" ab; ohne Paket scheitert jedes Setup mit DependencyError)
-# CI ermittelt den Pin automatisch aus package_constraints.txt des installierten Cores (quality.yml/validate.yml).
+# CI ermittelt den Pin automatisch aus package_constraints.txt des installierten Cores (quality.yml, Job ha-runtime).
 ```
 Im Container: vorinstalliertes Chromium über eine lokale, nicht eingecheckte Config mit
 `launchOptions.executablePath=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` (Version 1194 ≠ Playwright-Build 1187).
@@ -28,10 +28,43 @@ Im Container: vorinstalliertes Chromium über eine lokale, nicht eingecheckte Co
 | CI hacs | GitHub Actions | HACS-Store-Prüfung nur in öffentlichen Repos, Source-Release-Gate immer (A-16) |
 | Golden Master | `tools/coordinator_golden.py --check` | 6 Szenarien / 117 Zyklen identisch (Fixture 2026-10-16 nach A-20/A-21 neu aufgenommen; Abweichung nur `summer_cooling_and_exhaust` Zyklus 16/17) |
 | Browser | Playwright Chromium/WebKit/Firefox/Android-Emulation (CI) | A-12 behoben (Fixture-Sprache); lokal Chromium/Android 46/46, CI-Matrix nach Push prüfen |
-| HA-Runtime + Coverage | Pure-Suite mit `--cov` (ohne HA-Plugin: `-p no:homeassistant`), danach `ha_tests` mit `--cov-append --cov-report=json:ha_tests/coverage-ha.json`, dann `tools/report_ha_coverage.py … --min-total 99 --min-module 98 --config-flow 100` | 377/377 grün (HA 2026.10.1, Py 3.14); **Gate PASS: 99,88 % gesamt, config_flow 100 %, alle Module ≥ 98 %** (Rest 20 unerreichbare Zeilen, ANALYSIS A-23) |
+| HA-Runtime + Coverage | Pure-Suite mit `--cov` (ohne HA-Plugin: `-p no:homeassistant`), danach `ha_tests` mit `--cov-append --cov-report=json:ha_tests/coverage-ha.json`, dann `tools/report_ha_coverage.py … --min-total 100 --min-module 100 --config-flow 100` | 430/430 grün (HA 2026.10.1, Py 3.14); **Gate PASS: 100,00 % gesamt, config_flow 100 %, alle Module 100 %** (Stand 2026-10-19; Gate auf 100/100/100 angehoben, ANALYSIS A-23) |
 | Hub | `tools/quality_gate.py --stage <static|pure_logic_coverage|package_coverage|robustness_fault_injection|stability|performance|parallel_load>` | alle 7 Stufen + finalize grün; 432 Tests (hub 0fdf7db) |
 
 Hinweise: Der Golden-Master pinnt `TZ=Europe/Berlin` selbst. HA-Tests schreiben Diagnose-Traces in den geteilten `testing_config` des pytest-homeassistant-Pakets; lokal vor Messungen `…/testing_config/.storage/freshairiq_diagnostics/*.jsonl` leeren (verlangsamt sonst stark, CI startet sauber). Performance lokal immer gepinnt (`taskset -c <cpu>`) und mehrfach messen; Bewertung über CI.
+
+## Wartbarkeit: Größen-Gate und aufgeteilte Module (0.26.5.2)
+Auftrag des Eigentümers (2026-10-19): Dateien dürfen nicht mehr so groß werden, dass eine kleine Änderung an
+anderer Stelle bricht.
+- Grenzen: jede Python-Datei unter `custom_components/` und `tools/` ≤ 800 Zeilen, jede Funktion/Methode
+  ≤ 150 Zeilen (`end_lineno − lineno + 1`, verschachtelte Funktionen zählen einzeln), jedes Frontend-Modul
+  `custom_components/freshairiq/frontend/*.js` ≤ 200 000 Byte.
+- `python3 tools/maintainability_gate.py` prüft die Grenzen; läuft in `tools/quality_gate.py --profile local`
+  innerhalb der Stufe `static-and-version`. Ausnahmen stehen mit aktueller Größe und Begründung in
+  `quality/maintainability_baseline.json`; das Gate schlägt fehl, wenn eine nicht gelistete Stelle die Grenze
+  überschreitet oder eine gelistete wächst, und meldet gelistete Stellen, die inzwischen passen.
+- `python3 tools/maintainability_gate.py --update-baseline` senkt oder entfernt Einträge, fügt aber nie welche hinzu
+  und erhöht keine. Neue Ausnahmen gibt es nur per bewusster Baseline-Änderung mit Begründung.
+- Aufteilung großer Module: das ursprüngliche Modul bleibt Einstiegspunkt und exportiert alle bisherigen Namen weiter
+  (HA lädt `config_flow.py`/`coordinator.py`). Klassen werden aus Mixins zusammengesetzt, lange Methoden in benannte
+  Phasen-Helfer zerlegt (Schlüsselwort-Parameter, Rückgabe als Tupel). Neue Module, die Home Assistant importieren,
+  gehören wie ihr Ursprungsmodul in die `omit`-Liste von `.coveragerc-pure`; reine Module brauchen 100 % Pure-Coverage.
+- Contract-Tests, die Quelltext prüfen, lesen über `tests/_source.py` (`module_source("coordinator")` usw.) den
+  zusammengefügten Text eines Moduls und seiner abgespaltenen Module; `FAMILIES` dort bei neuen Modulen ergänzen.
+  Der UI-Vertrag (`quality/ui_configuration_contract.json`) hasht den zusammengefügten Config-Flow-Text.
+- Monkeypatches in Tests müssen das Modul treffen, in dem der Name verwendet wird (z. B. `coordinator_decision`,
+  `diagnostics_export`, `config_flow_subentry`).
+- Nachweis der Verhaltensgleichheit bei Umbauten: Golden Master (`--check`, `--english`, zusätzlich `--dump` vor/nach
+  vergleichen), Formular-Schemas aller Flow-Schritte und Schema-Builder vor/nach serialisieren und vergleichen,
+  `tests/test_coordinator_definite_assignment.py` (prüft alle Funktionen der Coordinator-Module), volle Pure-, HA- und
+  Coverage-Suite.
+
+## CI und Actions-Minuten (2026-10-23)
+- Automatisch läuft nur `quality.yml`; `validate.yml` startet von Hand (Actions → Validate) den kompletten Lauf.
+- Die echte HA-Runtime mit 100-%-Coverage läuft einmal im Job `ha-runtime`. Python 3.13 läuft in `core-quality` (mit Coverage), die Matrix prüft 3.14.
+- Pushes auf `arbeitsauftrag-*` testen im Browser nur Chromium + Android-WebView. `main`, Pull Requests, der Wochenlauf und Releases testen alle Browser. Gleiches gilt für die HA-Versionsmatrix in `-faiq-ha`.
+- Reine Doku-Pushes (`docs/**`, `*.md`) starten nichts. Ein neuerer Push bricht den laufenden Lauf desselben Branches ab (auch Hub, HA, Website).
+- Arbeitsweise: alle Gates lokal prüfen, mehrere Fixes lokal committen und gebündelt pushen (z. B. vor einer ZIP), nicht nach jedem einzelnen Fix.
 
 ## Build und Artefaktprüfung
 ```bash
@@ -55,7 +88,7 @@ Tag `v<version>` → `release.yml` → `quality.yml` (wiederverwendbar) → `ver
 - Offen/blockiert: siehe Register (u. a. HA-Runtime-Altfehler, Live-Nachweise E03/E06/E07, Produktentscheidungen F03/F11/F15/F16/F30, Owner-Filter für eigene GitHub-Issues).
 - Entscheidungen 2026-10-16: Owner-Issues zulassen (umgesetzt), Support-Postfach = eigenes IONOS-Postfach, HA-Runtime-Tests korrigiert (75/75), Raum-Reload-Fix in den Optionen freigegeben (A-19).
 - Gruppe 5 2026-10-16 erledigt: A-12, A-15 (Hub Retry-After), A-16, A-22, F12-Trace (Fehlercodes), Register H06/H07/H29/H32 verifiziert, CI-Frontend-Abhängigkeit (A-25).
-- Coverage-Paket 2026-10-16 abgeschlossen: kombiniertes HA-Coverage-Gate PASS (99,88 %/100 %/≥ 98 %), 255 neue Real-HA-Tests (`ha_tests/test_cov_*.py`); neue Befunde A-19 (behoben), A-20/A-21/A-24 (Lernen; nach Freigabe behoben, Golden Master neu aufgenommen – nur Abluft-Szenario Zyklus 16/17), A-22, A-23.
+- Coverage-Paket 2026-10-16 abgeschlossen: kombiniertes HA-Coverage-Gate PASS (99,88 %/100 %/≥ 98 %; seit 2026-10-19 100 %/100 %/100 % als hartes Gate, A-23 bereinigt), 255 neue Real-HA-Tests (`ha_tests/test_cov_*.py`); neue Befunde A-19 (behoben), A-20/A-21/A-24 (Lernen; nach Freigabe behoben, Golden Master neu aufgenommen – nur Abluft-Szenario Zyklus 16/17), A-22, A-23.
 - Nächster Schritt: (1) Hub-Branch deployen, `SUPPORT_MAIL_*` (und optional `REDDIT_*`) als Secrets setzen, Quellenstatus prüfen; (2) Produktentscheidungen (Register, Gruppe 1); (3) Rohdaten-Punkte F31–F41 nach Datenlieferung; (4) übrige Produktentscheidungen aus dem Register.
 
 ### Geprüfte Artefakte (lokal gebaut, nicht veröffentlicht)

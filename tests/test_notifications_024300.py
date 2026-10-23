@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime, timezone
 import sys
 import types
+from tests._source import module_source
 
 if "homeassistant" not in sys.modules:
     ha = types.ModuleType("homeassistant")
@@ -230,7 +231,7 @@ def test_night_suppression_respects_switch_night_feature_and_boundaries():
 def test_coordinator_never_short_circuits_notification_processing():
     """Regression: pending state changes must not skip process_notifications."""
     from pathlib import Path
-    source = (Path(__file__).parents[1] / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert "notification_changed = await process_notifications(" in source
     assert "changed = changed or await process_notifications(" not in source
 

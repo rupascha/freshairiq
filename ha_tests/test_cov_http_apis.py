@@ -191,6 +191,33 @@ async def test_ventilation_log_pdf_success_default_and_explicit_range(hass, api)
     assert body["event_count"] == 2
 
 
+async def test_ventilation_log_per_day_and_as_csv(hass, api) -> None:
+    """0.26.5.3 (user feedback): one row per day in the PDF, CSV per airing or per day."""
+    entry, runtime = _entry(hass)
+    runtime.store.data["ventilation_log"] = [
+        {"room_key": "bath", "room_name": "Bad", "started_at": "2026-10-20T07:00:00+02:00", "ended_at": "2026-10-20T07:10:00+02:00",
+         "duration_min": 10, "removed_ml": 120.0, "measurement_valid": True},
+        {"room_key": "bed", "room_name": "Schlafzimmer", "started_at": "2026-10-20T21:00:00+02:00", "ended_at": "2026-10-20T21:08:00+02:00",
+         "duration_min": 8, "removed_ml": None, "measurement_valid": False},
+    ]
+    window = {"start": "2026-10-19", "end": "2026-10-21"}
+    body = await (await api.get(f"/api/freshairiq/ventilation-log/{entry.entry_id}", params={**window, "group": "day"})).json()
+    assert body["filename"] == "FreshAirIQ-Lueftungsprotokoll-pro-Tag-2026-10-19-2026-10-21.pdf"
+    pdf = base64.b64decode(body["pdf_base64"])
+    assert pdf.startswith(b"%PDF-") and b"pro Tag" in pdf and b"1/2" in pdf
+
+    body = await (await api.get(f"/api/freshairiq/ventilation-log/{entry.entry_id}", params={**window, "group": "day", "format": "csv"})).json()
+    assert body["filename"] == "FreshAirIQ-Lueftungsprotokoll-pro-Tag-2026-10-19-2026-10-21.csv" and "pdf_base64" not in body
+    rows = body["csv"].lstrip("\ufeff").splitlines()
+    assert rows[1:] == ["2026-10-19;0;0,0;;;0;", "2026-10-20;2;18,0;9,0;120;1;Bad, Schlafzimmer", "2026-10-21;0;0,0;;;0;"]
+
+    hass.config.language = "en"
+    body = await (await api.get(f"/api/freshairiq/ventilation-log/{entry.entry_id}", params={**window, "format": "csv"})).json()
+    assert body["filename"] == "FreshAirIQ-Ventilation-Log-2026-10-19-2026-10-21.csv" and body["event_count"] == 2
+    lines = body["csv"].lstrip("\ufeff").splitlines()
+    assert lines[0].startswith("Date,Start,End,Room,Duration (min)") and lines[1].startswith("2026-10-20,07:00,07:10,Bad,10.0,120,yes")
+
+
 async def test_ventilation_log_errors(hass, api, monkeypatch) -> None:
     response = await api.get("/api/freshairiq/ventilation-log/missing")
     assert response.status == 404

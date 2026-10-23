@@ -211,7 +211,7 @@ def test_async_record_writes_and_exports_portable_file(tmp_path: Path):
 
 def test_export_respects_payload_byte_limit(tmp_path: Path, monkeypatch):
     import json
-    import custom_components.freshairiq.diagnostics as diagnostics
+    import custom_components.freshairiq.diagnostics_export as diagnostics
 
     recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.18.2.2")
     recorder.directory.mkdir(parents=True)
@@ -228,7 +228,7 @@ def test_export_respects_payload_byte_limit(tmp_path: Path, monkeypatch):
 
 def test_capped_export_prefers_newest_records(tmp_path: Path, monkeypatch):
     import json
-    import custom_components.freshairiq.diagnostics as diagnostics
+    import custom_components.freshairiq.diagnostics_export as diagnostics
 
     recorder = FreshAirIQDiagnosticsRecorder(_Hass(tmp_path), "entry", "0.18.2.2")
     recorder.directory.mkdir(parents=True)

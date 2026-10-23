@@ -15,8 +15,15 @@ def _class_bodies():
 def test_every_this_method_call_in_the_card_classes_is_defined():
     """`this._lang()` was called but never defined and silently broke the Rooms overview."""
     problems = []
-    for name, body in _class_bodies():
+    # 0.26.5.3: the live-channel methods come from freshairiq-card-data.js (FAIQ_LIVE_METHODS)
+    data = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/frontend/freshairiq-card-data.js").read_text(encoding="utf-8")
+    mixin = data[data.index("export const FAIQ_LIVE_METHODS = {"):]
+    mixed_in = set(re.findall(r"^    (?:async\s+)?(_\w+)\(", mixin, re.M))
+    assert "Object.assign(FreshAirIQCard.prototype, FAIQ_LIVE_METHODS);" in CARD
+    for name, body in [*_class_bodies(), ("FreshAirIQCard(live)", mixin)]:
         defined = set(re.findall(r"^    (?:static\s+|async\s+|get\s+|set\s+)*(_?\w+)\s*\(", body, re.M))
+        if name.startswith("FreshAirIQCard") and not name.startswith("FreshAirIQCardEditor"):
+            defined |= mixed_in | set(re.findall(r"^    (?:static\s+|async\s+|get\s+|set\s+)*(_?\w+)\s*\(", dict(_class_bodies()).get("FreshAirIQCard", ""), re.M))
         assigned = set(re.findall(r"this\.(_?\w+)\s*=", body))
         called = set(re.findall(r"this\.(_\w+)\(", body))
         problems += [f"{name}.{m}" for m in sorted(called - defined - assigned)]

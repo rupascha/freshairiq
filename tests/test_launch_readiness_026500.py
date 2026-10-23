@@ -8,6 +8,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -21,7 +22,7 @@ def test_card_speaks_the_language_of_the_freshairiq_texts():
     ui = ui[: ui.index("    _tx(text)")]
     assert "this._statusEntity()?.attributes?.output_language" in ui
     assert ui.index("output_language") < ui.index("this._hass.language")  # data language wins over the profile
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'data["output_language"] = "de"' in coordinator and 'localized["output_language"] = "en"' in coordinator
     sensor = (COMP / "sensor.py").read_text(encoding="utf-8")
     assert sensor.count('"output_language": self.coordinator.data.get("output_language", "de")') == 2  # status + room entities
@@ -32,8 +33,10 @@ def test_live_updates_and_click_texts_stay_english():
     assert "this._localizeLegacyFragment(template.content)" in fresh[: fresh.index("\n    }\n")]
     for text in ("PDF wird erstellt", "Export wird erstellt", "Export erstellt", "Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben.",
                  "Wird sicher an den Diagnose-Hub übertragen …"):
-        at = CARD.index(text)
-        assert "this._tx(" in CARD[at - 120: at], text
+        # 0.26.5.3: the ventilation log export lives in freshairiq-card-data.js
+        source = CARD if text in CARD else (COMP / "frontend/freshairiq-card-data.js").read_text(encoding="utf-8")
+        at = source.index(text)
+        assert "this._tx(" in source[at - 120: at], text
     assert 'const diagnosisDE = value => FAIQ_NUMBER_LOCALE === "en"' in CARD
     assert 'navigator.language || "").toLowerCase().startsWith("de") ? "Intelligente' in CARD  # card picker text
 
@@ -75,7 +78,7 @@ def test_backend_learning_diagnosis_is_fully_english():
 
 
 def test_test_notification_follows_the_server_language():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert '"Test successful: FreshAirIQ can reach this notification target."' in flow
     assert '_txt(_flow_language(self.hass), "Test erfolgreich' in flow
 
@@ -154,7 +157,7 @@ def test_dead_second_contact_does_not_keep_the_room_open(tmp_path):
 
 
 def test_airing_ended_by_a_dead_contact_is_not_learned():
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'mem["session_learning_quarantine_code"] = "FAIQ-CONTACT-UNKNOWN-001"' in coordinator
     block = coordinator[coordinator.index('if mem.get("session_contact_unknown_expired"):'):]
     assert "self._finish_session_without_measurement(mem, cfg, session_ended_at)" in block[:500]

@@ -315,52 +315,10 @@ def learn_outcome_feedback(room: dict[str, Any], actual_removed_ml: float, actua
     abs_error = abs(removed_error)
 
     guarded_sample = accuracy < 40.0 and abs_error > 80.0
-    if guarded_sample:
-        direction = "actual_lower" if raw_ratio < 1.0 else "actual_higher"
-        previous_direction = room.get("outcome_guarded_direction")
-        try:
-            previous_ratio = float(room.get("outcome_guarded_last_ratio"))
-        except (TypeError, ValueError):
-            previous_ratio = None
-        previous_streak = int(room.get("outcome_guarded_streak", 0) or 0)
-        similar = (
-            previous_direction == direction
-            and previous_ratio is not None
-            and abs(raw_ratio - previous_ratio) <= max(0.20, abs(previous_ratio) * 0.35)
-        )
-        streak = min(previous_streak + 1, 3) if similar else 1
-        room["outcome_guarded_direction"] = direction
-        room["outcome_guarded_streak"] = streak
-        room["outcome_guarded_last_ratio"] = round(raw_ratio, 4)
-
-        if streak == 1:
-            alpha = 0.0
-            feedback_action = "guarded_observation"
-            feedback_reason = "Sehr große Prognoseabweichung erkannt. FreshAirIQ speichert sie zunächst nur als Verdachtsprobe; das Prognosemodell bleibt unverändert, bis eine ähnliche Abweichung bestätigt wird."
-        elif streak == 2:
-            alpha = min(base_alpha, 0.04)
-            feedback_action = "cautious_confirmation"
-            feedback_reason = "Eine zweite ähnliche große Abweichung bestätigt das Muster. FreshAirIQ passt das Modell erstmals mit sehr geringer Gewichtung an."
-        else:
-            alpha = min(base_alpha, 0.08)
-            feedback_action = "confirmed_outlier"
-            feedback_reason = "Die große Abweichung wurde wiederholt bestätigt. FreshAirIQ übernimmt das stabile Muster nun kontrolliert in das Prognosemodell."
-    else:
-        room["outcome_guarded_direction"] = None
-        room["outcome_guarded_streak"] = 0
-        room["outcome_guarded_last_ratio"] = None
-        if abs_error <= 15.0:
-            alpha = min(base_alpha, 0.08)
-            feedback_action = "applied"
-            feedback_reason = "Kleine Prognoseabweichung im normalen Mess- und Modellrauschen; die Messdaten werden behutsam übernommen."
-        elif accuracy >= 70.0 or abs_error <= 35.0:
-            alpha = base_alpha
-            feedback_action = "applied"
-            feedback_reason = "Messdaten wurden regulär in das Lernmodell übernommen und verfeinern künftige Prognosen."
-        else:
-            alpha = min(base_alpha, 0.06)
-            feedback_action = "cautious"
-            feedback_reason = "Deutliche Abweichung erkannt; FreshAirIQ führt das Modell nur vorsichtig nach."
+    (alpha, feedback_action, feedback_reason) = _guarded_outcome_sample(
+        abs_error=abs_error, accuracy=accuracy, base_alpha=base_alpha, guarded_sample=guarded_sample,
+        raw_ratio=raw_ratio, room=room,
+    )
 
     # Residual statistics are diagnostic evidence, not forecast coefficients.
     # Preserve them even for an unapplied first outlier so later confirmation
@@ -432,6 +390,60 @@ def learn_outcome_feedback(room: dict[str, Any], actual_removed_ml: float, actua
         successful=successful, observed_at=datetime.now().astimezone(),
     )
     return True
+
+
+def _guarded_outcome_sample(
+    *,
+    abs_error: Any, accuracy: Any, base_alpha: Any, guarded_sample: Any, raw_ratio: Any, room: Any,
+) -> Any:
+    """Clamp a guarded outcome sample and record why it was limited."""
+    if guarded_sample:
+        direction = "actual_lower" if raw_ratio < 1.0 else "actual_higher"
+        previous_direction = room.get("outcome_guarded_direction")
+        try:
+            previous_ratio = float(room.get("outcome_guarded_last_ratio"))
+        except (TypeError, ValueError):
+            previous_ratio = None
+        previous_streak = int(room.get("outcome_guarded_streak", 0) or 0)
+        similar = (
+            previous_direction == direction
+            and previous_ratio is not None
+            and abs(raw_ratio - previous_ratio) <= max(0.20, abs(previous_ratio) * 0.35)
+        )
+        streak = min(previous_streak + 1, 3) if similar else 1
+        room["outcome_guarded_direction"] = direction
+        room["outcome_guarded_streak"] = streak
+        room["outcome_guarded_last_ratio"] = round(raw_ratio, 4)
+
+        if streak == 1:
+            alpha = 0.0
+            feedback_action = "guarded_observation"
+            feedback_reason = "Sehr große Prognoseabweichung erkannt. FreshAirIQ speichert sie zunächst nur als Verdachtsprobe; das Prognosemodell bleibt unverändert, bis eine ähnliche Abweichung bestätigt wird."
+        elif streak == 2:
+            alpha = min(base_alpha, 0.04)
+            feedback_action = "cautious_confirmation"
+            feedback_reason = "Eine zweite ähnliche große Abweichung bestätigt das Muster. FreshAirIQ passt das Modell erstmals mit sehr geringer Gewichtung an."
+        else:
+            alpha = min(base_alpha, 0.08)
+            feedback_action = "confirmed_outlier"
+            feedback_reason = "Die große Abweichung wurde wiederholt bestätigt. FreshAirIQ übernimmt das stabile Muster nun kontrolliert in das Prognosemodell."
+    else:
+        room["outcome_guarded_direction"] = None
+        room["outcome_guarded_streak"] = 0
+        room["outcome_guarded_last_ratio"] = None
+        if abs_error <= 15.0:
+            alpha = min(base_alpha, 0.08)
+            feedback_action = "applied"
+            feedback_reason = "Kleine Prognoseabweichung im normalen Mess- und Modellrauschen; die Messdaten werden behutsam übernommen."
+        elif accuracy >= 70.0 or abs_error <= 35.0:
+            alpha = base_alpha
+            feedback_action = "applied"
+            feedback_reason = "Messdaten wurden regulär in das Lernmodell übernommen und verfeinern künftige Prognosen."
+        else:
+            alpha = min(base_alpha, 0.06)
+            feedback_action = "cautious"
+            feedback_reason = "Deutliche Abweichung erkannt; FreshAirIQ führt das Modell nur vorsichtig nach."
+    return (alpha, feedback_action, feedback_reason)
 
 
 def clear_session_behaviour(room: dict[str, Any]) -> None:

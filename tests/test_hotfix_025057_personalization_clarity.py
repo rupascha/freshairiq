@@ -1,6 +1,7 @@
 from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/'custom_components/freshairiq'
@@ -10,7 +11,7 @@ def test_release_version():
     assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP/'const.py').read_text()
 
 def test_native_level_labels_are_localized():
-    s=(COMP/'config_flow.py').read_text()
+    s=module_source("config_flow")
     # 0.26.4.5: the labels follow the Home Assistant language.
     assert 'vol.Required(_level_label(level, _flow_language(self.hass)), default=idx)' in s
     assert 'user_input.get(_level_label(level, _flow_language(self.hass))' in s

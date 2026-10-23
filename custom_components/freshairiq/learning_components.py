@@ -150,6 +150,53 @@ def build_learning_components_status(
         + (f" · {shadow_guarded_rooms} Räume im Rollback-Schutz" if shadow_guarded_rooms else "")
     )
 
+    (
+        calendar_span_days, completed_seasons, routine_days, routine_detail, routine_maturity,
+        season_breakdown, seasonal_detail, seasonal_maturity, seasonal_samples,
+    ) = _routine_and_seasonal_parts(
+        n=n, valid=valid,
+    )
+
+    (
+        duration_samples, evidence, house_days, house_detail, house_maturity, house_samples, night_count,
+        night_detail, night_maturity, night_samples, personal_context_detail, personal_context_maturity,
+        personal_days, reliability_score, stabilization_days, stabilization_detail, stabilization_maturity,
+        stabilization_samples, strategy_days, strategy_detail, strategy_maturity, strategy_outcomes,
+        validation_days, validation_detail, validation_samples,
+    ) = _strategy_context_validation_parts(
+        _unique_dates=_unique_dates, forecast_backtest=forecast_backtest, n=n,
+        post_close_stabilization=post_close_stabilization, store_data=store_data, valid=valid,
+    )
+
+    return _learning_components_summary(
+        calendar_span_days=calendar_span_days, completed_seasons=completed_seasons,
+        duration_samples=duration_samples, evidence=evidence, feedback_detail=feedback_detail,
+        feedback_maturity=feedback_maturity, feedback_samples=feedback_samples, house_days=house_days,
+        house_detail=house_detail, house_maturity=house_maturity, house_samples=house_samples,
+        live_forecast_detail=live_forecast_detail, live_forecast_maturity=live_forecast_maturity,
+        live_forecast_samples=live_forecast_samples, mean_feedback_success=mean_feedback_success,
+        night_count=night_count, night_detail=night_detail, night_maturity=night_maturity,
+        night_samples=night_samples, personal_context_detail=personal_context_detail,
+        personal_context_maturity=personal_context_maturity, personal_days=personal_days,
+        reliability_score=reliability_score, room_days=room_days, room_detail=room_detail,
+        room_maturity=room_maturity, room_samples=room_samples, routine_days=routine_days,
+        routine_detail=routine_detail, routine_maturity=routine_maturity, season_breakdown=season_breakdown,
+        seasonal_detail=seasonal_detail, seasonal_maturity=seasonal_maturity,
+        seasonal_samples=seasonal_samples, shadow_detail=shadow_detail, shadow_maturity=shadow_maturity,
+        shadow_samples=shadow_samples, stabilization_days=stabilization_days,
+        stabilization_detail=stabilization_detail, stabilization_maturity=stabilization_maturity,
+        stabilization_samples=stabilization_samples, strategy_days=strategy_days,
+        strategy_detail=strategy_detail, strategy_maturity=strategy_maturity,
+        strategy_outcomes=strategy_outcomes, valid=valid, validation_days=validation_days,
+        validation_detail=validation_detail, validation_samples=validation_samples,
+    )
+
+
+def _routine_and_seasonal_parts(
+    *,
+    n: Any, valid: Any,
+) -> Any:
+    """Routine and seasonal learning components (observed days per season)."""
     routine_samples = sum(int(_num(r.get("routine_source_samples"))) for r in valid)
     routine_maturity_values = [_num(r.get("routine_maturity")) for r in valid]
     routine_model_maturity = sum(routine_maturity_values) / n if valid else 0.0
@@ -241,7 +288,18 @@ def build_learning_components_status(
         f"{x['label']}: {'optimiert' if x['optimized'] else (str(x['observed_days']) + ' Tage · wird gelernt' if x['observed_days'] else 'noch keine Tages-Evidenz')}"
         for x in season_breakdown
     )
+    return (
+        calendar_span_days, completed_seasons, routine_days, routine_detail, routine_maturity,
+        season_breakdown, seasonal_detail, seasonal_maturity, seasonal_samples,
+    )
 
+
+def _strategy_context_validation_parts(
+    *,
+    _unique_dates: Any, forecast_backtest: Any, n: Any, post_close_stabilization: Any, store_data: Any,
+    valid: Any,
+) -> Any:
+    """Strategy, personal context, night, validation and post-close stabilisation components."""
     strategy_samples = sum(int(_num(r.get("strategy_samples"))) for r in valid)
     strategy_outcomes = sum(int(_num(r.get("strategy_outcome_samples"))) for r in valid)
     strategy_maturity_values = [
@@ -322,7 +380,31 @@ def build_learning_components_status(
         if buffer_fraction is not None and stabilization_samples > 0
         else f"Beobachtet Feuchterückstrom nach dem Schließen; {stabilization_days} unterschiedliche Tage"
     )
+    return (
+        duration_samples, evidence, house_days, house_detail, house_maturity, house_samples, night_count,
+        night_detail, night_maturity, night_samples, personal_context_detail, personal_context_maturity,
+        personal_days, reliability_score, stabilization_days, stabilization_detail, stabilization_maturity,
+        stabilization_samples, strategy_days, strategy_detail, strategy_maturity, strategy_outcomes,
+        validation_days, validation_detail, validation_samples,
+    )
 
+
+def _learning_components_summary(
+    *,
+    calendar_span_days: Any, completed_seasons: Any, duration_samples: Any, evidence: Any,
+    feedback_detail: Any, feedback_maturity: Any, feedback_samples: Any, house_days: Any, house_detail: Any,
+    house_maturity: Any, house_samples: Any, live_forecast_detail: Any, live_forecast_maturity: Any,
+    live_forecast_samples: Any, mean_feedback_success: Any, night_count: Any, night_detail: Any,
+    night_maturity: Any, night_samples: Any, personal_context_detail: Any, personal_context_maturity: Any,
+    personal_days: Any, reliability_score: Any, room_days: Any, room_detail: Any, room_maturity: Any,
+    room_samples: Any, routine_days: Any, routine_detail: Any, routine_maturity: Any, season_breakdown: Any,
+    seasonal_detail: Any, seasonal_maturity: Any, seasonal_samples: Any, shadow_detail: Any,
+    shadow_maturity: Any, shadow_samples: Any, stabilization_days: Any, stabilization_detail: Any,
+    stabilization_maturity: Any, stabilization_samples: Any, strategy_days: Any, strategy_detail: Any,
+    strategy_maturity: Any, strategy_outcomes: Any, valid: Any, validation_days: Any, validation_detail: Any,
+    validation_samples: Any,
+) -> Any:
+    """Component rows, the weighted overall maturity and the status payload."""
     components = [
         _component("room_physics", "Raumphysik", room_samples, room_maturity, max(len(valid), 1) * 80, room_detail,
                    description="Lernt den realen Luftwechsel und die raumspezifische Lüftungswirkung."),

@@ -1,5 +1,6 @@
 from pathlib import Path
 from custom_components.freshairiq.runtime_health import RuntimeHealthMonitor
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/"custom_components"/"freshairiq"
@@ -23,9 +24,9 @@ def test_user_visible_failure_surfaces_have_stable_codes():
     card=(COMP/"frontend"/"freshairiq-card.js").read_text()
     panel=(COMP/"frontend"/"freshairiq-panel.js").read_text()
     loader=(COMP/"frontend"/"freshairiq-loader.js").read_text()
-    sensor=(COMP/"sensor.py").read_text()
+    sensor=(COMP/"sensor.py").read_text() + (COMP/"dashboard_live.py").read_text()  # 0.26.5.3: built by dashboard_live (live channel)
     pdf=(COMP/"ventilation_log_api.py").read_text()
-    diagnostics=(COMP/"diagnostics.py").read_text()
+    diagnostics=module_source("diagnostics")
     settings=(COMP/"feedback_api.py").read_text()
     assert '"support_status": self.coordinator.runtime_health.user_summary' in sensor
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).

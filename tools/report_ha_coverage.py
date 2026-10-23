@@ -1,9 +1,8 @@
 """Validate FreshAirIQ coverage from a real Home Assistant coverage.py JSON report.
 
 The v1 release standard is intentionally stricter than Home Assistant's >95%
-quality-scale rule: every Python integration module must be at least 98%, the
-combined integration must be at least 99%, and config_flow.py must be 100%.
-The project target remains 100% wherever the runtime makes the path testable.
+quality-scale rule: every Python integration module, the combined integration
+and config_flow.py must each be at 100%.
 """
 from __future__ import annotations
 
@@ -36,8 +35,8 @@ def _source_modules() -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("path", nargs="?", default="ha_tests/coverage-ha.json")
-    parser.add_argument("--min-total", type=float, default=99.0)
-    parser.add_argument("--min-module", type=float, default=98.0)
+    parser.add_argument("--min-total", type=float, default=100.0)
+    parser.add_argument("--min-module", type=float, default=100.0)
     parser.add_argument("--config-flow", type=float, default=100.0)
     args = parser.parse_args()
 

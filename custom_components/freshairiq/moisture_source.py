@@ -237,6 +237,75 @@ def update_moisture_source(
     temp_rise = 0.0
     interval_min = 0.0
 
+    (
+        ah_rise, confidence, generated_ml, identified_source, interval_min, label, observed_change_ml,
+        source_message, source_rate, temp_rise, ventilation_change_ml,
+    ) = _source_from_baseline(
+        absolute_humidity_g_m3=absolute_humidity_g_m3, active_before=active_before, ah_rise=ah_rise,
+        airflow_factor=airflow_factor, baseline_row=baseline_row, confidence=confidence,
+        configured_sources=configured_sources, cross_ventilation=cross_ventilation, generated_ml=generated_ml,
+        identified_source=identified_source, interval_min=interval_min, label=label,
+        learning_rate_per_min=learning_rate_per_min, memory=memory, now=now,
+        observed_change_ml=observed_change_ml, points=points, reference_ah_g_m3=reference_ah_g_m3,
+        source_message=source_message, source_rate=source_rate, temp_rise=temp_rise,
+        temperature_c=temperature_c, ventilation_change_ml=ventilation_change_ml, volume_m3=volume_m3,
+        window_open=window_open,
+    )
+
+    active = bool(memory.get("moisture_source_active", False))
+    if active and not identified_source:
+        identified_source = memory.get("moisture_source_identified_source")
+        source_message = str(memory.get("moisture_source_message") or source_message)
+        label = str(memory.get("moisture_source_label") or label)
+    memory["moisture_source_identified_source"] = identified_source
+    memory["moisture_source_message"] = source_message
+    memory["moisture_source_confidence"] = int(confidence if active else 0)
+    memory["moisture_source_rate_ml_min"] = round(max(source_rate, 0.0), 2)
+    memory["moisture_source_generated_ml"] = round(max(generated_ml, 0.0), 1)
+    memory["moisture_source_label"] = label
+    memory["moisture_source_last_evaluated_at"] = now.isoformat()
+
+    ended_at = _dt(memory.get("moisture_source_last_ended_at"))
+    recovery = bool(ended_at and 0 <= (now - ended_at).total_seconds() / 60.0 <= 15.0)
+    return {
+        "active": active,
+        "recovery": recovery,
+        "label": label,
+        "identified_source": identified_source,
+        "message": source_message,
+        "ambiguous": bool(active and configured_sources and len([x for x in configured_sources if x in _LABELS]) > 1 and not identified_source),
+        "configured_sources": list(configured_sources or []),
+        "confidence": int(memory.get("moisture_source_confidence", 0) or 0),
+        "source_rate_ml_min": round(max(source_rate, 0.0), 2),
+        "generated_ml_window": round(max(generated_ml, 0.0), 1),
+        "observed_change_ml_window": round(observed_change_ml, 1),
+        "ventilation_change_ml_window": round(ventilation_change_ml, 1),
+        "absolute_humidity_rise_g_m3": round(ah_rise, 3),
+        "temperature_rise_c": round(temp_rise, 2),
+        "window_min": round(interval_min, 1),
+        "started_at": memory.get("moisture_source_started_at"),
+        "last_ended_at": memory.get("moisture_source_last_ended_at"),
+        "changed": bool(
+            add
+            or active_before != active
+            or previous_confidence != int(memory.get("moisture_source_confidence", 0) or 0)
+            or abs(previous_rate - float(memory.get("moisture_source_rate_ml_min", 0.0) or 0.0)) >= 0.25
+            or abs(previous_generated - float(memory.get("moisture_source_generated_ml", 0.0) or 0.0)) >= 2.0
+            or previous_label != str(memory.get("moisture_source_label", "Feuchtequelle"))
+            or previous_ended != memory.get("moisture_source_last_ended_at")
+        ),
+    }
+
+
+def _source_from_baseline(
+    *,
+    absolute_humidity_g_m3: Any, active_before: Any, ah_rise: Any, airflow_factor: Any, baseline_row: Any,
+    confidence: Any, configured_sources: Any, cross_ventilation: Any, generated_ml: Any,
+    identified_source: Any, interval_min: Any, label: Any, learning_rate_per_min: Any, memory: Any, now: Any,
+    observed_change_ml: Any, points: Any, reference_ah_g_m3: Any, source_message: Any, source_rate: Any,
+    temp_rise: Any, temperature_c: Any, ventilation_change_ml: Any, volume_m3: Any, window_open: Any,
+) -> Any:
+    """Compare the room trend with its baseline and classify a likely moisture source."""
     if baseline_row is not None:
         interval_min, base = baseline_row
         old_ah = float(base.get("ah", absolute_humidity_g_m3))
@@ -355,47 +424,7 @@ def update_moisture_source(
             else:
                 memory["moisture_source_active"] = True
                 confidence = max(int(memory.get("moisture_source_confidence", 0) or 0) - 3, 55)
-
-    active = bool(memory.get("moisture_source_active", False))
-    if active and not identified_source:
-        identified_source = memory.get("moisture_source_identified_source")
-        source_message = str(memory.get("moisture_source_message") or source_message)
-        label = str(memory.get("moisture_source_label") or label)
-    memory["moisture_source_identified_source"] = identified_source
-    memory["moisture_source_message"] = source_message
-    memory["moisture_source_confidence"] = int(confidence if active else 0)
-    memory["moisture_source_rate_ml_min"] = round(max(source_rate, 0.0), 2)
-    memory["moisture_source_generated_ml"] = round(max(generated_ml, 0.0), 1)
-    memory["moisture_source_label"] = label
-    memory["moisture_source_last_evaluated_at"] = now.isoformat()
-
-    ended_at = _dt(memory.get("moisture_source_last_ended_at"))
-    recovery = bool(ended_at and 0 <= (now - ended_at).total_seconds() / 60.0 <= 15.0)
-    return {
-        "active": active,
-        "recovery": recovery,
-        "label": label,
-        "identified_source": identified_source,
-        "message": source_message,
-        "ambiguous": bool(active and configured_sources and len([x for x in configured_sources if x in _LABELS]) > 1 and not identified_source),
-        "configured_sources": list(configured_sources or []),
-        "confidence": int(memory.get("moisture_source_confidence", 0) or 0),
-        "source_rate_ml_min": round(max(source_rate, 0.0), 2),
-        "generated_ml_window": round(max(generated_ml, 0.0), 1),
-        "observed_change_ml_window": round(observed_change_ml, 1),
-        "ventilation_change_ml_window": round(ventilation_change_ml, 1),
-        "absolute_humidity_rise_g_m3": round(ah_rise, 3),
-        "temperature_rise_c": round(temp_rise, 2),
-        "window_min": round(interval_min, 1),
-        "started_at": memory.get("moisture_source_started_at"),
-        "last_ended_at": memory.get("moisture_source_last_ended_at"),
-        "changed": bool(
-            add
-            or active_before != active
-            or previous_confidence != int(memory.get("moisture_source_confidence", 0) or 0)
-            or abs(previous_rate - float(memory.get("moisture_source_rate_ml_min", 0.0) or 0.0)) >= 0.25
-            or abs(previous_generated - float(memory.get("moisture_source_generated_ml", 0.0) or 0.0)) >= 2.0
-            or previous_label != str(memory.get("moisture_source_label", "Feuchtequelle"))
-            or previous_ended != memory.get("moisture_source_last_ended_at")
-        ),
-    }
+    return (
+        ah_rise, confidence, generated_ml, identified_source, interval_min, label, observed_change_ml,
+        source_message, source_rate, temp_rise, ventilation_change_ml,
+    )

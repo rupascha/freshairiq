@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -19,8 +20,8 @@ def _flatten(value, prefix=""):
 
 
 def test_four_coordinator_values_are_exported_by_status_sensor():
-    sensor = (COMP / "sensor.py").read_text(encoding="utf-8")
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    sensor = (COMP / "sensor.py").read_text(encoding="utf-8") + (COMP / "dashboard_live.py").read_text(encoding="utf-8")  # 0.26.5.3: built by dashboard_live (live channel)
+    coordinator = module_source("coordinator")
     for key in (
         "ventilation_threshold_mode",
         "presence_explanation",

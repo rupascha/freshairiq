@@ -1,10 +1,10 @@
 from pathlib import Path
 import ast
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 
 def test_feedback_uses_central_diagnostics_schema_constant():
-    p=ROOT/'custom_components/freshairiq/telemetry.py'
-    text=p.read_text(encoding='utf-8')
+    text=module_source("telemetry")
     assert 'DIAGNOSTICS_SCHEMA_VERSION' in text
     assert '"diagnostics_schema_version": DIAGNOSTICS_SCHEMA_VERSION' in text
     tree=ast.parse(text)

@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from custom_components.freshairiq.opening_state import advertises_three_states, normalize_opening_state, room_opening_mode
+from tests._source import module_source
 
 class States:
     def __init__(self, rows): self.rows=rows
@@ -50,7 +51,7 @@ def test_binary_long_open_compatibility_guard_is_preserved():
 
 def test_mode_specific_learning_and_recommendation_are_wired():
     from pathlib import Path
-    text=(Path(__file__).parents[1]/'custom_components/freshairiq/coordinator.py').read_text()
+    text=module_source("coordinator")
     assert 'session_opening_mode_mixed' in text
     assert 'session_mode in {"open", "tilted", "cross"}' in text
     assert 'action = "Open fully"' not in text

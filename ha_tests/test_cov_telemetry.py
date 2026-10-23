@@ -21,6 +21,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 from homeassistant.util import dt as dt_util
 
 from custom_components.freshairiq import telemetry as telemetry_module
+from custom_components.freshairiq import telemetry_reports
 from custom_components.freshairiq.const import DOMAIN
 from custom_components.freshairiq.diagnostic_transport import next_nightly_upload_time
 from custom_components.freshairiq.diagnostics import FreshAirIQDiagnosticsRecorder
@@ -495,6 +496,7 @@ async def test_naive_clock_paths_are_aligned(hass, berlin, hub, monkeypatch) -> 
     """Defensive branches for a naive ``now`` with aware persisted timestamps."""
     naive_now = datetime(2026, 10, 15, 12, 0, 0)
     monkeypatch.setattr(telemetry_module, "dt_util", SimpleNamespace(now=lambda: naive_now))
+    monkeypatch.setattr(telemetry_reports, "dt_util", SimpleNamespace(now=lambda: naive_now))
     entry = _entry(hass)
     client = _client(hass, entry, FakeRecorder())
     client._state = {"client_token": TOKEN, "hub_enrolled": True,

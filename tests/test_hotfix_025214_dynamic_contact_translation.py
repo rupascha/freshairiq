@@ -1,7 +1,8 @@
 from pathlib import Path
 import json
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
-FLOW=(ROOT/"custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+FLOW=module_source("config_flow")
 
 def test_native_contact_form_uses_only_static_translatable_field_names():
     schema=FLOW[FLOW.index("def _single_contact_reference_schema"):FLOW.index("def _apply_single_contact_reference")]

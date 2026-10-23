@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_FLOW = ROOT / "custom_components/freshairiq/config_flow.py"
@@ -12,7 +13,7 @@ CONST = ROOT / "custom_components/freshairiq/const.py"
 
 
 def test_settings_are_grouped_and_have_explicit_back_navigation():
-    text = CONFIG_FLOW.read_text(encoding="utf-8")
+    text = module_source("config_flow")
     assert '"ventilation_settings"' in text
     assert '"notification_energy_settings"' in text
     assert '"data_learning_settings"' in text
@@ -21,7 +22,7 @@ def test_settings_are_grouped_and_have_explicit_back_navigation():
 
 
 def test_submitted_pages_persist_immediately():
-    text = CONFIG_FLOW.read_text(encoding="utf-8")
+    text = module_source("config_flow")
     assert "def _persist_working_state" in text
     assert "async_update_entry(self.config_entry, **kwargs)" in text
     assert "async_schedule_reload(self.config_entry.entry_id)" in text

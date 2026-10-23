@@ -19,7 +19,7 @@ def test_learning_scale_is_configurable_and_applied():
     assert 'this.style.setProperty("--faiq-font-learning", String(this._config.font_scale_learning));' in CARD
     assert '["font_scale_learning","Lernmodell & Analyse",' in CARD
     assert '["font_scale_learning","Learning model & analysis",' in CARD
-    assert "style.textContent = faiqScaleCss(style.textContent);" in CARD
+    assert "faiqThemeCss(faiqScaleCss(FAIQ_CARD_CSS + " in CARD  # 0.26.5.3: scaled, then themed
 
 
 def test_steps_reach_200_percent_and_default_stays_100():

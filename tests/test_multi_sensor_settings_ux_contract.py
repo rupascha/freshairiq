@@ -1,15 +1,16 @@
 from pathlib import Path
 import json
 from tests.frontend_source import card_text
+from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 
 def test_native_multi_select_contract():
-    s=(ROOT/"custom_components/freshairiq/config_flow.py").read_text()
+    s=module_source("config_flow")
     assert 'device_class="temperature", multiple=True' in s
     assert 'device_class="humidity", multiple=True' in s
 
 def test_import_preselects_all_detected_climate_sources():
-    s=(ROOT/"custom_components/freshairiq/config_flow.py").read_text()
+    s=module_source("config_flow")
     assert "if key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):" in s
     assert "defaults[key] = values" in s
 

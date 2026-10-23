@@ -1,5 +1,6 @@
 from pathlib import Path
 from custom_components.freshairiq.opening_state import update_passage_pattern
+from tests._source import module_source
 
 
 def test_passage_pattern_requires_repeated_evidence():
@@ -22,7 +23,7 @@ def test_genuine_open_evidence_prevents_overeager_learning():
 def test_learned_pattern_never_rewrites_contact_state():
     root = Path(__file__).parents[1]
     opening = (root / "custom_components/freshairiq/opening_state.py").read_text(encoding="utf-8")
-    coord = (root / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coord = module_source("coordinator")
     assert "It never rewrites" in opening
     assert "Sensorzustand wird nicht überschrieben" in coord
     assert '"passage_pattern_learned"' in coord
@@ -31,7 +32,7 @@ def test_learned_pattern_never_rewrites_contact_state():
 
 def test_existing_binary_and_three_state_guards_remain_present():
     root = Path(__file__).parents[1]
-    coord = (root / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    coord = module_source("coordinator")
     opening = (root / "custom_components/freshairiq/opening_state.py").read_text(encoding="utf-8")
     assert "stabilise_explicit_mode" in coord
     assert 'str(entity_id).startswith("binary_sensor.")' in opening

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COORD = ROOT / "custom_components/freshairiq/coordinator.py"
 
 
 def _source() -> str:
-    return COORD.read_text(encoding="utf-8")
+    return module_source("coordinator")
 
 
 def test_cross_ventilation_consumes_persisted_stable_three_state_truth():

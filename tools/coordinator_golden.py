@@ -374,16 +374,19 @@ async def _run_all(dump_dir: Path | None) -> dict:
 
 
 def _coverage(run) -> tuple[dict, dict]:
-    target = coord_mod.__file__
-    executed: set[int] = set()
+    # The coordinator is split into coordinator*.py modules (0.26.5.2 maintenance).
+    package = Path(coord_mod.__file__).parent
+    targets = {str(path) for path in package.glob("coordinator*.py")} | {str(package / "room_recommendation.py")}
+    executed: dict[str, set[int]] = {target: set() for target in targets}
 
     def tracer(frame, event, arg):
-        if frame.f_code.co_filename != target:
+        lines = executed.get(frame.f_code.co_filename)
+        if lines is None:
             return None
 
         def local(frame, event, arg):
             if event == "line":
-                executed.add(frame.f_lineno)
+                lines.add(frame.f_lineno)
             return local
         return local
 
@@ -393,13 +396,14 @@ def _coverage(run) -> tuple[dict, dict]:
     finally:
         sys.settrace(None)
     import ast
-    tree = ast.parse(Path(target).read_text(encoding="utf-8"))
     spans = {}
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            lines = {n.lineno for n in ast.walk(node) if isinstance(n, ast.stmt) and n is not node}
-            if lines:
-                spans[node.name] = (len(lines & executed), len(lines))
+    for target in sorted(targets):
+        tree = ast.parse(Path(target).read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                lines = {n.lineno for n in ast.walk(node) if isinstance(n, ast.stmt) and n is not node}
+                if lines:
+                    spans[node.name] = (len(lines & executed[target]), len(lines))
     return result, spans
 
 
@@ -470,7 +474,7 @@ def main() -> int:
         impl = spans.get("_async_update_data_impl", (0, 0))
         print(f"coverage _async_update_data_impl: {impl[0]}/{impl[1]} statements ({100 * impl[0] / max(1, impl[1]):.1f} %)")
         tot = [sum(v[0] for v in spans.values()), sum(v[1] for v in spans.values())]
-        print(f"coverage coordinator.py functions: {tot[0]}/{tot[1]} statements ({100 * tot[0] / max(1, tot[1]):.1f} %)")
+        print(f"coverage coordinator modules functions: {tot[0]}/{tot[1]} statements ({100 * tot[0] / max(1, tot[1]):.1f} %)")
     return 0
 
 

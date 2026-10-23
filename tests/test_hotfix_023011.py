@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from custom_components.freshairiq.opening_strategy import _opening_score, enrich_opening_recommendation
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -102,7 +103,7 @@ def test_opening_score_does_not_apply_airflow_twice():
 
 
 def _contact_reference_helper():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     module = ast.parse(source)
     helper = next(node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "_contact_specific_reference")
     mini = ast.Module(body=[helper], type_ignores=[])

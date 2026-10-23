@@ -8,6 +8,7 @@ from custom_components.freshairiq.cooldown import (
     FEEDBACK_COOLDOWN_SECONDS, cooldown_result, hub_retry_after, remaining_seconds, started_cooldown,
 )
 from tests.frontend_source import CARD_FILE
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 10, 10, 12, 0, tzinfo=timezone.utc)
@@ -33,7 +34,7 @@ def test_remaining_time_and_results():
 
 
 def test_integration_and_card_wiring():
-    telemetry = (ROOT / "custom_components/freshairiq/telemetry.py").read_text(encoding="utf-8")
+    telemetry = module_source("telemetry")
     assert 'left = remaining_seconds(self._state.get("feedback_cooldown_until"), now)' in telemetry
     assert "if response.status == 429:" in telemetry
     assert '"feedback_cooldown_until": self._state.get("feedback_cooldown_until"),' in telemetry

@@ -9,7 +9,8 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from .automation_events import ventilation_measures_active
+from .automation_events import notification_category
+from .notification_policy import reminder_interval_min, room_notification_events, status_messages_wanted
 from .const import NOTIFY_SCOPE_BOTH, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_ROOM
 from .forecast import in_night_window, night_window_hours
 from .intelligence import mark_recommendation_notified
@@ -483,15 +484,25 @@ def _house_message(iq: dict[str, Any], rooms: dict[str, Any]) -> tuple[str, str]
 def _publish_event(
     hass: HomeAssistant, store, now: datetime, cooldown: float, event: str, title: str, message: str,
     room_key: str | None, rooms: dict[str, Any], night_quiet: bool, extra: dict[str, Any] | None = None,
+    options: dict[str, Any] | None = None,
 ) -> bool:
-    """Fire ``freshairiq_notification`` once per message (same cooldown as push)."""
-    key = f"event:{event}:{room_key or 'house'}"
-    if not _due(store, key, now, cooldown):
+    """Fire ``freshairiq_notification`` once per message (same cooldown as push).
+
+    0.26.5.3: carries ``category`` (action / status / warning); status messages
+    stay off while the user switched them off; a reminder has its own interval.
+    """
+    options = options or {}
+    if not status_messages_wanted(options, event):
+        return False
+    reminder = bool((extra or {}).get("reminder"))
+    key = f"event:{'reminder:' if reminder else ''}{event}:{room_key or 'house'}"
+    if not _due(store, key, now, min(cooldown, reminder_interval_min(options) or cooldown) if reminder else cooldown):
         return False
     title_out, message_out = _localized(title, message)
     room = rooms.get(room_key) if room_key and isinstance(rooms.get(room_key), dict) else {}
     payload: dict[str, Any] = {
         "type": event,
+        "category": notification_category(event),
         "room_key": room_key,
         "room_name": room.get("name") if room else None,
         "title": title_out,
@@ -556,36 +567,20 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
     recovery = data.get("sensor_recovery") if isinstance(data.get("sensor_recovery"), dict) else {}
     sensor_recovery_active = bool(recovery.get("active"))
 
-    # Per-room action transitions. The action state is persisted, so restart does not spam.
-    room_events: dict[str, list[dict[str, Any]]] = {"Ventilate": [], "Ventilate for cooling": [], "Close": [], "sensor": [], "mould": []}
-    for key, room in rooms.items():
-        if not isinstance(room, dict):
-            continue
-        mem = store.room(key)
-        action = room.get("action")
-        previous = mem.get("last_action")
-        if action != previous:
-            mem["last_action"] = action
-            changed = True
-            if action in room_events:
-                room_events[action].append(room)
-        if room.get("data_quality") != "ok" and _room_can_raise_sensor_alerts(room):
-            room_events["sensor"].append(room)
-        # 0.26.4.6 (user feedback): no mould alarm while something already works
-        # against the humidity (shower with running fan, open window, recovery).
-        # The warning follows once windows are closed and the fan is off again.
-        if room.get("mould_level") in {"High", "Very high"} and not ventilation_measures_active(room):
-            room_events["mould"].append(room)
+    # Per-room messages on the house-aligned action, plus reminders (0.26.5.3).
+    room_events, room_state_changed = room_notification_events(
+        rooms, store, now, options, data.get("intelligent_recommendation"), sensor_alerts=_room_can_raise_sensor_alerts)
+    changed = changed or room_state_changed
 
     def publish(event: str, title: str, message: str, room_key: str | None = None, extra: dict[str, Any] | None = None) -> None:
         nonlocal changed
-        if _publish_event(hass, store, now, cooldown, event, title, message, room_key, rooms, suppress_at_night, extra):
+        if _publish_event(hass, store, now, cooldown, event, title, message, room_key, rooms, suppress_at_night, extra, options):
             changed = True
 
-    async def emit(event: str, title: str, message: str, room_key: str | None = None, *, push: bool = True) -> bool:
+    async def emit(event: str, title: str, message: str, room_key: str | None = None, *, push: bool = True, reminder: bool = False) -> bool:
         nonlocal changed
-        publish(event, title, message, room_key)
-        if not push_enabled or not push:
+        publish(event, title, message, room_key, {"reminder": True} if reminder else None)
+        if not push_enabled or not push or not status_messages_wanted(options, event):
             return True
         target_count, available_count = _notification_service_counts(hass, options)
         if suppress_at_night:
@@ -596,8 +591,8 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             if _record_notification_diagnostic(store, now=now, event=event, scope="room", status="suppressed", target_count=target_count, available_service_count=available_count, reason="room_not_selected"):
                 changed = True
             return True
-        key = f"{event}:{room_key or 'house'}"
-        if not _due(store, key, now, cooldown):
+        key = f"{'reminder:' if reminder else ''}{event}:{room_key or 'house'}"
+        if not _due(store, key, now, min(cooldown, reminder_interval_min(options) or cooldown) if reminder else cooldown):
             if _record_notification_diagnostic(store, now=now, event=event, scope="room" if room_key else "house", status="suppressed", target_count=target_count, available_service_count=available_count, reason="cooldown"):
                 changed = True
             return True
@@ -641,6 +636,9 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
         await emit("close", f"FreshAirIQ · {r['name']}", f"{room_notification_message('close', r, store.data)} {_continuation(r)}", r["key"], push=room_push and bool(options.get("notify_close")))
     for r in room_events["mould"]:
         await emit("mould", f"FreshAirIQ · {r['name']}", f"Schimmelrisiko {r['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(r['surface_rh'])} %.{_fan_hint(r)}", r["key"], push=room_push and bool(options.get("notify_mould")))
+    for r in room_events["reminder"]:
+        event = {"Ventilate": "ventilate", "Ventilate for cooling": "cool"}.get(store.room(r["key"]).get("last_action"), "close")
+        await emit(event, f"FreshAirIQ · {r['name']}", f"Erinnerung: {room_notification_message(event, r, store.data)}", r["key"], push=room_push and bool(options.get(f"notify_{'cooling' if event == 'cool' else event}")), reminder=True)
     if not sensor_recovery_active:
         for r in room_events["sensor"]:
             await emit("sensor", f"FreshAirIQ · {r['name']}", room_notification_message("sensor", r, store.data), r["key"], push=room_push and bool(options.get("notify_sensor")))

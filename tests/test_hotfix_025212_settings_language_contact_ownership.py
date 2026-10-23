@@ -1,9 +1,10 @@
 from pathlib import Path
 import json
 import re
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
-FLOW=(ROOT/"custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+FLOW=module_source("config_flow")
 CARD=(ROOT/"custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 
 def _walk(obj, path=""):

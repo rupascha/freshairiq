@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+from tests._source import module_source
 
 FLOW = Path(__file__).resolve().parents[1] / "custom_components/freshairiq/config_flow.py"
 
 
 def _resolve():
-    tree = ast.parse(FLOW.read_text(encoding="utf-8"))
+    tree = ast.parse(module_source("config_flow"))
     fn = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_resolve_move_ranking")
     namespace: dict = {}
     exec(compile(ast.Module(body=[fn], type_ignores=[]), str(FLOW), "exec"), namespace)
@@ -42,7 +43,7 @@ def test_result_is_always_a_permutation():
 
 
 def test_room_sorting_uses_the_same_move_semantics():
-    source = FLOW.read_text(encoding="utf-8")
+    source = module_source("config_flow")
     block = source[source.index("async def async_step_sort_rooms"):source.index("def _room_order_schema")]
     assert "ranked_keys = _resolve_move_ranking(ranked_keys, current_keys)" in block
     assert "len(set(ranked_keys)) != len(ranked_keys)" not in block

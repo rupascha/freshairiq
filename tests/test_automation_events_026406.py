@@ -12,6 +12,7 @@ from custom_components.freshairiq.automation_events import (
     action_code,
     ventilation_measures_active,
 )
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,13 +84,19 @@ def test_house_recommendation_and_english_labels():
 
 
 def test_mould_risk_changes_report_direction_and_active_measures():
-    emitter, fired = _emitter()
+    fired: list[tuple[str, dict]] = []
+    clock = [0.0]
+    emitter = AutomationEventEmitter(lambda t, p: fired.append((t, p)), "entry1", clock=lambda: clock[0])
     emitter.process(_data([_room()]))
     emitter.process(_data([_room(mould_level="High", configured_actuators={"mechanical_exhaust_active": True})]))
     assert [t for t, _ in fired] == [EVENT_MOULD_RISK]
     assert fired[0][1]["rising"] is True and fired[0][1]["previous_mould_level"] == "low"
     assert fired[0][1]["mould_level"] == "high"
     assert fired[0][1]["ventilation_measures_active"] is True
+    # 0.26.5.3: a fall is reported once it held 10 minutes (no flood at a boundary)
+    emitter.process(_data([_room(mould_level="Elevated")]))
+    assert emitter.fired == 1
+    clock[0] = 600.0
     emitter.process(_data([_room(mould_level="Elevated")]))
     assert fired[-1][1]["rising"] is False
     assert emitter.fired == 2
@@ -133,7 +140,7 @@ def test_an_evening_produces_a_sparse_well_formed_event_stream():
 
 
 def test_coordinator_registers_and_releases_the_event_listener():
-    source = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     assert "self.automation_events = AutomationEventEmitter(" in source
     assert "add_listener(self._async_fire_automation_events)" in source
     stop = source[source.index("async def async_stop_listeners"):]
@@ -141,8 +148,10 @@ def test_coordinator_registers_and_releases_the_event_listener():
 
 
 def test_mould_notifications_wait_until_ventilation_measures_end():
-    source = (ROOT / "custom_components/freshairiq/notifications.py").read_text(encoding="utf-8")
+    # 0.26.5.3: the room message rules live in notification_policy.py
+    source = (ROOT / "custom_components/freshairiq/notification_policy.py").read_text(encoding="utf-8")
     assert 'room.get("mould_level") in {"High", "Very high"} and not ventilation_measures_active(room)' in source
+    assert "room_notification_events(" in (ROOT / "custom_components/freshairiq/notifications.py").read_text(encoding="utf-8")
 
 
 def test_documentation_and_blueprints_match_the_event_contract():

@@ -24,6 +24,7 @@ from homeassistant.helpers import floor_registry as fr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.freshairiq import config_flow as cf
+from custom_components.freshairiq import config_flow_subentry as subentry_flow
 from custom_components.freshairiq.config_flow import FreshAirIQRoomSubentryFlow
 from custom_components.freshairiq.const import (
     CONF_CONTACT_DELAYS,
@@ -58,7 +59,7 @@ def fast_commit_sleep(monkeypatch):
     async def _yield(_delay=0):
         await asyncio.sleep(0)
 
-    monkeypatch.setattr(cf, "asyncio", SimpleNamespace(sleep=_yield))
+    monkeypatch.setattr(subentry_flow, "asyncio", SimpleNamespace(sleep=_yield))
 
 
 def _room(key: str = "wohnzimmer", name: str = "Wohnzimmer", **extra) -> dict:

@@ -67,6 +67,10 @@ class RoomCloseSensor(FreshAirIQEntity, BinarySensorEntity):
         )
 
 
+_SOURCE_DETAILS = ("source", "confidence", "rate_ml_min", "generated_ml")
+_NO_SOURCE = {"source": None, "confidence": 0, "rate_ml_min": None, "generated_ml": None}
+
+
 class RoomMoistureSourceSensor(FreshAirIQEntity, BinarySensorEntity):
     """0.26.5.1: on while an internal moisture source (shower, bath, ...) is active.
 
@@ -100,7 +104,7 @@ class RoomMoistureSourceSensor(FreshAirIQEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         room = self._room()
-        return {
+        attributes = {
             "source": room.get("moisture_source_identified_source"),
             "confidence": int(room.get("moisture_source_confidence") or 0),
             "rate_ml_min": room.get("moisture_source_rate_ml_min"),
@@ -109,6 +113,15 @@ class RoomMoistureSourceSensor(FreshAirIQEntity, BinarySensorEntity):
             "last_ended_at": room.get("moisture_source_last_ended_at"),
             "recovery": bool(room.get("moisture_source_recovery")),
         }
+        # 0.26.5.3 (recorder load): the detector's rate and amount move with every
+        # reading, also while nothing is going on. Outside an active source (or its
+        # recovery) they show the values of the last source, so the entity does not
+        # write a recorder row per reading.
+        if room.get("moisture_source_active") or room.get("moisture_source_recovery"):
+            self._last_source = {key: attributes[key] for key in _SOURCE_DETAILS}
+        else:
+            attributes.update(getattr(self, "_last_source", None) or dict(_NO_SOURCE))
+        return attributes
 
 
 class RoomShadingSensor(FreshAirIQEntity, BinarySensorEntity):

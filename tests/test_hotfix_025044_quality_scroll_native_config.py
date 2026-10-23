@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import json
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -45,7 +46,7 @@ def _assert_flow_descriptions_complete(payload: dict) -> None:
 
 
 def test_monitor_only_quality_fix_is_explicit_and_preserves_visibility_contract():
-    text = (COMP / "diagnostics.py").read_text(encoding="utf-8")
+    text = module_source("diagnostics")
     assert 'room.get("calculation_enabled") is False' in text
     assert 'room.get("monitor_only") is True' in text
     assert 'room.get("data_quality") == "monitor_only"' in text
@@ -103,7 +104,7 @@ def test_native_flow_is_fully_documented_and_locale_specific():
     assert "Beispiel" in json.dumps(de["options"], ensure_ascii=False)
 
 def test_options_flow_rebases_from_current_config_entry_and_dashboard_force_reloads():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     card = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     api = (COMP / "feedback_api.py").read_text(encoding="utf-8")
 

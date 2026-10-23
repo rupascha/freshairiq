@@ -7,6 +7,8 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any
 
+from .humidity_plateau import goal_unreachable, humidity_eta
+
 GOALS = ("humidity", "co2", "temperature")
 # Goals a user may switch off per room. Humidity stays: moisture and mould
 # protection is the core of every room evaluation.
@@ -34,6 +36,16 @@ def normalise_disabled_goals(value: Any) -> list[str]:
     vals = value if isinstance(value, (list, tuple, set)) else []
     return [g for g in SWITCHABLE_GOALS if g in {str(x) for x in vals}]
 
+def room_comfort_target(cfg: dict[str, Any], mem: dict[str, Any]) -> tuple[float | None, str]:
+    """The room's comfort target: manual value, running session, thermostat, fallback."""
+    mode = str(cfg.get("target_temperature_mode", "automatic"))
+    return effective_temperature_target(
+        manual=cfg.get("target_temperature") if mode == "manual" else None,
+        session_target=mem.get("session_comfort_target_c") if mem.get("session_active") else None,
+        thermostat_target=mem.get("last_plausible_comfort_target_c") if mode == "automatic" else None,
+        fallback=cfg.get("target_temperature_fallback"),
+    )
+
 def effective_temperature_target(*, manual: Any=None, session_target: Any=None, thermostat_target: Any=None, fallback: Any=None) -> tuple[float|None,str]:
     """Resolve a plausible comfort target without accepting frost-protection values."""
     for value, source in ((manual,"manual"),(session_target,"session"),(thermostat_target,"thermostat"),(fallback,"fallback")):
@@ -46,7 +58,7 @@ def evaluate_goals(*, humidity: Any, target_rh: Any, co2: Any, co2_warn: Any,
                    temperature: Any, temperature_target: Any, temperature_rate_c_min: Any=None,
                    co2_rate_ppm_min: Any=None, humidity_rate_pct_min: Any=None,
                    priorities: Any=None, available_goals: Any=None, hard_close: bool=False,
-                   disabled_goals: Any=None) -> dict[str,Any]:
+                   disabled_goals: Any=None, humidity_floor_rh: Any=None) -> dict[str,Any]:
     rh=_f(humidity); rh_target=_f(target_rh,55.0) or 55.0
     c=_f(co2); c_target=_f(co2_warn,1000.0) or 1000.0
     t=_f(temperature); tt=_f(temperature_target)
@@ -56,8 +68,12 @@ def evaluate_goals(*, humidity: Any, target_rh: Any, co2: Any, co2_warn: Any,
         r=_f(rate)
         if r is None or r >= -0.001: return None
         return round(min(max(delta/abs(r),0.0),240.0),1)
+    # 0.26.5.3: with the window open / fan running the room only comes down to
+    # what the supply air allows; an unreachable target gets no countdown.
+    floor=_f(humidity_floor_rh)
     rows.append({"id":"humidity","active":rh is not None,"reached":rh is not None and rh <= rh_target,
-                 "value":rh,"target":rh_target,"eta_min":eta(None if rh is None else rh-rh_target, humidity_rate_pct_min)})
+                 "value":rh,"target":rh_target,"eta_min":humidity_eta(rh, rh_target, _f(humidity_rate_pct_min), floor),
+                 "unreachable":goal_unreachable(rh, rh_target, floor),"floor_rh":None if floor is None else round(floor,1)})
     rows.append({"id":"co2","active":c is not None,"reached":c is not None and c <= c_target,
                  "value":c,"target":c_target,"eta_min":eta(None if c is None else c-c_target, co2_rate_ppm_min)})
     rows.append({"id":"temperature","active":t is not None and tt is not None,"reached":t is not None and tt is not None and t <= tt+0.3,

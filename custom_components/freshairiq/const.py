@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.5.2"
+VERSION = "0.26.5.3"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -75,7 +75,7 @@ CONF_ROOM_ILLUMINANCE = "illuminance"
 CONF_ROOM_COVERS = "covers"  # legacy room-wide fallback; new UI assigns covers per opening
 CONF_CONTACT_COVERS = "contact_covers"
 CONF_CONTACT_PASSAGE_DOORS = "contact_passage_doors"
-# 0.26.5.2: optional automatic control (off unless the user enables it)
+# 0.26.5.3: optional automatic control (off unless the user enables it)
 CONF_CONTACT_COVER_FOLLOW = "contact_cover_follow"
 CONF_ROOM_AUTO_SUN_PROTECTION = "auto_sun_protection"
 CONF_ROOM_EXHAUST_FAN_CONTROL = "exhaust_fan_control"
@@ -83,12 +83,15 @@ CONF_ROOM_EXHAUST_FAN_FOLLOW_UP = "exhaust_fan_follow_up_min"
 CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME = "exhaust_fan_max_runtime_min"
 THREE_STATE_TRANSITION_STABLE_SECONDS = 3.0
 THREE_STATE_UNKNOWN_HOLD_SECONDS = 30.0
-# 0.26.5.2: an unavailable/missing contact keeps a running airing open only this
+# 0.26.5.3: an unavailable/missing contact keeps a running airing open only this
 # long (HA start-up, short radio drop-outs). A dead second contact no longer keeps
 # the room "open" forever after the other window was closed.
 CONTACT_UNKNOWN_HOLD_SECONDS = 900.0
 CONF_ROOM_CLIMATE = "climate"
 CONF_ROOM_EXHAUST_FAN = "exhaust_fan"
+# 0.26.5.3: air drawn in by an exhaust fan comes from a neighbouring room
+CONF_ROOM_EXHAUST_REFERENCE_TEMPERATURE = "exhaust_fan_reference_temperature"
+CONF_ROOM_EXHAUST_REFERENCE_HUMIDITY = "exhaust_fan_reference_humidity"
 CONF_ROOM_SUPPLY_FAN = "supply_fan"
 CONF_ROOM_VENTILATION_DEVICE = "ventilation_device"
 CONF_ROOM_DEHUMIDIFIER = "dehumidifier"
@@ -208,7 +211,7 @@ DEFAULT_OPTIONS = {
     "humidify_below_rh": 35.0,
     "shade_above_temp_c": 24.0,
     "shade_min_illuminance_lx": 10000.0,
-    # 0.26.5.2: sun protection closes ahead of the sun on warm, clear days
+    # 0.26.5.3: sun protection closes ahead of the sun on warm, clear days
     "shade_lead_min": 15,
     "shade_forecast_max_c": 25.0,
     "shade_max_cloud_coverage": 80.0,
@@ -314,6 +317,10 @@ DEFAULT_OPTIONS = {
     "notify_learning": False,
     "notify_cooling": True,
     "notification_cooldown_min": 90,
+    # 0.26.5.3 (community): status messages can be switched off; a still open
+    # action can be repeated after 5–60 min (0 = no reminder).
+    "notify_status_messages": True,
+    "action_reminder_min": 0,
     "suppress_notifications_at_night": False,
     # Feedback FAIQ-FB-7C943C054B43: only notify residents who are at home.
     "notify_only_when_home": False,

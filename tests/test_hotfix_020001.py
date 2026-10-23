@@ -16,6 +16,7 @@ from custom_components.freshairiq.ventilation_result import (
     new_ventilation_group,
     update_session_cross_tracking,
 )
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -151,7 +152,7 @@ def test_readme_and_runtime_versions_are_current():
 
 
 def test_house_strategy_learning_waits_for_complete_house_group():
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert "completed_house_sessions: list[dict[str, Any]] = []" in coordinator
     assert "self.store.data, completed_house_sessions, room_meta_for_house" in coordinator
     assert "self.store.data, completed_sessions, room_meta_for_house" not in coordinator
@@ -172,6 +173,6 @@ def test_cross_ventilation_aggregate_is_labelled_as_room_minutes_not_wall_clock_
 
 
 def test_cross_ventilation_reopen_does_not_reapply_opening_delay_to_active_session():
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert 'active_session = bool((self.store.data.get("rooms", {}).get(key) or {}).get("session_active"))' in coordinator
     assert 'honour_delays=not active_session' in coordinator

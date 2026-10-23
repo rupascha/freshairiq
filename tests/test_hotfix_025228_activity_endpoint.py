@@ -1,7 +1,8 @@
 from pathlib import Path
+from tests._source import module_source
 ROOT=Path(__file__).parents[1]
 def test_heartbeat_uses_authenticated_activity_endpoint():
- t=(ROOT/'custom_components/freshairiq/telemetry.py').read_text()
+ t=module_source("telemetry")
  start=t.index('async def async_activity_heartbeat')
  end=t.index('    def _health(', start)
  heartbeat=t[start:end]

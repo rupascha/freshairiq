@@ -1,7 +1,8 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORD = module_source("coordinator")
 
 
 def _session_start_block():

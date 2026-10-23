@@ -1,10 +1,11 @@
 from datetime import datetime
 from pathlib import Path
+from tests._source import module_source
 
 
 def test_room_humidity_history_contract_is_wired_end_to_end():
-    storage = Path('custom_components/freshairiq/storage.py').read_text()
-    coordinator = Path('custom_components/freshairiq/coordinator.py').read_text()
+    storage = module_source("storage")
+    coordinator = module_source("coordinator")
     card = Path('custom_components/freshairiq/frontend/freshairiq-card.js').read_text()
     assert 'def record_room_humidity_point' in storage
     assert 'def room_humidity_points' in storage
@@ -16,6 +17,6 @@ def test_room_humidity_history_contract_is_wired_end_to_end():
 
 
 def test_room_humidity_history_is_preserved_and_reset_with_statistics():
-    storage = Path('custom_components/freshairiq/storage.py').read_text()
+    storage = module_source("storage")
     assert 'fresh["humidity_points"] = old.get("humidity_points", [])' in storage
     assert 'room["humidity_points"] = []' in storage

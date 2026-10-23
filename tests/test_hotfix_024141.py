@@ -13,6 +13,7 @@ from custom_components.freshairiq.forecast_validation import (
     freeze_start_forecast_context,
 )
 from custom_components.freshairiq.ventilation_result import finalise_ventilation_group
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -150,7 +151,7 @@ def test_result_marks_clean_aligned_comparison_as_validated():
 
 
 def test_coordinator_uses_logical_measurement_start_and_replays_actual_measurement_duration():
-    source = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    source = module_source("coordinator")
     capture = source[source.index("# Hotfix 0.24.14.1: freeze"):source.index("# Validation Engine v2:")]
     finish = source[source.index("# Hotfix 0.24.14.1: compare"):source.index("event_id =", source.index("# Hotfix 0.24.14.1: compare"))]
     assert "measurement_elapsed_now <= 2.5" in capture

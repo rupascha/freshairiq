@@ -18,6 +18,7 @@ def test_room_disclosures_have_stable_keys_and_rehydrate_open_state():
 
 def test_full_render_replaces_dom_but_persistent_state_survives_in_card_instance():
     replace=JS[JS.index('    _replaceRenderedContent(html) {'):JS.index('    disconnectedCallback()')]
-    assert 'this.shadowRoot.removeChild(node)' in replace
+    # 0.26.5.3: the previously rendered nodes are replaced; card-mod/UIX nodes stay
+    assert '(this._ownNodes || []).forEach(node => { if (node.parentNode) node.parentNode.removeChild(node); });' in replace
     constructor=JS[JS.index('    constructor() {'):JS.index('    _uiLanguage() {')]
     assert 'this._classicDisclosureOpen = new Set()' in constructor

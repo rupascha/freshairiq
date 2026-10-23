@@ -1,5 +1,6 @@
 from pathlib import Path
 from custom_components.freshairiq.recommendation import build_recommendation
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,7 +27,7 @@ def test_health_override_is_not_blocked_by_high_room_threshold():
 
 
 def test_floor_localisation_and_threshold_ui_are_present():
-    coordinator=(ROOT/'custom_components/freshairiq/coordinator.py').read_text(encoding='utf-8')+(ROOT/'custom_components/freshairiq/house_decision.py').read_text(encoding='utf-8')  # rules moved in 0.26.3.2
+    coordinator=module_source("coordinator")+(ROOT/'custom_components/freshairiq/house_decision.py').read_text(encoding='utf-8')  # rules moved in 0.26.3.2
     card=(ROOT/'custom_components/freshairiq/frontend/freshairiq-card.js').read_text(encoding='utf-8')
     assert '"ground_floor": "Erdgeschoss"' in coordinator
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).

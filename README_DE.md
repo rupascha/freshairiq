@@ -27,6 +27,12 @@ Die FreshAirIQ Community-Dashboard-Karte bringt **zwei Dashboard-Darstellungen**
 > [!NOTE]
 > **Experimentelles FreshAirIQ IQ / Freshy Dashboard:** Dieses Dashboard befindet sich noch in einer experimentellen Phase. Grafik, Animationen, Layout und Darstellung können sich von Version zu Version verändern, während das Design weiterentwickelt wird. Das **Classic** Dashboard bleibt als etabliertere Ansicht weiterhin verfügbar.
 
+### Farben & Theme
+
+Standardmäßig behält die Karte ihr eigenes dunkles FreshAirIQ-Design. Mit **Farben & Theme → Home-Assistant-Theme** im Karten-Editor (YAML: `theme: auto`) übernimmt sie Hintergrund, Rand, Rundung, Schatten, Text- und Akzentfarben deines aktiven Home-Assistant-Themes – auch transparente Glas-Themes. Farbige Hinweise werden dabei an die Textfarbe des Themes angeglichen, damit sie auf hellen und dunklen Themes lesbar bleiben.
+
+Für eigene Anpassungen (Theme, card-mod, UIX) liest die Karte CSS-Variablen, z. B. `--freshairiq-card-background`, `--freshairiq-card-border-radius`, `--freshairiq-text-color`, `--freshairiq-secondary-text-color`, `--freshairiq-overlay-rgb` (Kacheln und Linien, z. B. `255,255,255`), `--freshairiq-accent` sowie `--freshairiq-color-ventilate`, `-wait`, `-close`, `-ok`, `-alert`. Styles von card-mod und UIX bleiben bei jeder Aktualisierung erhalten.
+
 Mit **Freshy** hat FreshAirIQ außerdem ein eigenes Maskottchen. Freshy behält das Klima deines Hauses im Blick und macht den aktuellen Zustand auf einen Blick verständlicher: Beim Lüften segelt Freshy durch den Wind, kurz vor der Nacht macht er sich mit Schlafmütze bereit und nachts schläft er. Weitere Zustände reagieren passend auf die aktuelle Situation im Haus.
 
 <p align="center">

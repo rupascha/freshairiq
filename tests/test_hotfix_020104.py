@@ -1,11 +1,12 @@
 from pathlib import Path
 
 from custom_components.freshairiq.forecast import horizon_forecast
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-COORD = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
-SENSOR = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="utf-8")
+COORD = module_source("coordinator")
+SENSOR = (ROOT / "custom_components/freshairiq/sensor.py").read_text(encoding="utf-8") + (ROOT / "custom_components/freshairiq/dashboard_live.py").read_text(encoding="utf-8")  # 0.26.5.3: built by dashboard_live (live channel)
 
 
 def test_details_dialog_owns_scrolling_and_backdrop_cannot_scroll_behind_header():

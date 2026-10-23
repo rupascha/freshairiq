@@ -1,6 +1,7 @@
 from statistics import median
 from pathlib import Path
 import json
+from tests._source import module_source
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -8,7 +9,7 @@ def test_median_is_robust_example():
     assert median([21.0,21.4,28.0]) == 21.4
 
 def test_median_available_in_native_selectors_and_validation():
-    source=(ROOT/"custom_components/freshairiq/config_flow.py").read_text()
+    source=module_source("config_flow")
     assert source.count('options=["mean", "median", "max", "min"]') >= 2
     assert '{"mean", "median", "min", "max"}' in source
 

@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "name": "FreshAirIQ Continuous Quality System",
-  "version": "0.26.5.2",
+  "version": "0.26.5.3",
   "correctness": {
     "pure_logic_coverage_percent": 100.0,
-    "ha_combined_coverage_percent": 99.0,
-    "ha_module_coverage_percent": 98.0,
+    "ha_combined_coverage_percent": 100.0,
+    "ha_module_coverage_percent": 100.0,
     "config_flow_coverage_percent": 100.0
   },
   "robustness": {

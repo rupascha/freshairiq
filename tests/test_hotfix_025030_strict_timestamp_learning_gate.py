@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from custom_components.freshairiq.measurement_frame import session_measurement_quality
+from tests._source import module_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
-COORDINATOR = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORDINATOR = module_source("coordinator")
 
 
 def test_strict_gate_requires_activity_from_both_climate_channels():

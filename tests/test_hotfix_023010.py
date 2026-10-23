@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from custom_components.freshairiq.opening_strategy import enrich_opening_recommendation
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -97,7 +98,7 @@ def test_no_opening_data_preserves_existing_recommendation():
 
 
 def test_coordinator_disables_outdoor_future_for_active_local_reference():
-    text = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+    text = module_source("coordinator")
     assert "active_contact_reference = any(" in text
     assert text.count("and not active_contact_reference") >= 3
     assert '"opening_assessments": opening_assessments' in text

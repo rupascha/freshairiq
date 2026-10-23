@@ -1,7 +1,8 @@
 from pathlib import Path
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-COORDINATOR = (ROOT / "custom_components/freshairiq/coordinator.py").read_text(encoding="utf-8")
+COORDINATOR = module_source("coordinator")
 CARD = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
 CONSOLIDATION = (ROOT / "custom_components/freshairiq/consolidation.py").read_text(encoding="utf-8")
 BRAIN = (ROOT / "custom_components/freshairiq/decision_brain.py").read_text(encoding="utf-8")
@@ -35,7 +36,7 @@ def test_binary_long_open_detection_is_preserved():
 
 
 def test_diagnostic_three_state_summary_contains_models_without_entity_ids():
-    diagnostics = (ROOT / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     assert '"proven_contact_count"' in diagnostics
     assert '"active_specialist_model"' in diagnostics
     assert '"models": {"tilted": model("tilted"), "open": model("open"), "cross": model("cross")}' in diagnostics
@@ -48,7 +49,7 @@ def test_diagnostic_three_state_summary_contains_models_without_entity_ids():
     assert '"passage_behavior":' not in helper
 
 def test_diagnostics_records_include_three_state_learning_summary():
-    diagnostics = (ROOT / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     assert 'room["three_state_learning"] = _three_state_learning_diagnostic(raw, stored_room)' in diagnostics
     assert 'compact["three_state_learning"] = _three_state_learning_diagnostic(room_map.get(str(key), {}), raw)' in diagnostics
     assert diagnostics.count('three_state_learning"] = _three_state_learning_diagnostic') == 2

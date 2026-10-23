@@ -45,6 +45,22 @@ TU = TEILWEISE UMGESETZT · VO = VORHANDEN, VERIFIKATION OFFEN · BL = BLOCKIERT
 | A-45 | UV | **2026-10-19 (Community):** Ablüfter-Automatik wirkt ohne Neustart und bei Räumen ohne Fensterkontakt | ha_tests/test_exhaust_fan_live_026502.py | Nutzerbestätigung | – |
 | A-46 | UV | **2026-10-19 (Owner):** Diagnose je Kontakt (Art, Herkunft, Drei-Zustand, gleiche Namen) | ha_tests/test_diagnostics_contacts_026502.py | – | – |
 | A-47 | UV | **2026-10-19 (Support):** „geöffnet“ als offen erkannt | tests/test_opening_state_geoeffnet_026502.py, ha_tests/test_geoeffnet_template_026502.py (Coordinator geschlossen → gekippt → geöffnet → geschlossen; ohne Fix rot) | Nutzerbestätigung | – |
+| A-48 | UV | **2026-10-23 (Community):** Nebenraum-Referenz für Ablüfter | tests/test_exhaust_reference_026503.py, ha_tests/test_exhaust_reference_026503.py (ohne Änderung rot) | Nutzerbestätigung | – |
+| A-49 | UV | **2026-10-23 (Owner):** Gespeicherte Felder wieder entfernbar | ha_tests/test_clearable_fields_026503.py (läuft alle Optionsseiten ab, leert jedes vorbelegte Feld; ohne Fix 15 Funde) | Nutzerbestätigung | – |
+| A-50 | UV | **2026-10-23 (Owner):** Einstellungen ohne Neustart wirksam (Rollladen-Automatik, neue Kontakte) | ha_tests/test_live_config_026503.py (ohne Fix 4 von 5 rot; Optionsflow-Pfad mit geschlossenem Dialog) | Nutzerbestätigung | – |
+| A-51 | UV | **2026-10-23 (Owner):** „Aus“ bei Lüftungszielen bleibt beim erneuten Bearbeiten erhalten | ha_tests/test_room_edit_keeps_settings_026503.py (ohne Fix 3 von 3 rot; generisch: Raum-Editor + alle Optionsseiten ohne Änderung bestätigt ⇒ nichts geändert) | Nutzerbestätigung | – |
+| A-52 | UV | **2026-10-23 (Community):** Schimmel-Event und Haus-Event ohne Flut | tests/test_event_flood_026503.py (ohne Fix 3 rot, Tagestest 60/h) | Nutzerbestätigung | – |
+| A-53 | UV | **2026-10-23 (Community):** Aktion/Status, Erinnerung, abgestimmte Raum-Meldungen | tests/test_notification_policy_026503.py | Nutzerbestätigung | – |
+| A-54 | UV | **2026-10-23 (Community):** Temperaturziel hält Fenster offen | tests/test_comfort_cooling_026503.py | Nutzerbestätigung | – |
+| A-55 | UV | **2026-10-23 (Community):** Offene Verbindungen | tests/test_open_connections_026503.py, ha_tests/test_open_connections_026503.py | Nutzerbestätigung | – |
+| A-56 | UV | **2026-10-23 (Community):** Geteilter Lüfter | ha_tests/test_open_connections_026503.py (ohne Fix rot) | Nutzerbestätigung | – |
+| A-57 | UV | **2026-10-23 (Community):** Lüftung endet am Feuchte-Plateau | tests/test_humidity_plateau_026503.py | Nutzerbestätigung | – |
+| A-58 | UV | **2026-10-23 (Owner):** jede Einstellung sofort wirksam | ha_tests/test_live_settings_026503.py (ohne Fix 4 von 5 rot) | Nutzerbestätigung | – |
+| A-59 | UV | **2026-10-23 (Community, GitHub #15):** kein Lüften/Schließen-Pendeln | tests/test_issue15_flapping_026503.py (Tagestest: 72 → 19 Meldungen) | Nutzerbestätigung | – |
+| A-60 | UV | **2026-10-23 (Owner):** Hub sammelt alle Lüftungen mit Prognosen zur Optimierung von Grundformel, Prognosen und Lernmodellen | -faiq-hub tests/test_ventilation_dataset_20261023.py (Hub 0.3.3.90) | Auswertung echter Daten | – |
+| A-61 | UV | **2026-10-23 (Community, GitHub #17):** Theme-Unterstützung, card-mod/UIX-Styles bleiben | frontend_tests/theme.spec.mjs (ohne Fix 6 von 6 rot) | Nutzerbestätigung | – |
+| A-62 | UV | **2026-10-23 (Community):** Recorder-Last senken ohne Funktionsverlust | ha_tests/test_recorder_load_026503.py, tests/test_recorder_load_026503.py, frontend_tests/live.spec.mjs; Messung mit echtem Recorder | Nutzerbestätigung | – |
+| A-63 | UV | **2026-10-23 (Nutzerfeedback):** Lüftungsprotokoll pro Tag und als CSV | tests/test_ventilation_daily_026503.py, ha_tests/test_cov_http_apis.py, frontend_tests/ventlog.spec.mjs | Nutzerbestätigung | – |
 | A-27 | UV | **2026-10-17 (Owner-Auftrag):** Temperatur-/Feuchte-Auswahl bietet Geräteklasse oder passende Einheit an (8 Felder, Helfer `_climate_sensor_selector`) | ha_tests/test_unit_climate_pickers_20261017.py; bestehender Laufzeittest test_unit_based_climate_sensors_are_accepted_by_room_flow_and_runtime | Nutzerbestätigung | – |
 | F17 | NU | Nur title/message; Deep-Link/gespeicherte Nachricht braucht Design + iOS-Runtime | Analyse `_send_target` | Design, iOS | Konzept |
 | F18 | NU | Event-Bausteine vorhanden, kein Kiosk-Workflow | Analyse | Infrastruktur-Entscheidung | Doku-Workflow |

@@ -23,6 +23,8 @@ def test_release_builder_invokes_source_and_zip_gates():
 def test_github_workflows_enforce_release_gate():
     for rel in (".github/workflows/validate.yml", ".github/workflows/release.yml", ".github/workflows/quality.yml"):
         text = (ROOT / rel).read_text(encoding="utf-8")
+        if "uses: ./.github/workflows/quality.yml" in text:  # 2026-10-23: validate.yml delegates
+            text += (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
         assert "tools/github_release_gate.py" in text
 
 

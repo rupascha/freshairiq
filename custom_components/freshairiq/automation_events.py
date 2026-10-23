@@ -23,6 +23,8 @@ bus and are not part of the diagnostics upload.
 """
 from __future__ import annotations
 
+import re
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -70,7 +72,20 @@ _LABELS = {
         "monitor_open": "Long opening is being monitored",
     },
 }
-_MOULD_ORDER = {"Low": 0, "Elevated": 1, "High": 2, "Very high": 3}
+_MOULD_ORDER = {"Low": 0, "Slightly elevated": 1, "Elevated": 2, "High": 3, "Very high": 4}
+_MOULD_LABELS = {
+    "de": {"Low": "niedrig", "Slightly elevated": "leicht erhöht", "Elevated": "erhöht", "High": "hoch", "Very high": "sehr hoch"},
+    "en": {"Low": "low", "Slightly elevated": "slightly elevated", "Elevated": "elevated", "High": "high", "Very high": "very high"},
+}
+_MOULD_TEXT = {
+    "de": {True: "{name}: Schimmelrisiko {label}{surface}.", False: "{name}: Schimmelrisiko gesunken auf {label}{surface}."},
+    "en": {True: "{name}: mould risk {label}{surface}.", False: "{name}: mould risk down to {label}{surface}."},
+}
+# 0.26.5.3 (community: flood from the mould node): a lower risk level is only
+# reported once it held this long, so a surface humidity hovering around a
+# level boundary no longer fires an event every cycle. A rise is immediate.
+MOULD_FALL_HOLD_S = 600.0
+_NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 _SOURCE_LABELS = {
     "de": {"shower": "Dusche", "bath": "Bad", "sauna": "Sauna", "cooking": "Kochen", "washing_machine": "Waschmaschine",
            "dryer": "Trockner", "ironing_station": "Bügelstation", "laundry_drying": "Wäsche trocknen", None: "Feuchtequelle"},
@@ -81,6 +96,45 @@ _SOURCE_PHASE_TEXT = {
     "de": {"started": "{label} erkannt", "ended": "{label} beendet"},
     "en": {"started": "{label} detected", "ended": "{label} ended"},
 }
+
+
+# 0.26.5.3 (community: separate action and status messages). Every event and
+# notification carries ``category``: "action" asks the user to do something,
+# "warning" reports a risk or a defect, "status" only tells what is going on.
+CATEGORY_ACTION = "action"
+CATEGORY_STATUS = "status"
+CATEGORY_WARNING = "warning"
+_ACTION_CODES = frozenset({"ventilate", "close", "close_fan", "ventilate_for_cooling", "open_fully", "ventilate_indirectly", "do_not_ventilate"})
+_WARNING_CODES = frozenset({"check_sensor"})
+_HOUSE_ACTION_KINDS = frozenset({"ventilate", "close", "start", "prepare"})
+_HOUSE_WARNING_KINDS = frozenset({"sensor"})
+_NOTIFICATION_ACTION_TYPES = frozenset({"ventilate", "cool", "close"})
+_NOTIFICATION_WARNING_TYPES = frozenset({"mould", "sensor"})
+
+
+def action_category(code: Any) -> str:
+    """Category of a room action / recommendation code."""
+    code = str(code or "")
+    if code in _ACTION_CODES:
+        return CATEGORY_ACTION
+    return CATEGORY_WARNING if code in _WARNING_CODES else CATEGORY_STATUS
+
+
+def house_category(kind: Any) -> str:
+    kind = str(kind or "")
+    if kind in _HOUSE_ACTION_KINDS:
+        return CATEGORY_ACTION
+    return CATEGORY_WARNING if kind in _HOUSE_WARNING_KINDS else CATEGORY_STATUS
+
+
+def notification_category(event_type: Any) -> str:
+    """Category of a ``freshairiq_notification`` type (``house_<kind>`` uses the house kind)."""
+    event_type = str(event_type or "")
+    if event_type.startswith("house_"):
+        return house_category(event_type.removeprefix("house_"))
+    if event_type in _NOTIFICATION_ACTION_TYPES:
+        return CATEGORY_ACTION
+    return CATEGORY_WARNING if event_type in _NOTIFICATION_WARNING_TYPES else CATEGORY_STATUS
 
 
 def mould_code(level: Any) -> str | None:
@@ -137,6 +191,7 @@ def room_payload(room: dict[str, Any], *, previous_action: Any, language: str, e
         "room_name": name,
         "floor": room.get("floor"),
         "action": code,
+        "category": action_category(code),
         "previous_action": action_code(previous_action) if previous_action is not None else None,
         # 0.26.4.7: the room action considering the whole-house decision
         # ("ventilate_later" while the house deliberately waits).
@@ -167,6 +222,7 @@ def recommendation_payload(
     label = _LABELS[language].get("close_fan" if code == "close" and fan_only(room) else code, code)
     payload.update({
         "recommendation": code,
+        "category": action_category(code),
         "previous_recommendation": previous_recommendation,
         "recommendation_label": label,
         "message": f"{payload['room_name']}: {label}.",
@@ -182,6 +238,7 @@ def house_payload(iq: dict[str, Any], *, previous_kind: Any, data: dict[str, Any
         "schema_version": EVENT_SCHEMA_VERSION,
         "entry_id": entry_id,
         "kind": str(iq.get("kind") or ""),
+        "category": house_category(iq.get("kind")),
         "previous_kind": previous_kind,
         "status": str(iq.get("status") or data.get("status") or ""),
         "severity": iq.get("severity"),
@@ -198,6 +255,27 @@ def house_payload(iq: dict[str, Any], *, previous_kind: Any, data: dict[str, Any
     }
 
 
+def mould_message(room: dict[str, Any], level: Any, *, rising: bool, language: str) -> str:
+    """Ready-to-speak mould sentence, e.g. "Büro: Schimmelrisiko hoch · Oberflächenfeuchte 82 %."."""
+    name = str(room.get("name") or room.get("key") or "")
+    label = _MOULD_LABELS[language].get(str(level), str(level or "").lower())
+    surface_rh = _number(room.get("surface_rh"))
+    surface = "" if surface_rh is None else (
+        f" · Oberflächenfeuchte {round(surface_rh)} %" if language == "de" else f" · surface humidity {round(surface_rh)} %"
+    )
+    return _MOULD_TEXT[language][rising].format(name=name, label=label, surface=surface)
+
+
+def house_signature(iq: dict[str, Any]) -> str:
+    """Identity of a house recommendation without its running countdown (0.26.5.3).
+
+    "noch ca. 19 min", "18 min", … used to fire one event per minute although
+    the recommendation itself did not change.
+    """
+    instruction = _NUMBER.sub("#", str(iq.get("instruction") or ""))
+    return "|".join([str(iq.get("kind") or ""), ",".join(str(x) for x in (iq.get("room_keys") or [])), instruction])
+
+
 def moisture_source_payload(room: dict[str, Any], *, phase: str, source: Any, language: str, entry_id: str) -> dict[str, Any]:
     """Payload of ``freshairiq_moisture_source`` (``phase``: ``started`` / ``ended``)."""
     source = source if source in _SOURCE_LABELS["de"] else None
@@ -210,6 +288,7 @@ def moisture_source_payload(room: dict[str, Any], *, phase: str, source: Any, la
         "room_name": name,
         "floor": room.get("floor"),
         "phase": phase,
+        "category": CATEGORY_STATUS,
         "source": source,
         "source_label": label,
         "message": f"{name}: {_SOURCE_PHASE_TEXT[language][phase].format(label=label)}.",
@@ -226,8 +305,10 @@ def moisture_source_payload(room: dict[str, Any], *, phase: str, source: Any, la
 class AutomationEventEmitter:
     """Detects changes between coordinator cycles and fires bus events."""
 
-    def __init__(self, fire: Callable[[str, dict[str, Any]], None], entry_id: str) -> None:
+    def __init__(self, fire: Callable[[str, dict[str, Any]], None], entry_id: str, *, clock: Callable[[], float] = time.monotonic) -> None:
         self._fire = fire
+        self._clock = clock
+        self._mould_lower_since: dict[str, float] = {}
         self._entry_id = entry_id
         self._initialised = False
         self._room_actions: dict[str, Any] = {}
@@ -270,22 +351,28 @@ class AutomationEventEmitter:
                     room, phase="started" if source_active else "ended",
                     source=source if source_active else (source or previous_source), language=language, entry_id=self._entry_id))
                 fired += 1
-            level = room.get("mould_level")
             previous_level = self._room_mould.get(key)
+            level = self._reported_mould_level(key, room.get("mould_level"), previous_level)
             self._room_mould[key] = level
             if not initial and previous_level is not None and level != previous_level:
+                rising = _MOULD_ORDER.get(str(level), 0) > _MOULD_ORDER.get(str(previous_level), 0)
                 payload = room_payload(room, previous_action=previous, language=language, entry_id=self._entry_id)
                 payload.update({
                     "mould_level": mould_code(level),
                     "previous_mould_level": mould_code(previous_level),
-                    "rising": _MOULD_ORDER.get(str(level), 0) > _MOULD_ORDER.get(str(previous_level), 0),
+                    "rising": rising,
+                    "category": CATEGORY_WARNING if rising else CATEGORY_STATUS,
+                    # 0.26.5.3: the sentence is about the mould risk; the room
+                    # action sentence it carried before stays available.
+                    "message": mould_message(room, level, rising=rising, language=language),
+                    "action_message": payload["message"],
                 })
                 self._fire(EVENT_MOULD_RISK, payload)
                 fired += 1
         self._seen_rooms = set(self._room_actions)
 
         iq = data.get("intelligent_recommendation") if isinstance(data.get("intelligent_recommendation"), dict) else {}
-        signature = "|".join([str(iq.get("kind") or ""), ",".join(str(x) for x in (iq.get("room_keys") or [])), str(iq.get("instruction") or "")])
+        signature = house_signature(iq)
         if not initial and iq and signature != self._house_signature:
             self._fire(EVENT_HOUSE_RECOMMENDATION, house_payload(iq, previous_kind=self._house_kind, data=data, entry_id=self._entry_id))
             fired += 1
@@ -294,3 +381,15 @@ class AutomationEventEmitter:
         self._initialised = True
         self.fired += fired
         return fired
+
+    def _reported_mould_level(self, key: str, level: Any, reported: Any) -> Any:
+        """Rise at once, fall only after the lower level held ``MOULD_FALL_HOLD_S``."""
+        if reported is None or _MOULD_ORDER.get(str(level), 0) >= _MOULD_ORDER.get(str(reported), 0):
+            self._mould_lower_since.pop(key, None)
+            return level
+        now = self._clock()
+        since = self._mould_lower_since.setdefault(key, now)
+        if now - since >= MOULD_FALL_HOLD_S:
+            self._mould_lower_since.pop(key, None)
+            return level
+        return reported

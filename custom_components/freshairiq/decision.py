@@ -260,86 +260,11 @@ def build_decision_simulation(
     locked = kind in {"close", "continue", "sensor"}
     options_out: list[dict[str, Any]] = []
 
-    if selected and kind in {"ventilate", "pollen_wait", "wait", "prepare"}:
-        pressure = max((_health_pressure(r, options) for r in selected), default=0.0)
-        now_duration, sim_now, now_duration_meta = _optimise_duration(
-            selected, duration, options, pressure
-        )
-        thermal_penalty = abs(min(_f(sim_now["temperature_change_c"]), 0.0)) * 14.0
-        cost_penalty = _f(sim_now["cost"]) * 120.0
-        benefit_score = max(_f(sim_now["removed_ml"]), 0.0) / max(_f(options.get("min_potential_room_ml"), 100.0), 80.0) * 18.0
-        now_score = pressure * 1.35 + min(benefit_score, 55.0) - min(thermal_penalty + cost_penalty, 30.0)
-        if kind == "pollen_wait":
-            now_score -= 70.0
-        now_strategy = _strategy_adjustment(selected, "now", now_duration, pressure)
-        now_score += _f(now_strategy.get("strategy_bonus"))
-        options_out.append({
-            "id": "now", "label": "Jetzt lüften", "delay_min": 0, "duration_min": now_duration,
-            "score": round(now_score, 1), **sim_now, **now_strategy, **now_duration_meta,
-            "assumption": "aktuelle Außenbedingungen",
-        })
-
-        trend = max((_f(r.get("humidity_trend_pct_h")) for r in selected), default=0.0)
-        future_outdoor = future_outdoor or {}
-        for delay in (15, 30, 60):
-            boundary = future_outdoor.get(delay)
-            routine_generation = 0.0
-            routine_maturity = 0.0
-            if now is not None:
-                routine_generation, routine_maturity = project_generation_ml(selected, now, delay)
-            if boundary:
-                future_duration, future_sim, future_duration_meta = _optimise_duration(
-                    selected, duration, options, pressure,
-                    source_ah=_f(boundary.get("absolute_humidity")),
-                    source_temp_c=_f(boundary.get("temperature_c")),
-                )
-                benefit_future = max(_f(future_sim["removed_ml"]), 0.0) / max(_f(options.get("min_potential_room_ml"), 100.0), 80.0) * 18.0
-                thermal_future = abs(min(_f(future_sim["temperature_change_c"]), 0.0)) * 14.0
-                cost_future = _f(future_sim["cost"]) * 120.0
-                health_wait_penalty = pressure * (delay / 60.0) * 0.75
-                trend_penalty = max(trend, 0.0) * (delay / 60.0) * 4.0
-                future_score = pressure * 1.35 + min(benefit_future, 55.0) - min(thermal_future + cost_future, 30.0) - health_wait_penalty - trend_penalty
-                conf = min(_f(future_sim["confidence"]), _f(boundary.get("confidence"), 75.0))
-                assumption = f"Wetterprognose: {boundary.get('temperature_c')} °C · {boundary.get('humidity')} %"
-            else:
-                future_duration, future_sim, future_duration_meta = now_duration, sim_now, dict(now_duration_meta)
-                health_wait_penalty = pressure * (delay / 60.0) * 0.75
-                trend_penalty = max(trend, 0.0) * (delay / 60.0) * 4.0
-                future_score = now_score - health_wait_penalty - trend_penalty - delay * 0.04
-                conf = max(_f(sim_now["confidence"]) - delay * 0.35, 20.0)
-                assumption = "aktuelle Außenbedingungen konservativ fortgeschrieben"
-            if routine_maturity >= 15.0 and routine_generation > 0:
-                maturity_weight = min(routine_maturity / 60.0, 1.0)
-                generation_ratio = routine_generation / max(_f(options.get("min_potential_room_ml"), 100.0), 80.0)
-                routine_penalty = min(
-                    generation_ratio * 10.0 * maturity_weight
-                    + max(generation_ratio - 1.0, 0.0) * 5.0 * maturity_weight,
-                    30.0,
-                )
-                future_score -= routine_penalty
-            if kind in {"wait", "pollen_wait", "prepare"}:
-                future_score += 18.0
-            wait_strategy = _strategy_adjustment(selected, f"wait_{delay}", future_duration, pressure)
-            future_score += _f(wait_strategy.get("strategy_bonus"))
-            options_out.append({
-                "id": f"wait_{delay}", "label": f"{delay} min warten", "delay_min": delay,
-                "duration_min": future_duration, "score": round(future_score, 1), **wait_strategy, **future_duration_meta,
-                "removed_ml": future_sim["removed_ml"], "temperature_change_c": future_sim["temperature_change_c"],
-                "cost": future_sim["cost"], "confidence": round(conf),
-                "assumption": assumption, "future_weather": bool(boundary),
-                "routine_generation_ml": round(routine_generation), "routine_maturity": round(routine_maturity),
-            })
-
-        if night_forecast_ml > 0:
-            night_score = 12.0 - pressure * 0.9 - min(_f(night_forecast_ml) / 20.0, 35.0)
-            night_strategy = _strategy_adjustment(selected, "night", None, pressure)
-            night_score += _f(night_strategy.get("strategy_bonus"))
-            options_out.append({
-                "id": "night", "label": "Nacht abwarten", "delay_min": None, "duration_min": None,
-                "score": round(night_score, 1), "removed_ml": 0, "temperature_change_c": 0.0, "cost": 0.0, **night_strategy,
-                "confidence": round(_clamp(night_confidence, 20.0, 95.0)),
-                "assumption": f"Nachtprognose +{round(night_forecast_ml)} ml",
-            })
+    _simulate_alternatives(
+        duration=duration, future_outdoor=future_outdoor, kind=kind,
+        night_confidence=night_confidence, night_forecast_ml=night_forecast_ml, now=now, options=options,
+        options_out=options_out, selected=selected,
+    )
 
     # Always preserve the existing recommendation when there is no meaningful
     # matrix to compare. This keeps v0.9.5.0 behaviour stable for edge cases.
@@ -420,3 +345,91 @@ def build_decision_simulation(
         "dürfen ähnlich gute Optionen verfeinern; Gesundheit und Physik bleiben vorrangig."
     )
     return refined
+
+
+def _simulate_alternatives(
+    *,
+    duration: Any, future_outdoor: Any, kind: Any, night_confidence: Any, night_forecast_ml: Any,
+    now: Any, options: Any, options_out: Any, selected: Any,
+) -> Any:
+    """Score every actionable alternative (now, shorter/longer, cross ventilation, later)."""
+    if selected and kind in {"ventilate", "pollen_wait", "wait", "prepare"}:
+        pressure = max((_health_pressure(r, options) for r in selected), default=0.0)
+        now_duration, sim_now, now_duration_meta = _optimise_duration(
+            selected, duration, options, pressure
+        )
+        thermal_penalty = abs(min(_f(sim_now["temperature_change_c"]), 0.0)) * 14.0
+        cost_penalty = _f(sim_now["cost"]) * 120.0
+        benefit_score = max(_f(sim_now["removed_ml"]), 0.0) / max(_f(options.get("min_potential_room_ml"), 100.0), 80.0) * 18.0
+        now_score = pressure * 1.35 + min(benefit_score, 55.0) - min(thermal_penalty + cost_penalty, 30.0)
+        if kind == "pollen_wait":
+            now_score -= 70.0
+        now_strategy = _strategy_adjustment(selected, "now", now_duration, pressure)
+        now_score += _f(now_strategy.get("strategy_bonus"))
+        options_out.append({
+            "id": "now", "label": "Jetzt lüften", "delay_min": 0, "duration_min": now_duration,
+            "score": round(now_score, 1), **sim_now, **now_strategy, **now_duration_meta,
+            "assumption": "aktuelle Außenbedingungen",
+        })
+
+        trend = max((_f(r.get("humidity_trend_pct_h")) for r in selected), default=0.0)
+        future_outdoor = future_outdoor or {}
+        for delay in (15, 30, 60):
+            boundary = future_outdoor.get(delay)
+            routine_generation = 0.0
+            routine_maturity = 0.0
+            if now is not None:
+                routine_generation, routine_maturity = project_generation_ml(selected, now, delay)
+            if boundary:
+                future_duration, future_sim, future_duration_meta = _optimise_duration(
+                    selected, duration, options, pressure,
+                    source_ah=_f(boundary.get("absolute_humidity")),
+                    source_temp_c=_f(boundary.get("temperature_c")),
+                )
+                benefit_future = max(_f(future_sim["removed_ml"]), 0.0) / max(_f(options.get("min_potential_room_ml"), 100.0), 80.0) * 18.0
+                thermal_future = abs(min(_f(future_sim["temperature_change_c"]), 0.0)) * 14.0
+                cost_future = _f(future_sim["cost"]) * 120.0
+                health_wait_penalty = pressure * (delay / 60.0) * 0.75
+                trend_penalty = max(trend, 0.0) * (delay / 60.0) * 4.0
+                future_score = pressure * 1.35 + min(benefit_future, 55.0) - min(thermal_future + cost_future, 30.0) - health_wait_penalty - trend_penalty
+                conf = min(_f(future_sim["confidence"]), _f(boundary.get("confidence"), 75.0))
+                assumption = f"Wetterprognose: {boundary.get('temperature_c')} °C · {boundary.get('humidity')} %"
+            else:
+                future_duration, future_sim, future_duration_meta = now_duration, sim_now, dict(now_duration_meta)
+                health_wait_penalty = pressure * (delay / 60.0) * 0.75
+                trend_penalty = max(trend, 0.0) * (delay / 60.0) * 4.0
+                future_score = now_score - health_wait_penalty - trend_penalty - delay * 0.04
+                conf = max(_f(sim_now["confidence"]) - delay * 0.35, 20.0)
+                assumption = "aktuelle Außenbedingungen konservativ fortgeschrieben"
+            if routine_maturity >= 15.0 and routine_generation > 0:
+                maturity_weight = min(routine_maturity / 60.0, 1.0)
+                generation_ratio = routine_generation / max(_f(options.get("min_potential_room_ml"), 100.0), 80.0)
+                routine_penalty = min(
+                    generation_ratio * 10.0 * maturity_weight
+                    + max(generation_ratio - 1.0, 0.0) * 5.0 * maturity_weight,
+                    30.0,
+                )
+                future_score -= routine_penalty
+            if kind in {"wait", "pollen_wait", "prepare"}:
+                future_score += 18.0
+            wait_strategy = _strategy_adjustment(selected, f"wait_{delay}", future_duration, pressure)
+            future_score += _f(wait_strategy.get("strategy_bonus"))
+            options_out.append({
+                "id": f"wait_{delay}", "label": f"{delay} min warten", "delay_min": delay,
+                "duration_min": future_duration, "score": round(future_score, 1), **wait_strategy, **future_duration_meta,
+                "removed_ml": future_sim["removed_ml"], "temperature_change_c": future_sim["temperature_change_c"],
+                "cost": future_sim["cost"], "confidence": round(conf),
+                "assumption": assumption, "future_weather": bool(boundary),
+                "routine_generation_ml": round(routine_generation), "routine_maturity": round(routine_maturity),
+            })
+
+        if night_forecast_ml > 0:
+            night_score = 12.0 - pressure * 0.9 - min(_f(night_forecast_ml) / 20.0, 35.0)
+            night_strategy = _strategy_adjustment(selected, "night", None, pressure)
+            night_score += _f(night_strategy.get("strategy_bonus"))
+            options_out.append({
+                "id": "night", "label": "Nacht abwarten", "delay_min": None, "duration_min": None,
+                "score": round(night_score, 1), "removed_ml": 0, "temperature_change_c": 0.0, "cost": 0.0, **night_strategy,
+                "confidence": round(_clamp(night_confidence, 20.0, 95.0)),
+                "assumption": f"Nachtprognose +{round(night_forecast_ml)} ml",
+            })

@@ -785,3 +785,68 @@ async def test_direct_finish_without_measurement_repairs_observation_dates(hass,
     assert event["duration_min"] == pytest.approx(3.0)
     assert mem["personal_context_observation_dates"] == [now.date().isoformat()]
     assert mem["session_active"] is False
+
+
+async def test_legacy_naive_session_start_does_not_count_reports(hass, freezer) -> None:
+    """A naive (pre-timezone) persisted session start is not comparable with HA report times."""
+    d = await _active_bath(hass, freezer, minutes=2)
+    mem = d.mem("bad")
+    counted = mem["session_humidity_reports"]
+    mem["session_physical_started"] = mem["session_physical_started"][:19]
+    previous_report = mem["session_last_humidity_update"]
+    await d.step(60, sensor__bad_h=74.0)
+    mem = d.mem("bad")
+    assert mem["session_active"] is True
+    assert mem["session_last_humidity_update"] != previous_report
+    assert mem["session_humidity_reports"] == counted
+
+
+async def test_legacy_naive_three_state_since_starts_session_without_reports(hass, freezer) -> None:
+    """A naive persisted stable-open timestamp makes earlier reports non-comparable."""
+    lage = {"options": ["closed", "tilted", "open"], "device_class": "enum"}
+    contact = "sensor.schlaf_fenster_lage"
+    rooms = _with(_rooms(), "schlaf", contacts=[contact], contact_delays={contact: 0},
+                  contact_orientations={contact: "east"})
+    d = await _make(hass, freezer, data=_data(rooms), initial={contact: ("closed", lage), "sensor.schlaf_h": (66.0, HUM)})
+    mem = d.mem("schlaf")
+    assert mem["three_state_contacts"] == [contact]
+    assert mem["session_active"] is False
+    since = (coord_mod.dt_util.now() - timedelta(minutes=5)).replace(tzinfo=None).isoformat()
+    mem["stable_opening_modes"] = {contact: "open"}
+    mem["stable_opening_since"] = {contact: since}
+    await d.step(1, sensor__schlaf_fenster_lage=("open", lage))
+    mem = d.mem("schlaf")
+    assert mem["session_active"] is True
+    assert mem["session_physical_started"] == since
+    assert mem["session_temperature_reports"] == 0
+    assert mem["session_humidity_reports"] == 0
+
+
+async def test_room_closed_for_seconds_helper_edge_states(hass, freezer) -> None:
+    freezer.move_to(datetime(2026, 10, 7, 21, 0, tzinfo=BERLIN))
+    now = coord_mod.dt_util.now()
+    closed_for = coord_mod._room_closed_for_seconds
+    room = {"contacts": ["binary_sensor.a", "binary_sensor.b"], "contact_mode": "any"}
+    hass.states.async_set("binary_sensor.a", "off")
+    # A configured contact without any HA state is not a confirmed close.
+    assert closed_for(hass, room, now) is None
+    hass.states.async_set("binary_sensor.b", "on")
+    # "any": one open contact keeps the room logically open.
+    assert closed_for(hass, room, now) is None
+    hass.states.async_set("binary_sensor.b", "off")
+    freezer.tick(timedelta(seconds=30))
+    assert closed_for(hass, room, coord_mod.dt_util.now()) == pytest.approx(30.0)
+    # A stable mode outside open/tilted/closed/unknown is never read as closed.
+    assert closed_for(hass, room, now, contact_modes={"binary_sensor.a": "ajar"}) is None
+    # "all": the room is only closed once a required contact is closed.
+    both_open = {"binary_sensor.a": "open", "binary_sensor.b": "tilted"}
+    assert closed_for(hass, {**room, "contact_mode": "all"}, now, contact_modes=both_open) is None
+
+
+async def test_direct_finish_without_session_start_temperature_uses_end_value(hass, freezer) -> None:
+    d = await _active_bath(hass, freezer, minutes=4)
+    mem = d.mem("bad")
+    mem.pop("session_start_temp", None)
+    now = coord_mod.dt_util.now()
+    event = await d.coordinator._finish_session(mem, _cfg(d, "bad"), 22.9, 70.0, 9.0, 82.0, now, False, None)
+    assert event["temp_delta_c"] == 0

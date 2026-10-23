@@ -92,7 +92,7 @@ def test_decision_explanation_uses_ventilation_average_instead_of_hausmittel():
 
 def test_dashboard_contains_five_minute_result_and_persistent_last_ventilation_detail():
     card = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text()
-    sensor = (ROOT / "custom_components/freshairiq/sensor.py").read_text()
+    sensor = (ROOT / "custom_components/freshairiq/sensor.py").read_text() + (ROOT / "custom_components/freshairiq/dashboard_live.py").read_text()  # 0.26.5.3: built by dashboard_live (live channel)
     assert 'data-info="lastvent"' in card
     assert "display_until" in card
     assert "LÜFTUNG ABGESCHLOSSEN" in card

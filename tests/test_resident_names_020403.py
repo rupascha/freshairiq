@@ -2,6 +2,7 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from custom_components.freshairiq.personal_context import build_resident_context, personalise_recommendation
+from tests._source import module_source
 
 
 def _rec(kind="ventilate"):
@@ -79,9 +80,9 @@ def test_names_are_local_presentation_options_and_available_in_both_settings_uis
     from pathlib import Path
     root = Path(__file__).resolve().parents[1]
     card = (root / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
-    flow = (root / "custom_components/freshairiq/config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     settings = (root / "custom_components/freshairiq/settings_contract.py").read_text(encoding="utf-8")
-    diagnostics = (root / "custom_components/freshairiq/diagnostics.py").read_text(encoding="utf-8")
+    diagnostics = module_source("diagnostics")
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
     assert '"adult_resident_names"' in flow and '"child_resident_names"' in flow

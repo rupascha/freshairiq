@@ -18,6 +18,7 @@ from custom_components.freshairiq.outdoor_air import (
     veto_cause,
 )
 from custom_components.freshairiq.recommendation import build_recommendation
+from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components/freshairiq"
@@ -109,7 +110,7 @@ def test_moisture_source_headline_is_not_replaced_by_a_generic_airing_phrase():
 
 
 def test_configuration_and_translations_offer_the_sensor_and_limit():
-    flow = (COMP / "config_flow.py").read_text(encoding="utf-8")
+    flow = module_source("config_flow")
     assert 'CONF_OUTDOOR_PM25_ENTITY, entity_ids(data.get(CONF_OUTDOOR_PM25_ENTITY))' in flow
     # 0.26.5.2: device class pm25 *or* the µg/m³ unit *or* a WAQI sensor
     assert '{"domain": "sensor", "device_class": "pm25"}' in flow
@@ -123,7 +124,7 @@ def test_configuration_and_translations_offer_the_sensor_and_limit():
         air = data["options"]["step"]["air_quality"]
         for key in ("outdoor_pm25_enabled", "outdoor_pm25_max"):
             assert air["data"][key] and air["data_description"][key]
-    coordinator = (COMP / "coordinator.py").read_text(encoding="utf-8")
+    coordinator = module_source("coordinator")
     assert "entities.update(entity_ids(self.entry.data.get(CONF_OUTDOOR_PM25_ENTITY)))" in coordinator  # live updates
     assert '"outdoor_pm25_blocked": bool(self._outdoor_pm25_blocked)' in coordinator
 
