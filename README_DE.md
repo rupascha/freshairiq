@@ -29,7 +29,7 @@ Die FreshAirIQ Community-Dashboard-Karte bringt **zwei Dashboard-Darstellungen**
 
 ### Farben & Theme
 
-Standardmäßig behält die Karte ihr eigenes dunkles FreshAirIQ-Design. Mit **Farben & Theme → Home-Assistant-Theme** im Karten-Editor (YAML: `theme: auto`) übernimmt sie Hintergrund, Rand, Rundung, Schatten, Text- und Akzentfarben deines aktiven Home-Assistant-Themes – auch transparente Glas-Themes. Farbige Hinweise werden dabei an die Textfarbe des Themes angeglichen, damit sie auf hellen und dunklen Themes lesbar bleiben.
+Standardmäßig behält die Karte ihr eigenes dunkles FreshAirIQ-Design. Mit **Farben & Theme → Home-Assistant-Theme** im Karten-Editor (YAML: `freshairiq_design: auto`; das bisherige `theme: auto` funktioniert weiter, und ein benanntes Home-Assistant-Theme unter `theme:` – z. B. `theme: FrostedGlass` – lässt die Karte jetzt ebenfalls diesem Theme folgen) übernimmt sie Hintergrund, Rand, Rundung, Schatten, Text- und Akzentfarben deines aktiven Home-Assistant-Themes – auch transparente Glas-Themes. Farbige Hinweise werden dabei an die Textfarbe des Themes angeglichen, damit sie auf hellen und dunklen Themes lesbar bleiben.
 
 Für eigene Anpassungen (Theme, card-mod, UIX) liest die Karte CSS-Variablen, z. B. `--freshairiq-card-background`, `--freshairiq-card-border-radius`, `--freshairiq-text-color`, `--freshairiq-secondary-text-color`, `--freshairiq-overlay-rgb` (Kacheln und Linien, z. B. `255,255,255`), `--freshairiq-accent` sowie `--freshairiq-color-ventilate`, `-wait`, `-close`, `-ok`, `-alert`. Styles von card-mod und UIX bleiben bei jeder Aktualisierung erhalten.
 

@@ -705,10 +705,25 @@ async def test_profile_summer_cooling_details(hass) -> None:
     assert entry.options["operating_profile"] == "summer_cooling"
 
     result = await _open(hass, entry, "ventilation_settings", "profile")
-    result = await _submit(hass, result, {"operating_profile": "comfort"})
+    result = await _submit(hass, result, {"operating_profile": "dehumidify"})
     assert result["step_id"] == "ventilation_settings"
     flow = _flow(hass, result)
     assert (await flow.async_step_profile_details())["step_id"] == "ventilation_settings"
+
+
+async def test_profile_comfort_details_offer_the_cooling_lower_limit(hass) -> None:
+    """0.26.5.4 (GitHub #19): the house-wide cooling start also limits the comfort profile, so it can be set there."""
+    entry = _entry(rooms=[_room()])
+    entry.add_to_hass(hass)
+    result = await _open(hass, entry, "ventilation_settings", "profile")
+    result = await _submit(hass, result, {"operating_profile": "comfort"})
+    assert result["step_id"] == "profile_details"
+    assert result["description_placeholders"] == {"profile": "Comfort"}
+    assert [str(key) for key in result["data_schema"].schema] == ["cooling_start_temp_c"]
+    result = await _submit(hass, result, {"cooling_start_temp_c": 25.5})
+    assert result["step_id"] == "ventilation_settings"
+    assert entry.options["operating_profile"] == "comfort"
+    assert entry.options["cooling_start_temp_c"] == 25.5
 
 
 # --------------------------------------------------------------------------- home setup pages

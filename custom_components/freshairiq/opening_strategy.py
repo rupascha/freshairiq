@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .close_wording import airing_running
+
 
 def _f(value: Any, default: float = 0.0) -> float:
     try:
@@ -350,9 +352,9 @@ def synchronize_room_presentation_actions(
         final_action: str | None = None
         if kind == "close":
             final_action = "Close"
-        elif kind == "continue" and bool(room.get("active")):
+        elif kind == "continue" and airing_running(room):
             final_action = "Continue ventilating"
-        elif kind == "ventilate" and not bool(room.get("active")):
+        elif kind == "ventilate" and not airing_running(room):
             final_action = "Ventilate"
         if key in guidance and str(guidance[key].get("mode") or "") == "adjust_running":
             final_action = "Continue ventilating"

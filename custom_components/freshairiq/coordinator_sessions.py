@@ -26,6 +26,7 @@ from .model import absolute_humidity, update_learning
 from .opening_state import update_passage_pattern
 from .post_stabilization import start_post_close_observation
 from .robustness import finite_float
+from .start_model import learning_observation
 
 
 class SessionFinishMixin:
@@ -450,6 +451,12 @@ class SessionFinishMixin:
         source_ah: Any,
     ) -> Any:
         """Learn the room air-exchange rate (and opening sub-model) from a trustworthy session."""
+        # 0.26.5.4: what this airing showed about the exchange rate (session record → hub start model)
+        mem["session_learning_observation"] = learning_observation(
+            start_ah=learning_start_ah, end_ah=end_ah, source_ah=source_ah, elapsed_min=measurement_elapsed,
+            max_duration_min=self.options.get("learning_max_duration_min", 120), rate_before=mem.get("learning_rate"),
+            samples_before=mem.get("learning_samples"), usable=not (cover_learning_blocked or learning_contaminated or not frame_learning_eligible),
+        )
         if cover_learning_blocked:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
             diagnosis = cover_guard.diagnosis(cover_session)

@@ -3,11 +3,27 @@ from __future__ import annotations
 
 from typing import Any
 
-from .model import SUMMER_WARMING_CLOSE_REASON, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH
+from .model import CO2_HYSTERESIS_PPM, SUMMER_WARMING_CLOSE_REASON, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
 from .outdoor_air import outdoor_pm25_blocked, pm25_reason
 
 
-def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2: float | None, airflow: float, wind_bearing: float | None, wind_speed: float | None, outdoor_pm25: float | None = None, ventilation_latched: bool = False) -> tuple[str, str, list[str]]:
+def _running_reasons(result: Any) -> list[str]:
+    """Why a running airing stays open."""
+    if not bool(getattr(result, "close_decision_ready", True)):
+        fresh = max(int(getattr(result, "fresh_measurements", 0) or 0), 0)
+        reasons = [f"Schließentscheidung wartet auf neue Klimamessungen ({fresh}/2)"]
+    elif bool(getattr(result, "close_decision_model_fallback", False)):
+        reasons = ["Seit 15 Minuten fehlen zwei neue Klimamessungen; Modellbewertung sieht aktuell noch einen sinnvollen Lüftungsvorteil"]
+    elif str(getattr(result, "reason", "")).startswith("Cooling remains useful"):
+        reasons = ["Kühlen wirkt weiter: die Außenluft ist deutlich kühler als der Raum"]
+    else:
+        reasons = [f"Kurzfristiger Schließcheck (5 min): voraussichtlich {max(round(result.moisture_effect_next_5_min_ml), 0)} ml Feuchteabbau"]
+    if getattr(result, "co2_sensor_missing", False):  # audit P1-04: never "CO2 reached" without a value
+        reasons.append("Der CO₂-Sensor liefert keinen Wert; CO₂ wird nicht bewertet, die Lüftung folgt der geplanten Dauer")
+    return reasons
+
+
+def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2: float | None, airflow: float, wind_bearing: float | None, wind_speed: float | None, outdoor_pm25: float | None = None, ventilation_latched: bool = False, co2_latched: bool = False) -> tuple[str, str, list[str]]:
     """Build a room-specific recommendation with an explicit trigger and suitability reason.
 
     The house threshold is intentionally *not* used here. A room can therefore
@@ -60,10 +76,12 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
     if source_active:
         reasons.append(f"{source_label} wahrscheinlich aktiv ({source_conf} % Sicherheit); interne Feuchteproduktion etwa {source_rate * 60:.0f} ml/h")
 
-    if result.active and source_active and float(result.delta_g_m3) > float(options.get("close_delta", 0.4)) and not (pollen_blocked or pm25_blocked):
+    # the airing only runs while the window is open: after closing, the session lives on for its final measurement
+    running = result.active and bool(getattr(result, "open", True))
+    if running and source_active and float(result.delta_g_m3) > float(options.get("close_delta", 0.4)) and not (pollen_blocked or pm25_blocked):
         action = "Continue ventilating"
         reasons.append("Die Referenzluft ist weiterhin trockener; die steigende Raumfeuchte stammt trotz wirksamer Lüftung aus der aktiven Feuchtequelle")
-    elif result.active and result.close_recommended:
+    elif running and result.close_recommended:
         action = "Close"
         if bool(getattr(result, "close_decision_model_fallback", False)):
             if bool(getattr(result, "future_moisture_risk_15", False)):
@@ -76,23 +94,24 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
                 if getattr(result, "reason", "") == SUMMER_WARMING_CLOSE_REASON
                 else "Lüftungsziel erreicht oder zusätzlicher Nutzen ist zu gering"
             )
-    elif result.active:
+    elif running:
         action = "Continue ventilating"
-        if not bool(getattr(result, "close_decision_ready", True)):
-            fresh = max(int(getattr(result, "fresh_measurements", 0) or 0), 0)
-            reasons.append(f"Schließentscheidung wartet auf neue Klimamessungen ({fresh}/2)")
-        elif bool(getattr(result, "close_decision_model_fallback", False)):
-            reasons.append("Seit 15 Minuten fehlen zwei neue Klimamessungen; Modellbewertung sieht aktuell noch einen sinnvollen Lüftungsvorteil")
-        elif str(getattr(result, "reason", "")).startswith("Cooling remains useful"):
-            reasons.append("Kühlen wirkt weiter: die Außenluft ist deutlich kühler als der Raum")
-        else:
-            reasons.append(f"Kurzfristiger Schließcheck (5 min): voraussichtlich {max(round(result.moisture_effect_next_5_min_ml), 0)} ml Feuchteabbau")
+        reasons.extend(_running_reasons(result))
     elif (pollen_blocked or pm25_blocked) and (result.ventilation_candidate or result.cooling_candidate):
         action = "Do not ventilate"
         if pollen_blocked:
             reasons.append(f"Pollenindex {pollen:.1f} liegt über dem Grenzwert {float(options.get('pollen_max',4)):.1f}")
         if pm25_blocked:
             reasons.append(pm25_reason(outdoor_pm25, options))
+    elif getattr(result, "co2_airing", False):
+        # 0.26.5.4 (review A07): CO2 is a goal of its own; the airing ends once CO2 is down again
+        action = "Ventilate"
+        if not co2_high:
+            reasons.append(f"CO₂ {round(co2)} ppm liegt knapp unter der Warnschwelle {round(co2_warn)} ppm; die Empfehlung endet erst {round(CO2_HYSTERESIS_PPM)} ppm darunter")
+        reasons.append("Lüften senkt das CO₂; kurz und kräftig lüften genügt"
+                       if float(result.delta_g_m3) >= 0 else "Lüften senkt das CO₂; die etwas feuchtere Außenluft bringt bei kurzem Lüften kaum Feuchte herein")
+        if result.cooling_candidate:
+            reasons.append("Zusätzlich kühlt die Außenluft den Raum; der Feuchteeintrag bleibt vertretbar")
     elif result.ventilation_candidate:
         action = "Ventilate"
         required_delta = min_delta_high if humidity_high else min_delta
@@ -107,6 +126,13 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
                 f"Empfehlung bleibt trotz leichter Schwankung bestehen: sie endet erst {VENTILATION_HYSTERESIS_RH:.0f} % "
                 f"bzw. {VENTILATION_HYSTERESIS_DELTA_G_M3:.1f} g/m³ unter den Startwerten"
             )
+    elif result.cooling_candidate and co2_lead(co2, options, co2_latched):
+        # 0.26.5.4 (support case): elevated CO2 is its own goal and leads; the
+        # cooling is an extra benefit, not the label that hides the CO2.
+        action = "Ventilate"
+        if not co2_high:
+            reasons.append(f"CO₂ {round(co2)} ppm liegt knapp unter der Warnschwelle {round(co2_warn)} ppm; die Empfehlung endet erst {round(CO2_HYSTERESIS_PPM)} ppm darunter")
+        reasons.append("Zusätzlich kühlt die Außenluft den Raum; der Feuchteeintrag bleibt vertretbar")
     elif result.cooling_candidate:
         action = "Ventilate for cooling"
         reasons.append("Außenluft ist ausreichend kühler und der Feuchteeintrag bleibt vertretbar")

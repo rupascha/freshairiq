@@ -130,6 +130,9 @@ class Translator:
         if self._is_protected(text) or not _HAS_WORD.search(text):
             return text
         translated = self._translate(text, depth + 1)
+        if _german_score(translated, self._protected) and ", " in text:
+            # 0.26.5.4: an enumeration ("Entfeuchtung, CO₂/Luftqualität") is translated item by item
+            translated = ", ".join(self._translate(part, depth + 1) for part in text.split(", "))
         if _german_score(translated, self._protected):
             return None
         return translated

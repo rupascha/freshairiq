@@ -29,7 +29,7 @@ The FreshAirIQ Community Dashboard card includes **two dashboard views**. In the
 
 ### Colours & theme
 
-By default the card keeps its own dark FreshAirIQ design. With **Colours & theme → Home Assistant theme** in the card editor (YAML: `theme: auto`) it uses background, border, radius, shadow, text and accent colours of your active Home Assistant theme – glass themes with a transparent background included. Coloured hints are adjusted to the theme's text colour so they stay readable on light and dark themes.
+By default the card keeps its own dark FreshAirIQ design. With **Colours & theme → Home Assistant theme** in the card editor (YAML: `freshairiq_design: auto`; the older `theme: auto` still works, and a named Home Assistant theme in `theme:` – e.g. `theme: FrostedGlass` – now also makes the card follow that theme) it uses background, border, radius, shadow, text and accent colours of your active Home Assistant theme – glass themes with a transparent background included. Coloured hints are adjusted to the theme's text colour so they stay readable on light and dark themes.
 
 For your own styling (theme, card-mod, UIX) the card reads CSS variables such as `--freshairiq-card-background`, `--freshairiq-card-border-radius`, `--freshairiq-text-color`, `--freshairiq-secondary-text-color`, `--freshairiq-overlay-rgb` (tiles and lines, e.g. `255,255,255`), `--freshairiq-accent` and `--freshairiq-color-ventilate`, `-wait`, `-close`, `-ok`, `-alert`. Styles from card-mod and UIX are kept on every refresh.
 

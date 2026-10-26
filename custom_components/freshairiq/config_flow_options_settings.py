@@ -304,17 +304,19 @@ class OptionsSettingsMixin:
                 "operating_profile"
             ]
             self._persist_working_state()
-            if self._working_options["operating_profile"] == PROFILE_SUMMER_COOLING:
+            if self._working_options["operating_profile"] in {PROFILE_SUMMER_COOLING, PROFILE_COMFORT}:
                 return await self.async_step_profile_details()
             # The efficiency fields for Comfort/Dehumidify already live in the
-            # canonical ventilation model. Do not expose duplicate controls.
+            # canonical ventilation model. Do not expose duplicate controls;
+            # Comfort only gets its cooling lower limit (0.26.5.4).
             return await self.async_step_ventilation_settings()
         return self.async_show_form(
             step_id="profile", data_schema=_profile_schema(self._working_options)
         )
 
     async def async_step_profile_details(self, user_input=None):
-        if self._working_options.get("operating_profile", PROFILE_COMFORT) != PROFILE_SUMMER_COOLING:
+        # 0.26.5.4: the comfort profile shows its cooling lower limit here too
+        if self._working_options.get("operating_profile", PROFILE_COMFORT) not in {PROFILE_SUMMER_COOLING, PROFILE_COMFORT}:
             return await self.async_step_ventilation_settings()
         if user_input is not None:
             self._working_options.update(dict(user_input))

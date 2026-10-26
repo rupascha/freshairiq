@@ -65,15 +65,29 @@ triggers:
     for:
       minutes: !input follow_up
     id: stop
+  # 0.26.5.4: a moisture source that is already running when Home Assistant starts
+  # is followed as well (the state triggers above only see changes)
+  - trigger: homeassistant
+    event: start
+    id: boot
+  - trigger: event
+    event_type: automation_reloaded
+    id: boot
 variables:
   sources: !input sources
-  source: "{{ state_attr(trigger.entity_id, 'source') or 'unknown' }}"
+  moisture_source: !input moisture_source
+  source: "{{ state_attr(moisture_source, 'source') or 'unknown' }}"
   follow_up: !input follow_up
   max_runtime: !input max_runtime
+  device: !input device
+  # minutes since the last moisture source ended (None when unknown)
+  ended_min: >-
+    {% set ended = state_attr(moisture_source, 'last_ended_at') %}
+    {{ ((as_timestamp(now()) - as_timestamp(ended)) / 60) | round(1) if ended else none }}
 actions:
   - choose:
       - conditions:
-          - "{{ trigger.id == 'start' and (sources | length == 0 or source in sources) }}"
+          - "{{ (trigger.id == 'start' or (trigger.id == 'boot' and is_state(moisture_source, 'on'))) and (sources | length == 0 or source in sources) }}"
         sequence:
           - action: homeassistant.turn_on
             target:
@@ -86,6 +100,22 @@ actions:
                   minutes: "{{ follow_up }}"
             timeout:
               minutes: "{{ max_runtime }}"
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input device
+      - conditions:
+          # 0.26.5.4: Home Assistant restarted (or automations were reloaded) during the follow-up time: the
+          # running timer is lost then. Only a follow-up that demonstrably ran is finished: the source
+          # reports a valid "off" and ended (last_ended_at, kept by FreshAirIQ over a restart) less than
+          # the follow-up time plus 10 minutes ago. A fan that runs without such a source (e.g. switched on
+          # by hand) is left alone; with a source filter the ended source must be known and selected.
+          - "{{ trigger.id == 'boot' and is_state(moisture_source, 'off') and is_state(device, 'on') and ended_min is not none and ended_min < follow_up + 10 and (sources | length == 0 or source in sources) }}"
+        sequence:
+          - delay:
+              seconds: "{{ [((follow_up - ended_min) * 60) | int, 0] | max }}"
+          - condition: state
+            entity_id: !input moisture_source
+            state: "off"
           - action: homeassistant.turn_off
             target:
               entity_id: !input device

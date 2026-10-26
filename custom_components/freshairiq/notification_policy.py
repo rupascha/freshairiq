@@ -18,7 +18,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .automation_events import CATEGORY_STATUS, action_code, notification_category, ventilation_measures_active
-from .close_wording import fan_only
+from .close_wording import fan_only, house_handled_by_automation
+from .fan_automation import fan_automation, handled_label
 from .open_connections import connection_map
 
 ROOM_EVENT_ACTIONS = ("Ventilate", "Ventilate for cooling", "Close")
@@ -88,6 +89,11 @@ def effective_room_action(
     return action
 
 
+def _automatic(action: Any, room: dict[str, Any]) -> bool:
+    """0.26.5.4: FreshAirIQ carries the action out itself - nothing to remind of."""
+    return handled_label(room, action_code(action)) is not None and not fan_automation(room).get("user_action_needed")
+
+
 def _still_open(action: Any, room: dict[str, Any]) -> bool:
     """The asked action has not been done yet."""
     return bool(room.get("active")) if action == "Close" else not room.get("active")
@@ -121,7 +127,7 @@ def room_notification_events(
             changed = True
             if action in events:
                 events[action].append(room)
-        elif interval is not None and action in ROOM_EVENT_ACTIONS and _still_open(action, room):
+        elif interval is not None and action in ROOM_EVENT_ACTIONS and _still_open(action, room) and not _automatic(action, room):
             notified = _parse(mem.get("action_notified_at"))
             if notified is None:
                 # state from before 0.26.5.3 or a damaged value: count from now
@@ -172,3 +178,21 @@ def _parse(value: Any) -> datetime | None:
         return datetime.fromisoformat(str(value))
     except (TypeError, ValueError):
         return None
+
+
+def auto_room_event(event: str, room: dict[str, Any], message: str) -> tuple[str, str, str]:
+    """0.26.5.4: event, title and text of a room message.
+
+    When FreshAirIQ switches the room's fan itself, the message is a status
+    ("fan_auto") with the automation's wording instead of a task for the user.
+    """
+    label = handled_label(room, "close" if event == "close" else "ventilate")
+    title = f"FreshAirIQ · {room.get('name')}"
+    if label and fan_automation(room).get("user_action_needed"):
+        return event, title, f"{label}."  # audit S08: e.g. not every fan came on – a task, not a status
+    return ("fan_auto", title, f"{label}.") if label else (event, title, message)
+
+
+def auto_house(iq: dict[str, Any], rooms: dict[str, Any]) -> bool:
+    """A house close/ventilate that only concerns fans FreshAirIQ switches itself."""
+    return house_handled_by_automation(iq.get("kind"), iq.get("room_keys"), rooms)

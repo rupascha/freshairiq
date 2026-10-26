@@ -22,6 +22,7 @@ Im Container: vorinstalliertes Chromium über eine lokale, nicht eingecheckte Co
 |---|---|---|
 | Pure-Suite 3.13 / 3.14 | `pytest -q -p no:cacheprovider tests` (3.14 mit `-p no:homeassistant`, falls HA-Plugin installiert) | 2074/2074 grün (beide) |
 | Quality-Gate lokal | `tools/quality_gate.py --profile local` | alle Stufen grün außer **Performance: im geteilten Container instabil** (gleicher Code schwankt +4 … +50 %; A/B Ausgangs- vs. aktueller Stand ohne systematischen Unterschied) |
+| GitHub Actions (ab 2026-10-25) | alle Repos | **nur manuell** (`workflow_dispatch`): Actions-Kontingent ausgeschöpft; Push, Pull-Request und Zeitplan starten keine Workflows mehr. Pflichtprüfungen laufen lokal (Pure-Suite, HA-Suite + Coverage, Golden Master, Gates, Browser, CLEAN-Build). `release.yml` startet weiter nur bei einem freigegebenen Tag und ruft dann `quality.yml` auf |
 | Quality-Gate CI (`core-quality`) | GitHub Actions | **grün** inkl. Performance auf dediziertem Runner (Commits 0710d1c, 0e31654) |
 | CI python-compatibility 3.13/3.14, Validate/pure-logic, release-dry-run | GitHub Actions | grün |
 | CI ha-compatibility (HA 2026.8/2026.9 Import-Smoke) | GitHub Actions | lief bis 0e31654 rot wegen fehlendem `PYTHONPATH=.` im rekonstruierten Workflow; korrigiert, lokal mit HA 2026.10.1 grün |
@@ -76,6 +77,14 @@ Danach ZIP entpacken: Struktur, Versionen (manifest/const/JS/package/policy), ke
 
 ## Release (nicht Teil dieses Auftrags)
 Tag `v<version>` → `release.yml` → `quality.yml` (wiederverwendbar) → `verify-release` (Tag = Manifest) → CLEAN-ZIP anhängen. Versionen nur mit `tools/bump_release_version.py`.
+
+## Ausgangsmodell übernehmen (0.26.5.4)
+Nur wenn der Hub (Admin → „Ausgangsmodell für neue Installationen“) Werte als **empfohlen** ausweist:
+```bash
+python3 tools/apply_start_model.py FreshAirIQ-start-model-candidate-<datum>.json --check   # zeigt, was übernommen würde
+python3 tools/apply_start_model.py FreshAirIQ-start-model-candidate-<datum>.json           # schreibt start_model_data.py
+```
+Danach komplette Suite, Golden Master (Startwerte ändern Prognosen ungelernter Räume → Diff prüfen, neu aufnehmen) und alle Gates; CHANGELOG nennt Version und Werte. Zurücknehmen: `start_model_data.py` auf das leere Modell zurücksetzen – ungelernte Werte gehen dann auf die eingebauten Startwerte zurück, gelernte bleiben.
 
 ## Bekannte Grenzen der Entwicklungsumgebung
 - Reddit und GitHub-API des öffentlichen Repos per Netzwerkrichtlinie nicht erreichbar (Proxy 403) → Live-Nachweise offen.

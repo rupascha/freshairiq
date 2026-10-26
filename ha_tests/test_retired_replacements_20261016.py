@@ -395,11 +395,17 @@ async def test_no_native_form_shows_the_same_setting_twice(hass) -> None:
         duplicates = sorted({key for key in keys if keys.count(key) > 1})
         assert duplicates == [], f"{name} shows {duplicates} twice"
     # Comfort/dehumidify efficiency values live only on the model page; the
-    # profile page does not open a second copy of them.
+    # profile page does not open a second copy of them. Since 0.26.5.4 the
+    # comfort profile page shows only its cooling lower limit.
     entry = _entry(rooms=[_room()])
     entry.add_to_hass(hass)
     result = await _open(hass, entry, "ventilation_settings", "profile")
     result = await _submit(hass, result, {"operating_profile": "comfort"})
+    assert result["type"] is FlowResultType.FORM and result["step_id"] == "profile_details"
+    assert _keys(result) == ["cooling_start_temp_c"]
+    assert not set(_keys(result)) & set(_keys(forms["model"]))
+    result = await _open(hass, entry, "ventilation_settings", "profile")
+    result = await _submit(hass, result, {"operating_profile": "dehumidify"})
     assert result["type"] is FlowResultType.MENU and result["step_id"] == "ventilation_settings"
 
 

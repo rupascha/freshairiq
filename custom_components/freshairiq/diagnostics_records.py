@@ -408,6 +408,8 @@ class DiagnosticsRecordsMixin:
                 "followed_session_count": sum(1 for item in completed_sessions if item.get("recommendation_followed")),
                 "completed_session_count": len(completed_sessions),
             },
+            # 0.26.5.4: which fan command FreshAirIQ sent, why, and whether Home Assistant confirmed it
+            "fan_automation_trace": _json_safe(data.get("fan_automation_trace") or []),
             "notification_delivery": {
                 "trace_schema_version": 1,
                 "recent_attempts": _json_safe((store_data.get("notification_diagnostics") or [])[-50:])

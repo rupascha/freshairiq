@@ -2,10 +2,11 @@ import { test, expect } from '@playwright/test';
 import { loadCard } from './harness.mjs';
 
 
-async function mountRooms(page, count, { spacer = 0 } = {}) {
+async function mountRooms(page, count, { spacer = 0, wrap = '' } = {}) {
   const errors = [];
   page.on('pageerror', err => errors.push(String(err)));
-  await loadCard(page, `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main>${spacer ? `<div style="height:${spacer}px">other dashboard cards</div>` : ''}<freshairiq-card id="card"></freshairiq-card><div style="height:1200px"></div></main></body></html>`);
+  const card = wrap ? `<div id="wrap" style="${wrap}"><freshairiq-card id="card"></freshairiq-card></div>` : '<freshairiq-card id="card"></freshairiq-card>';
+  await loadCard(page, `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main>${spacer ? `<div style="height:${spacer}px">other dashboard cards</div>` : ''}${card}<div style="height:1200px"></div></main></body></html>`);
   await page.evaluate(({ count }) => {
     const rooms = {};
     for (let i = 0; i < count; i++) {
@@ -196,4 +197,87 @@ test('E08 iOS: scrolling right after Back is not pulled back', async ({ page }) 
   });
   await page.waitForTimeout(400);
   expect(await listTop(page)).toBe(0);
+});
+
+// 0.26.5.4 (support case support-ff65eea96f68094a0640aec0): after switching from
+// card_mod to UIX every dialog appeared inside the card and the lowest room of
+// the room overview was cut off. A backdrop-filter or transform on ha-card or on
+// a parent makes it the containing block of position:fixed; the dialogs now live
+// in the browser's top layer and always cover the screen.
+const LAYOUTS = [
+  ['normal card', '', ''],
+  ['card with backdrop-filter', '', 'blur(18px)'],
+  ['card in a container with transform and overflow', 'transform:translateZ(0);overflow:hidden;height:360px', ''],
+];
+const coversScreen = (page, selector) => page.locator('#card').evaluate((card, selector) => {
+  const box = card.shadowRoot.querySelector(selector).getBoundingClientRect();
+  return Math.round(box.top) === 0 && Math.round(box.left) === 0 && Math.round(box.height) === innerHeight && Math.round(box.width) === innerWidth;
+}, selector);
+const openOverlays = page => page.locator('#card').evaluate(card => card.shadowRoot.querySelectorAll('.modal,.submodal,.explain-backdrop').length);
+
+for (const [label, width, height] of [['iPhone', 390, 844], ['Desktop', 1440, 900]]) {
+  for (const [layout, wrap, blur] of LAYOUTS) {
+    test(`overlays ${label}, ${layout}: room overview, last room, details and support cover the screen`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      const errors = await mountRooms(page, 30, { wrap });
+      if (blur) await page.locator('#card').evaluate((card, blur) => { card.shadowRoot.querySelector('ha-card').style.backdropFilter = blur; }, blur);
+      await page.locator('#rooms').click();
+      await expect(page.locator('.subdialog article.room')).toHaveCount(30);
+      expect(await coversScreen(page, '.submodal')).toBe(true);
+      // the last room can be reached and opened by a real click
+      const last = page.locator('.subdialog article.room[data-room="room_29"]');
+      await last.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(50);
+      const before = await listTop(page);
+      await last.click();
+      await expect(page.locator('.subdialog .room-detail h3')).toHaveText(/^(Raum|Room) 30$/);
+      expect(await coversScreen(page, '.submodal')).toBe(true);
+      await page.locator('.subdialog').evaluate(el => { el.scrollTop = el.scrollHeight; });
+      await pushLiveUpdate(page);  // a live update keeps the dialog on screen
+      expect(await coversScreen(page, '.submodal')).toBe(true);
+      await page.locator('#info-back').click();
+      await page.waitForTimeout(400);
+      expect(await listTop(page)).toBe(before);
+      await page.locator('#info-close').click();
+      expect(await openOverlays(page)).toBe(0);  // closed overlays are removed
+      // details window and support view
+      await page.locator('#details').click();
+      expect(await coversScreen(page, '.modal')).toBe(true);
+      await page.locator('#close').click();
+      expect(await openOverlays(page)).toBe(0);
+      await page.locator('#card').evaluate(card => { card._info = 'support'; card._render(); });
+      await page.waitForTimeout(80);
+      expect(await coversScreen(page, '.submodal')).toBe(true);
+      await page.locator('.subdialog').evaluate(el => { el.scrollTop = el.scrollHeight; });
+      await page.waitForTimeout(50);
+      const bottom = await page.locator('.subdialog').evaluate(el => Math.round(el.getBoundingClientRect().bottom));
+      expect(bottom).toBeLessThanOrEqual(height);
+      await page.locator('#info-close').click();
+      expect(await openOverlays(page)).toBe(0);
+      expect(errors).toEqual([]);
+    });
+  }
+}
+
+test('overlays Android WebView: a trusted touch swipe scrolls the room list inside a transformed, clipped container', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'android-webview', 'Trusted touch swipe uses the Chromium Android WebView project');
+  const errors = await mountRooms(page, 30, { wrap: 'transform:translateZ(0);overflow:hidden;height:360px' });
+  await page.locator('#card').evaluate(card => { card.shadowRoot.querySelector('ha-card').style.backdropFilter = 'blur(18px)'; });
+  await page.locator('#rooms').click();
+  const dialog = page.locator('.subdialog');
+  const box = await dialog.boundingBox();
+  const x = box.x + box.width / 2;
+  const startY = box.y + box.height - 60;
+  const endY = box.y + 80;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: startY, id: 1, radiusX: 4, radiusY: 4, force: 1 }] });
+  for (let i = 1; i <= 8; i++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: startY + ((endY - startY) * i / 8), id: 1, radiusX: 4, radiusY: 4, force: 1 }] });
+    await page.waitForTimeout(18);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(180);
+  expect(await dialog.evaluate(el => el.scrollTop)).toBeGreaterThan(100);
+  expect(await coversScreen(page, '.submodal')).toBe(true);
+  expect(errors).toEqual([]);
 });

@@ -21,6 +21,7 @@ from .const import (
     CONF_ROOM_DEHUMIDIFIER,
     CONF_ROOM_DISABLED_GOALS,
     CONF_ROOM_EXHAUST_FAN,
+    CONF_ROOM_EXHAUST_FAN_CONTROL,
     CONF_ROOM_FLOOR,
     CONF_ROOM_HUMIDIFIER,
     CONF_ROOM_HUMIDITY,
@@ -44,11 +45,14 @@ from .const import (
     ORIENTATION_UNKNOWN,
     PROFILE_SUMMER_COOLING,
 )
+from .automation_events import action_code
 from .climate_sources import aggregate_states
 from .coordinator_contacts import _contact_ids, _contact_specific_reference, _cover_openings
 from .coordinator_sources import _aggregate_state_proxy, _float_state
 from .goals import normalise_disabled_goals
 from .intelligence import ensure_behaviour_defaults
+from .exhaust_reference import NEIGHBOUR_REFERENCE_REASON
+from .fan_automation import room_fan_automation
 from .intervention import build_interventions, voc_scale
 from .measurement_frame import build_measurement_frame
 from .model import absolute_humidity
@@ -69,6 +73,10 @@ class RoomEvaluationMixin:
     """Per-room evaluation of the coordinator: sensor readings, stage order and room overlays."""
 
     hass: HomeAssistant  # provided by the coordinator
+
+    def _fan_snapshot(self, key: str) -> dict[str, Any] | None:
+        controller = getattr(self, "actuator_controller", None)
+        return controller.fan_snapshot(key) if controller is not None else None
 
     def _shading_context(self, now: datetime, options: dict[str, Any], temperature: Any, comfort_target: Any) -> dict[str, Any]:
         """Sun now / after the lead time, expected heat and clouds for the shading plan (0.26.5.1)."""
@@ -158,6 +166,8 @@ class RoomEvaluationMixin:
             outdoor_temp_state=outdoor_temp_state, proven_three_state=proven_three_state, rh=rh,
             stable_since=stable_since, t=t, temperature_state=temperature_state,
         )
+        # 0.26.5.4 (review A04): the wall (mould) model keeps the default reference, whatever air is drawn in
+        self.__dict__.setdefault("_wall_reference_t", {})[str(cfg.get("key") or "")] = default_ref_t
 
         (changed, measurements_valid, ventilation_group) = await self._async_room_session_lifecycle(
             active_passage_contacts=active_passage_contacts, cfg=cfg, changed=changed,
@@ -366,6 +376,7 @@ class RoomEvaluationMixin:
             "covers": list(cfg.get(CONF_ROOM_COVERS, []) or []),  # legacy fallback only
             "climate": cfg.get(CONF_ROOM_CLIMATE),
             "exhaust_fan": cfg.get(CONF_ROOM_EXHAUST_FAN),
+            "exhaust_fan_control": str(cfg.get(CONF_ROOM_EXHAUST_FAN_CONTROL) or "off"),
             "mechanical_exhaust_active": mechanical_exhaust_active,
             "window_open": raw_contact_open,
             "ventilation_type": mem.get("session_specialist_opening_mode") if mem.get("session_active") else None,
@@ -375,6 +386,14 @@ class RoomEvaluationMixin:
             "humidifier": cfg.get(CONF_ROOM_HUMIDIFIER),
             "air_purifier": cfg.get(CONF_ROOM_AIR_PURIFIER),
         }
+        results[key]["reference_path"] = self.__dict__.get("_reference_paths", {}).get(str(key), "default")
+        results[key]["air_exchange"] = self.__dict__.get("_air_exchange", {}).get(key)  # 0.26.5.4: display only
+        if results[key]["reference_path"] == "neighbour_room" and isinstance(results[key].get("recommendation_reasons"), list):
+            results[key]["recommendation_reasons"].append(NEIGHBOUR_REFERENCE_REASON)
+        # 0.26.5.4: what the automatic fan control does (final value after the house decision)
+        results[key]["fan_automation"] = room_fan_automation(
+            {**results[key], "house_aligned_action": action_code(results[key].get("action"))}, self._fan_snapshot(key)
+        )
 
     def _monitor_only_room_result(
         self,

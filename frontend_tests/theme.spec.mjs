@@ -159,8 +159,110 @@ test('switching the theme back restores the FreshAirIQ design; aliases are accep
     card.setConfig({ theme: 'whatever' }); out.push(card.getAttribute('data-freshairiq-theme'));
     return out;
   });
-  expect(results).toEqual(['12px', '22px', 'freshairiq', 'auto', 'auto', 'freshairiq']);
+  // 0.26.5.4 (audit S14): a named Home Assistant theme ("whatever") is no longer read as the FreshAirIQ design
+  expect(results).toEqual(['12px', '22px', 'freshairiq', 'auto', 'auto', 'auto']);
 });
+
+// 0.26.5.4 (audit S14): "theme" is Lovelace's key for a named Home Assistant theme. The FreshAirIQ look is
+// "freshairiq_design"; the old values theme: auto / native / freshairiq keep working.
+test('a named Home Assistant theme stays the theme, the FreshAirIQ look is freshairiq_design', async ({ page }) => {
+  await mount(page, {}, LIGHT);
+  const results = await page.locator('#card').evaluate(card => {
+    const read = config => { card.setConfig(config); return [card.getAttribute('data-freshairiq-theme'), card._config.theme, card._config.freshairiq_design]; };
+    return [
+      read({ theme: 'FrostedGlass' }),
+      read({ theme: 'FrostedGlass', freshairiq_design: 'freshairiq' }),
+      read({ freshairiq_design: 'auto' }),
+      read({ theme: 'freshairiq' }),
+      read({}),
+    ];
+  });
+  expect(results).toEqual([
+    ['auto', 'FrostedGlass', 'auto'],
+    ['freshairiq', 'FrostedGlass', 'freshairiq'],
+    ['auto', 'auto', 'auto'],
+    ['freshairiq', 'freshairiq', 'freshairiq'],
+    ['freshairiq', 'freshairiq', 'freshairiq'],
+  ]);
+});
+
+test('the editor keeps a named Home Assistant theme when the design is changed', async ({ page }) => {
+  await loadCard(page, '<!doctype html><html><body><freshairiq-card-editor id="ed"></freshairiq-card-editor></body></html>');
+  const result = await page.evaluate(async () => {
+    const editor = document.getElementById('ed');
+    editor.hass = { language: 'de', states: {} };
+    editor.setConfig({ theme: 'FrostedGlass' });
+    await new Promise(r => setTimeout(r, 50));
+    const select = editor.shadowRoot.getElementById('card-theme');
+    const events = [];
+    editor.addEventListener('config-changed', e => events.push([e.detail.config.theme, e.detail.config.freshairiq_design]));
+    const before = select.value;
+    select.value = 'freshairiq';
+    select.dispatchEvent(new Event('change'));
+    return { before, events };
+  });
+  expect(result.before).toBe('auto');
+  expect(result.events).toEqual([['FrostedGlass', 'freshairiq']]);
+});
+
+// 0.26.5.4 (support case support-ff65eea96f68094a0640aec0): with a glass theme,
+// UIX or card-mod styles on the card (blur, transform) the dialogs stayed inside
+// the card. They now cover the screen and keep the theme and the foreign styles.
+for (const [name, config, theme] of [['FreshAirIQ design', {}, {}], ['theme: auto with a glass theme', { theme: 'auto' }, GLASS], ['theme: auto with a light theme', { theme: 'auto' }, LIGHT]]) {
+  test(`dialogs cover the screen with UIX / card-mod styles – ${name}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const errors = await mount(page, config, theme);
+    const result = await page.locator('#card').evaluate(async card => {
+      const style = document.createElement('style');
+      style.id = 'uix-style';
+      style.textContent = 'ha-card{transform:translateZ(0);backdrop-filter:blur(18px);contain:paint;overflow:hidden!important}';
+      card.shadowRoot.appendChild(style);
+      const haCard = card.shadowRoot.querySelector('ha-card');
+      haCard.appendChild(document.createElement('card-mod'));
+      const read = () => {
+        const sub = card.shadowRoot.querySelector('.submodal');
+        const box = sub.getBoundingClientRect();
+        const dialog = card.shadowRoot.querySelector('.subdialog');
+        return { full: Math.round(box.height) === innerHeight && Math.round(box.width) === innerWidth && Math.round(box.top) === 0,
+          background: getComputedStyle(sub).backgroundColor, dialogColor: getComputedStyle(dialog).color, border: getComputedStyle(sub).borderTopWidth };
+      };
+      const out = {};
+      for (const view of ['rooms', 'room:bad', 'support', 'guests', 'settings']) {
+        card._info = view; card._render();
+        await new Promise(r => setTimeout(r, 60));
+        out[view] = read();
+        if (view === 'room:bad') {
+          // the explanation window of a tile lies above the room dialog, also after a refresh
+          card.shadowRoot.querySelector('[data-explain]').click();
+          await new Promise(r => setTimeout(r, 30));
+          card._render();
+          await new Promise(r => setTimeout(r, 30));
+          const sheet = card.shadowRoot.querySelector('.explain-backdrop');
+          const box = sheet.getBoundingClientRect();
+          const hit = card.shadowRoot.elementFromPoint(innerWidth / 2, innerHeight - 30);
+          out.explain = { full: Math.round(box.height) === innerHeight, onTop: !!(hit && hit.closest('.explain-backdrop')) };
+          card.shadowRoot.querySelector('[data-explain-close]').click();
+          out.explainClosed = !card.shadowRoot.querySelector('.explain-backdrop');
+        }
+      }
+      card._info = null; card._render();
+      out.after = { overlays: card.shadowRoot.querySelectorAll('.modal,.submodal').length, sameCard: card.shadowRoot.querySelector('ha-card') === haCard,
+        uix: !!card.shadowRoot.getElementById('uix-style'), cardMod: !!haCard.querySelector(':scope > card-mod'),
+        transform: getComputedStyle(haCard).transform !== 'none' };
+      out.cardColor = getComputedStyle(haCard).color;
+      return out;
+    });
+    for (const view of ['rooms', 'room:bad', 'support', 'guests', 'settings']) {
+      expect(result[view].full).toBe(true);
+      expect(result[view].border).toBe('0px');  // no browser frame around the dialog
+      expect(result[view].background).not.toBe('rgb(255, 255, 255)');  // the dialog's own backdrop, not the browser default
+    }
+    expect(result.explain).toEqual({ full: true, onTop: true });
+    expect(result.explainClosed).toBe(true);
+    expect(result.after).toEqual({ overlays: 0, sameCard: true, uix: true, cardMod: true, transform: true });
+    expect(errors).toEqual([]);
+  });
+}
 
 test('the card editor offers the theme', async ({ page }) => {
   await loadCard(page, '<!doctype html><html><body><freshairiq-card-editor id="ed"></freshairiq-card-editor></body></html>');

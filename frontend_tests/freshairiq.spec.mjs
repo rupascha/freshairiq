@@ -380,6 +380,13 @@ test('Diagnostics consent hint points admins to Devices & services and never wri
     return { hiddenForNonAdmin, shownForAdmin: !!el.shadowRoot.querySelector('.faiq-consent') };
   });
   expect(shown).toEqual({ hiddenForNonAdmin: true, shownForAdmin: true });
+  // 0.26.5.4: the hint says what sharing is good for, and that nothing is sent without consent
+  const hint = page.locator('.faiq-consent');
+  await expect(hint).toContainText('new rooms learn faster');
+  await expect(hint).toContainText('forecasts more accurate for everyone');
+  await expect(hint).toContainText('nothing is sent without consent');
+  const fits = await hint.evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.getBoundingClientRect().right <= window.innerWidth + 1);
+  expect(fits).toBe(true);
   // "Öffnen" navigates inside Home Assistant to the integration page.
   await page.evaluate(() => { window.__nav = []; history.pushState = (_s, _t, url) => window.__nav.push(String(url)); window.addEventListener('location-changed', () => window.__nav.push('location-changed')); });
   await page.locator('[data-consent-open]').click();

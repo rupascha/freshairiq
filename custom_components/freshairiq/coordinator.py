@@ -603,6 +603,8 @@ class FreshAirIQCoordinator(
                 await self.store.async_save_deferred()
         self.runtime_health.observe_metric("coordinator_phase_persistence_ms", (perf_counter() - _persistence_started) * 1000.0, now, unit="ms")
         data["runtime_health"] = self.runtime_health.snapshot
+        controller = getattr(self, "actuator_controller", None)
+        data["fan_automation_trace"] = controller.fan_trace() if controller is not None else []  # 0.26.5.4
         _diagnostics_started = perf_counter()
         self.diagnostics.update_configuration_snapshot(self.entry.data, options, data, now)
         await self.diagnostics.async_record(data, self.store.data, now, completed_sessions)

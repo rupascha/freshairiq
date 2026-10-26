@@ -155,9 +155,14 @@ async def test_switched_off_co2_starts_no_airing_but_stays_visible(hass, freezer
 
 
 async def test_switched_off_temperature_gets_no_ventilate_for_cooling(hass, freezer) -> None:
-    warm = {"sensor.kueche_t": (27.0, TEMP), "sensor.aussen_t": (15.0, TEMP), "sensor.kueche_h": (50.0, HUM)}
+    # CO₂ below the warning threshold: only the temperature goal decides here
+    warm = {"sensor.kueche_t": (27.0, TEMP), "sensor.aussen_t": (15.0, TEMP), "sensor.kueche_h": (50.0, HUM), "sensor.kueche_co2": (600, CO2)}
     on = await _kitchen(hass, freezer, [], "summer_cooling", warm)
     assert on["action"] == "Ventilate for cooling" and on["cooling_candidate"] is True
+    # 0.26.5.4: CO₂ above the warning threshold leads, cooling stays the extra benefit
+    stale = await _kitchen(hass, freezer, [], "summer_cooling", {**warm, "sensor.kueche_co2": (1180, CO2)})
+    assert stale["action"] == "Ventilate" and stale["cooling_candidate"] is True
+    assert stale["recommendation_reasons"][0].startswith("CO₂ 1180 ppm")
 
     off = await _kitchen(hass, freezer, ["temperature"], "summer_cooling", warm)
     assert off["action"] != "Ventilate for cooling" and off["cooling_candidate"] is False

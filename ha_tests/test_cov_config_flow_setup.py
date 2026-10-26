@@ -365,7 +365,7 @@ def test_normalise_room_tolerates_legacy_string_values() -> None:
     [
         (c.PROFILE_SUMMER_COOLING, ["cooling_start_temp_c", "cooling_min_outdoor_delta_c", "cooling_max_indoor_rh", "cooling_max_moisture_gain_5min_ml"]),
         (c.PROFILE_DEHUMIDIFY, ["min_return_next_5_min_ml", "max_temp_loss_next_5_min_c", "min_efficiency_ml_per_01c"]),
-        (c.PROFILE_COMFORT, ["min_return_next_5_min_ml", "max_temp_loss_next_5_min_c", "min_efficiency_ml_per_01c"]),
+        (c.PROFILE_COMFORT, ["cooling_start_temp_c"]),  # 0.26.5.4: return/efficiency of comfort live on the model page
     ],
 )
 def test_profile_details_schema_per_profile(profile, expected) -> None:
@@ -378,7 +378,8 @@ def test_profile_details_schema_per_profile(profile, expected) -> None:
     if profile == c.PROFILE_DEHUMIDIFY:
         assert _schema_defaults(schema)["min_return_next_5_min_ml"] == 15.0
     if profile == c.PROFILE_COMFORT:
-        assert _schema_defaults(schema)["min_return_next_5_min_ml"] == 25.0
+        assert _schema_defaults(schema)["cooling_start_temp_c"] == 24
+        assert _schema_defaults(cf._profile_details_schema({"operating_profile": profile}))["cooling_start_temp_c"] == 24.0
 
 
 @pytest.mark.parametrize(

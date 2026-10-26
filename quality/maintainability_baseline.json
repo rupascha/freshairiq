@@ -9,7 +9,7 @@
   "files": {},
   "functions": {
     "custom_components/freshairiq/model.py::evaluate_room": {
-      "lines": 292,
+      "lines": 289,
       "reason": "hot path of every cycle and opening assessment; phase helpers with keyword arguments cost about 35 % runtime (performance gate)"
     },
     "custom_components/freshairiq/notifications.py::_process_notifications": {
@@ -19,7 +19,7 @@
   },
   "frontend": {
     "custom_components/freshairiq/frontend/freshairiq-card.js": {
-      "bytes": 415184,
+      "bytes": 414773,
       "reason": "dashboard card (single ES module); split planned as a separate frontend step"
     }
   }

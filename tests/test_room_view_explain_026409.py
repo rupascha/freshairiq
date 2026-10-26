@@ -30,7 +30,9 @@ def test_rh_is_explained_in_both_languages():
 
 
 def test_explanation_window_survives_rerender_and_closes_cleanly():
-    assert "            this._ownNodes.forEach(node => card.appendChild(node));\n        }\n        this._syncExplainSheet();" in CARD
+    # 0.26.5.4: the dialogs are raised into the top layer first, then the explanation follows on top
+    assert "            this._ownNodes.forEach(node => card.appendChild(node));\n        }\n        faiqLiftOverlays(this.shadowRoot);\n        this._syncExplainSheet();" in CARD
+    assert "if (old) old.replaceWith(node); else this.shadowRoot.appendChild(node);\n        faiqLiftOverlays(this.shadowRoot);" in CARD
     assert 'data-explain-close aria-label="${de ? "Schließen" : "Close"}"' in CARD
     assert 'e.key === "Escape" && this._explain' in CARD
     # above the room window (.submodal z-index 10010)

@@ -45,6 +45,7 @@ def slim_room(room: Any) -> Any:
 VOLATILE_ROOM_KEYS = (
     "frame_age_temp_s", "frame_age_humidity_s", "frame_age_reference_temp_s", "frame_age_reference_humidity_s",
     "measurement_frame_max_age_s", "moisture_source_window_min", "humidity_high_duration_min",
+    "air_exchange",  # 0.26.5.4: changes every cycle while airing; the dashboard gets it over the live channel
 )
 _ROOM_STAMPS = ("frame_temp_reported_at", "frame_humidity_reported_at")
 _ALL_STAMPS = (*_ROOM_STAMPS, "frame_reference_temp_reported_at", "frame_reference_humidity_reported_at")

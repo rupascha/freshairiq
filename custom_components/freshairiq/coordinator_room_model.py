@@ -6,9 +6,11 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .air_exchange import advance_air_exchange
 from .const import (
     CONF_CONTACT_REFERENCE_HUMIDITIES,
     CONF_CONTACT_REFERENCE_TEMPERATURES,
+    CONF_ROOM_CO2,
     CONF_ROOM_MOISTURE_SOURCES,
     CONF_ROOM_NAME,
     CONF_ROOM_REFERENCE_HUMIDITY,
@@ -31,7 +33,29 @@ from .learning_effectiveness import freeze_learning_effectiveness_context
 from .model import RoomInput, absolute_humidity, evaluate_room, scaled_min_return
 from .moisture_source import update_moisture_source
 from .post_stabilization import prune_history as prune_stabilization_history, update_post_close_observation
-from .room_recommendation import _recommendation
+from .room_recommendation import _recommendation, co2_lead
+from .start_model import seed_room, validate as _validate_start_model
+from .start_model_data import START_MODEL as _SHIPPED_START_MODEL
+
+START_MODEL = _validate_start_model(_SHIPPED_START_MODEL)
+
+
+def _remember_airing_kind(mem: dict[str, Any], result: Any, has_ventilation_contact: bool, is_open: Any) -> bool:
+    """Hysteresis memory of a closed room; returns whether ``mem`` changed.
+
+    0.26.4.7 (GitHub #15): only a closed room that recommended airing keeps the
+    relaxed release thresholds – for humidity only, CO2 has its own hysteresis.
+    0.26.5.4 (review A07): whether an airing opened now is asked for CO2 alone.
+    """
+    changed = False
+    latched = bool(result.data_quality == "ok" and result.ventilation_candidate and not result.co2_airing and has_ventilation_contact and not mem["session_active"] and not is_open)
+    if bool(mem.get("ventilation_candidate_latched", False)) != latched:
+        mem["ventilation_candidate_latched"] = latched
+        changed = True
+    if not mem["session_active"] and bool(mem.get("co2_airing_last")) != bool(result.co2_airing):
+        mem["co2_airing_last"] = bool(result.co2_airing)
+        changed = True
+    return changed
 
 
 class RoomModelMixin:
@@ -113,10 +137,11 @@ class RoomModelMixin:
             and str(_contact_ref_h.get(_cid)) == str(reference_humidity_entity)
             for _cid in _contact_ids(cfg)
         )
-        # Rooms without an assigned opening remain full calculated indoor
-        # rooms. Their exchange model is learned from conservative passive
-        # observations instead of pretending they own another room's contact.
+        # Rooms without an assigned opening remain full calculated indoor rooms. Their exchange model
+        # is learned from conservative passive observations instead of pretending they own another room's contact.
         has_ventilation_contact = bool(_contact_ids(cfg))
+        # 0.26.5.4: a room that has not learned yet starts from the shipped start model (empty: built-in values)
+        changed = bool(has_ventilation_contact and seed_room(mem, START_MODEL, cfg[CONF_ROOM_VOLUME])) or changed
         effective_learning_rate = float(mem["learning_rate"] if has_ventilation_contact else mem.get("passive_learning_rate", 0.03))
         effective_learning_samples = int(mem["learning_samples"] if has_ventilation_contact else mem.get("passive_learning_samples", 0))
         opening_learning = mem.get("opening_learning") if isinstance(mem.get("opening_learning"), dict) else {}
@@ -129,6 +154,8 @@ class RoomModelMixin:
         if opening_model and int(opening_model.get("samples", 0) or 0) > 0:
             effective_learning_rate = float(opening_model.get("rate", effective_learning_rate))
             effective_learning_samples = int(opening_model.get("samples", effective_learning_samples))
+        elif has_ventilation_contact and opening_model_key in ((mem.get("start_model") or {}).get("rates") or {}):  # not learned yet: start model
+            effective_learning_rate = float(mem["start_model"]["rates"][opening_model_key])
         if mem.get("session_active") and mem.get("session_target_fan_start") and raw_contact_open:
             joined = _session_target_min(self.data, options)
             mem["session_target_min"] = round(elapsed + joined, 1) if joined is not None else None
@@ -137,9 +164,10 @@ class RoomModelMixin:
             key=key, name=cfg[CONF_ROOM_NAME], temperature=t, humidity=rh, reference_temperature=ref_t, reference_humidity=ref_rh,
             volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
             learning_rate=effective_learning_rate, learning_samples=effective_learning_samples, co2=co2,
-            cooling_allowed="temperature" not in disabled_goals,
-            comfort_target_c=room_comfort_target(cfg, mem)[0] if "temperature" not in disabled_goals else None,
-            humidity_plateau=track_session(mem, session_active=bool(mem["session_active"]), elapsed_min=elapsed, temp_c=t, rh=rh),
+            cooling_allowed="temperature" not in disabled_goals, comfort_target_c=room_comfort_target(cfg, mem)[0] if "temperature" not in disabled_goals else None,
+            surface_reference_temperature=self.__dict__.get("_wall_reference_t", {}).get(str(key)), co2_lead_latched=bool(mem.get("co2_lead_latched")), session_co2_only=bool(mem["session_active"] and mem.get("session_co2_only")),
+            co2_sensor_missing=bool(cfg.get(CONF_ROOM_CO2)) and co2 is None and "co2" not in disabled_goals,
+            humidity_plateau=track_session(mem, session_active=bool(mem["session_active"]), elapsed_min=elapsed, temp_c=t, rh=rh, reports=int(mem.get("session_humidity_reports", 0))),
             session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),
             session_start_temp=mem.get("session_start_temp"), session_result_base_ml=float(mem.get("session_result_base_ml", 0.0)),
             session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)),
@@ -172,12 +200,10 @@ class RoomModelMixin:
             outdoor_pm25=outdoor_pm25,
         )
         result = evaluate_room(room_input, options, cross)
-        # 0.26.4.7 (GitHub #15): hysteresis memory. Only a closed room that
-        # recommended airing keeps the relaxed release thresholds.
-        _latched = bool(result.data_quality == "ok" and result.ventilation_candidate and has_ventilation_contact and not mem["session_active"] and not is_open)
-        if bool(mem.get("ventilation_candidate_latched", False)) != _latched:
-            mem["ventilation_candidate_latched"] = _latched
-            changed = True
+        self.__dict__.setdefault("_air_exchange", {})[key] = advance_air_exchange(  # 0.26.5.4: display only
+            mem, active=bool(mem["session_active"] and is_open), elapsed_min=elapsed, now=now, rate_per_min=room_input.learning_rate,
+            factor=(1.25 if cross else 1.0) * min(max(float(airflow), 0.5), 1.5), learned=room_input.learning_samples >= 3)
+        changed = _remember_airing_kind(mem, result, has_ventilation_contact, is_open) or changed
 
         return (
             active_contact_reference, airflow, changed, effective_learning_rate, elapsed,
@@ -286,7 +312,11 @@ class RoomModelMixin:
 
         mem["last_measurement_at"] = now.isoformat()
         mem["last_measurement_valid"] = result.data_quality == "ok"
-        action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed, outdoor_pm25=outdoor_pm25, ventilation_latched=bool(room_input.ventilation_latched))
+        # audit S04: a sensor without a value keeps the hold band – only a valid reading below it ends it
+        co2_latched = bool(mem.get("co2_lead_latched")) if room_input.co2_sensor_missing else co2_lead(co2, options, bool(mem.get("co2_lead_latched")))
+        if bool(mem.get("co2_lead_latched")) != co2_latched:
+            mem["co2_lead_latched"] = co2_latched; changed = True
+        action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed, outdoor_pm25=outdoor_pm25, ventilation_latched=bool(room_input.ventilation_latched), co2_latched=co2_latched)
         if explicit_tilted and action not in {"Close", "Check sensor"}:
             # A tilted three-state session is a valid, separately learned
             # ventilation mode. Do not silently upgrade a user's deliberate

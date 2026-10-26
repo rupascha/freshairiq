@@ -99,6 +99,7 @@ def _opening_assessments(
     options: dict[str, Any], wind_bearing: float | None, wind_speed: float | None,
     contact_modes: dict[str, str] | None = None,
     cooling_allowed: bool = True,
+    comfort_target_c: float | None = None,
 ) -> list[dict[str, Any]]:
     """Evaluate every configured opening against its own incoming air.
 
@@ -168,7 +169,7 @@ def _opening_assessments(
                 volume_m3=float(volume_m3), contact_open=False, contact_open_seconds=0.0,
                 learning_rate=float(learning_rate), learning_samples=int(learning_samples),
                 co2=co2, session_active=False, airflow_factor=airflow, pollen_index=float(pollen),
-                cooling_allowed=cooling_allowed,
+                cooling_allowed=cooling_allowed, comfort_target_c=comfort_target_c,
             ),
             options,
             False,

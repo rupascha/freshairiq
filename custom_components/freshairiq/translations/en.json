@@ -355,7 +355,7 @@
     "diagnostics_consent": {
       "options": {
         "unset": "Not decided yet (nothing is sent)",
-        "granted": "Yes, share pseudonymised diagnostics",
+        "granted": "Yes, share and improve FreshAirIQ (pseudonymised)",
         "declined": "No, do not share"
       }
     },
@@ -1796,12 +1796,12 @@
       },
       "profile_details": {
         "title": "Operating profile · {profile}",
-        "description": "Dehumidify tolerates somewhat more temperature loss for effective moisture removal. Comfort balances moisture and energy. Summer cooling uses cooling-specific parameters only.",
+        "description": "Dehumidify tolerates somewhat more temperature loss for effective moisture removal. Comfort balances moisture and energy and only sets here the room temperature from which airing for cooling may start. Summer cooling uses cooling-specific parameters only.",
         "data": {
           "min_return_next_5_min_ml": "Minimum yield next 5 min",
           "max_temp_loss_next_5_min_c": "Maximum temperature loss next 5 min",
           "min_efficiency_ml_per_01c": "Minimum moisture/temperature efficiency",
-          "cooling_start_temp_c": "Summer cooling from room temperature",
+          "cooling_start_temp_c": "Cool from room temperature (lower limit)",
           "cooling_min_outdoor_delta_c": "Outdoor air at least this much cooler",
           "cooling_max_indoor_rh": "Maximum indoor RH for cooling",
           "cooling_max_moisture_gain_5min_ml": "Maximum tolerated moisture gain in 5 min"
@@ -1810,7 +1810,7 @@
           "cooling_max_indoor_rh": "Above this indoor humidity, cooling is not prioritised at the cost of additional moisture. Default: 70%.",
           "cooling_max_moisture_gain_5min_ml": "Maximum accepted predicted moisture gain during five minutes of cooling. Default: 60 ml.",
           "cooling_min_outdoor_delta_c": "Outdoor air must be at least this much cooler. Default: 2 °C.",
-          "cooling_start_temp_c": "Summer cooling is prioritised only above this room temperature. Default: 24 °C.",
+          "cooling_start_temp_c": "Below this room temperature FreshAirIQ does not suggest airing for cooling. In the comfort profile the room's comfort target also applies: cooling starts 0.5 °C above it. Default: 24 °C.",
           "max_temp_loss_next_5_min_c": "Maximum tolerated additional room-temperature loss over the next five minutes. Example: 0.6 °C in Comfort mode.",
           "min_efficiency_ml_per_01c": "Minimum ratio of moisture removal to temperature loss. Example: 8 ml per 0.1 °C.",
           "min_return_next_5_min_ml": "Minimum additional moisture removal FreshAirIQ expects over the next five minutes. Example: 25 ml in Comfort mode."
@@ -2372,14 +2372,14 @@
       },
       "diagnostics_sharing": {
         "title": "Diagnostics sharing",
-        "description": "During the public beta, nightly sharing is enabled by default and can be disabled at any time. FreshAirIQ prepares the technically complete retained diagnostics history locally for analysis, removes or pseudonymises direct identifiers, and transfers large histories in chunks. After the first acknowledged full sync, only new diagnostic records are transferred. This staging configuration connects only to the local Diagnostics Hub on the private LAN. The beta preset is Nightly; any later public deployment will require HTTPS.",
+        "description": "With your consent, your installation helps make FreshAirIQ better for everyone:\n\n- **New rooms learn faster:** the measured airings of many homes give better starting values, so forecasts fit after a few airings instead of many.\n- **More accurate forecasts:** how far forecasts and measurements differ is evaluated across all installations and improved where it matters.\n- **Faults are fixed sooner:** problems are detected even when nobody reports them.\n\nShared data are pseudonymised technical diagnostics (readings, forecasts, learning state) without names, location or device IDs, encrypted via HTTPS. **Nothing is sent without your consent.** After you agree, uploads run nightly by default; large histories are sent in parts, afterwards only new records. You can change this at any time.",
         "data": {
           "diagnostics_consent": "Share diagnostics?",
           "diagnostics_reporting_mode": "Automatic diagnostics sharing",
           "diagnostics_include_client_context": "Include coarse device/browser context"
         },
         "data_description": {
-          "diagnostics_consent": "Automatic uploads only happen after you agree. Shared data are pseudonymised technical diagnostics without names, location or device IDs; they help improve bug fixes and forecasts. You can change this at any time.",
+          "diagnostics_consent": "Nothing is sent without your consent. With it you help improve forecasts and let new rooms learn faster. You can change this at any time.",
           "diagnostics_reporting_mode": "Off, only for detected problems, nightly, or weekly. A future nightly upload is deterministically distributed between 02:00 and 03:59 local time.",
           "diagnostics_include_client_context": "Optional for compatibility analysis. Exact device names, serial numbers and exact device models are not sent to the Hub."
         }

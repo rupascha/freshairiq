@@ -63,8 +63,11 @@ class RoomResultMixin:
     ) -> Any:
         """Repeat-ventilation cooldown, routines, opening assessments, comfort target and goals."""
         minutes_since_vent = None
-        if mem.get("last_ventilation_ended_at"):
-            try: minutes_since_vent = max(0.0, (now-datetime.fromisoformat(mem["last_ventilation_ended_at"])).total_seconds()/60.0)
+        # closed, final measurement still running: the airing ended at the physical close
+        finalizing = bool(mem.get("session_close_pending") and mem.get("session_close_detected_at") and not is_open)
+        ended_at = mem.get("session_close_detected_at") if finalizing else mem.get("last_ventilation_ended_at")
+        if ended_at:
+            try: minutes_since_vent = max(0.0, (now-datetime.fromisoformat(str(ended_at))).total_seconds()/60.0)
             except (TypeError, ValueError): minutes_since_vent = None
         stabilization_min = float(options.get("post_ventilation_stabilization_min", 4.0))
         repeat_cooldown = float(options.get("repeat_recommendation_cooldown_min", 120.0))
@@ -106,7 +109,9 @@ class RoomResultMixin:
         cooldown_override = bool(strong_new_source or weather_override_allowed or urgent_override)
         stabilizing = stabilization
         recently_ventilated = minutes_since_vent is not None and minutes_since_vent < repeat_cooldown and not cooldown_override
-        cooldown_demoted = bool(recently_ventilated and result.action == "Ventilate" and not is_open and not mem["session_active"])
+        # 0.26.5.4: also a room aired only by its fan ("Ventilate indirectly"):
+        # it escaped the cooldown and the automatic fan restarted right away.
+        cooldown_demoted = bool(recently_ventilated and result.action in {"Ventilate", "Ventilate indirectly"} and not is_open and (finalizing or not mem["session_active"]))
         if cooldown_demoted:
             # 0.26.4.7 (GitHub #15): the house recommendation already skipped
             # rooms inside the repeat cooldown, but the room's own action (sensor,
@@ -146,6 +151,7 @@ class RoomResultMixin:
             learning_samples=int(mem.get("learning_samples", 0)), co2=co2, pollen=pollen,
             options=options, wind_bearing=wind_bearing, wind_speed=wind_speed, contact_modes=physical_contact_modes,
             cooling_allowed="temperature" not in disabled_goals,
+            comfort_target_c=room_comfort_target(cfg, mem)[0] if "temperature" not in disabled_goals else None,
         )
         room_threshold_mode = str(cfg.get(CONF_ROOM_THRESHOLD_MODE, ROOM_THRESHOLD_AUTOMATIC) or ROOM_THRESHOLD_AUTOMATIC)
         if room_threshold_mode == ROOM_THRESHOLD_PERCENT:

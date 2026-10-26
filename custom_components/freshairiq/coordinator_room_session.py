@@ -128,6 +128,7 @@ class RoomSessionMixin:
         elif include_ventilation_group_start(ventilation_group, physical_started):
             changed = True
         mem["session_active"] = True
+        mem["session_co2_only"] = bool(mem.get("co2_airing_last"))  # 0.26.5.4 (review A07): asked for CO2 alone
         # 0.26.4.10: the airing duration FreshAirIQ showed when the window was
         # opened. Until it has passed, a close is only advised if moisture
         # would come in (see model.analyse_room).

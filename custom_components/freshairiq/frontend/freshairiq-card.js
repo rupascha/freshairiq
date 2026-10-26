@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.5.3";
+const FAIQ_VERSION = "0.26.5.4";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -72,7 +72,7 @@ const FAIQ_UI = Object.freeze({
 // English. German dashboards never download or parse them.
 // 0.26.5.3: card parts in their own modules, loaded with the card version like the English module
 const faiqModule = name => import(new URL(`./${name}?v=${FAIQ_VERSION}`, import.meta.url).href);
-const [{ faiqThemeCss, faiqThemeColor, faiqThemeInline, FAIQ_THEME_AUTO_CSS }, { FRESHY_EPOCH, freshyClock, freshySvg }, { reasonDE, statusTextDE, FAIQ_LIVE_METHODS, FAIQ_EXPORT_METHODS }] = await Promise.all([faiqModule("freshairiq-card-style.js"), faiqModule("freshairiq-card-freshy.js"), faiqModule("freshairiq-card-data.js")]);
+const [{ faiqThemeCss, faiqThemeColor, faiqThemeInline, FAIQ_THEME_AUTO_CSS, faiqLiftOverlays, faiqDesign, faiqDesignChoice }, { FRESHY_EPOCH, freshyClock, freshySvg }, { reasonDE, statusTextDE, consentHint, FAIQ_LIVE_METHODS, FAIQ_EXPORT_METHODS }] = await Promise.all([faiqModule("freshairiq-card-style.js"), faiqModule("freshairiq-card-freshy.js"), faiqModule("freshairiq-card-data.js")]);
 const FAIQ_EN_MODULE = "freshairiq-card-i18n-en.js";
 const FAIQ_EN_READY_EVENT = "freshairiq-i18n-en-ready";
 let FAIQ_EN_RULES = null; let FAIQ_EN_PATTERNS = [];
@@ -182,7 +182,7 @@ const lastItem = arr => (arr && arr.length ? arr[arr.length - 1] : undefined);
 // 0.26.4.6: number/date format follows the dashboard language (set at the start of _render).
 let FAIQ_NUMBER_LOCALE = "de";
 const fmt = (v, d = 1) => { const n = Number(v); if (!Number.isFinite(n)) return "–"; const s = n.toFixed(d); return FAIQ_NUMBER_LOCALE === "de" ? s.replace(".", ",") : s; };
-// 0.26.4.1: head counts read "4 Personen", not "4,0"; a weighted share (e.g. 2,5) keeps one decimal.
+// 0.26.4.1: "4 Personen", not "4,0"; shares keep one decimal.
 const fmtPeople = v => { const n = Number(v); if (!Number.isFinite(n)) return "–"; const r = Math.round(n * 10) / 10; return Number.isInteger(r) ? String(r) : fmt(r, 1); };
 const whenDE = v => { if (!v)
     return FAIQ_NUMBER_LOCALE === "de" ? "noch keine Messung" : "no measurement yet"; const d = new Date(v); return Number.isNaN(d.getTime()) ? "–" : d.toLocaleString(FAIQ_NUMBER_LOCALE === "de" ? "de-DE" : "en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
@@ -198,11 +198,11 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
 };
 // 0.26.4.7: rooms the whole-house decision deliberately holds back.
 const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
-// 0.26.5.3: a room aired only by its exhaust fan has nothing to close.
+// Fan-only: nothing to close; server label/hint.
 const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
-// F02 (2026-10-16): the house tolerates this long opening; never show "Schließen" here.
+// F02: tolerated long opening, never "Schließen".
 const houseMonitoredRoom = r => !!r && !!r.active && String(r.house_aligned_action || "") === "monitor_open";
-const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : houseMonitoredRoom(r) ? "Daueröffnung überwachen" : (r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action);
+const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : houseMonitoredRoom(r) ? "Daueröffnung überwachen" : (r && (r.fan_automation?.label || r.action_hint)) || ((r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action));
 const roomStyleAction = r => houseHeldRoom(r) ? "Wait" : (r && r.action);
 const actionDE = v => ({ "Ventilate": "Lüften", "Continue ventilating": "Weiterlüften", "Close": "Schließen", "Do not ventilate": "Nicht lüften", "Wait": "Warten", "Okay": "Alles okay", "Check sensor": "Sensor prüfen", "Ventilate for cooling": "Zum Kühlen lüften", "Monitor only": "Nur anzeigen", "Open fully": "Vollständig öffnen", "Ventilate indirectly": "Über Nachbarraum lüften" }[v] || v || "–");
 const mouldDE = v => ({ "Very high": "Sehr hoch", "High": "Hoch", "Elevated": "Erhöht", "Slightly elevated": "Leicht erhöht", "Low": "Niedrig", "Unknown": "Unbekannt" }[v] || v || "Unbekannt");
@@ -254,7 +254,7 @@ const styleFor = a => ({
     "Monitor only": ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:eye-outline"]
 }[a] || ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:check-circle-outline"]);
 const FAIQ_FONT_SCALE_STEPS = Object.freeze([0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2]);
-// 0.26.5.3: fixed small text sizes follow the text size settings too (learning pages, info panels, labels).
+// 0.26.5.3: small fixed text sizes follow the text size settings.
 const faiqScaleCss = css => css.replace(/([^{}]*)\{([^{}]*font-size:[\d.]+px[^{}]*)\}/g, (r,s,b) => { const k=/learn|longterm|season-|info-/.test(s)?"learning":/goal/.test(s)?"goals":/room|floor/.test(s)?"rooms":/metric|kpi/.test(s)?"metrics":/decision|reason|why|explain|detail/.test(s)?"details":"meta"; return k!=="learning"&&/font-size:(1[4-9]|[2-9]\d)/.test(b)?r:`${s}{${b.replace(/(font-size|line-height):([\d.]+)px/g,`$1:calc($2px*var(--faiq-font-${k},1))`)}}`; });
 const faiqCardCssCache = {};
 const normalizeFontScale = value => { const n=Number(value); if(!Number.isFinite(n)) return 1; return FAIQ_FONT_SCALE_STEPS.reduce((best,step)=>Math.abs(step-n)<Math.abs(best-n)?step:best,1); };
@@ -287,7 +287,7 @@ const normalizeDashboardConfig = input => {
         show_rec_cooling: inherited("show_rec_cooling", null, true),
         show_rec_sensor: inherited("show_rec_sensor", null, true),
         dashboard_variant: ["classic", "iq"].includes(String(raw.dashboard_variant || "classic")) ? String(raw.dashboard_variant || "classic") : "classic",
-        theme: ["auto", "native"].includes(String(raw.theme || "").toLowerCase()) || raw.transparent_background === true ? "auto" : "freshairiq",
+        ...faiqDesign(raw),
         font_scale_recommendation: normalizeFontScale(raw.font_scale_recommendation),
         font_scale_goals: normalizeFontScale(raw.font_scale_goals),
         font_scale_rooms: normalizeFontScale(raw.font_scale_rooms),
@@ -910,9 +910,9 @@ class FreshAirIQCard extends HTMLElement {
         return style;
     }
     _themeAuto() {
-        return !!(this._config && this._config.theme === "auto");
+        return !!(this._config && this._config.freshairiq_design === "auto");
     }
-    // 0.26.5.3 (community): ha-card stays the same element and only our own nodes are replaced, so card-mod/UIX styles survive refreshes
+    // 0.26.5.3: ha-card stays, only our nodes are replaced (card-mod/UIX styles survive)
     _replaceRenderedContent(html) {
         const style = this._ensureStaticStyle();
         if (!style || !this.shadowRoot) return;
@@ -939,6 +939,7 @@ class FreshAirIQCard extends HTMLElement {
             this._ownNodes = Array.prototype.slice.call(fresh.childNodes);
             this._ownNodes.forEach(node => card.appendChild(node));
         }
+        faiqLiftOverlays(this.shadowRoot);
         this._syncExplainSheet();
     }
     // 0.26.5.3: tap a tile in the room view → a small window explains the value.
@@ -986,6 +987,7 @@ class FreshAirIQCard extends HTMLElement {
         template.innerHTML = html;
         const node = template.content.firstElementChild;
         if (old) old.replaceWith(node); else this.shadowRoot.appendChild(node);
+        faiqLiftOverlays(this.shadowRoot);
         const tile = this.shadowRoot.querySelector(`[data-explain="${ex.key}"]`);
         if (tile) tile.setAttribute("data-explain-focus", "");
         if (!old) { try { node.querySelector(".explain-close").focus({ preventScroll: true }); } catch (_) { /* ignore */ } }
@@ -1441,7 +1443,7 @@ class FreshAirIQCard extends HTMLElement {
         if (!this._relevantStateIds || !this._relevantStateIds.size) return [];
         return Array.from(this._relevantStateIds, id => this._hass.states[id]).filter(Boolean);
     }
-    setConfig(c) { this._config = normalizeDashboardConfig(c); this.setAttribute("data-freshairiq-theme", this._config.theme); this._invalidateEntityCaches(); this._render(); }
+    setConfig(c) { this._config = normalizeDashboardConfig(c); this.setAttribute("data-freshairiq-theme", this._config.freshairiq_design); this._invalidateEntityCaches(); this._render(); }
     set hass(h) {
         const previous = this._hass;
         this._hass = h;
@@ -2129,8 +2131,8 @@ class FreshAirIQCard extends HTMLElement {
             if (showMoisture)
                 contextCards.push(`<div class="decision-impact clickable" data-info="moisture"><span>JETZT ENTFERNBAR</span><b style="color:${p.color}">${p.text}</b><small>Schwelle ${Math.round(Number(st.ventilation_threshold_ml || 0))} ml</small></div>`);
             // v0.20.4.2: Vor Lüftungsbeginn keine zeitgebundene Lüftungsprognose anzeigen.
-            // Die Prognose bleibt intern vollständig berechnet und erscheint erst bei aktiver Lüftung
-            // als "WEITERE <Horizont> MIN". So bleibt die Vorher-Ansicht eine reine Entscheidungshilfe.
+            // Prognose intern vollständig, sichtbar erst bei aktiver Lüftung
+            // als "WEITERE <Horizont> MIN" (reine Entscheidungshilfe).
             if (showMoisture)
                 contextCards.push(`<div class="decision-impact clickable" data-info="water"><span>WASSER IN DER LUFT</span><b>${Math.round(Number(st.total_water_ml || 0))} ml</b><small>${calcRooms.length} berechnete Räume</small></div>`);
             const nightWithoutRaw = nightStrategy.forecast_without_action_ml;
@@ -2359,7 +2361,7 @@ class FreshAirIQCard extends HTMLElement {
             : `<div class="room-summary-grid"><div class="room-stat"><ha-icon class="stat-icon" icon="mdi:thermometer"></ha-icon><div><div class="tiny">RAUMKLIMA</div><div class="room-value">${fmt(r.temperature, 1)} °C · ${Math.round(Number(r.humidity || 0))} %</div><div class="muted">${fmt(r.absolute_humidity, 1)} g/m³ absolut</div></div></div><div class="room-stat mould-mini" style="border-color:${mouldColor}55;background:${mouldBg}"><ha-icon class="stat-icon" icon="mdi:shield-outline" style="color:${mouldColor}"></ha-icon><div><div class="tiny">SCHIMMEL</div><div class="room-value" style="color:${mouldColor}">${Math.round(Number(r.surface_rh || 0))} %</div><div class="muted" style="color:${mouldColor}">${esc(mouldDE(r.mould_level))}</div></div></div><div class="room-stat"><ha-icon class="stat-icon learning-bars" icon="mdi:chart-bar"></ha-icon><div><div class="tiny">LERNSTATUS</div><div class="room-value">${esc(learnDE(r.learning_status))}</div><div class="muted">${samples} ${samples === 1 ? "Probe" : "Proben"} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min</div></div></div></div>`;
         const statusColor = structureOnly ? "#9aa7b3" : (r.action === "Okay" ? "#67df92" : styleFor(roomStyleAction(r))[0]);
         const statusChip = structureOnly ? "" : `<span class="room-status">${esc(roomActionLabel(r))}</span>`;
-        return `<article class="room clickable" role="button" tabindex="0" data-room="${esc(r.key)}" style="--accent:${accent};--icon-bg:${iconBg};--status:${statusColor}"><div class="room-head"><div class="room-icon"><ha-icon icon="${icon}"></ha-icon></div><div class="room-ident"><div class="room-title">${esc(r.name || r.key)}</div><div class="muted">${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³ · Fenster ${esc(dirText)}${structureOnly ? " · nur Struktur" : ""}</div>${statusChip}</div>${structureOnly ? "" : `<div class="room-water"><ha-icon icon="mdi:water"></ha-icon><strong>${Math.round(waterMl)} ml</strong></div>`}<ha-icon class="room-chevron" icon="mdi:chevron-right"></ha-icon></div>${summary}</article>`;
+        return `<article class="room clickable" role="button" tabindex="0" data-room="${esc(r.key)}" style="--accent:${accent};--icon-bg:${iconBg};--status:${statusColor}"><div class="room-head"><div class="room-icon"><ha-icon icon="${icon}"></ha-icon></div><div class="room-ident"><div class="room-title">${esc(r.name || r.key)}</div><div class="muted">${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³ · Fenster ${esc(dirText)}${structureOnly ? " · nur Struktur" : ""}</div>${statusChip}${this._airExchangeLine ? this._airExchangeLine(r) : ""}</div>${structureOnly ? "" : `<div class="room-water"><ha-icon icon="mdi:water"></ha-icon><strong>${Math.round(waterMl)} ml</strong></div>`}<ha-icon class="room-chevron" icon="mdi:chevron-right"></ha-icon></div>${summary}</article>`;
     }
     _infoBackButton() {
         return `<button class="info-back" id="info-back" aria-label="Zurück"><ha-icon icon="mdi:arrow-left"></ha-icon></button>`;
@@ -2515,7 +2517,7 @@ class FreshAirIQCard extends HTMLElement {
                 : houseHoldsRoom ? `Lüften wäre hier möglich, aber FreshAirIQ wartet hausweit auf ein günstigeres Fenster (später trockenere Luft, Pollen/Feinstaub oder Nachtstrategie).`
                 : r.active ? `FreshAirIQ begleitet die laufende Lüftung in diesem Raum.` : `FreshAirIQ bewertet diesen Raum fortlaufend aus Klima, Außenluft, Lernmodell und Gebäudeeigenschaften.`;
             const roomAction = passiveOpenRoom ? "Daueröffnung überwachen" : houseHoldsRoom ? "Lüften möglich · noch warten" : roomActionLabel(r);
-            return `<section class="info-panel room-detail"><div class="tiny room-detail-label">RAUM-INTELLIGENZ · ${days} TAGE</div><h3>${esc(r.name)}</h3><div class="room-iq-hero" style="--room-iq:${actionStyle[0]}"><div class="room-iq-icon"><ha-icon icon="${actionStyle[2]}"></ha-icon></div><div><div class="tiny">FRESHAIRIQ EMPFIEHLT</div><strong>${esc(roomAction)}</strong><span>${esc(roomLead)}</span></div><div class="room-iq-quality ${qualityOk ? "ok" : "warn"}" data-explain="data_quality">${qualityOk ? "Daten plausibel" : "Daten prüfen"}</div></div>${roomReasons.length ? `<div class="room-iq-why"><div class="tiny">WARUM?</div>${roomReasons.slice(0,4).map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}</div>` : ""}<div class="info-grid room-tiles"><div data-explain="climate"><b>${fmt(r.temperature, 1)} °C / ${Math.round(Number(r.humidity || 0))} %</b><span>${fmt(r.absolute_humidity, 2)} g/m³ absolut · ${Math.round(Number(r.water_in_air_ml || 0))} ml Wasserdampf</span></div><div data-explain="measurement"><b>${esc(whenDE(r.last_measurement_at))}</b><span>Letzte Messung · ${r.last_measurement_valid === false ? "Messwerte unplausibel" : "Messwerte plausibel"}</span></div><div data-explain="${r.active ? "balance" : "potential"}"><b style="color:${r.active ? bal.color : pot.color}">${r.active ? bal.text : pot.text}</b><span>${r.active ? "Bilanz seit Sessionstart" : "aktuell entfernbares Potenzial"}</span></div><div data-explain="forecast"><b>${eff.text}</b><span>weitere ${Number(r.forecast_horizon_min || st.forecast_horizon_min || 5)} min · ${signed((_c = r.forecast_temperature_change_c) !== null && _c !== void 0 ? _c : r.temp_next_5_min_c, "°C")} · ${fmt(r.forecast_cost || 0, 2)} €</span></div><div data-explain="surface_rh"><b>${Math.round(Number(r.surface_rh || 0))} %</b><span>Oberflächen-RH · ${esc(mouldDE(r.mould_level))}</span></div><div data-explain="balance_days"><b style="color:${moisture(sum.removed).color}">${sum.removed > 0 ? "−" : sum.removed < 0 ? "+" : "±"}${fmt(Math.abs(sum.removed) / 1000, 2)} l</b><span>Bilanz in ${days} Tagen</span></div><div data-explain="sessions"><b>${sum.sessions}</b><span>Lüftungen · ${fmt(sum.mins, 0)} min</span></div><div data-explain="cost"><b>${fmt(sum.cost, 2)} €</b><span>geschätztes Wiederaufheizen</span></div><div data-explain="learning"><b>${Number(r.learning_samples || 0)} Proben</b><span>${esc(learnDE(r.learning_status))} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min</span></div>${Number(r.outcome_feedback_samples || 0) > 0 ? `<div data-explain="feedback"><b>${Number(r.outcome_feedback_samples || 0)} Feedback-Proben</b><span>Prognose ↔ Realität · Treffer ${fmt(r.outcome_success_rate || 0, 0)} % · Feuchtefaktor ${fmt(r.outcome_removed_factor || 1, 2)}</span></div>` : ""}${Number(r.outcome_feedback_samples || 0) > 0 ? `<div data-explain="shadow"><b>Learning 3.0 · ${r.shadow_rollback_active ? "Rollback-Schutz" : "Shadow-Modelle"}</b><span>${esc(r.shadow_learning_status || "Vergleicht Produktionsmodell mit Alternativen")} · Übernahmen ${Number(r.shadow_learning_promotions || 0)} · Rollbacks ${Number(r.shadow_learning_rollbacks || 0)}</span></div>` : ""}${Number(r.routine_source_samples || 0) > 0 ? `<div data-explain="routine"><b>Routine-IQ ${fmt(r.routine_maturity || 0, 0)} %</b><span>${Number(r.routine_source_samples || 0)} Zeitmuster-Proben${r.routine_expected_source_ml_min != null ? ` · aktuell erwartet ${signed(Number(r.routine_expected_source_ml_min || 0) * 60, " ml/h")}` : ""}</span></div>` : ""}${Number(r.strategy_samples || 0) > 0 ? `<div data-explain="strategy"><b>Strategie-IQ ${fmt(r.strategy_maturity || 0, 0)} %</b><span>${Number(r.strategy_samples || 0)} Empfehlungen ausgewertet · ${Number(r.strategy_outcome_samples || 0)} Ergebnisproben</span></div>` : ""}</div>${optionalSensorHtml}<div class="last-learning" data-explain="last_learning" style="--learn:${r.last_learning_valid === false ? "#c97878" : r.last_learning_valid === true ? "#6fbd88" : "#82929e"}"><ha-icon icon="${r.last_learning_valid === false ? "mdi:alert-circle-outline" : r.last_learning_valid === true ? "mdi:check-circle-outline" : "mdi:brain"}"></ha-icon><div><div class="tiny">LETZTE LERNMESSUNG · ${esc(whenDE(r.last_learning_at))}</div><b>${esc(diagnosisDE(r.learning_diagnosis))}</b></div></div><div class="history-grid"><div class="history"><div class="tiny">RAUMLUFTFEUCHTE · ${Math.min(days, 30)} TAGE · %</div><div class="chart">${this._svgLine(this._roomChartHistory(r).humidity_history_14d || [], "humidity_percent")}</div></div><div class="history"><div class="tiny">TEMPERATUR · ${Math.min(days, 30)} TAGE · °C</div><div class="chart">${this._svgLine(this._roomChartHistory(r).temperature_history_14d || [])}</div></div></div>${r.moisture_source_active ? `<div class="last-learning" style="--learn:#e6be62"><ha-icon icon="mdi:water-plus-outline"></ha-icon><div><div class="tiny">AKTIVE FEUCHTEQUELLE · ${Math.round(Number(r.moisture_source_confidence || 0))} % SICHERHEIT</div><b>${esc(r.moisture_source_message || `${r.moisture_source_label || "Feuchtequelle"} erkannt.`)} · ca. +${Math.round(Number(r.moisture_source_rate_ml_min || 0) * 60)} ml/h</b></div></div>` : ""}<div class="room-iq-context"><div class="tiny">RAUMMODELL</div><span>Fenster/Türen: ${esc(dirs)} · Luftstromfaktor ${fmt(r.airflow_factor, 2)} · ${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³</span></div></section>`;
+            return `<section class="info-panel room-detail"><div class="tiny room-detail-label">RAUM-INTELLIGENZ · ${days} TAGE</div><h3>${esc(r.name)}</h3><div class="room-iq-hero" style="--room-iq:${actionStyle[0]}"><div class="room-iq-icon"><ha-icon icon="${actionStyle[2]}"></ha-icon></div><div><div class="tiny">FRESHAIRIQ EMPFIEHLT</div><strong>${esc(roomAction)}</strong><span>${esc(roomLead)}</span>${this._airExchangeLine ? this._airExchangeLine(r) : ""}</div><div class="room-iq-quality ${qualityOk ? "ok" : "warn"}" data-explain="data_quality">${qualityOk ? "Daten plausibel" : "Daten prüfen"}</div></div>${roomReasons.length ? `<div class="room-iq-why"><div class="tiny">WARUM?</div>${roomReasons.slice(0,4).map(x => `<div><ha-icon icon="mdi:check-circle-outline"></ha-icon><span>${esc(x)}</span></div>`).join("")}</div>` : ""}<div class="info-grid room-tiles"><div data-explain="climate"><b>${fmt(r.temperature, 1)} °C / ${Math.round(Number(r.humidity || 0))} %</b><span>${fmt(r.absolute_humidity, 2)} g/m³ absolut · ${Math.round(Number(r.water_in_air_ml || 0))} ml Wasserdampf</span></div><div data-explain="measurement"><b>${esc(whenDE(r.last_measurement_at))}</b><span>Letzte Messung · ${r.last_measurement_valid === false ? "Messwerte unplausibel" : "Messwerte plausibel"}</span></div><div data-explain="${r.active ? "balance" : "potential"}"><b style="color:${r.active ? bal.color : pot.color}">${r.active ? bal.text : pot.text}</b><span>${r.active ? "Bilanz seit Sessionstart" : "aktuell entfernbares Potenzial"}</span></div><div data-explain="forecast"><b>${eff.text}</b><span>weitere ${Number(r.forecast_horizon_min || st.forecast_horizon_min || 5)} min · ${signed((_c = r.forecast_temperature_change_c) !== null && _c !== void 0 ? _c : r.temp_next_5_min_c, "°C")} · ${fmt(r.forecast_cost || 0, 2)} €</span></div><div data-explain="surface_rh"><b>${Math.round(Number(r.surface_rh || 0))} %</b><span>Oberflächen-RH · ${esc(mouldDE(r.mould_level))}</span></div><div data-explain="balance_days"><b style="color:${moisture(sum.removed).color}">${sum.removed > 0 ? "−" : sum.removed < 0 ? "+" : "±"}${fmt(Math.abs(sum.removed) / 1000, 2)} l</b><span>Bilanz in ${days} Tagen</span></div><div data-explain="sessions"><b>${sum.sessions}</b><span>Lüftungen · ${fmt(sum.mins, 0)} min</span></div><div data-explain="cost"><b>${fmt(sum.cost, 2)} €</b><span>geschätztes Wiederaufheizen</span></div><div data-explain="learning"><b>${Number(r.learning_samples || 0)} Proben</b><span>${esc(learnDE(r.learning_status))} · ${fmt(Number(r.learned_exchange_rate_per_min || 0) * 100, 1)} %/min</span></div>${Number(r.outcome_feedback_samples || 0) > 0 ? `<div data-explain="feedback"><b>${Number(r.outcome_feedback_samples || 0)} Feedback-Proben</b><span>Prognose ↔ Realität · Treffer ${fmt(r.outcome_success_rate || 0, 0)} % · Feuchtefaktor ${fmt(r.outcome_removed_factor || 1, 2)}</span></div>` : ""}${Number(r.outcome_feedback_samples || 0) > 0 ? `<div data-explain="shadow"><b>Learning 3.0 · ${r.shadow_rollback_active ? "Rollback-Schutz" : "Shadow-Modelle"}</b><span>${esc(r.shadow_learning_status || "Vergleicht Produktionsmodell mit Alternativen")} · Übernahmen ${Number(r.shadow_learning_promotions || 0)} · Rollbacks ${Number(r.shadow_learning_rollbacks || 0)}</span></div>` : ""}${Number(r.routine_source_samples || 0) > 0 ? `<div data-explain="routine"><b>Routine-IQ ${fmt(r.routine_maturity || 0, 0)} %</b><span>${Number(r.routine_source_samples || 0)} Zeitmuster-Proben${r.routine_expected_source_ml_min != null ? ` · aktuell erwartet ${signed(Number(r.routine_expected_source_ml_min || 0) * 60, " ml/h")}` : ""}</span></div>` : ""}${Number(r.strategy_samples || 0) > 0 ? `<div data-explain="strategy"><b>Strategie-IQ ${fmt(r.strategy_maturity || 0, 0)} %</b><span>${Number(r.strategy_samples || 0)} Empfehlungen ausgewertet · ${Number(r.strategy_outcome_samples || 0)} Ergebnisproben</span></div>` : ""}</div>${optionalSensorHtml}<div class="last-learning" data-explain="last_learning" style="--learn:${r.last_learning_valid === false ? "#c97878" : r.last_learning_valid === true ? "#6fbd88" : "#82929e"}"><ha-icon icon="${r.last_learning_valid === false ? "mdi:alert-circle-outline" : r.last_learning_valid === true ? "mdi:check-circle-outline" : "mdi:brain"}"></ha-icon><div><div class="tiny">LETZTE LERNMESSUNG · ${esc(whenDE(r.last_learning_at))}</div><b>${esc(diagnosisDE(r.learning_diagnosis))}</b></div></div><div class="history-grid"><div class="history"><div class="tiny">RAUMLUFTFEUCHTE · ${Math.min(days, 30)} TAGE · %</div><div class="chart">${this._svgLine(this._roomChartHistory(r).humidity_history_14d || [], "humidity_percent")}</div></div><div class="history"><div class="tiny">TEMPERATUR · ${Math.min(days, 30)} TAGE · °C</div><div class="chart">${this._svgLine(this._roomChartHistory(r).temperature_history_14d || [])}</div></div></div>${r.moisture_source_active ? `<div class="last-learning" style="--learn:#e6be62"><ha-icon icon="mdi:water-plus-outline"></ha-icon><div><div class="tiny">AKTIVE FEUCHTEQUELLE · ${Math.round(Number(r.moisture_source_confidence || 0))} % SICHERHEIT</div><b>${esc(r.moisture_source_message || `${r.moisture_source_label || "Feuchtequelle"} erkannt.`)} · ca. +${Math.round(Number(r.moisture_source_rate_ml_min || 0) * 60)} ml/h</b></div></div>` : ""}<div class="room-iq-context"><div class="tiny">RAUMMODELL</div><span>Fenster/Türen: ${esc(dirs)} · Luftstromfaktor ${fmt(r.airflow_factor, 2)} · ${esc(floorDE(r.floor))} · ${fmt(r.volume_m3, 1)} m³</span></div></section>`;
         }
         if (this._info === "moisture" && rooms.some(x => x.active)) {
             const activeRooms = rooms.filter(r => r.active);
@@ -2727,7 +2729,7 @@ class FreshAirIQCard extends HTMLElement {
             await this._registerFieldTestClient(true);
             const stamp = new Date().toISOString().split(":").join("-").replace(/\.\d{3}Z$/, "Z");
             let blob, filename;
-            // 0.26.5.3: Home Assistant packs the export as ZIP (same JSON inside, ≈1/15 of the size);
+            // 0.26.5.3: HA packs the export as ZIP (same JSON, ≈1/15 size);
             // the browser no longer parses and re-indents tens of MiB.
             const zipResponse = typeof this._hass.callApiRaw === "function" ? await this._hass.callApiRaw("GET", "freshairiq/diagnostics?format=zip") : null;
             if (zipResponse && zipResponse.ok && String(zipResponse.headers?.get?.("Content-Type") || "").includes("zip")) {
@@ -2914,14 +2916,14 @@ class FreshAirIQCard extends HTMLElement {
         const showProfileBadge = this._config.show_profile_badge !== false;
         const classicTopBar = showBranding || showProfileBadge ? `<div class="top ai-top${showBranding ? "" : " profile-only"}">${showBranding ? `<img class="logo" src="/freshairiq/frontend/freshairiq-icon.png" alt="FreshAirIQ"><div><div class="brand">FreshAir<span class="iq">IQ</span></div><div class="brand-subtitle">INTELLIGENT HOME CLIMATE</div></div>` : ""}${showProfileBadge ? `<div class="pill" data-info="profile">${esc(profileDE(profile))}</div>` : ""}</div>` : "";
         const iqTopBar = showBranding || showProfileBadge ? `<div class="top ai-top${showBranding ? "" : " profile-only"}">${showBranding ? `<img class="logo" src="/freshairiq/frontend/freshairiq-icon.png" alt="FreshAirIQ"><div><div class="brand">FreshAir<span class="iq">IQ</span></div><div class="brand-subtitle">${esc(this._t("shell.subtitle_iq"))}</div></div>` : ""}${showProfileBadge ? `<div class="pill" data-info="profile">${esc(profileDE(profile))}</div>` : ""}</div>` : "";
-        const topBar = dashboardVariant === "classic" ? classicTopBar : iqTopBar;
+        const topBar = this._liveNotice() + (dashboardVariant === "classic" ? classicTopBar : iqTopBar);
         const consentState = (st.diagnostics_upload && st.diagnostics_upload.consent) || null;
         const isAdmin = !!(this._hass && this._hass.user && this._hass.user.is_admin);
         // 0.26.4.3: settings live only under Devices & services. The card no longer
         // writes the consent itself; it points admins to the one place to decide.
         const consentPrompt = consentState === "unset" && isAdmin && !this._consentDecided && !this._consentSnoozed() ? (() => {
-            const de = this._uiLanguage() === "de";
-            return `<div class="faiq-consent" role="region" aria-label="${de ? "Diagnosen teilen" : "Share diagnostics"}"><ha-icon icon="mdi:shield-check-outline"></ha-icon><span class="faiq-consent-text"><b>${de ? "Diagnosen teilen?" : "Share diagnostics?"}</b> ${de ? "Pseudonymisiert, ohne Namen oder Standort. Ohne Zustimmung wird nichts gesendet. Festlegen unter Geräte & Dienste → FreshAirIQ → Konfigurieren." : "Pseudonymised, no names or location. Nothing is sent without consent. Decide under Devices & services → FreshAirIQ → Configure."}</span><span class="faiq-consent-actions"><button type="button" data-consent-later>${de ? "Später" : "Later"}</button><button type="button" class="primary" data-consent-open>${de ? "Öffnen" : "Open"}</button></span></div>`;
+            const h = consentHint(this._uiLanguage() === "de");
+            return `<div class="faiq-consent" role="region" aria-label="${h.label}"><ha-icon icon="mdi:shield-check-outline"></ha-icon><span class="faiq-consent-text"><b>${h.title}</b> ${h.text}</span><span class="faiq-consent-actions"><button type="button" data-consent-later>${h.later}</button><button type="button" class="primary" data-consent-open>${h.open}</button></span></div>`;
         })() : "";
         this.style.setProperty("--faiq-hero-color", faiqThemeColor(hero.color, this._themeAuto()));
         this.style.setProperty("--faiq-hero-bg", `${hero.color}12`);
@@ -3061,7 +3063,7 @@ class FreshAirIQCard extends HTMLElement {
             this._subdialogScrollTop = intended;
             if (this._info) { if (!this._infoScrollByView) this._infoScrollByView = new Map(); this._infoScrollByView.set(this._info, intended); }
             this._settleSubdialogScroll(newSubdialog, intended);
-            // Native pan scrolling stays untouched (Android WebView); CSS overscroll containment.
+            // Native pan scrolling untouched (Android WebView); CSS overscroll contained.
             this._installAndroidTouchScroll(newSubdialog);
             newSubdialog.addEventListener("scroll", () => {
                 this._subdialogScrollTop = newSubdialog.scrollTop;
@@ -3201,7 +3203,7 @@ class FreshAirIQCardEditor extends HTMLElement {
 </style>
           <div class="box">
             <div class="intro"><b>FreshAirIQ Dashboard</b><span>Standardmäßig bleibt das vollständige Dashboard sichtbar. Hier kannst du Zusatzbereiche einzeln ausblenden. Wenn du alle Informationen und festen Bedienelemente deaktivierst, bleibt eine kompakte Ansicht mit der zentralen FreshAirIQ-Empfehlung.</span></div>
-            <section class="section"><div class="section-head"><b>${this._t("editor.dashboard_design")}</b><span>${this._t("editor.dashboard_design_help")}</span></div><div class="row"><div><label>${this._t("editor.dashboard_style")}</label><span>${this._t("editor.dashboard_style_help")}</span></div><select id="dashboard-variant" class="variant-select"><option value="classic" ${this._config.dashboard_variant === "classic" ? "selected" : ""}>${this._t("editor.classic")}</option><option value="iq" ${this._config.dashboard_variant !== "classic" ? "selected" : ""}>FreshAirIQ IQ</option></select></div><div class="row"><div><label>${this._t("editor.theme")}</label><span>${this._t("editor.theme_help")}</span></div><select id="card-theme" class="variant-select"><option value="freshairiq" ${this._config.theme !== "auto" ? "selected" : ""}>${this._t("editor.theme_freshairiq")}</option><option value="auto" ${this._config.theme === "auto" ? "selected" : ""}>${this._t("editor.theme_auto")}</option></select></div></section>
+            <section class="section"><div class="section-head"><b>${this._t("editor.dashboard_design")}</b><span>${this._t("editor.dashboard_design_help")}</span></div><div class="row"><div><label>${this._t("editor.dashboard_style")}</label><span>${this._t("editor.dashboard_style_help")}</span></div><select id="dashboard-variant" class="variant-select"><option value="classic" ${this._config.dashboard_variant === "classic" ? "selected" : ""}>${this._t("editor.classic")}</option><option value="iq" ${this._config.dashboard_variant !== "classic" ? "selected" : ""}>FreshAirIQ IQ</option></select></div><div class="row"><div><label>${this._t("editor.theme")}</label><span>${this._t("editor.theme_help")}</span></div><select id="card-theme" class="variant-select"><option value="freshairiq" ${this._config.freshairiq_design !== "auto" ? "selected" : ""}>${this._t("editor.theme_freshairiq")}</option><option value="auto" ${this._config.freshairiq_design === "auto" ? "selected" : ""}>${this._t("editor.theme_auto")}</option></select></div></section>
 <section class="section"><div class="section-head"><b>EMPFEHLUNGEN</b><span>Wähle, welche Arten von raumspezifischen Empfehlungen diese Karte wiedergibt.</span></div>${recommendationFields.map(row).join("")}</section>
             <section class="section"><div class="section-head"><b>INFORMATIONEN DIESER KARTE</b><span>Diese Schalter ändern nur die Darstellung dieser einzelnen Dashboard-Karte. Globale FreshAirIQ-Einstellungen werden ausschließlich unter Geräte & Dienste → FreshAirIQ → Konfigurieren verwaltet.</span></div>${infoFields.map(row).join("")}</section>
             <section class="section"><div class="section-head"><b>DARSTELLUNG & KOMPAKTHEIT</b><span>Blende feste Bereiche und Schnellzugriffe aus, bis nur noch die Empfehlung übrig bleibt.</span></div>${layoutFields.map(row).join("")}</section>
@@ -3220,7 +3222,7 @@ class FreshAirIQCardEditor extends HTMLElement {
             this._emitConfigChanged(this._config);
         });
         this.shadowRoot.getElementById("card-theme")?.addEventListener("change", e => {
-            const nextConfig = Object.assign({}, this._config, {theme: e.target.value === "auto" ? "auto" : "freshairiq"});
+            const nextConfig = Object.assign({}, this._config, faiqDesignChoice(this._config, e.target.value));
             delete nextConfig.transparent_background;
             this._config = normalizeDashboardConfig(nextConfig);
             this._emitConfigChanged(this._config);

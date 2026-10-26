@@ -247,6 +247,7 @@ class SessionEventsMixin:
             "prediction_measurement_duration_min": round(validation_elapsed, 3),
             "prediction_comparable": bool(prediction_comparable),
             "learning_effectiveness": learning_effectiveness_sample,
+            "learning_observation": mem.pop("session_learning_observation", None),
             "forecast_timeline": list(mem.get("session_forecast_timeline") or []) + [{
                 "kind": "end",
                 "checkpoint_min": round(measurement_elapsed, 3),

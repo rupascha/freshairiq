@@ -15,6 +15,8 @@ from .decision_trace import build_decision_trace, build_recommendation_quality
 from .energy import energy_price_per_kwh_equivalent
 from .forecast import effective_night_rate_ml_h
 from .forecast_backtest import backtest_summary
+from .close_wording import airing_running, fan_only, no_opening_wording
+from .fan_automation import room_fan_automation
 from .forecast_validation import validation_summary
 from .house_decision import floor_ventilation_decision
 from .house_strategy import house_maturity, house_strategy_fit, learn_house_outcome
@@ -24,6 +26,7 @@ from .learning_components import build_learning_components_status
 from .learning_v2 import build_learning_v2_status
 from .live_coach import refine_live_recommendation
 from .model import absolute_humidity
+from .open_connections import connection_map
 from .opening_strategy import (
     enrich_opening_recommendation,
     house_aligned_room_actions,
@@ -55,6 +58,12 @@ class HouseDecisionMixin:
         # Adaptive presentation mode: when most of the monitored house is being
         # aired, communicate one house action instead of noisy per-room closing.
         monitored_count = max(len(valid), 1)
+        # 0.26.5.4 (support case): a running exhaust fan alone is no opened
+        # window – it is judged by its own room model. Counted here, its start
+        # held the whole floor on "continue" and its floor close told the user
+        # to switch off a fan that still dried the room.
+        # A room in its final measurement after closing is no longer aired either.
+        active = [r for r in active if airing_running(r) and not fan_only(r)]
         active_ratio = len(active) / monitored_count
         previous_house_mode = bool(self.store.data.get("house_ventilation_mode", False))
         enter_ratio = float(options.get("house_ventilation_enter_ratio", 0.75))
@@ -157,6 +166,10 @@ class HouseDecisionMixin:
         # this happens only after all physics/learning decisions are complete.
         synchronize_room_presentation_actions(intelligent_recommendation, results)
         house_aligned_room_actions(intelligent_recommendation, results)
+        for _key, _room in results.items():
+            if isinstance(_room, dict) and _room.get("fan_automation") is not None:
+                _room["fan_automation"] = room_fan_automation(_room, self._fan_snapshot(_key))
+        no_opening_wording(results, connection_map(options, results))
 
         # summaries in coordinator data so the dashboard payload stays small.
         for _room in results.values():

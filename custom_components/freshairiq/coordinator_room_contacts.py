@@ -10,6 +10,7 @@ from .const import (
     CONF_CONTACT_PASSAGE_DOORS,
     CONF_ROOM_CLIMATE,
     CONF_ROOM_EXHAUST_FAN,
+    CONF_ROOM_EXHAUST_FAN_CONTROL,
     CONTACT_UNKNOWN_HOLD_SECONDS,
     SESSION_CLOSE_CONFIRM_SECONDS,
     THREE_STATE_TRANSITION_STABLE_SECONDS,
@@ -207,6 +208,7 @@ class RoomContactsMixin:
             self.hass, cfg, now, honour_delays=True, contact_modes=stable_session_modes, contact_since=stable_since
         )
         mechanical_exhaust_active = _entity_active(self.hass, cfg.get(CONF_ROOM_EXHAUST_FAN))
+        reference_path = "default" if reference_temperature_entity == default_reference_temperature_entity else "opening"
         # 0.26.5.3: an exhaust fan draws its replacement air from the neighbouring
         # room. A configured pair is atomic: unavailable values never fall back
         # to outdoor air (same rule as opening-specific references).
@@ -214,7 +216,9 @@ class RoomContactsMixin:
         if exhaust_pair is not None and exhaust_reference_applies(
             fan_configured=bool(cfg.get(CONF_ROOM_EXHAUST_FAN)), fan_active=mechanical_exhaust_active,
             window_open=raw_contact_open, has_contacts=bool(configured_contact_ids),
+            auto_start=str(cfg.get(CONF_ROOM_EXHAUST_FAN_CONTROL) or "off") == "recommendation",
         ):
+            reference_path = "neighbour_room"
             reference_temperature_entity, reference_humidity_entity = exhaust_pair
             ref_t = _float_state(self.hass, reference_temperature_entity)
             ref_rh = _float_state(self.hass, reference_humidity_entity)
@@ -225,6 +229,7 @@ class RoomContactsMixin:
                 reference_temperature_state=self.hass.states.get(reference_temperature_entity),
                 reference_humidity_state=self.hass.states.get(reference_humidity_entity),
             )
+        self.__dict__.setdefault("_reference_paths", {})[str(cfg.get("key") or "")] = reference_path  # 0.26.5.4: wording, diagnostics
         # Mechanical exhaust is a first-class ventilation trigger. It shares
         # the session lifecycle but remains explicitly typed so its learning
         # evidence can never silently contaminate window-opening models.

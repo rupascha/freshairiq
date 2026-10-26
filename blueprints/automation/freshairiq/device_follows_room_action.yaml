@@ -55,19 +55,40 @@ triggers:
   - trigger: event
     event_type: freshairiq_room_recommendation
     id: house
+  # 0.26.5.4: after a restart of Home Assistant the device is brought in line with the
+  # current recommendation once (events only report changes)
+  - trigger: homeassistant
+    event: start
+    id: start
+  # also after "reload automations" (timers and waits of running automations are lost then as well)
+  - trigger: event
+    event_type: automation_reloaded
+    id: start
 variables:
   basis: !input basis
   room: !input room
   room_key: "{{ state_attr(room, 'freshairiq_room_key') }}"
   on_actions: !input on_actions
   only_when_windows_closed: !input only_when_windows_closed
-  data: "{{ trigger.event.data }}"
+  data: "{{ trigger.event.data if trigger.id != 'start' else {} }}"
   # House decision: effective recommendation (as on the card); room only: raw room action.
   action_code: "{{ data.recommendation if trigger.id == 'house' else data.action }}"
 conditions:
-  - "{{ trigger.id == basis }}"
-  - "{{ room_key is not none and data.room_key == room_key }}"
+  - "{{ trigger.id in [basis, 'start'] }}"
+  # the start sync waits for the room sensor first (it may not exist yet right after the start)
+  - "{{ trigger.id == 'start' or (room_key is not none and data.room_key == room_key) }}"
 actions:
+  - if:
+      - "{{ trigger.id == 'start' }}"
+    then:
+      # wait until FreshAirIQ has its first result after the start
+      - wait_template: "{{ states(room) not in ['unknown', 'unavailable'] and state_attr(room, 'freshairiq_room_key') is not none and state_attr(room, 'freshairiq_room_payload') is not none }}"
+        timeout: "00:05:00"
+        continue_on_timeout: false
+      - variables:
+          payload: "{{ state_attr(room, 'freshairiq_room_payload') }}"
+          action_code: "{{ payload.house_aligned_action if basis == 'house' else states(room) }}"
+          data: "{{ {'ventilation_active': payload.active | default(false)} }}"
   - if:
       - "{{ action_code in on_actions and not (only_when_windows_closed and data.ventilation_active) }}"
     then:

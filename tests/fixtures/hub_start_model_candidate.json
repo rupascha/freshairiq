@@ -1,0 +1,162 @@
+{
+ "format": "freshairiq-start-model-candidate",
+ "format_version": 1,
+ "version": "2026-10-25",
+ "generated_at": "2026-10-25T00:00:00+00:00",
+ "hub_version": "0.3.3.92",
+ "rule": "one vote per room (median of its airings), median over rooms; recommended with >=8 rooms from >=5 installations and, leave-one-installation-out, >=10 % smaller median error than the built-in start value and closer for >=55 % of the rooms",
+ "thresholds": {
+  "min_rooms": 8,
+  "min_installations": 5,
+  "min_improvement_percent": 10.0,
+  "min_closer_percent": 55.0
+ },
+ "observations": {
+  "airings": 36,
+  "exact": 36,
+  "estimated_from_curve": 0,
+  "rooms": 36,
+  "installations": 6
+ },
+ "defaults": {
+  "open": 0.03,
+  "tilted": 0.015,
+  "cross": 0.04,
+  "mechanical_exhaust": 0.02
+ },
+ "cells": [
+  {
+   "mode": "open",
+   "size": "all",
+   "rate_per_min": 0.0616,
+   "default_rate_per_min": 0.03,
+   "p25": 0.05916,
+   "p75": 0.0663,
+   "rooms": 12,
+   "installations": 6,
+   "airings": 12,
+   "backtest": {
+    "rooms": 12,
+    "default_error_percent": 51.3,
+    "start_model_error_percent": 7.4,
+    "improvement_percent": 85.6,
+    "closer_percent": 100.0,
+    "airings_to_fit_default": 5.0,
+    "airings_to_fit_start_model": 0.0
+   },
+   "recommended": true,
+   "reason": "recommended"
+  },
+  {
+   "mode": "open",
+   "size": "<15",
+   "rate_per_min": 0.0616,
+   "default_rate_per_min": 0.03,
+   "p25": 0.05916,
+   "p75": 0.0663,
+   "rooms": 12,
+   "installations": 6,
+   "airings": 12,
+   "backtest": {
+    "rooms": 12,
+    "default_error_percent": 51.3,
+    "start_model_error_percent": 7.4,
+    "improvement_percent": 85.6,
+    "closer_percent": 100.0,
+    "airings_to_fit_default": 5.0,
+    "airings_to_fit_start_model": 0.0
+   },
+   "recommended": true,
+   "reason": "recommended"
+  },
+  {
+   "mode": "tilted",
+   "size": "all",
+   "rate_per_min": 0.0152,
+   "default_rate_per_min": 0.015,
+   "p25": 0.015,
+   "p75": 0.0155,
+   "rooms": 12,
+   "installations": 6,
+   "airings": 12,
+   "backtest": {
+    "rooms": 12,
+    "default_error_percent": 1.3,
+    "start_model_error_percent": 1.3,
+    "improvement_percent": 0.5,
+    "closer_percent": 58.3,
+    "airings_to_fit_default": 0.0,
+    "airings_to_fit_start_model": 0.0
+   },
+   "recommended": false,
+   "reason": "not better than the built-in start value"
+  },
+  {
+   "mode": "tilted",
+   "size": "<15",
+   "rate_per_min": 0.0152,
+   "default_rate_per_min": 0.015,
+   "p25": 0.015,
+   "p75": 0.0155,
+   "rooms": 12,
+   "installations": 6,
+   "airings": 12,
+   "backtest": {
+    "rooms": 12,
+    "default_error_percent": 1.3,
+    "start_model_error_percent": 1.3,
+    "improvement_percent": 0.5,
+    "closer_percent": 58.3,
+    "airings_to_fit_default": 0.0,
+    "airings_to_fit_start_model": 0.0
+   },
+   "recommended": false,
+   "reason": "not better than the built-in start value"
+  },
+  {
+   "mode": "mechanical_exhaust",
+   "size": "all",
+   "rate_per_min": 0.0515,
+   "default_rate_per_min": 0.02,
+   "p25": 0.05,
+   "p75": 0.0561,
+   "rooms": 12,
+   "installations": 6,
+   "airings": 12,
+   "backtest": {
+    "rooms": 12,
+    "default_error_percent": 61.2,
+    "start_model_error_percent": 6.2,
+    "improvement_percent": 89.9,
+    "closer_percent": 100.0,
+    "airings_to_fit_default": 7.0,
+    "airings_to_fit_start_model": 0.0
+   },
+   "recommended": true,
+   "reason": "recommended"
+  },
+  {
+   "mode": "mechanical_exhaust",
+   "size": "<15",
+   "rate_per_min": 0.0515,
+   "default_rate_per_min": 0.02,
+   "p25": 0.05,
+   "p75": 0.0561,
+   "rooms": 12,
+   "installations": 6,
+   "airings": 12,
+   "backtest": {
+    "rooms": 12,
+    "default_error_percent": 61.2,
+    "start_model_error_percent": 6.2,
+    "improvement_percent": 89.9,
+    "closer_percent": 100.0,
+    "airings_to_fit_default": 7.0,
+    "airings_to_fit_start_model": 0.0
+   },
+   "recommended": true,
+   "reason": "recommended"
+  }
+ ],
+ "recommended_cells": 4
+}

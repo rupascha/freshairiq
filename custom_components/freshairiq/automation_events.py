@@ -14,6 +14,10 @@ Contract (schema 1, see docs/AUTOMATIONEN.md):
   (``house_aligned_action``) changed (added 2026-10-16, F05). The raw
   ``freshairiq_room_action`` stream is unchanged; it does not fire when only
   the house context changes (e.g. ``ventilate_later`` -> ``ventilate``).
+* ``freshairiq_fan_automation``      the automatic fan control of a room changed
+  its state, command result or whether the user has to act (added 0.26.5.4,
+  audit S06: the room action stays "ventilate" while the fan goes from
+  requested to running or failed).
 
 Events are fired only on *changes*. The first cycle after a (re)start records
 the current state silently, so restarts never replay old announcements.
@@ -29,6 +33,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .close_wording import fan_only
+from .fan_automation import automation_text, event_fields, fan_automation, handled_label
 
 EVENT_ROOM_ACTION = "freshairiq_room_action"
 EVENT_HOUSE_RECOMMENDATION = "freshairiq_house_recommendation"
@@ -37,6 +42,7 @@ EVENT_ROOM_RECOMMENDATION = "freshairiq_room_recommendation"
 # 0.26.5.1 (community: run the bathroom fan only after showering): an internal
 # moisture source (shower, bath, cooking, ...) started or ended in a room.
 EVENT_MOISTURE_SOURCE = "freshairiq_moisture_source"
+EVENT_FAN_AUTOMATION = "freshairiq_fan_automation"
 EVENT_SCHEMA_VERSION = 1
 
 # Machine-readable action codes: identical to the states of the room "Aktion"
@@ -59,7 +65,7 @@ _LABELS = {
         "ventilate": "Bitte lüften", "continue_ventilating": "Weiterlüften", "close": "Bitte Fenster schließen",
         "ventilate_for_cooling": "Zum Kühlen lüften", "do_not_ventilate": "Bitte nicht lüften", "wait": "Noch warten",
         "okay": "Alles in Ordnung", "check_sensor": "Sensor prüfen", "monitor_only": "Nur Beobachtung",
-        "open_fully": "Fenster ganz öffnen", "close_fan": "Bitte Lüfter ausschalten",
+        "open_fully": "Fenster ganz öffnen", "close_fan": "Bitte Lüfter ausschalten", "ventilate_fan": "Bitte Ablüfter einschalten",
         "ventilate_indirectly": "Über Nachbarraum lüften", "ventilate_later": "Lüften möglich, noch warten",
         "monitor_open": "Daueröffnung wird beobachtet",
     },
@@ -67,11 +73,20 @@ _LABELS = {
         "ventilate": "Please air the room", "continue_ventilating": "Keep airing", "close": "Please close the window",
         "ventilate_for_cooling": "Air for cooling", "do_not_ventilate": "Please do not air", "wait": "Wait for now",
         "okay": "All good", "check_sensor": "Check sensor", "monitor_only": "Monitoring only",
-        "open_fully": "Open the window fully", "close_fan": "Please switch off the fan",
+        "open_fully": "Open the window fully", "close_fan": "Please switch off the fan", "ventilate_fan": "Please switch on the exhaust fan",
         "ventilate_indirectly": "Air via a connected room", "ventilate_later": "Airing possible, wait for now",
         "monitor_open": "Long opening is being monitored",
     },
 }
+
+
+def _label_key(code: str, room: dict[str, Any]) -> str:
+    """Fan rooms: switch the fan, not a window (0.26.5.4: also a fan room without a window)."""
+    if code == "close" and fan_only(room):
+        return "close_fan"
+    return "ventilate_fan" if code == "ventilate_indirectly" and room.get("action_hint") else code
+
+
 _MOULD_ORDER = {"Low": 0, "Slightly elevated": 1, "Elevated": 2, "High": 3, "Very high": 4}
 _MOULD_LABELS = {
     "de": {"Low": "niedrig", "Slightly elevated": "leicht erhöht", "Elevated": "erhöht", "High": "hoch", "Very high": "sehr hoch"},
@@ -85,7 +100,8 @@ _MOULD_TEXT = {
 # reported once it held this long, so a surface humidity hovering around a
 # level boundary no longer fires an event every cycle. A rise is immediate.
 MOULD_FALL_HOLD_S = 600.0
-_NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+# audit S12: only the running minutes are ignored ("noch ca. 19 min") – "Fenster 1" -> "Fenster 2" is a new instruction
+_MINUTES = re.compile(r"\d+(?:[.,]\d+)?(?=\s*[Mm]in)")  # min, Min., minutes
 _SOURCE_LABELS = {
     "de": {"shower": "Dusche", "bath": "Bad", "sauna": "Sauna", "cooking": "Kochen", "washing_machine": "Waschmaschine",
            "dryer": "Trockner", "ironing_station": "Bügelstation", "laundry_drying": "Wäsche trocknen", None: "Feuchtequelle"},
@@ -181,7 +197,9 @@ def _language(data: dict[str, Any]) -> str:
 def room_payload(room: dict[str, Any], *, previous_action: Any, language: str, entry_id: str) -> dict[str, Any]:
     code = action_code(room.get("action"))
     # 0.26.4.10: a room aired only by its fan has no window to close.
-    label = _LABELS[language].get("close_fan" if code == "close" and fan_only(room) else code, str(room.get("action") or ""))
+    label = _LABELS[language].get(_label_key(code, room), str(room.get("action") or ""))
+    # 0.26.5.4: FreshAirIQ switches the fan itself - a status, not a task for the user
+    automatic = handled_label(room, code, language)
     name = str(room.get("name") or room.get("key") or "")
     reasons = [str(x) for x in (room.get("recommendation_reasons") or []) if str(x).strip()][:4]
     return {
@@ -191,14 +209,14 @@ def room_payload(room: dict[str, Any], *, previous_action: Any, language: str, e
         "room_name": name,
         "floor": room.get("floor"),
         "action": code,
-        "category": action_category(code),
+        "category": CATEGORY_STATUS if automatic and not _user_must_act(room) else action_category(code),
         "previous_action": action_code(previous_action) if previous_action is not None else None,
         # 0.26.4.7: the room action considering the whole-house decision
         # ("ventilate_later" while the house deliberately waits).
         "house_aligned_action": room.get("house_aligned_action"),
-        "action_label": label,
+        "action_label": automatic or label,
         # Ready-to-speak sentence, e.g. "Schlafzimmer: Bitte Fenster schließen."
-        "message": f"{name}: {label}.",
+        "message": f"{name}: {automatic or label}.",
         "reasons": reasons,
         "humidity": _number(room.get("humidity")),
         "temperature": _number(room.get("temperature")),
@@ -209,6 +227,35 @@ def room_payload(room: dict[str, Any], *, previous_action: Any, language: str, e
         "ventilation_active": bool(room.get("active")),
         "ventilation_measures_active": ventilation_measures_active(room),
         "data_quality": room.get("data_quality"),
+        "fan_automation": event_fields(room),
+    }
+
+
+def _user_must_act(room: dict[str, Any]) -> bool:
+    """The automatic fan control needs the user (audit S08: e.g. not every fan came on)."""
+    return bool((event_fields(room) or {}).get("user_action_needed"))
+
+
+def fan_automation_payload(room: dict[str, Any], *, previous: dict[str, Any] | None, language: str, entry_id: str) -> dict[str, Any]:
+    """Payload of ``freshairiq_fan_automation`` (audit S06; no entity IDs)."""
+    value = fan_automation(room)
+    name = str(room.get("name") or room.get("key") or "")
+    label = automation_text(value, language)
+    must_act = bool(value.get("user_action_needed"))
+    return {
+        "schema_version": EVENT_SCHEMA_VERSION,
+        "entry_id": entry_id,
+        "room_key": str(room.get("key") or ""),
+        "room_name": name,
+        "floor": room.get("floor"),
+        "category": CATEGORY_ACTION if must_act else CATEGORY_STATUS,
+        "previous_state": (previous or {}).get("state"),
+        **{key: value.get(key) for key in ("mode", "state", "owned", "command", "command_state", "user_action_needed",
+                                           "fans_on", "fans_total", "group_incomplete")},
+        "label": label,
+        "message": f"{name}: {label}." if label else None,
+        "action": action_code(room.get("action")),
+        "house_aligned_action": room.get("house_aligned_action"),
     }
 
 
@@ -219,10 +266,11 @@ def recommendation_payload(
     payload = room_payload(room, previous_action=None, language=language, entry_id=entry_id)
     payload.pop("previous_action", None)
     code = str(room.get("house_aligned_action") or "unknown")
-    label = _LABELS[language].get("close_fan" if code == "close" and fan_only(room) else code, code)
+    automatic = handled_label(room, code, language)
+    label = automatic or _LABELS[language].get(_label_key(code, room), code)
     payload.update({
         "recommendation": code,
-        "category": action_category(code),
+        "category": CATEGORY_STATUS if automatic and not _user_must_act(room) else action_category(code),
         "previous_recommendation": previous_recommendation,
         "recommendation_label": label,
         "message": f"{payload['room_name']}: {label}.",
@@ -272,7 +320,7 @@ def house_signature(iq: dict[str, Any]) -> str:
     "noch ca. 19 min", "18 min", … used to fire one event per minute although
     the recommendation itself did not change.
     """
-    instruction = _NUMBER.sub("#", str(iq.get("instruction") or ""))
+    instruction = _MINUTES.sub("#", str(iq.get("instruction") or ""))
     return "|".join([str(iq.get("kind") or ""), ",".join(str(x) for x in (iq.get("room_keys") or [])), instruction])
 
 
@@ -315,6 +363,7 @@ class AutomationEventEmitter:
         self._room_mould: dict[str, Any] = {}
         self._room_aligned: dict[str, Any] = {}
         self._room_source: dict[str, tuple[bool, Any]] = {}
+        self._room_fan: dict[str, tuple[Any, Any, Any]] = {}
         self._house_signature: str | None = None
         self._house_kind: Any = None
         self._seen_rooms: set[str] = set()
@@ -351,6 +400,7 @@ class AutomationEventEmitter:
                     room, phase="started" if source_active else "ended",
                     source=source if source_active else (source or previous_source), language=language, entry_id=self._entry_id))
                 fired += 1
+            fired += self._fan_automation_event(key, room, initial=initial, language=language)
             previous_level = self._room_mould.get(key)
             level = self._reported_mould_level(key, room.get("mould_level"), previous_level)
             self._room_mould[key] = level
@@ -369,7 +419,12 @@ class AutomationEventEmitter:
                 })
                 self._fire(EVENT_MOULD_RISK, payload)
                 fired += 1
-        self._seen_rooms = set(self._room_actions)
+        # audit S19: a removed room is forgotten – re-added under the same key it starts silently again
+        current = {str(key) for key, room in rooms_raw.items() if isinstance(room, dict)}
+        for memory in (self._room_actions, self._room_mould, self._room_aligned, self._room_source, self._room_fan, self._mould_lower_since):
+            for gone in set(memory) - current:
+                memory.pop(gone, None)
+        self._seen_rooms = current
 
         iq = data.get("intelligent_recommendation") if isinstance(data.get("intelligent_recommendation"), dict) else {}
         signature = house_signature(iq)
@@ -381,6 +436,20 @@ class AutomationEventEmitter:
         self._initialised = True
         self.fired += fired
         return fired
+
+    def _fan_automation_event(self, key: str, room: dict[str, Any], *, initial: bool, language: str) -> int:
+        """Audit S06: fire when the fan control's state, command result or need for the user changes."""
+        value = fan_automation(room)
+        state = (value.get("state"), value.get("command_state"), value.get("user_action_needed")) if value else None
+        previous = self._room_fan.get(key)
+        if state is None:
+            self._room_fan.pop(key, None)
+            return 0
+        self._room_fan[key] = state
+        if initial or key not in self._seen_rooms or previous is None or previous == state:
+            return 0
+        self._fire(EVENT_FAN_AUTOMATION, fan_automation_payload(room, previous={"state": previous[0]}, language=language, entry_id=self._entry_id))
+        return 1
 
     def _reported_mould_level(self, key: str, level: Any, reported: Any) -> Any:
         """Rise at once, fall only after the lower level held ``MOULD_FALL_HOLD_S``."""

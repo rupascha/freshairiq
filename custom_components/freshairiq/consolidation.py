@@ -8,7 +8,7 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any
 
-from .close_wording import close_instruction, fan_only, keep_instruction
+from .close_wording import airing_running, close_instruction, fan_only, keep_instruction
 from .model import min_return_volume_factor
 
 
@@ -105,7 +105,7 @@ def session_target_min(previous_data: Any, options: dict[str, Any]) -> float | N
         return None
     rooms = previous_data.get("rooms")
     rows = rooms.values() if isinstance(rooms, dict) else rooms if isinstance(rooms, list) else []
-    running = any(isinstance(r, dict) and r.get("active") and r.get("calculation_enabled", True) and not fan_only(r) for r in rows)
+    running = any(airing_running(r) and r.get("calculation_enabled", True) and not fan_only(r) for r in rows)
     try:
         low = float(options.get("min_duration_min", 3.0))
         high = float(options.get("max_duration_min", 20.0))
@@ -135,7 +135,11 @@ def _timed(rooms: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def moisture_coming_in(rooms: list[dict[str, Any]], net_next5_ml: float | None, close_delta: float) -> bool:
-    """Same rule as the room model: no net drying, or no room's reference air drier any more."""
+    """Same rule as the room model: no net drying, or no room's reference air drier any more.
+
+    Despite the name this covers both reasons of the room model (``air_no_longer_helps``):
+    moisture really coming in, and reference air only marginally drier (``close_delta``).
+    """
     if net_next5_ml is not None and float(net_next5_ml) <= 0:
         return True
     deltas = []
@@ -261,7 +265,7 @@ def stabilise_recommendation(
 
     calculated = [r for r in rooms.values() if r.get("calculation_enabled", True)]
     valid = [r for r in calculated if r.get("data_quality") == "ok"]
-    active = [r for r in valid if r.get("active")]
+    active = [r for r in valid if airing_running(r)]  # not a room in its final measurement after closing
     closing = [r for r in active if (r.get("close_recommended") or str(r.get("action")) == "Close") and not r.get("moisture_source_active")]
     max_duration = _f(options.get("max_duration_min"), 20.0)
     tolerated_long_open = [
@@ -276,7 +280,10 @@ def stabilise_recommendation(
     ]
     tolerated_keys = {str(r.get("key")) for r in tolerated_long_open}
     closing = [r for r in closing if str(r.get("key")) not in tolerated_keys]
-    effective_active = [r for r in active if str(r.get("key")) not in tolerated_keys]
+    # 0.26.5.4 (support case): a running exhaust fan alone is no window session
+    # of the house; otherwise it blocked the close of a tolerated long opening
+    # and turned it into "continue" for every active room.
+    effective_active = [r for r in active if str(r.get("key")) not in tolerated_keys and not fan_only(r)]
 
     original_kind = str(out.get("kind") or "okay")
     kind = original_kind

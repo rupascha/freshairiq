@@ -453,7 +453,9 @@ def test_repeat_cooldown_now_also_applies_to_the_room_action():
 
     source = module_source("coordinator")
     block = source[source.index("recently_ventilated = minutes_since_vent"):][:1600]
-    assert 'cooldown_demoted = bool(recently_ventilated and result.action == "Ventilate" and not is_open and not mem["session_active"])' in block
+    # 0.26.5.4: a room aired only by its fan ("Ventilate indirectly") is held as well
+    # 0.26.5.4: also while the closed window's final measurement runs
+    assert 'cooldown_demoted = bool(recently_ventilated and result.action in {"Ventilate", "Ventilate indirectly"} and not is_open and (finalizing or not mem["session_active"]))' in block
     assert 'result.action = "Wait"' in block
     assert "ventilation_latched=bool(mem.get(\"ventilation_candidate_latched\", False))" in source
 
@@ -479,7 +481,8 @@ def test_review_fixes_are_wired():
 
     comp = Path(__file__).resolve().parents[1] / "custom_components/freshairiq"
     coordinator = module_source("coordinator")
-    assert "result.ventilation_candidate and has_ventilation_contact and not mem[\"session_active\"]" in coordinator
+    # 0.26.5.4 (review A07): the humidity latch excludes an airing asked for CO2 alone (it has its own hysteresis)
+    assert "result.ventilation_candidate and not result.co2_airing and has_ventilation_contact and not mem[\"session_active\"]" in coordinator
     assert "Empfehlung bleibt trotz leichter Schwankung bestehen" in coordinator
     validation = (comp / "forecast_validation.py").read_text(encoding="utf-8")
     assert 'scaled_min_return(controls.get("min_return_next_5_min_ml", 25.0), args.get("volume_m3"))' in validation

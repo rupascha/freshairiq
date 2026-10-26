@@ -151,10 +151,10 @@ def _profile_details_schema(current: dict[str, Any]) -> vol.Schema:
             vol.Required(native_option_key("max_temp_loss_next_5_min_c"), default=current.get("max_temp_loss_next_5_min_c", 1.0)): _number(0.1, 5, 0.1, "°C"),
             vol.Required(native_option_key("min_efficiency_ml_per_01c"), default=current.get("min_efficiency_ml_per_01c", 5.0)): _number(0, 200, 1, "mL/0,1°C"),
         })
+    # 0.26.5.4: comfort – the lower limit for cooling advice; the return and
+    # efficiency values of the comfort profile live on the model page.
     return vol.Schema({
-        vol.Required(native_option_key("min_return_next_5_min_ml"), default=current.get("min_return_next_5_min_ml", 25.0)): _number(0, 500, 5, "mL"),
-        vol.Required(native_option_key("max_temp_loss_next_5_min_c"), default=current.get("max_temp_loss_next_5_min_c", 0.6)): _number(0.1, 5, 0.1, "°C"),
-        vol.Required(native_option_key("min_efficiency_ml_per_01c"), default=current.get("min_efficiency_ml_per_01c", 8.0)): _number(0, 200, 1, "mL/0,1°C"),
+        vol.Required(native_option_key("cooling_start_temp_c"), default=current.get("cooling_start_temp_c", 24.0)): _number(18, 35, 0.5, "°C"),
     })
 
 

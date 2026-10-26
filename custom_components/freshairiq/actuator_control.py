@@ -33,6 +33,15 @@ FAN_CONTROL_MODES = [FAN_CONTROL_OFF, FAN_CONTROL_MOISTURE_SOURCE, FAN_CONTROL_R
 FAN_RECOMMENDATION_ON = {"ventilate", "continue_ventilating", "ventilate_indirectly"}
 DEFAULT_FAN_FOLLOW_UP_MIN = 10
 DEFAULT_FAN_MAX_RUNTIME_MIN = 60
+# 0.26.5.4 (garage on/off within one second): switching the fan changes the
+# room evaluation it is based on (a running fan is an airing session with its
+# own close checks). A switch-off asked for by the recommendation must hold
+# for one evaluation cycle before the fan stops, and a fan FreshAirIQ stopped
+# after a finished airing is not started again by the recommendation before
+# the anti-flap time is over. Neither delays the maximum runtime, the control
+# being switched off, a manual switch-off or moisture coming in.
+FAN_OFF_CONFIRM_S = 30.0
+FAN_COMMAND_TIMEOUT_S = 60.0
 
 COVER_OPEN = "open"
 COVER_CLOSE = "close"
@@ -206,40 +215,136 @@ def decide_fan(
     follow_up_min: float,
     max_runtime_min: float,
     mem: dict[str, Any],
+    off_confirm_s: float = 0.0,
+    restart_lock_min: float = 0.0,
+    urgent: bool = False,
+    safety_off: bool = False,
+    all_on: bool | None = None,
+    all_off: bool | None = None,
 ) -> str | None:
     """"on", "off" or None for the exhaust fan(s) of one room; ``mem`` is updated.
 
     FreshAirIQ only switches off what it switched on itself. If someone turns
     such a fan off, it is not switched on again until the demand has ended.
+
+    0.26.5.4: a command is "pending" until Home Assistant reports the new state
+    (``FAN_COMMAND_TIMEOUT_S``), so a late state report is not taken for a
+    manual switch; a command that is never confirmed is "failed". In the
+    recommendation mode a switch-off waits ``off_confirm_s`` for the demand to
+    stay away (``safety_off`` – moisture coming in – stops at once), and after
+    a finished airing a new start waits ``restart_lock_min`` unless ``urgent``.
+    ``mem["reason"]`` tells why the last decision was taken.
+
+    0.26.5.4 (review): with several fans ``fan_on`` means "any on"; a switch-on
+    is only confirmed when ``all_on`` (every fan reports on). A device that is
+    unavailable cannot confirm a command – it still fails after the timeout.
     """
+    command = mem.get("command")
     if fan_on is None:
+        _expire_unconfirmed(mem, command, now, demand)
         return None
+    if command in {"on", "off"} and mem.get("command_state") == "pending":
+        # audit S02: a switch-off is confirmed only when every fan reports off (not "off + unavailable")
+        if (fan_on and all_on is not False) if command == "on" else (not fan_on and all_off is not False):
+            mem["command_state"] = "confirmed"
+        elif now - (_parse(mem.get("command_at")) or now) < timedelta(seconds=FAN_COMMAND_TIMEOUT_S):
+            return None  # Home Assistant has not reported the new state yet
+        elif command == "on" and fan_on:
+            # audit P1-06: only part of the group came on – FreshAirIQ keeps the fans it
+            # switched on and stops them later as usual (never left running unattended)
+            mem["command_state"], mem["reason"] = "partial", "partial_start"
+        else:
+            mem["command_state"] = "failed"
+            if command == "on":
+                mem["owned"] = False
+                mem["blocked"] = demand
+                mem["reason"] = "command_failed"
+                return None
     if not demand:
-        mem["blocked"] = False
+        # a switch-off by hand holds until the demand has really ended (not one flicker)
+        lost = _parse(mem.setdefault("demand_lost_since", now.isoformat())) or now
+        if now - lost >= timedelta(seconds=off_confirm_s):
+            mem["blocked"] = False
+    else:
+        mem.pop("demand_lost_since", None)
     if mem.get("owned") and not fan_on:
         mem["owned"] = False
         mem["blocked"] = demand
+        mem.pop("off_pending_since", None)
+        mem["reason"] = "manual_off"
         return None
     if demand:
         mem["last_demand"] = now.isoformat()
+        mem.pop("off_pending_since", None)
     if mem.get("owned"):
         since = _parse(mem.get("since")) or now
         if mode == FAN_CONTROL_OFF:
-            mem["owned"] = False
-            return "off"
+            return _fan_command(mem, "off", now, "control_off")
         if now - since >= timedelta(minutes=max_runtime_min):
-            mem["owned"] = False
             mem["blocked"] = demand
-            return "off"
+            mem["completed_at"] = now.isoformat()
+            return _fan_command(mem, "off", now, "max_runtime")
         if not demand:
-            last = _parse(mem.get("last_demand")) or since
-            follow_up = follow_up_min if mode == FAN_CONTROL_MOISTURE_SOURCE else 0.0
-            if now - last >= timedelta(minutes=follow_up):
-                mem["owned"] = False
-                return "off"
+            if mode == FAN_CONTROL_MOISTURE_SOURCE:
+                last = _parse(mem.get("last_demand")) or since
+                if now - last >= timedelta(minutes=follow_up_min):
+                    return _fan_command(mem, "off", now, "follow_up_ended")
+                mem["reason"] = "follow_up"
+                return None
+            if safety_off:
+                mem["completed_at"] = now.isoformat()
+                return _fan_command(mem, "off", now, "moisture_ingress")
+            pending = _parse(mem.setdefault("off_pending_since", now.isoformat())) or now
+            if now - pending >= timedelta(seconds=off_confirm_s):
+                mem["completed_at"] = now.isoformat()
+                return _fan_command(mem, "off", now, "goal_reached")
+            mem["reason"] = "off_confirming"
         return None
     if demand and not mem.get("blocked") and not fan_on:
+        completed = _parse(mem.get("completed_at"))
+        if not urgent and completed is not None and now - completed < timedelta(minutes=restart_lock_min):
+            mem["reason"] = "restart_locked"
+            return None
         mem["owned"] = True
         mem["since"] = now.isoformat()
-        return "on"
+        return _fan_command(mem, "on", now, "moisture_source" if mode == FAN_CONTROL_MOISTURE_SOURCE else "recommendation")
     return None
+
+
+def settle_removed_off(mem: dict[str, Any], fan_on: bool | None, now: datetime, *, all_off: bool | None = None) -> bool:
+    """Audit P2-08: the switch-off sent when a room's fan control was removed gets its result.
+
+    True when it is settled now: confirmed once every fan reports off, failed after
+    ``FAN_COMMAND_TIMEOUT_S``. The room is not controlled again.
+    """
+    if mem.get("reason") != "control_removed" or mem.get("command_state") != "pending":
+        return False
+    if fan_on is False and all_off is not False:  # audit S02: every fan reports off
+        mem["command_state"] = "confirmed"
+    elif now - (_parse(mem.get("command_at")) or now) >= timedelta(seconds=FAN_COMMAND_TIMEOUT_S):
+        mem["command_state"] = "failed"
+    else:
+        return False
+    mem.pop("off_entities", None)
+    return True
+
+
+def _expire_unconfirmed(mem: dict[str, Any], command: Any, now: datetime, demand: bool) -> None:
+    """A pending command whose device reports no state fails after the timeout like any other."""
+    if command not in {"on", "off"} or mem.get("command_state") != "pending":
+        return
+    if now - (_parse(mem.get("command_at")) or now) < timedelta(seconds=FAN_COMMAND_TIMEOUT_S):
+        return
+    mem["command_state"] = "failed"
+    mem["reason"] = "device_unavailable"
+    if command == "on":
+        mem["owned"] = False
+        mem["blocked"] = demand
+
+
+def _fan_command(mem: dict[str, Any], command: str, now: datetime, reason: str) -> str:
+    if command == "off":
+        mem["owned"] = False
+        mem.pop("off_pending_since", None)
+    mem.update(command=command, command_at=now.isoformat(), command_state="pending", reason=reason)
+    return command

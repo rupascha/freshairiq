@@ -26,6 +26,10 @@ export const reasonDE = value => {
     }
     return ({ "Target reached or additional ventilation benefit is too low": "Ziel erreicht oder zusätzlicher Lüftungsnutzen zu gering", "Reference air would add moisture": "Referenzluft würde zusätzliche Feuchtigkeit eintragen", "Potential exists, but ventilation threshold is not reached": "Potenzial vorhanden, Lüftungsschwelle noch nicht erreicht", "No meaningful ventilation demand": "Kein sinnvoller Lüftungsbedarf", "Missing or implausible measurements": "Messwerte fehlen oder sind unplausibel", "Room is visible but excluded from FreshAirIQ calculations": "Raum wird angezeigt, beeinflusst die Berechnungen aber nicht" }[s] || s);
 };
+// 0.26.5.4: what sharing diagnostics is good for (admin hint while undecided).
+export const consentHint = de => de
+    ? { label: "Diagnosen teilen", title: "Diagnosen teilen?", text: "Damit lernen neue Räume schneller und Prognosen werden für alle genauer – aus echten Lüftungen vieler Häuser. Pseudonymisiert, ohne Namen oder Standort; ohne Zustimmung wird nichts gesendet. Festlegen unter Geräte & Dienste → FreshAirIQ → Konfigurieren.", later: "Später", open: "Öffnen" }
+    : { label: "Share diagnostics", title: "Share diagnostics?", text: "This lets new rooms learn faster and makes forecasts more accurate for everyone – from real airings of many homes. Pseudonymised, no names or location; nothing is sent without consent. Decide under Devices & services → FreshAirIQ → Configure.", later: "Later", open: "Open" };
 export const statusTextDE = value => {
     var _a, _b;
     const s = String(value || "");
@@ -61,16 +65,34 @@ export const FAIQ_LIVE_METHODS = {
         const entryId = attrs.freshairiq_entry_id || null;
         this._ensureLive(entryId);
         const live = this._live;
-        if (!live || live.entryId !== entryId) return null; // first payload still on its way
+        // 0.26.5.4 (audit S13): without a live channel the status sensor and the room entities still
+        // carry the status and the rooms - shown with a notice instead of an empty card
+        if (!live || live.entryId !== entryId) return this._liveFailed ? this._liveDegraded(raw) : null; // first payload still on its way
         const merged = this._liveMerged;
         if (merged && merged.raw === raw && merged.payload === live.payload) return merged.state;
         const state = Object.assign({}, raw, { attributes: Object.assign({}, attrs, live.payload) });
         this._liveMerged = { raw, payload: live.payload, state };
         return state;
     },
+    _liveDegraded(raw) {
+        const cached = this._liveDegradedState;
+        if (cached && cached.raw === raw) return cached.state;
+        const state = Object.assign({}, raw, { attributes: Object.assign({}, raw.attributes, { freshairiq_live_unavailable: true }) });
+        this._liveDegradedState = { raw, state };
+        return state;
+    },
+    _liveNotice() {
+        // audit F04: a payload of another (e.g. replaced) FreshAirIQ entry does not count as a working live channel
+        const raw = this._statusEntityRaw(), entryId = (raw && raw.attributes && raw.attributes.freshairiq_entry_id) || null;
+        if (!this._liveFailed || (this._live && this._live.entryId === entryId)) return "";
+        const text = this._uiLanguage() === "de"
+            ? "Live-Verbindung zu FreshAirIQ gestört – eingeschränkte Anzeige aus den Sensoren, neuer Versuch läuft"
+            : "Live connection to FreshAirIQ disrupted – limited view from the sensors, retrying";
+        return `<div class="live-notice" role="status" style="margin:0 0 8px;padding:6px 10px;border-radius:10px;font-size:12px;color:#ffcf8a;background:rgba(255,180,95,.09);border:1px solid rgba(255,180,95,.35)">${text}</div>`;
+    },
     _ensureLive(entryId) {
         const connection = this._hass && this._hass.connection;
-        if (!connection || typeof connection.subscribeMessage !== "function") return;
+        if (!connection || typeof connection.subscribeMessage !== "function") { this._liveFailed = true; return; }
         const key = entryId || "";
         if (this._liveSub && this._liveSub.key === key) return;
         if (this._liveRetryAt && Date.now() < this._liveRetryAt) return;
@@ -84,6 +106,8 @@ export const FAIQ_LIVE_METHODS = {
             .catch(() => {
                 if (this._liveSub !== sub) return;
                 this._liveSub = null;
+                this._liveFailed = true;
+                if (this.isConnected) this._queueRender(); // the limited view at once, not after the retry pause
                 this._liveRetryAt = Date.now() + FAIQ_LIVE_RETRY_MS;
                 setTimeout(() => { if (this.isConnected) this._queueRender(); }, FAIQ_LIVE_RETRY_MS);
             });
@@ -98,6 +122,7 @@ export const FAIQ_LIVE_METHODS = {
     _onLivePayload(sub, payload) {
         if (this._liveSub !== sub || !payload || typeof payload !== "object") return;
         this._live = { entryId: sub.key || null, payload };
+        this._liveFailed = false;
         if (!this.isConnected) return;
         if (this._info || this._dialogOpen) this._queueLiveRefresh();
         else this._queueRender();
@@ -105,6 +130,21 @@ export const FAIQ_LIVE_METHODS = {
 };
 
 export const FAIQ_EXPORT_METHODS = {
+    // 0.26.5.4 (community): how much of the room air the running airing has
+    // replaced and how long it takes to 95 % under the current conditions.
+    // Display only - no goal, no influence on any recommendation.
+    _airExchangeLine(r) {
+        const a = r && r.active && r.air_exchange;
+        if (!a) return "";
+        const de = this._uiLanguage() === "de";
+        const pct = Math.max(0, Math.round(Number(a.exchanged_percent) || 0));
+        const rest = a.minutes_to_95;
+        const tail = pct >= 95 || rest === 0
+            ? (de ? "praktisch vollständig" : "practically complete")
+            : rest === null || rest === undefined ? "" : (de ? `bis 95 % noch ca. ${Math.max(1, Math.round(rest))} min` : `about ${Math.max(1, Math.round(rest))} min to 95 %`);
+        const estimate = a.estimate ? (de ? " · Schätzung" : " · estimate") : "";
+        return `<div class="muted air-exchange">${de ? "Luftaustausch" : "Air exchange"} ${pct} %${tail ? ` · ${tail}` : ""}${estimate}</div>`;
+    },
     _ventLogExtras() {
         const de = this._uiLanguage() === "de";
         return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;min-height:32px;order:-1;flex-basis:100%"><input type="checkbox" id="ventlog-daily"${this._ventLogDaily ? " checked" : ""}><span>${de ? "Pro Tag zusammenfassen" : "Summarise per day"}</span></label><button class="quick-forecast" id="ventlog-csv"><ha-icon icon="mdi:file-delimited-outline"></ha-icon><b>${de ? "Als CSV" : "As CSV"}</b><span>${de ? "für Tabellen" : "for spreadsheets"}</span></button>`;

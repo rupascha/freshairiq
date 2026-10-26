@@ -373,11 +373,15 @@ _ROOM_KEYS = (
     "shadow_learning_samples", "shadow_learning_total_samples", "shadow_learning_status", "shadow_learning_last_action",
     "shadow_learning_last_improvement_pct", "shadow_learning_promotions", "shadow_learning_rollbacks", "shadow_rollback_active",
     "outcome_avg_temperature_error_c",
+    "fan_automation", "reference_path", "air_exchange",
+    # 0.26.5.4 (support case): temperature target and the action at each decision step
+    "comfort_target_c", "comfort_target_source", "canonical_action", "house_aligned_action",
+    "close_recommended", "close_decision_ready", "contact_count", "action_hint",
 )
 
 
 _LEARNING_ROOM_KEYS = (
-    "learning_rate", "learning_samples", "learning_sample_credit", "learning_status", "diagnosis",
+    "learning_rate", "learning_samples", "learning_sample_credit", "learning_status", "diagnosis", "start_model",
     "last_learning_at", "outcome_feedback_samples", "outcome_successes", "outcome_guarded_direction", "outcome_guarded_streak", "outcome_guarded_last_ratio", "last_outcome_feedback_applied",
     "outcome_removed_factor", "strategy_samples", "strategy_outcome_samples",
     "shadow_learning_samples", "shadow_learning_total_samples", "shadow_learning_status", "shadow_learning_last_action", "shadow_learning_promotions", "shadow_learning_rollbacks", "shadow_rollback_active",

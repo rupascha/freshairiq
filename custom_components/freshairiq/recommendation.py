@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any, Iterable
 
-from .close_wording import close_instruction
+from .close_wording import airing_running, close_instruction
 from .outdoor_air import pm25_reason, veto_cause
 
 
@@ -184,6 +184,8 @@ def build_recommendation(
     outdoor_pm25_blocked: bool = False,
 ) -> dict[str, Any]:
     """Compose the single best action for the home at this moment."""
+    # a room in its final measurement after closing is no longer aired
+    rooms = {k: dict(r, active=False) if isinstance(r, dict) and r.get("active") and not airing_running(r) else r for k, r in rooms.items()}
     # 0.26.4.7: outdoor fine dust (PM2.5) is a second outdoor-air veto next to
     # pollen. Both postpone normal airing; critical CO₂/mould keep priority.
     pollen_only = bool(pollen_blocked)

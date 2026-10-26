@@ -180,6 +180,7 @@ def floor_ventilation_decision(
         intelligent_recommendation["room_keys"] = [str(r.get("key")) for r in floor_active]
         floor_room_names = [str(r.get("name") or r.get("key")) for r in floor_active]
         intelligent_recommendation["selected_rooms"] = floor_room_names
+        intelligent_recommendation["room_names"] = list(floor_room_names)  # 0.26.5.4: names match the keys
         intelligent_recommendation["floor_next_5_min_moisture_effect_ml"] = round(floor_next5_removed)
         if floor_should_close:
             intelligent_recommendation.update({
@@ -264,6 +265,7 @@ def _house_presentation(
     intelligent_recommendation["room_keys"] = active_room_keys
     active_room_names = [str(r.get("name") or r.get("key")) for r in active]
     intelligent_recommendation["selected_rooms"] = active_room_names
+    intelligent_recommendation["room_names"] = list(active_room_names)  # 0.26.5.4: names match the keys
     if house_should_close:
         intelligent_recommendation["kind"] = "close"
         intelligent_recommendation["status"] = "close_windows"

@@ -355,7 +355,7 @@
     "diagnostics_consent": {
       "options": {
         "unset": "Noch nicht entschieden (nichts wird gesendet)",
-        "granted": "Ja, pseudonymisierte Diagnosen teilen",
+        "granted": "Ja, teilen und FreshAirIQ verbessern (pseudonymisiert)",
         "declined": "Nein, nicht teilen"
       }
     },
@@ -1796,12 +1796,12 @@
       },
       "profile_details": {
         "title": "Betriebsprofil · {profile}",
-        "description": "Entfeuchten toleriert für wirksamen Feuchteabbau etwas mehr Temperaturverlust. Komfort balanciert Feuchte und Energie. Sommer kühlen verwendet nur die Kühlparameter.",
+        "description": "Entfeuchten toleriert für wirksamen Feuchteabbau etwas mehr Temperaturverlust. Komfort balanciert Feuchte und Energie und legt hier nur fest, ab welcher Raumtemperatur frühestens zum Kühlen gelüftet wird. Sommer kühlen verwendet nur die Kühlparameter.",
         "data": {
           "min_return_next_5_min_ml": "Mindestertrag nächste 5 Min",
           "max_temp_loss_next_5_min_c": "Maximaler Temperaturverlust nächste 5 Min",
           "min_efficiency_ml_per_01c": "Minimale Feuchte-/Temperatur-Effizienz",
-          "cooling_start_temp_c": "Sommerkühlung ab Raumtemperatur",
+          "cooling_start_temp_c": "Kühlen frühestens ab Raumtemperatur",
           "cooling_min_outdoor_delta_c": "Außenluft mindestens so viel kühler",
           "cooling_max_indoor_rh": "Maximale Raumfeuchte für Kühlmodus",
           "cooling_max_moisture_gain_5min_ml": "Maximal tolerierter Feuchteeintrag in 5 Min"
@@ -1810,7 +1810,7 @@
           "min_return_next_5_min_ml": "Zusätzlicher Feuchteabbau, den FreshAirIQ für die nächsten fünf Minuten mindestens erwartet.",
           "max_temp_loss_next_5_min_c": "Maximal tolerierter zusätzlicher Raumtemperaturverlust in den nächsten fünf Minuten.",
           "min_efficiency_ml_per_01c": "Mindestverhältnis von Feuchteabbau zu Temperaturverlust.",
-          "cooling_start_temp_c": "Sommerkühlung wird erst oberhalb dieser Raumtemperatur priorisiert.",
+          "cooling_start_temp_c": "Unterhalb dieser Raumtemperatur empfiehlt FreshAirIQ kein Lüften zum Kühlen. Im Profil Komfort gilt zusätzlich das Komfortziel des Raums: zum Kühlen gelüftet wird dort erst 0,5 °C darüber.",
           "cooling_min_outdoor_delta_c": "Die Außenluft muss mindestens um diesen Betrag kühler sein.",
           "cooling_max_indoor_rh": "Oberhalb dieser Raumfeuchte wird Kühlung nicht auf Kosten zusätzlicher Feuchte priorisiert.",
           "cooling_max_moisture_gain_5min_ml": "Maximal akzeptierter prognostizierter Feuchteeintrag während fünf Minuten Kühlung."
@@ -2372,14 +2372,14 @@
       },
       "diagnostics_sharing": {
         "title": "Diagnose-Freigabe",
-        "description": "Während der öffentlichen Beta standardmäßig täglich nachts aktiv; jederzeit abschaltbar. FreshAirIQ bereitet die technisch vollständige 30-Tage-Diagnostik lokal für die Analyse auf, entfernt bzw. pseudonymisiert direkte Identifikatoren und überträgt große Historien in Chunks. Nach dem ersten bestätigten Vollabgleich werden nur neue Diagnosedatensätze übertragen. Diese Staging-Konfiguration ist ausschließlich mit dem lokalen Diagnostics Hub im privaten Heimnetz verbunden. Die Beta-Voreinstellung ist „Täglich nachts“; der spätere öffentliche Betrieb wird nur über HTTPS freigegeben.",
+        "description": "Mit deiner Zustimmung hilft deine Installation, FreshAirIQ für alle besser zu machen:\n\n- **Neue Räume lernen schneller:** Aus den gemessenen Lüftungen vieler Häuser entstehen bessere Startwerte. Prognosen passen dann schon nach wenigen Lüftungen statt erst nach vielen.\n- **Genauere Prognosen:** Wie weit Prognose und Messung auseinanderliegen, wird über alle Installationen ausgewertet und gezielt verbessert.\n- **Fehler werden schneller behoben:** Probleme werden erkannt, auch wenn sie niemand meldet.\n\nGeteilt werden pseudonymisierte technische Diagnosen (Messwerte, Prognosen, Lernstand) ohne Namen, Standort oder Geräte-IDs, verschlüsselt per HTTPS. **Ohne Zustimmung wird nichts gesendet.** Nach der Zustimmung wird standardmäßig täglich nachts übertragen; große Historien in Teilen, danach nur neue Datensätze. Jederzeit änderbar.",
         "data": {
           "diagnostics_consent": "Diagnosen teilen?",
           "diagnostics_reporting_mode": "Automatische Diagnoseübertragung",
           "diagnostics_include_client_context": "Groben Geräte-/Browser-Kontext mitsenden"
         },
         "data_description": {
-          "diagnostics_consent": "Automatische Übertragungen finden nur nach deiner Zustimmung statt. Geteilt werden pseudonymisierte technische Diagnosen ohne Namen, Standort oder Geräte-IDs; sie helfen, Fehler und Prognosen zu verbessern. Jederzeit änderbar.",
+          "diagnostics_consent": "Ohne Zustimmung wird nichts gesendet. Mit Zustimmung hilfst du, Prognosen zu verbessern und neue Räume schneller lernen zu lassen. Jederzeit änderbar.",
           "diagnostics_reporting_mode": "Aus, nur bei erkannten Problemen, täglich nachts oder wöchentlich. Ein künftiger Nachtversand wird pro Installation deterministisch zwischen 02:00 und 03:59 Uhr verteilt.",
           "diagnostics_include_client_context": "Optional für Kompatibilitätsanalysen. Exakte Gerätenamen, Seriennummern und exakte Gerätemodelle werden nicht an den Hub übertragen."
         }
