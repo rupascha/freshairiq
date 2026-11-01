@@ -1,0 +1,220 @@
+{
+ "_comment": "Room payloads as published over freshairiq/dashboard/subscribe after opening_strategy.house_aligned_room_actions (tests/test_display_semantics_026505.py re-derives every house_aligned_action from the backend). Used by the house map, Classic and IQ display tests.",
+ "scenarios": {
+  "monitor_open": {
+   "recommendation": {
+    "kind": "okay",
+    "status": "passive_open_monitor",
+    "severity": "neutral",
+    "title": "Daueröffnung wird beobachtet",
+    "room_keys": [
+     "bad"
+    ]
+   },
+   "rooms": {
+    "bad": {
+     "key": "bad",
+     "name": "Bad",
+     "action": "Close",
+     "reason": "Bad: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": true,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "monitor_open"
+    },
+    "flur": {
+     "key": "flur",
+     "name": "Flur",
+     "action": "Okay",
+     "reason": "Flur: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": false,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "okay"
+    }
+   }
+  },
+  "ventilate_later": {
+   "recommendation": {
+    "kind": "wait",
+    "status": "wait",
+    "severity": "warning",
+    "title": "Noch kurz warten",
+    "room_keys": []
+   },
+   "rooms": {
+    "wohnen": {
+     "key": "wohnen",
+     "name": "Wohnen",
+     "action": "Ventilate",
+     "reason": "Wohnen: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": false,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "ventilate_later"
+    },
+    "flur": {
+     "key": "flur",
+     "name": "Flur",
+     "action": "Okay",
+     "reason": "Flur: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": false,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "okay"
+    }
+   }
+  },
+  "close": {
+   "recommendation": {
+    "kind": "close",
+    "status": "close_windows",
+    "severity": "warning",
+    "title": "Jetzt schließen",
+    "room_keys": [
+     "bad"
+    ]
+   },
+   "rooms": {
+    "bad": {
+     "key": "bad",
+     "name": "Bad",
+     "action": "Close",
+     "reason": "Bad: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": true,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "close"
+    },
+    "flur": {
+     "key": "flur",
+     "name": "Flur",
+     "action": "Okay",
+     "reason": "Flur: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": false,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "okay"
+    }
+   }
+  },
+  "protection_close": {
+   "recommendation": {
+    "kind": "close",
+    "status": "critical_co2_reassess",
+    "severity": "danger",
+    "title": "Jetzt schließen",
+    "room_keys": [
+     "bad"
+    ]
+   },
+   "rooms": {
+    "bad": {
+     "key": "bad",
+     "name": "Bad",
+     "action": "Close",
+     "reason": "Bad: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": true,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "close_recommended": true,
+     "goal_state": {
+      "hard_close": true,
+      "goals": []
+     },
+     "house_aligned_action": "close"
+    },
+    "flur": {
+     "key": "flur",
+     "name": "Flur",
+     "action": "Okay",
+     "reason": "Flur: Grund",
+     "data_quality": "ok",
+     "temperature": 21.4,
+     "humidity": 58.0,
+     "absolute_humidity": 10.9,
+     "co2": null,
+     "comfort_target_c": null,
+     "surface_rh": 60.0,
+     "mould_level": "Slightly elevated",
+     "active": false,
+     "learning_samples": 4,
+     "learned_exchange_rate_per_min": 0.031,
+     "contact_entities": [],
+     "floor": "EG",
+     "house_aligned_action": "okay"
+    }
+   }
+  }
+ }
+}

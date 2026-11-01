@@ -245,10 +245,19 @@ def test_floor_close_waits_for_the_minimum_airing_time_of_every_room():
 def test_protection_and_unanimous_room_close_still_close_immediately():
     from custom_components.freshairiq.consolidation import aggregate_close_allowed
 
+    # Expectations corrected in 0.26.5.5 (F04, GitHub #23, audit 29.10.): these asserted that one room's
+    # own close, or every room's "Close", closes the whole group before a younger window had its
+    # minimum time – exactly the reported bug. A room's own released close (hard_close) still counts
+    # for that room, real protection (moisture coming in) still closes at once.
     hard = [_active("a", 0.5, goal_state={"hard_close": True}), _active("b", 0.2)]
-    assert aggregate_close_allowed(hard, low_return=False, thermal_bad=False, min_duration_min=3.0) is True
+    assert aggregate_close_allowed(hard, low_return=False, thermal_bad=False, min_duration_min=3.0) is False
+    assert aggregate_close_allowed(hard, low_return=False, thermal_bad=False, min_duration_min=3.0, net_next5_ml=-1.0) is True
+    both_released = [_active("a", 0.5, goal_state={"hard_close": True}), _active("b", 0.2, goal_state={"hard_close": True})]
+    assert aggregate_close_allowed(both_released, low_return=False, thermal_bad=False, min_duration_min=3.0) is True
     unanimous = [_active("a", 0.5, action="Close"), _active("b", 1.0, action="Close")]
-    assert aggregate_close_allowed(unanimous, low_return=False, thermal_bad=False, min_duration_min=3.0) is True
+    assert aggregate_close_allowed(unanimous, low_return=False, thermal_bad=False, min_duration_min=3.0) is False
+    assert aggregate_close_allowed([_active("a", 3.5, action="Close"), _active("b", 3.0, action="Close")],
+                                   low_return=False, thermal_bad=False, min_duration_min=3.0) is True
     # Unknown session age never blocks (older payloads / partial test rooms).
     unknown = [_active("a", "nan?"), _active("b", None), _active("c", float("nan"))]
     assert aggregate_close_allowed(unknown, low_return=True, thermal_bad=False, min_duration_min=3.0) is True

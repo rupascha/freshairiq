@@ -169,6 +169,7 @@ EXACT: dict[str, str] = {
     'Die Außenluft ist kaum noch trockener als die Raumluft. Lüfter ausschalten.': 'The outdoor air is hardly drier than the room air any more. Switch off the fan.',
     # 0.26.5.4: automatic exhaust-fan control
     'Vergleichsluft ist die Zuluft aus dem Nebenraum (Ablüfter), nicht die Außenluft': 'The reference air is the air drawn in from the neighbouring room (exhaust fan), not the outdoor air',
+    'Feuchtesensor des Nebenraums meldet keine relative Feuchte in % (z. B. absolute Feuchte in g/m³) – Wert wird nicht verwendet, bitte in der Raumeinrichtung einen Sensor für relative Feuchte wählen': 'The neighbouring room\'s humidity sensor does not report relative humidity in % (e.g. absolute humidity in g/m³) – the value is not used, please choose a relative humidity sensor in the room setup',
     'Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung.': 'Airing goal reached – FreshAirIQ ends the airing.',
     'Die Zuluft aus dem Nebenraum ist gerade feuchter als die Raumluft. Lüfter ausschalten.': 'The air drawn in from the neighbouring room is currently more humid than the room air. Switch off the fan.',
     'Die Zuluft aus dem Nebenraum ist kaum noch trockener als die Raumluft. Lüfter ausschalten.': 'The air drawn in from the neighbouring room is hardly drier than the room air any more. Switch off the fan.',
@@ -182,11 +183,16 @@ EXACT: dict[str, str] = {
     'Nicht alle Ablüfter sind angesprungen – bitte die übrigen prüfen': 'Not every exhaust fan came on – please check the others',
     'Automatische Lüftung startet nach der Pause': 'Automatic airing starts after the pause',
     'Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung': 'Airing goal reached – FreshAirIQ ends the airing',
+    'Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus': 'Airing goal reached – FreshAirIQ checks briefly and then ends the airing',
+    'Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus.': 'Airing goal reached – FreshAirIQ checks briefly and then ends the airing.',
     'Ablüfter läuft wegen erkannter Feuchtequelle': 'Exhaust fan runs because of a detected moisture source',
     'Feuchtequelle beendet – automatische Nachlaufzeit aktiv': 'Moisture source ended – automatic follow-up time running',
     'Ablüfter konnte nicht automatisch eingeschaltet werden – bitte von Hand einschalten': 'The exhaust fan could not be switched on automatically – please switch it on by hand',
     'Ablüfter konnte nicht automatisch ausgeschaltet werden – bitte von Hand ausschalten': 'The exhaust fan could not be switched off automatically – please switch it off by hand',
     'Automatische Lüftung abgeschlossen': 'Automatic airing finished',
+    'Gemeinsamer Ablüfter läuft für einen anderen Raum weiter – FreshAirIQ schaltet ihn danach aus': 'Shared exhaust fan keeps running for another room – FreshAirIQ switches it off afterwards',
+    'Gemeinsamer Ablüfter läuft – FreshAirIQ steuert ihn über einen anderen Raum': 'Shared exhaust fan running – FreshAirIQ controls it through another room',
+    'Ablüfter wird gerade von einer anderen Automation gesteuert – FreshAirIQ schaltet ihn nicht aus': 'The exhaust fan is controlled by another automation right now – FreshAirIQ does not switch it off',
     'Zum Kühlen lüften': 'Air for cooling',
     'Bitte nicht lüften': 'Please do not air',
     'Alles in Ordnung': 'All good',
@@ -342,6 +348,8 @@ EXACT: dict[str, str] = {
     'Jetzt passt der Zeitpunkt zum Lüften.': 'Now is the right time to ventilate.',
     'Jetzt querlüften': 'Cross-ventilate now',
     'Jetzt schließen': 'Close now',
+    'Einzelne Räume schließen': 'Close single rooms',
+    'Ein Raum hat sein eigenes Schließkriterium erreicht; die übrigen geöffneten Räume lüften weiter.': 'One room has reached its own close criterion; the other open rooms keep airing.',
     'Jetzt schließen – der Zusatznutzen wird klein': 'Close now – the extra benefit is getting small',
     'Kein relevanter Lüftungsbedarf': 'No relevant need to ventilate',
     'Keine Aktion erforderlich': 'No action required',
@@ -604,6 +612,12 @@ EXACT: dict[str, str] = {
     '{name}: Schimmelrisiko gesunken auf {label}{surface}.': '{name}: mould risk down to {label}{surface}.',
     'Abkühlen auf die Zieltemperatur': 'Cooling towards the target temperature',
     'Die Außenluft ist deutlich kühler und bringt keine Feuchte herein; der Raum liegt noch über seiner Komfort-Zieltemperatur.': 'The outdoor air is clearly cooler and brings in no moisture; the room is still above its comfort target temperature.',
+    # notification hotfix: action titles of room messages
+    'Kühlen': 'Cool down',
+    'Lüfter ausschalten': 'Switch off the fan',
+    'Lüfter einschalten': 'Switch on the fan',
+    'Lüfter prüfen': 'Check the fans',
+    'Automatische Lüftung': 'Automatic airing',
 }
 
 # Templates with interpolated values (split out to keep both tables manageable).

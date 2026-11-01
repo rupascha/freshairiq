@@ -74,9 +74,11 @@ def test_csv_single_airings():
     events = [EVENTS[0], EVENTS[2], _event("2026-10-21T08:00:00+02:00", 5, "=SUMME(A1)", 20, cross_ventilation=True, recommendation_followed=None)]
     rows = _rows(ventilation_csv(events, date(2026, 10, 20), date(2026, 10, 21), TZ, language="de", daily=False), ";")
     assert rows[0][:6] == ["Datum", "Beginn", "Ende", "Raum", "Dauer (min)", "Entfernte Feuchte (ml)"]
-    assert rows[1] == ["2026-10-20", "07:00", "07:10", "Bad", "10,0", "150", "ja", "21,0", "19,5", "64", "55", "11,81", "9,40", "nein", "ja"]
+    # audit F02/G01 (0.26.5.5): columns appended (version, forecast formula, start version, test formula, both
+    # errors); empty for airings logged without them
+    assert rows[1] == ["2026-10-20", "07:00", "07:10", "Bad", "10,0", "150", "ja", "21,0", "19,5", "64", "55", "11,81", "9,40", "nein", "ja", "", "", "", "", "", ""]
     assert rows[2][5:7] == ["", "nein"]  # not measured: no moisture value
-    assert rows[3][3] == "'=SUMME(A1)" and rows[3][13:] == ["ja", ""]
+    assert rows[3][3] == "'=SUMME(A1)" and rows[3][13:] == ["ja", "", "", "", "", "", "", ""]
     en = _rows(ventilation_csv([EVENTS[0], {"started_at": None}], date(2026, 10, 20), date(2026, 10, 20), TZ, language="en", daily=False), ",")
     assert en[1][4:7] == ["10.0", "150", "yes"] and en[2][:3] == ["", "", ""]
 

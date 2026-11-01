@@ -24,8 +24,10 @@ FAN_ON_RECOMMENDATIONS = frozenset({"ventilate", "continue_ventilating", "ventil
 # FreshAirIQ carries out the action itself: no manual instruction for these.
 # "completed": FreshAirIQ switched the fan off itself (e.g. maximum runtime) -
 # the close is already carried out, no "switch off the fan" for the user.
-AUTO_STOP_STATES = frozenset({"stopping", "follow_up", "source", "completed"})
-AUTO_START_STATES = frozenset({"recommended", "requested", "running", "waiting", "partial"})
+# 0.26.5.5: "shared" – the fan runs for another room's control (FreshAirIQ switches it, not the user);
+# "external" – another automation (Alexa, washing machine …) controls it: no request to the user either.
+AUTO_STOP_STATES = frozenset({"stopping", "follow_up", "source", "completed", "shared", "external"})
+AUTO_START_STATES = frozenset({"recommended", "requested", "running", "waiting", "partial", "shared", "external"})
 
 _LABELS = {
     "recommended": "Automatische Lüftung empfohlen – Ablüfter wird automatisch eingeschaltet",
@@ -33,12 +35,17 @@ _LABELS = {
     "running": "Automatische Lüftung läuft",
     "waiting": "Automatische Lüftung startet nach der Pause",
     "stopping": "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung",
+    # hotfix F3: the goal is reached, the switch-off is not sent yet (confirmation time)
+    "stop_check": "Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus",
     "source": "Ablüfter läuft wegen erkannter Feuchtequelle",
     "follow_up": "Feuchtequelle beendet – automatische Nachlaufzeit aktiv",
     "failed_on": "Ablüfter konnte nicht automatisch eingeschaltet werden – bitte von Hand einschalten",
     "partial": "Nicht alle Ablüfter sind angesprungen – bitte die übrigen prüfen",
     "failed_off": "Ablüfter konnte nicht automatisch ausgeschaltet werden – bitte von Hand ausschalten",
     "completed": "Automatische Lüftung abgeschlossen",
+    "shared_for": "Gemeinsamer Ablüfter läuft für einen anderen Raum weiter – FreshAirIQ schaltet ihn danach aus",
+    "shared_owner": "Gemeinsamer Ablüfter läuft – FreshAirIQ steuert ihn über einen anderen Raum",
+    "external": "Ablüfter wird gerade von einer anderen Automation gesteuert – FreshAirIQ schaltet ihn nicht aus",
 }
 COMPLETED_LABEL = _LABELS["completed"]
 _LABELS_EN = {
@@ -47,12 +54,16 @@ _LABELS_EN = {
     "running": "Automatic airing is running",
     "waiting": "Automatic airing starts after the pause",
     "stopping": "Airing goal reached – FreshAirIQ ends the airing",
+    "stop_check": "Airing goal reached – FreshAirIQ checks briefly and then ends the airing",
     "source": "Exhaust fan runs because of a detected moisture source",
     "follow_up": "Moisture source ended – automatic follow-up time running",
     "failed_on": "The exhaust fan could not be switched on automatically – please switch it on by hand",
     "partial": "Not every exhaust fan came on – please check the others",
     "failed_off": "The exhaust fan could not be switched off automatically – please switch it off by hand",
     "completed": "Automatic airing finished",
+    "shared_for": "Shared exhaust fan keeps running for another room – FreshAirIQ switches it off afterwards",
+    "shared_owner": "Shared exhaust fan running – FreshAirIQ controls it through another room",
+    "external": "The exhaust fan is controlled by another automation right now – FreshAirIQ does not switch it off",
 }
 
 
@@ -103,6 +114,9 @@ def room_fan_automation(room: dict[str, Any], snapshot: dict[str, Any] | None) -
         "user_action_needed": state in {"failed", "manual", "manual_off", "partial"},
         "label": _LABELS.get(label_key) if label_key else None,
         "label_key": label_key,
+        # 0.26.5.5: fixed points in time for a real countdown – only while the follow-up runs
+        "follow_up_until": snap.get("follow_up_until") if fan_on and state in {"follow_up", "shared"} else None,
+        "runtime_limit_at": snap.get("runtime_limit_at") if fan_on else None,
         **_group(snap),
     }
 
@@ -112,16 +126,39 @@ def _group(snap: dict[str, Any]) -> dict[str, Any]:
     if "fans_total" not in snap:
         return {}
     total, on = int(snap["fans_total"]), int(snap.get("fans_on") or 0)
-    return {"fans_total": total, "fans_on": on, "group_incomplete": 0 < on < total}
+    return {"fans_total": total, "fans_on": on, "group_incomplete": 0 < on < total, "fans_unknown": int(snap.get("fans_unknown") or 0)}
 
 
 def _state(mode, fan_on, owned, aligned, room, snap, command, command_state) -> tuple[str, str | None]:
+    if snap.get("external_lock"):
+        return "external", "external"
+    failed = snap.get("own_off") == "failed" or (command_state == "failed" and ((command == "on" and not fan_on) or (command == "off" and fan_on)))
+    shared = None if failed else _shared_state(fan_on, owned, aligned, room, snap)
+    return shared if shared is not None else _own_state(mode, fan_on, owned, aligned, room, snap, command, command_state)
+
+
+def _shared_state(fan_on, owned, aligned, room, snap) -> tuple[str, str] | None:
+    """0.26.5.5 (community diagnosis): a fan several rooms share has one owner – the other rooms
+    show it as FreshAirIQ's, never as switched on by hand ("manual" asked the user to act)."""
+    if not fan_on:
+        return None
+    if not owned and snap.get("shared_owner"):
+        return "shared", "shared_owner"
+    if owned and snap.get("shared_for") and aligned not in FAN_ON_RECOMMENDATIONS and not room.get("moisture_source_active"):
+        return "shared", "shared_for"
+    return None
+
+
+def _own_state(mode, fan_on, owned, aligned, room, snap, command, command_state) -> tuple[str, str | None]:
     if snap.get("own_off") == "failed":
         return "failed", "failed_off"  # audit N01: the room's own fan did not go off (a shared one runs on)
     if command_state == "failed" and ((command == "on" and not fan_on) or (command == "off" and fan_on)):
         return "failed", f"failed_{command}"
     if command == "on" and command_state == "pending" and owned:
         return "requested", "requested"
+    if command == "off" and not fan_on and command_state != "confirmed" and int(snap.get("fans_unknown") or 0):
+        # hotfix F3: the others are off, but a fan without a state is not – never "completed"
+        return ("failed", "failed_off") if command_state == "failed" else ("stopping", "stopping")
     if command == "off" and command_state == "pending" and fan_on:
         # 0.26.5.4 (review A02): FreshAirIQ's own switch-off, not yet reported by the device – not "manual"
         return "stopping", "stopping"
@@ -129,7 +166,8 @@ def _state(mode, fan_on, owned, aligned, room, snap, command, command_state) -> 
         if mode == "moisture_source":
             running = ("source", "source") if room.get("moisture_source_active") else ("follow_up", "follow_up")
         else:
-            running = ("running", "running") if aligned in FAN_ON_RECOMMENDATIONS else ("stopping", "stopping")
+            # hotfix F3: no switch-off sent yet (it waits for its confirmation) – "stop_check", not "stopping"
+            running = ("running", "running") if aligned in FAN_ON_RECOMMENDATIONS else ("stopping", "stop_check")
         if running[0] != "stopping" and command_state == "partial" and _group(snap).get("group_incomplete"):
             return "partial", "partial"  # audit S08: not every fan came on – never shown as "running"
         return running

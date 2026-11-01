@@ -23,3 +23,17 @@ export async function loadCard(page, html) {
   await page.addScriptTag({ url: `${ORIGIN}/freshairiq-card.js`, type: 'module' });
   await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
 }
+
+// Any frontend module (e.g. the loader with the optional house map card).
+export async function loadModule(page, html, file, tag) {
+  await page.route(`${ORIGIN}/**`, route => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: html });
+    const target = path.join(FRONTEND, path.basename(url.pathname));
+    if (!fs.existsSync(target)) return route.fulfill({ status: 404, body: '' });
+    return route.fulfill({ path: target, contentType: target.endsWith('.js') ? 'text/javascript' : 'application/octet-stream' });
+  });
+  await page.goto(`${ORIGIN}/`);
+  await page.addScriptTag({ url: `${ORIGIN}/${file}`, type: 'module' });
+  await page.waitForFunction(name => !!customElements.get(name), tag);
+}

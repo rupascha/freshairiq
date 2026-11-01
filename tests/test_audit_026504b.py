@@ -105,10 +105,12 @@ def _decide(mem, *, fan_on, seconds, demand=True, all_on=None):
 def test_a_partial_group_start_keeps_the_fans_and_stops_them_later() -> None:
     mem: dict = {}
     assert _decide(mem, fan_on=False, all_on=False, seconds=0) == "on"
-    assert _decide(mem, fan_on=True, all_on=False, seconds=FAN_COMMAND_TIMEOUT_S + 1) is None
+    # corrected (hotfix F4): the fan that did not come on is asked once more before "partial"
+    assert _decide(mem, fan_on=True, all_on=False, seconds=FAN_COMMAND_TIMEOUT_S + 1) == "on"
+    assert _decide(mem, fan_on=True, all_on=False, seconds=2 * FAN_COMMAND_TIMEOUT_S + 2) is None
     assert mem["command_state"] == "partial" and mem["owned"] is True and not mem.get("blocked") and mem["reason"] == "partial_start"
     # the demand ends: FreshAirIQ switches off what it switched on
-    assert _decide(mem, fan_on=True, all_on=False, seconds=FAN_COMMAND_TIMEOUT_S + 100, demand=False) == "off"
+    assert _decide(mem, fan_on=True, all_on=False, seconds=2 * FAN_COMMAND_TIMEOUT_S + 100, demand=False) == "off"
 
 
 def test_a_start_where_no_fan_came_on_still_fails() -> None:

@@ -62,3 +62,19 @@ test('a fan room without a window asks for the fan', async ({ page }) => {
   await mount(page, { wk: laundry }, 'en');
   expect(await text(page)).toContain('Switch on the exhaust fan');
 });
+
+// 0.26.5.5 (community diagnosis): a real follow-up countdown from the fan control's end time
+test('a running follow-up counts down; no countdown without an end time or after it', async ({ page }) => {
+  const until = new Date(Date.now() + 4.5 * 60000).toISOString();
+  const label = 'Feuchtequelle beendet – automatische Nachlaufzeit aktiv';
+  await mount(page, { garage: garage({ state: 'follow_up', label, follow_up_until: until }) });
+  expect(await text(page)).toContain(`${label} · Nachlauf noch 5 min`);
+  await mount(page, { garage: garage({ state: 'follow_up', label, follow_up_until: new Date(Date.now() - 60000).toISOString() }) });
+  expect(await text(page)).not.toContain('Nachlauf noch');
+  await mount(page, { garage: garage({ state: 'shared', label: 'Gemeinsamer Ablüfter läuft für einen anderen Raum weiter – FreshAirIQ schaltet ihn danach aus', follow_up_until: null }) });
+  const shared = await text(page);
+  expect(shared).toContain('Gemeinsamer Ablüfter läuft für einen anderen Raum weiter');
+  expect(shared).not.toContain('Lüfter ausschalten');
+  await mount(page, { garage: garage({ state: 'follow_up', label, follow_up_until: until }) }, 'en');
+  expect(await text(page)).toContain('follow-up 5 min left');
+});

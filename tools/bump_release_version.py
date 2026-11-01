@@ -25,6 +25,8 @@ AUTHORITATIVE_TARGETS = (
     ROOT / 'custom_components/freshairiq/frontend/freshairiq-card.js',
     ROOT / 'custom_components/freshairiq/frontend/freshairiq-panel.js',
     ROOT / 'custom_components/freshairiq/frontend/freshairiq-loader.js',
+    ROOT / 'custom_components/freshairiq/frontend/freshairiq-house-card.js',
+    ROOT / 'custom_components/freshairiq/frontend/freshairiq-house-editor.js',
 )
 
 

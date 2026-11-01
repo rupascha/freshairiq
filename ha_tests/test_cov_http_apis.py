@@ -335,6 +335,11 @@ async def test_support_diagnostics_view(hass, api, aioclient_mock, monkeypatch) 
     response = await api.post("/api/freshairiq/support-diagnostics", json={"message": "x" * 5000})
     assert response.status == 400
     assert (await response.json()) == {"error": "support_message_too_long", "error_code": "FAIQ-SUPPORT-VALIDATION-001"}
+    # 0.26.5.5: a send without a description is refused before anything is collected or uploaded.
+    for body in ({}, {"message": ""}, {"message": "   kurz   "}):
+        response = await api.post("/api/freshairiq/support-diagnostics", json=body)
+        assert response.status == 400
+        assert (await response.json()) == {"error": "support_message_required", "error_code": "FAIQ-SUPPORT-VALIDATION-001"}
 
     aioclient_mock.post(f"{HUB}/v1/support/diagnostics", status=503)
     aioclient_mock.post(f"{HUB}/v1/client-errors", status=500)
@@ -349,7 +354,7 @@ async def test_support_diagnostics_view(hass, api, aioclient_mock, monkeypatch) 
     assert response.status == 200
     body = await response.json()
     assert body["accepted"] is True and body["support_case_id"].startswith("support-")
-    response = await api.post("/api/freshairiq/support-diagnostics", json={})
+    response = await api.post("/api/freshairiq/support-diagnostics", json={"message": "Bitte nochmal"})  # 0.26.5.5: {} is refused now
     assert response.status == 429
     assert (await response.json())["reason"] == "cooldown"
 

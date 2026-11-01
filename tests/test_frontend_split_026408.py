@@ -27,7 +27,8 @@ def test_english_tables_moved_out_of_the_card():
 def test_card_loads_english_on_demand_and_waits_only_for_the_first_paint():
     assert 'const FAIQ_EN_MODULE = "freshairiq-card-i18n-en.js";' in CARD
     assert "import(url).then(mod => {" in CARD
-    assert "new URL(`./${FAIQ_EN_MODULE}?v=${FAIQ_VERSION}`, import.meta.url).href" in CARD
+    # Hotfix 31.10.: with the card's own query (version + build revision), see test_freshy_026408
+    assert "new URL(`./${FAIQ_EN_MODULE}${FAIQ_Q}`, import.meta.url).href" in CARD
     assert "if (faiqLikelyEnglish()) faiqLoadEnglish().catch(() => {});" in CARD
     assert "for (const [de, en] of (FAIQ_EN_RULES || []))" in CARD
     render = CARD[CARD.index("    _render() {"):CARD.index("    _handleRenderFailure(")]

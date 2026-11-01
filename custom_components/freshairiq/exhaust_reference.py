@@ -13,6 +13,9 @@ from typing import Any
 
 # 0.26.5.4: tells which air "Außen-/Referenzluft" means in the room's reasons
 NEIGHBOUR_REFERENCE_REASON = "Vergleichsluft ist die Zuluft aus dem Nebenraum (Ablüfter), nicht die Außenluft"
+# 0.26.5.5: why the neighbouring-room humidity is not used (a sensor in another unit than %, e.g. g/m³)
+REFERENCE_UNIT_REASON = ("Feuchtesensor des Nebenraums meldet keine relative Feuchte in % (z. B. absolute Feuchte in g/m³) – "
+                         "Wert wird nicht verwendet, bitte in der Raumeinrichtung einen Sensor für relative Feuchte wählen")
 
 
 def exhaust_reference_pair(room: dict[str, Any]) -> tuple[str, str] | None:

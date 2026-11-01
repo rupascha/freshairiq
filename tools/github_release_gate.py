@@ -92,6 +92,8 @@ def _check_common(paths: set[str], read_text, errors: list[str]) -> str | None:
         "custom_components/freshairiq/frontend/freshairiq-card.js": f'const FAIQ_VERSION = "{version}";',
         "custom_components/freshairiq/frontend/freshairiq-panel.js": f'const FAIQ_VERSION = "{version}";',
         "custom_components/freshairiq/frontend/freshairiq-loader.js": f'const FAIQ_VERSION = "{version}";',
+        "custom_components/freshairiq/frontend/freshairiq-house-card.js": f'const FAIQ_VERSION = "{version}";',
+        "custom_components/freshairiq/frontend/freshairiq-house-editor.js": f'const FAIQ_VERSION = "{version}";',
         "quality/quality_policy.json": f'"version": "{version}"',
         "package.json": f'"version": "{version}"',
         "package-lock.json": f'"version": "{version}"',

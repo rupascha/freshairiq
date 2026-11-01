@@ -29,7 +29,7 @@ def _check_version_contract(version: str) -> list[str]:
     const = (COMP / "const.py").read_text(encoding="utf-8")
     if not re.search(rf'^VERSION\s*=\s*[\"\']{re.escape(version)}[\"\']', const, re.M):
         failures.append("const.py VERSION differs from manifest")
-    for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
+    for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js", "freshairiq-house-card.js", "freshairiq-house-editor.js"):
         text = (COMP / "frontend" / name).read_text(encoding="utf-8")
         if f'const FAIQ_VERSION = "{version}";' not in text:
             failures.append(f"frontend version differs: {name}")

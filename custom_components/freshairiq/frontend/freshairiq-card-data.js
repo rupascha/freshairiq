@@ -185,3 +185,36 @@ export const FAIQ_EXPORT_METHODS = {
         } finally { if (button && original) button.innerHTML = original; }
     },
 };
+
+// 0.26.5.5: house map card and "Darstellung: Hauskarte" (freshairiq-card-house.js). Awaited here so it is
+// ready before freshairiq-card.js defines its elements; a failure never blocks the card.
+try {
+    await import(new URL(`./freshairiq-card-house.js${new URL(import.meta.url).search}`, import.meta.url).href);
+} catch (error) {
+    console.error("FreshAirIQ house map registration failed", error);
+}
+// 0.26.5.5: passive test of a new moisture formula, a section in "Wie gut FreshAirIQ aktuell vorhersagt".
+// Hotfix (31.10.): a failed download no longer hides the section silently – it stays visible with the reason.
+try {
+    await import(new URL(`./freshairiq-card-shadow.js${new URL(import.meta.url).search}`, import.meta.url).href);
+} catch (error) {
+    console.error("FreshAirIQ formula test section failed", error);
+    customElements.whenDefined("freshairiq-card").then(() => shadowLoadFailed(customElements.get("freshairiq-card"), error));
+}
+export function shadowLoadFailed(cls, error) {
+    const proto = cls && cls.prototype;
+    if (!proto || proto.__faiqShadow || typeof proto._learningPanel !== "function") return;
+    proto.__faiqShadow = "failed";
+    const learningPanel = proto._learningPanel;
+    proto._learningPanel = function (st) {
+        const html = learningPanel.call(this, st);
+        const end = this._info === "learning:quality" && typeof html === "string" ? html.lastIndexOf("</section>") : -1;
+        if (end < 0) return html;
+        const en = typeof this._uiLanguage === "function" && this._uiLanguage() === "en";
+        const reason = String((error && error.message) || error || "").replace(/[&<>"']/g, " ").slice(0, 160);
+        const text = en
+            ? ["Experiment: new moisture formula (passive test)", "This section could not be loaded on this device. Please reload the page (in the app: pull down or restart the app).", "Error code FAIQ-UI-SHADOW-001"]
+            : ["Experiment: Neue Feuchteformel (passiver Test)", "Dieser Abschnitt konnte auf diesem Gerät nicht geladen werden. Bitte die Seite neu laden (in der App: nach unten ziehen oder die App neu starten).", "Fehlercode FAIQ-UI-SHADOW-001"];
+        return html.slice(0, end) + `<div class="learning-overview-note faiq-shadow-test faiq-shadow-failed" role="alert" style="overflow-wrap:anywhere"><ha-icon icon="mdi:alert-circle-outline"></ha-icon><span><b>${text[0]}</b><br>${text[1]}<br><small>${text[2]}${reason ? ` · ${reason}` : ""}</small></span></div>` + html.slice(end);
+    };
+}

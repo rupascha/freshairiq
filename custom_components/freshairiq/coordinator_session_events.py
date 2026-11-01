@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_ROOM_FLOOR, CONF_ROOM_SORT_ORDER, CONF_ROOM_VOLUME, FLOOR_GROUND
+from .forecast_shadow import shadow_forecast_record
 from .robustness import finite_float
 
 
@@ -98,6 +99,9 @@ class SessionEventsMixin:
             "prediction_time_aligned": False,
             "prediction_measurement_duration_min": None,
             "prediction_comparable": False,
+            "shadow_forecast": shadow_forecast_record(
+                mem.get("session_prediction_start_context"), horizon_min=None, production_predicted_ml=None,
+                measured_removed_ml=None, comparable=False, time_aligned=False, no_measurement=True),
             "forecast_timeline": list(mem.get("session_forecast_timeline") or []) + [{
                 "kind": "end",
                 "checkpoint_min": round(elapsed, 3),
@@ -247,6 +251,7 @@ class SessionEventsMixin:
             "prediction_measurement_duration_min": round(validation_elapsed, 3),
             "prediction_comparable": bool(prediction_comparable),
             "learning_effectiveness": learning_effectiveness_sample,
+            "shadow_forecast": shadow_forecast_record(mem.get("session_prediction_start_context"), horizon_min=validation_elapsed, production_predicted_ml=mem.get("session_predicted_removed_ml"), measured_removed_ml=validation_removed, comparable=bool(prediction_comparable), time_aligned=bool(prediction_time_aligned), contaminated=bool(source_contaminated), reference_reversal=bool(reference_moisture_reversal), cross_ratio=cross_ratio, quarantined=bool(mem.get("session_learning_quarantined"))),  # passive shadow formula: same frozen start, same measured duration
             "learning_observation": mem.pop("session_learning_observation", None),
             "forecast_timeline": list(mem.get("session_forecast_timeline") or []) + [{
                 "kind": "end",

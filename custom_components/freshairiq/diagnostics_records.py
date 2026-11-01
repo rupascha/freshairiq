@@ -431,6 +431,7 @@ class DiagnosticsRecordsMixin:
                 "forecast_backtest_samples": _collection_size(data.get("forecast_backtest")),
             },
             "learning_effectiveness": _json_safe(data.get("learning_effectiveness") or {}),
+            "forecast_shadow_comparison": _json_safe(data.get("forecast_shadow_comparison") or {}),
             "learning_v2": _json_safe(data.get("learning_v2") or {}),
             "learning_components": _json_safe(_compact_learning_components(data.get("learning_components"))),
             "learning": {

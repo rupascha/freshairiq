@@ -3,7 +3,7 @@
   "evening_ventilation_and_night": {
    "cycles": [
     {
-     "all": "c087b819c4ae488a",
+     "all": "0918298872769fd7",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -41,6 +41,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -153,7 +154,7 @@
      "store": "aac29616779774a7"
     },
     {
-     "all": "3523f5cc545d5bcd",
+     "all": "047d7e30553ae7ce",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -191,6 +192,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -270,7 +272,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "accd5517cc48df3d",
+      "rooms": "253ee677e252c03e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "32d793354e7a685f",
       "runtime_robustness": "ed027e3757180140",
@@ -303,7 +305,7 @@
      "store": "60c09a110b231ba2"
     },
     {
-     "all": "3e81734439c90e5b",
+     "all": "b9f9d3b0215ccfe8",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -341,6 +343,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -420,7 +423,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8b27c4e88b430eb4",
+      "rooms": "8e50ecf8b435deb8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8ddaec29c62dc16c",
       "runtime_robustness": "4bd5d87c75704ea7",
@@ -453,7 +456,7 @@
      "store": "4d0c2e7deeb70076"
     },
     {
-     "all": "b4fca48c90f1ab33",
+     "all": "ccbb7c949fcd774d",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -491,6 +494,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -570,7 +574,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "57b2de18f2929586",
+      "rooms": "357c83252cbfda5c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "41b003613257c871",
       "runtime_robustness": "31899a6cfcb54135",
@@ -603,7 +607,7 @@
      "store": "0abf85ab47b2be47"
     },
     {
-     "all": "18a7c868ada17b58",
+     "all": "3caaf087f6b72185",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -641,6 +645,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -720,7 +725,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ca249f24d9a36230",
+      "rooms": "12f156e7a99688ee",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "db537a4cd7a6db02",
       "runtime_robustness": "c1c2574d9f39e6c8",
@@ -753,7 +758,7 @@
      "store": "03b6b6ad7cd0be21"
     },
     {
-     "all": "1b50bb1e65e4b7cd",
+     "all": "0e0c2fcd4d283734",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -791,6 +796,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "b7a56873cd771f2c",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b785c56e32f33774",
       "forecast_uncapped_moisture_effect_ml": "b7a56873cd771f2c",
@@ -870,7 +876,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "228699709084e4f1",
+      "rooms": "42288aa3f5674ba0",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "36535a3dd0a694a2",
       "runtime_robustness": "af063c6ec3c0026d",
@@ -900,10 +906,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window open",
-     "store": "0be15f37e9fee116"
+     "store": "c1c2daae980c2757"
     },
     {
-     "all": "c26cf2ffda0f76d4",
+     "all": "8cad20d866fadff2",
      "keys": {
       "actionable_potential_ml": "5ef6fdf32513aa7c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -941,6 +947,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "c2356069e9d1e79c",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b19acc97f88c41c0",
       "forecast_uncapped_moisture_effect_ml": "c2356069e9d1e79c",
@@ -1020,7 +1027,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5b32baf1e5a2c1a6",
+      "rooms": "c2e648274b2a9f15",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b7a05d5ee0db8fa",
       "runtime_robustness": "29f115f556de70e4",
@@ -1050,10 +1057,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 1",
-     "store": "7a9d784fe4d621ea"
+     "store": "a030dac18d76941e"
     },
     {
-     "all": "97d09d0981f4bf03",
+     "all": "8aacbed7fd3114a0",
      "keys": {
       "actionable_potential_ml": "454f63ac30c83229",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1091,6 +1098,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "785f3ec7eb32f30b",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "98e1c754c1876bb6",
       "forecast_uncapped_moisture_effect_ml": "785f3ec7eb32f30b",
@@ -1170,7 +1178,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3f9b147d7198bcf0",
+      "rooms": "e82f2ef275f6c5bb",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf0dbbf849011a65",
       "runtime_robustness": "6175c0cc419e351a",
@@ -1200,10 +1208,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 2",
-     "store": "bb47deadb0763f0a"
+     "store": "cbeca0b56b017a56"
     },
     {
-     "all": "7051cbf94cad0201",
+     "all": "b9bd060c7801c3bd",
      "keys": {
       "actionable_potential_ml": "16dc368a89b428b2",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1241,6 +1249,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "6f4b6612125fb3a0",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "e37496d7f9f25582",
       "forecast_uncapped_moisture_effect_ml": "6f4b6612125fb3a0",
@@ -1320,7 +1329,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7d5a4310cdb828dd",
+      "rooms": "89bbacfcb5afd54f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "536c0b72bc2a091b",
       "runtime_robustness": "8e834cfa984cf8de",
@@ -1350,10 +1359,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 3",
-     "store": "ab8483c669c65849"
+     "store": "807080824cb27673"
     },
     {
-     "all": "81401303a923c878",
+     "all": "3b0da714d62cca98",
      "keys": {
       "actionable_potential_ml": "ad57366865126e55",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1391,6 +1400,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "f5ca38f748a1d6ea",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "0a526f2a1505c0ff",
       "forecast_uncapped_moisture_effect_ml": "f5ca38f748a1d6ea",
@@ -1470,7 +1480,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c6ffd96db920ff27",
+      "rooms": "a4364b9b233fdbc3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "dcc4dc3ff1cffd4b",
       "runtime_robustness": "9046ea0934315e89",
@@ -1500,10 +1510,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 4",
-     "store": "103a525faf0e0baf"
+     "store": "c19c2b6318a11cad"
     },
     {
-     "all": "4e70f54e629e938d",
+     "all": "e33e1cd29d1f1e89",
      "keys": {
       "actionable_potential_ml": "8c1f1046219ddd21",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1541,6 +1551,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "9400f1b21cb527d7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "d8d6df831af54354",
       "forecast_uncapped_moisture_effect_ml": "9400f1b21cb527d7",
@@ -1620,7 +1631,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6d9371ae846f559e",
+      "rooms": "fdf86bcfb43de700",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f339fd9756d3812a",
       "runtime_robustness": "62001acfbfdb8e07",
@@ -1650,10 +1661,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 5",
-     "store": "689fd3a6cb0bc9af"
+     "store": "694088f57f8e4013"
     },
     {
-     "all": "987ec3991f83967a",
+     "all": "278086fcba161476",
      "keys": {
       "actionable_potential_ml": "29db0c6782dbd500",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1691,6 +1702,7 @@
       "forecast_live_observation_weight": "52e4d55cf700422d",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "0229989018e1323e",
       "forecast_uncapped_moisture_effect_ml": "4ec9599fc203d176",
@@ -1770,7 +1782,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "433d2ed27978e512",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2f72284194208913",
+      "rooms": "f2a16549a6915c30",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e2faaaf10dbd59f6",
       "runtime_robustness": "584a0f5b2c35c096",
@@ -1800,10 +1812,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 6",
-     "store": "901f7f55901e9c96"
+     "store": "0460882d1b2b0304"
     },
     {
-     "all": "9f56a062a5516e11",
+     "all": "903b4b5609a9cb3a",
      "keys": {
       "actionable_potential_ml": "d6d824abba4afde8",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1841,6 +1853,7 @@
       "forecast_live_observation_weight": "30be679025b58a1e",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "4523540f1504cd17",
@@ -1920,7 +1933,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "3e8acbd32dad939b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b11b015cc52caaf0",
+      "rooms": "314d8bd6ad0553e1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6cf35b2c1e395ce9",
       "runtime_robustness": "c99f3f74a560520f",
@@ -1950,10 +1963,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 7",
-     "store": "470dd1b7d22ee720"
+     "store": "3e725a2c547b4ab2"
     },
     {
-     "all": "a26618c17cf970d7",
+     "all": "acf94c67767cd6d9",
      "keys": {
       "actionable_potential_ml": "7b1a278f5abe8e9d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1991,6 +2004,7 @@
       "forecast_live_observation_weight": "5211920a953abd41",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "68a62933d637fcfe",
       "forecast_uncapped_moisture_effect_ml": "b17ef6d19c7a5b1e",
@@ -2070,7 +2084,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1828d146679f42b8",
+      "rooms": "a2504c60e98e4387",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3b3109139a92478b",
       "runtime_robustness": "b9ee76288d12dcba",
@@ -2100,10 +2114,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 8",
-     "store": "cd92c42fbfb69c82"
+     "store": "699b369560f6160d"
     },
     {
-     "all": "d60454b845af3edf",
+     "all": "839ab1af766dae07",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2141,6 +2155,7 @@
       "forecast_live_observation_weight": "69be8fc1781b9aaf",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "a91a4e7764d58cbc",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -2220,7 +2235,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "3e8acbd32dad939b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d45848be436ff125",
+      "rooms": "4b2833d8a66b9b40",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8fd33fe261916427",
       "runtime_robustness": "83416cc5a28d64cc",
@@ -2250,10 +2265,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 9",
-     "store": "b55ffc87b16c5ea2"
+     "store": "00fa16cd1b621953"
     },
     {
-     "all": "fd1c34d31e224cbf",
+     "all": "40cfc093d70b02fb",
      "keys": {
       "actionable_potential_ml": "e3d6c4d4599e0088",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2291,6 +2306,7 @@
       "forecast_live_observation_weight": "ee67062321af9f78",
       "forecast_moisture_effect_ml": "4523540f1504cd17",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "75894aa01d7bcf6d",
       "forecast_uncapped_moisture_effect_ml": "8527a891e2241369",
@@ -2370,7 +2386,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bb333fe71a98540f",
+      "rooms": "775ff6a0b8d57388",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7a1ac79ce6e853d0",
       "runtime_robustness": "183527c6a35fb29d",
@@ -2400,10 +2416,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 10",
-     "store": "2156ddcb2ce05ed1"
+     "store": "8e9a5b5c56563055"
     },
     {
-     "all": "986756066890ad48",
+     "all": "b1bad6c2ca1149bb",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2441,6 +2457,7 @@
       "forecast_live_observation_weight": "bef8ceaaa0e4d01b",
       "forecast_moisture_effect_ml": "4523540f1504cd17",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "d584a0f7e5f3e79e",
       "forecast_uncapped_moisture_effect_ml": "3fdba35f04dc8c46",
@@ -2520,7 +2537,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "00dc72efd297c01e",
+      "rooms": "d15e26b6b62d9fc5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "365374ee0c913ef8",
       "runtime_robustness": "c3391ce856cb1f86",
@@ -2550,10 +2567,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 11",
-     "store": "770cbf97416f10e2"
+     "store": "b3e39c7632247f95"
     },
     {
-     "all": "ba4023816a4a37d4",
+     "all": "548eb251c08c5525",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2591,6 +2608,7 @@
       "forecast_live_observation_weight": "3bbc96ce85f6a11c",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "8de8dcc378529e03",
       "forecast_uncapped_moisture_effect_ml": "4fc82b26aecb47d2",
@@ -2670,7 +2688,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "5fcaaa5150b122cd",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a4a28a77d3938ff6",
+      "rooms": "b00b4a9e928eb26f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "979d3963472ee30a",
       "runtime_robustness": "badf571473761219",
@@ -2700,10 +2718,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 12",
-     "store": "7fad299030dfa451"
+     "store": "c4e8576b7a4f1ed8"
     },
     {
-     "all": "f08b081bfb8cacf5",
+     "all": "146ffa6dc60eff4b",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2741,6 +2759,7 @@
       "forecast_live_observation_weight": "51165ae1ea9dd1bf",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "8de8dcc378529e03",
       "forecast_uncapped_moisture_effect_ml": "4fc82b26aecb47d2",
@@ -2760,7 +2779,7 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "bf335c1917f0d30a",
+      "intelligent_recommendation": "373e32ed0a982ab6",
       "iq_state": "8af6010ebecd20c1",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
@@ -2820,7 +2839,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "5c91a1ba11dbd43a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "038f40d806854d2e",
+      "rooms": "c4e0540547023b2f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "21d5bf759c22e809",
       "runtime_robustness": "612fae74d584a339",
@@ -2850,10 +2869,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window closed",
-     "store": "77cf00da42711168"
+     "store": "bbd565957bf49d28"
     },
     {
-     "all": "a75705e90c08fb7f",
+     "all": "cfa56f6c05da1cd2",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2891,6 +2910,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "6b51d431df5d7f14",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "166a4ba2550cc3da",
       "forecast_uncapped_moisture_effect_ml": "6b51d431df5d7f14",
@@ -2970,7 +2990,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5c91a1ba11dbd43a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2e38b38e31f7face",
+      "rooms": "170df5a7276d8ad5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "edf80c7a3a54d7c7",
       "runtime_robustness": "2443723f489576e1",
@@ -3000,10 +3020,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 1",
-     "store": "a499c62fa3b3d739"
+     "store": "7a747a36680c2139"
     },
     {
-     "all": "66540d82c9c7c219",
+     "all": "67fb9cb6f0281ecd",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3041,10 +3061,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "9a3d59ba189f4980",
       "guardian": "c1c4f3f043a34045",
@@ -3120,7 +3141,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "09add1dcff7b2b30",
+      "rooms": "bd50ac78426816ac",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a521ae68d95f0e4f",
       "runtime_robustness": "4c62611656eefc89",
@@ -3150,10 +3171,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 2",
-     "store": "ebe226b07676db6e"
+     "store": "473b51b50f32576b"
     },
     {
-     "all": "8e116b0af7e96d15",
+     "all": "531241da7337bfd5",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3191,10 +3212,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "0340d1cb19f0ab37",
       "guardian": "c1c4f3f043a34045",
@@ -3270,7 +3292,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bbb81baeb28b1cce",
+      "rooms": "4c848d1e974951f4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "431a961b86aefbb4",
       "runtime_robustness": "082c7dba58117914",
@@ -3300,10 +3322,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 3",
-     "store": "c8ae826500dfc339"
+     "store": "8d59b2a2e9b8667a"
     },
     {
-     "all": "1d687c9fcebe0529",
+     "all": "83aa3d461e1cbfa0",
      "keys": {
       "actionable_potential_ml": "f6e0a1e2ac41945a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3341,10 +3363,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "b07fbd6b23f07e9a",
       "guardian": "c1c4f3f043a34045",
@@ -3420,7 +3443,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a9e2828099e024fc",
+      "rooms": "3491fa2b9855a0fd",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d01bd34d72ef4446",
       "runtime_robustness": "7792ae66ca5da760",
@@ -3450,10 +3473,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 4",
-     "store": "1c078346c4d1dd4c"
+     "store": "477303f9c72061e1"
     },
     {
-     "all": "094193576fb5c3eb",
+     "all": "4e10734991f52663",
      "keys": {
       "actionable_potential_ml": "f6e0a1e2ac41945a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3491,10 +3514,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "d95ceb608f4a1217",
       "guardian": "c1c4f3f043a34045",
@@ -3570,7 +3594,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b783923660a238c8",
+      "rooms": "1eb8f8859f746b58",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "31ed09fb06d0a45d",
       "runtime_robustness": "53f38c7bf8340931",
@@ -3600,10 +3624,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 5",
-     "store": "b69b833924ed94b3"
+     "store": "2eabf9d7d934e752"
     },
     {
-     "all": "43f5abc9a34bb9d2",
+     "all": "6572517882ab86f6",
      "keys": {
       "actionable_potential_ml": "f6e0a1e2ac41945a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3641,10 +3665,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "6bcb5e9ec26de59b",
       "guardian": "c1c4f3f043a34045",
@@ -3720,7 +3745,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6ea408b3646dde50",
+      "rooms": "07a38953f4b6450d",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "35f25549a842e22d",
       "runtime_robustness": "bc87a765060a0980",
@@ -3750,10 +3775,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 6",
-     "store": "962edbd595354785"
+     "store": "3b68241a2c575e9e"
     },
     {
-     "all": "02637c0409b5c202",
+     "all": "92f6cac7bf26882f",
      "keys": {
       "actionable_potential_ml": "e3d6c4d4599e0088",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3791,10 +3816,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "a64da8b7a5c600bc",
       "guardian": "c1c4f3f043a34045",
@@ -3870,7 +3896,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bfa3863cfe765ec5",
+      "rooms": "9f83540dfe18186a",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "d06dcbb45f36f07f",
       "runtime_robustness": "638eb05540705586",
@@ -3900,10 +3926,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 7",
-     "store": "7e36a8c81d0b0123"
+     "store": "304dd0c9d9092648"
     },
     {
-     "all": "22d6bc26bf5eb569",
+     "all": "d6778cb6b79b1f52",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3941,10 +3967,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "a935eaae422e03b1",
       "guardian": "c1c4f3f043a34045",
@@ -4020,7 +4047,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0ca82caa57ab266c",
+      "rooms": "daf8c7939b555002",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "338a9d46ce5c20e4",
       "runtime_robustness": "645f561f68c585d4",
@@ -4050,10 +4077,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 8",
-     "store": "888ac9615164e45c"
+     "store": "fefac9c6bb61aa51"
     },
     {
-     "all": "118a2d118b242ad9",
+     "all": "c4c477873a42f7b6",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4091,10 +4118,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "da4ea2a5506f2693",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "da4ea2a5506f2693",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "7390d8304c4e8d17",
       "guardian": "c1c4f3f043a34045",
@@ -4170,7 +4198,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "8c160485b860f673",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "019a4cff2d257ce9",
+      "rooms": "d2ff88914d583483",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "3ec07059a3609942",
       "runtime_robustness": "29aef4daf3caeb1a",
@@ -4200,10 +4228,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cross ventilation kitchen",
-     "store": "1860dc42e6bf9a6a"
+     "store": "d149992040640a40"
     },
     {
-     "all": "1962d2010b3d6dd9",
+     "all": "b66a1d9e86489f21",
      "keys": {
       "actionable_potential_ml": "1da51b8d8ff98f6a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4241,10 +4269,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "3e1e967e9b793e90",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "2335a0cc294a6bc0",
       "forecast_uncapped_moisture_effect_ml": "3e1e967e9b793e90",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "be15021411aebe6a",
       "guardian": "c1c4f3f043a34045",
@@ -4320,7 +4349,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "b52c1735552bce4e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b8a9d872f64cf22d",
+      "rooms": "a16d5f648f56972a",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "fd0669d55425a613",
       "runtime_robustness": "2a4afe4c553b813a",
@@ -4350,10 +4379,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 1",
-     "store": "71546170ddd8c155"
+     "store": "ac4888a626ac24b0"
     },
     {
-     "all": "adcb94c4f94bcf08",
+     "all": "587d22ad6a1edb53",
      "keys": {
       "actionable_potential_ml": "8b940be7fb78aaa6",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4391,10 +4420,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "7688b6ef52555962",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "2335a0cc294a6bc0",
       "forecast_uncapped_moisture_effect_ml": "7688b6ef52555962",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "2c5ead23484d6a93",
       "guardian": "c1c4f3f043a34045",
@@ -4470,7 +4500,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "87888cc50bced672",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3988e752712907de",
+      "rooms": "146185ee43627a7f",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "92d7ed9f7dea543b",
       "runtime_robustness": "91456cd274b8b20d",
@@ -4500,10 +4530,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 2",
-     "store": "6e45389f1b3ff105"
+     "store": "301a382b878f9e45"
     },
     {
-     "all": "1948bc59193f43cb",
+     "all": "3ba821b56cdd2d37",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4541,10 +4571,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "41cfc0d1f2d127b0",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "4c3e11b81ff28b4d",
       "forecast_uncapped_moisture_effect_ml": "41cfc0d1f2d127b0",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "3269bbe20a36d346",
       "guardian": "c1c4f3f043a34045",
@@ -4620,7 +4651,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7cfc7bc6f7775a9c",
+      "rooms": "9c9771d4e35f742e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "263a79372faddb09",
       "runtime_robustness": "0762eac2d3e31f30",
@@ -4650,10 +4681,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 3",
-     "store": "c165564bc2dd390a"
+     "store": "015cd71c495d010e"
     },
     {
-     "all": "0d01c3a544e3d298",
+     "all": "e4563b6e2132832e",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4691,10 +4722,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "0e17daca5f3e175f",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "ce40a5eb3c0acd7d",
       "forecast_uncapped_moisture_effect_ml": "0e17daca5f3e175f",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "fe407b3a44e2106e",
       "guardian": "c1c4f3f043a34045",
@@ -4770,7 +4802,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bdad24dd28de7e1e",
+      "rooms": "8742527246704611",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a704e2dfb0d530d2",
       "runtime_robustness": "6fdc1570e079590e",
@@ -4800,10 +4832,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 4",
-     "store": "f360098baee39c30"
+     "store": "70aff18861a745b7"
     },
     {
-     "all": "979304da36d610fc",
+     "all": "633a5756d842f2a8",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4841,10 +4873,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "25fc0e7096fc6537",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "a91a4e7764d58cbc",
       "forecast_uncapped_moisture_effect_ml": "25fc0e7096fc6537",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "f372e9584e4a2041",
       "guardian": "c1c4f3f043a34045",
@@ -4920,7 +4953,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "56f67b2555f36943",
+      "rooms": "b01ead147d78bdba",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9f5e21358ad1f7e3",
       "runtime_robustness": "1f46a0627a2c45bd",
@@ -4950,10 +4983,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 5",
-     "store": "c9f90813d6a9e2f1"
+     "store": "4ad6c922a03f78ef"
     },
     {
-     "all": "840f30295bcefeb2",
+     "all": "43fbbcdd5c5fb089",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4991,10 +5024,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "44cb730c420480a0",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "ed2d82b4576b27ed",
       "forecast_uncapped_moisture_effect_ml": "44cb730c420480a0",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "3d242b7b918a3377",
       "guardian": "c1c4f3f043a34045",
@@ -5070,7 +5104,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "641e015141e184b5",
+      "rooms": "8d1d27286397822d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0e0bed05bf17c095",
       "runtime_robustness": "1811b552db020b0f",
@@ -5100,10 +5134,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 6",
-     "store": "e47fcd174ffa6360"
+     "store": "1e4ce851149a5ecc"
     },
     {
-     "all": "80754ced232fc815",
+     "all": "41114096f0d7cbdd",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5141,10 +5175,11 @@
       "forecast_live_observation_weight": "30be679025b58a1e",
       "forecast_moisture_effect_ml": "811786ad1ae74adf",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "8456ac9fb7212631",
       "forecast_uncapped_moisture_effect_ml": "44cb730c420480a0",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "7ccbd7384f2867d3",
       "guardian": "c1c4f3f043a34045",
@@ -5160,7 +5195,7 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "93f79afa8612c88d",
+      "intelligent_recommendation": "54ad745d4af42f99",
       "iq_state": "fa93ce66f2ce1bb5",
       "last_learning_diagnosis": "0dc6d606e9c17101",
       "last_ventilation": "7ed983068fa13892",
@@ -5220,7 +5255,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3cbf5fca2f2f97fb",
+      "rooms": "d3acf98e353d80db",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "1f0625426901fb5b",
       "runtime_robustness": "194f78e585b3330a",
@@ -5250,10 +5285,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen closed",
-     "store": "6131520a7a3b6df0"
+     "store": "997e664cad1d0026"
     },
     {
-     "all": "ca31f9977b129c29",
+     "all": "2303442eb09f5554",
      "keys": {
       "actionable_potential_ml": "e29c9c180c6279b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5291,10 +5326,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "44cb730c420480a0",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "61cc74ead0de629b",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "933508f1da6bc865",
       "forecast_uncapped_moisture_effect_ml": "44cb730c420480a0",
-      "forecast_validation": "d3e69eeb510a15d5",
+      "forecast_validation": "1f257891c11fe6b0",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "c508334b4c8609c0",
       "guardian": "c1c4f3f043a34045",
@@ -5370,7 +5406,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e92fe9afe4e29827",
+      "rooms": "ea8907520b5c6aad",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a6bd57daa3efdc62",
       "runtime_robustness": "d4fc5611c1942d9f",
@@ -5400,10 +5436,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 1",
-     "store": "7613b404570a869a"
+     "store": "00e190ea4fdaca9e"
     },
     {
-     "all": "cd832ef9ae72e0fc",
+     "all": "0c5e84c87e05f46a",
      "keys": {
       "actionable_potential_ml": "c6f3ac57944a5314",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5441,10 +5477,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "dbca51e676211117",
       "guardian": "c1c4f3f043a34045",
@@ -5520,7 +5557,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6507233b1ead6a26",
+      "rooms": "1c907208b2318cde",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "eb5db890285c94ce",
       "runtime_robustness": "4385a5fd49331b25",
@@ -5550,10 +5587,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 2",
-     "store": "bb07dc4ed4f2f721"
+     "store": "f4ff466404aaa64e"
     },
     {
-     "all": "5666dcb78d6bc94e",
+     "all": "75bfe8b6579e43ee",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5591,10 +5628,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "40bd52e72d309149",
       "guardian": "c1c4f3f043a34045",
@@ -5670,7 +5708,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "67db0d46d5bdf9b3",
+      "rooms": "ac3d688c27d2d382",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "283bb443ac0163b6",
       "runtime_robustness": "fa1ba57aefbe8a5b",
@@ -5700,10 +5738,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 3",
-     "store": "4d1d24f6fca3ad3d"
+     "store": "60931fba161824d7"
     },
     {
-     "all": "eaac8d1130f4df1c",
+     "all": "d1158ce6f76ff17a",
      "keys": {
       "actionable_potential_ml": "9f14025af0065b30",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5741,10 +5779,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "70d705210e15db43",
       "guardian": "c1c4f3f043a34045",
@@ -5820,7 +5859,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8da7d2b8af93c8ec",
+      "rooms": "3480cd6701a9823c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "447ab91d32bdf99a",
       "runtime_robustness": "34e97f8904bb0a06",
@@ -5850,10 +5889,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 4",
-     "store": "7e2f7a6c63258e71"
+     "store": "252b289f6eaceb91"
     },
     {
-     "all": "a7b009d07bd3e2ac",
+     "all": "b5a953b23d545ff6",
      "keys": {
       "actionable_potential_ml": "76a50887d8f1c2e9",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5891,10 +5930,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "e558acb9dd0191d3",
       "guardian": "c1c4f3f043a34045",
@@ -5970,7 +6010,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "453e70960bb697a6",
+      "rooms": "e03d2db85015df90",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "628e0331c7461026",
       "runtime_robustness": "9295f44ce817700e",
@@ -6000,10 +6040,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 5",
-     "store": "dac032d97f670407"
+     "store": "03bd5cac11a2cb07"
     },
     {
-     "all": "ba37d10099a67102",
+     "all": "19c9c7c609db01c3",
      "keys": {
       "actionable_potential_ml": "7a61b53701befdae",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6041,10 +6081,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "81d123568ce6d600",
       "guardian": "c1c4f3f043a34045",
@@ -6120,7 +6161,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3680f02f7fdb950a",
+      "rooms": "b2947e3450c2bd35",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "07ca56ef03aff2e5",
       "runtime_robustness": "5b219ef371e1e1d7",
@@ -6150,10 +6191,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 6",
-     "store": "c84c5920e88de68d"
+     "store": "29dd6a9f5435241c"
     },
     {
-     "all": "53d3d95be5082fa6",
+     "all": "58ec1219b4b40491",
      "keys": {
       "actionable_potential_ml": "d029fa3a95e174a1",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6191,10 +6232,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "b7935fd6eeec8480",
       "guardian": "c1c4f3f043a34045",
@@ -6270,7 +6312,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b5772c1f50318611",
+      "rooms": "da9dbb55bf72d2e2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5358f69aa38a3746",
       "runtime_robustness": "d99855371b6ec168",
@@ -6300,10 +6342,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 7",
-     "store": "1e1fbef790d2e30b"
+     "store": "61bac3a0a6761a99"
     },
     {
-     "all": "eb08748d23494586",
+     "all": "a5d08bfaed7125d2",
      "keys": {
       "actionable_potential_ml": "da4ea2a5506f2693",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6341,10 +6383,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "37562d3744acdcb8",
       "guardian": "c1c4f3f043a34045",
@@ -6420,7 +6463,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c25b05f5874cd17c",
+      "rooms": "91558a7c8d27ebd4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7d752455145d60e3",
       "runtime_robustness": "ae34d6cf65e6cf5d",
@@ -6450,10 +6493,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 8",
-     "store": "d52bc887d2f35a18"
+     "store": "4b105bc5744ff0a6"
     },
     {
-     "all": "ea7e79cbe7faae35",
+     "all": "e465ee3bf7c2cb21",
      "keys": {
       "actionable_potential_ml": "108c995b953c8a35",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6491,10 +6534,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "aed3d4a4934af366",
       "guardian": "c1c4f3f043a34045",
@@ -6570,7 +6614,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f8680bd3a8c54607",
+      "rooms": "9fa2c71ba9fba12f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6b1d26c9f4733b8b",
       "runtime_robustness": "64e1791f67f16173",
@@ -6600,10 +6644,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 9",
-     "store": "157aab18c105fe0e"
+     "store": "e711655f2fbad5d8"
     },
     {
-     "all": "ac42e172ebcd261a",
+     "all": "470d822b0526c607",
      "keys": {
       "actionable_potential_ml": "49d180ecf5613281",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6641,10 +6685,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "0fc15ce424e5c801",
       "guardian": "c1c4f3f043a34045",
@@ -6720,7 +6765,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "79d71e4d67e564a4",
+      "rooms": "e0785889ccab499d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c812e2e266efceb9",
       "runtime_robustness": "a68d107ef932fa61",
@@ -6750,10 +6795,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 10",
-     "store": "d8c85f1f89d3d1db"
+     "store": "5e2dd5ba331c32e2"
     },
     {
-     "all": "72e221d595ba4aa2",
+     "all": "8d3f6dd7cbc76c51",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6791,10 +6836,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "17cd055e6ea1d6a4",
       "guardian": "c1c4f3f043a34045",
@@ -6870,7 +6916,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "25d3e352d70b276c",
+      "rooms": "faf2fdb0f2a278a3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "ea2899884dbe808a",
       "runtime_robustness": "d3752a7c48fc6f33",
@@ -6900,10 +6946,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "morning",
-     "store": "eae83cbfdb9af33e"
+     "store": "a638553299e5ddae"
     },
     {
-     "all": "c07b02abbd5644ac",
+     "all": "a91a28d10f6644c7",
      "keys": {
       "actionable_potential_ml": "c75cb66ae28d8ebc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -6941,10 +6987,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "35135aaa6cc23891",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "35135aaa6cc23891",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "bdb29375dbf18b44",
       "guardian": "c1c4f3f043a34045",
@@ -7020,7 +7067,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5215cbdf55d110ad",
+      "rooms": "eb0d103fa0b32b60",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b952e26248c9a503",
       "runtime_robustness": "822ee4da2e790cbc",
@@ -7050,10 +7097,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom window open",
-     "store": "dce77bf515d7963f"
+     "store": "046ec1ced6e2a6e5"
     },
     {
-     "all": "3387d63aba51cba9",
+     "all": "ab2272c2a2eaadc4",
      "keys": {
       "actionable_potential_ml": "a21855da08cb102d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7091,10 +7138,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "59e19706d51d39f6",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "59e19706d51d39f6",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "273128830d90c084",
       "guardian": "c1c4f3f043a34045",
@@ -7170,7 +7218,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "042688b0c2677fa5",
+      "rooms": "5ea18acc22ac7ece",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6d8095dd7bfbbe34",
       "runtime_robustness": "520adb9b972149d5",
@@ -7200,10 +7248,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 1",
-     "store": "7bc5f8962dbee65d"
+     "store": "0075ccc821b332cd"
     },
     {
-     "all": "4572f82c7614f934",
+     "all": "e8207218bf2ab771",
      "keys": {
       "actionable_potential_ml": "3ada92f28b4ceda3",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7241,10 +7289,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5f9c4ab08cac7457",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "5f9c4ab08cac7457",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "849c682ab9eae855",
       "guardian": "c1c4f3f043a34045",
@@ -7320,7 +7369,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8247ac69842946ed",
+      "rooms": "1ce453a7510837ac",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3777a57a9303f097",
       "runtime_robustness": "c21fb23b4427ed6b",
@@ -7350,10 +7399,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 2",
-     "store": "4c5690150fdf3c9f"
+     "store": "5afdfd3fa4e15de5"
     },
     {
-     "all": "577f3c71a9167b6f",
+     "all": "2763e940285602f8",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7391,10 +7440,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "b7a56873cd771f2c",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "b7a56873cd771f2c",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "b60a2f249ac81f07",
       "guardian": "c1c4f3f043a34045",
@@ -7470,7 +7520,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "86169bcf42397928",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "86d30827aced2aed",
+      "rooms": "709510c1a76c433f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f34f677401960db1",
       "runtime_robustness": "dd180db36af86cef",
@@ -7500,10 +7550,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 3",
-     "store": "bb0fe8f0b193bac1"
+     "store": "1847bb83356f1102"
     },
     {
-     "all": "381ce6e6d99f0712",
+     "all": "0e6b757414bd3b7a",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7541,10 +7591,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "535fa30d7e25dd8a",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "535fa30d7e25dd8a",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "40f74799544a6aba",
       "guardian": "c1c4f3f043a34045",
@@ -7620,7 +7671,7 @@
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8de7fe425ad1fce7",
+      "rooms": "d9a36021198a6bd6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0037b9f217a481c",
       "runtime_robustness": "7c0a9ab5bc84c462",
@@ -7650,10 +7701,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 4",
-     "store": "bc875a283c999c3c"
+     "store": "156444a46b35a4a4"
     },
     {
-     "all": "ed17a772d1ee463d",
+     "all": "d89db4bece9a711d",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7691,10 +7742,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "785f3ec7eb32f30b",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "785f3ec7eb32f30b",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "a27b2715db00f58a",
       "guardian": "c1c4f3f043a34045",
@@ -7770,7 +7822,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bac61b9eca2ec4e6",
+      "rooms": "d3e733ea5752911a",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cf2b91501dbb236e",
       "runtime_robustness": "e0efe11766928737",
@@ -7800,10 +7852,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 5",
-     "store": "c0be8f7365cfdc1c"
+     "store": "a1a84bed8d228f86"
     },
     {
-     "all": "08f48429167e0b69",
+     "all": "a5ebf8d0ae16f208",
      "keys": {
       "actionable_potential_ml": "d59eced1ded07f84",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7841,10 +7893,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "785f3ec7eb32f30b",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "f59cebd281ce6f82",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "55c30f28d8dd99df",
       "forecast_uncapped_moisture_effect_ml": "785f3ec7eb32f30b",
-      "forecast_validation": "faddb8167e11ef03",
+      "forecast_validation": "7bf72eb92371f148",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "abbddaf744e43d66",
       "guardian": "c1c4f3f043a34045",
@@ -7860,7 +7913,7 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "abb1de2a5d9cb6ff",
+      "intelligent_recommendation": "f7e2328299c9917b",
       "iq_state": "b8830b29a7f085f8",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "6e87747941f20b69",
@@ -7920,7 +7973,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "4042a76b2e4df7c7",
+      "rooms": "57ee65c374d4af1a",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "62d1ebf23f4c8e42",
       "runtime_robustness": "0c3c414f22a70229",
@@ -7950,16 +8003,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed",
-     "store": "a34891bc19257181"
+     "store": "d4b8e9c3677dade7"
     }
    ],
    "network_calls": [],
-   "persisted": "2f920eac4d53887b"
+   "persisted": "0d9b50a464bc447a"
   },
   "no_rooms": {
    "cycles": [
     {
-     "all": "4dc8e1dbebcaddcc",
+     "all": "a07a28b3ec4fa7f1",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7997,6 +8050,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8109,7 +8163,7 @@
      "store": "9efbe40c3767f779"
     },
     {
-     "all": "fcc663ca8df19149",
+     "all": "19495958002337fe",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8147,6 +8201,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8259,7 +8314,7 @@
      "store": "9efbe40c3767f779"
     },
     {
-     "all": "78a29f1da12fe3f0",
+     "all": "8d653d1c33dd7c36",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8297,6 +8352,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8415,7 +8471,7 @@
   "sensor_trouble": {
    "cycles": [
     {
-     "all": "3b897fda15f6e454",
+     "all": "be9de848c277a7d8",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8453,6 +8509,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8565,7 +8622,7 @@
      "store": "76801dac118d75ee"
     },
     {
-     "all": "2c62195e090dc344",
+     "all": "109173675d8a6db6",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8603,6 +8660,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8682,7 +8740,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1f15ff128ed62139",
+      "rooms": "ef8080ea6e58aadd",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c9db919d628811b3",
       "runtime_robustness": "699ccf32a6ef1a44",
@@ -8715,7 +8773,7 @@
      "store": "4ded32092aa35ee0"
     },
     {
-     "all": "c7ed43e45575ef84",
+     "all": "a5b56ccf301fc55b",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8753,6 +8811,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8832,7 +8891,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a7028f00eff2a2bc",
+      "rooms": "a84c59e9e3683f8a",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "20ea8874975d06cf",
       "runtime_robustness": "55f05d56575e3f87",
@@ -8865,7 +8924,7 @@
      "store": "b0edfdf3a96b3eed"
     },
     {
-     "all": "a2459f548c133b4f",
+     "all": "a1cf2a571cfb0143",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8903,6 +8962,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -8982,7 +9042,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a2c7c43160e5080e",
+      "rooms": "c24fb5bd71af035f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "87b81f2a6bfd20cf",
       "runtime_robustness": "62419a103bfc4c84",
@@ -9015,7 +9075,7 @@
      "store": "ad09a1423534fb98"
     },
     {
-     "all": "99482348fd0c02a7",
+     "all": "b9d3fa3659eca911",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9053,6 +9113,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -9132,7 +9193,7 @@
       "recommended_duration_min": "8c160485b860f673",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f252b6297953af07",
+      "rooms": "7b2a9d2baf838acf",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "19fdbfb53574d131",
       "runtime_robustness": "0863c0236fec910c",
@@ -9165,7 +9226,7 @@
      "store": "eb63cbf44d57d08b"
     },
     {
-     "all": "d63974f26839e726",
+     "all": "45c9be00aa852a78",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9203,6 +9264,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -9282,7 +9344,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0af75a5a659c2e21",
+      "rooms": "2566c239d82bf400",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "db38f960cd306294",
       "runtime_robustness": "bed68d010ad11020",
@@ -9315,7 +9377,7 @@
      "store": "ab92558278cb1397"
     },
     {
-     "all": "f72a719b57d1bfa7",
+     "all": "a1f88b2eedbb152c",
      "keys": {
       "actionable_potential_ml": "6f4b6612125fb3a0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9353,6 +9415,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -9432,7 +9495,7 @@
       "recommended_duration_min": "e7f6c011776e8db7",
       "remaining_duration_min": "cc811c81659039ef",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "607e1cf5a5178a1d",
+      "rooms": "73bc8fe8856405f6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b6baf49c1ee77ea4",
       "runtime_robustness": "365c58c9550f3eb2",
@@ -9465,7 +9528,7 @@
      "store": "469eaad69cb9cb8d"
     },
     {
-     "all": "437bf37868311647",
+     "all": "3ecb3e321fc7a705",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9503,6 +9566,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "f5ca38f748a1d6ea",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b785c56e32f33774",
       "forecast_uncapped_moisture_effect_ml": "f5ca38f748a1d6ea",
@@ -9582,7 +9646,7 @@
       "recommended_duration_min": "cc811c81659039ef",
       "remaining_duration_min": "d813b7ed683d2ab3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e81694aefa806992",
+      "rooms": "fe685712ea50a8bd",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "fcf85fbe7b7816b2",
       "runtime_robustness": "c665f053af038172",
@@ -9612,10 +9676,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity back",
-     "store": "cce4f5440c0b08be"
+     "store": "31a4968f077b2790"
     },
     {
-     "all": "2ad8b7e89c7a7f23",
+     "all": "049376c568f9690f",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9653,6 +9717,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "f5ca38f748a1d6ea",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "d1648e112d992f15",
       "forecast_uncapped_moisture_effect_ml": "f5ca38f748a1d6ea",
@@ -9732,7 +9797,7 @@
       "recommended_duration_min": "cc811c81659039ef",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "64a887723349cb2e",
+      "rooms": "ace032353f3f082b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5e883a00b3914a8",
       "runtime_robustness": "da109e8d31626854",
@@ -9762,10 +9827,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "all recovered",
-     "store": "448bb8357065ecc0"
+     "store": "0e39a5fc869c0164"
     },
     {
-     "all": "a0a759f1a2535d9c",
+     "all": "c28ecacb3dd991b2",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9780,7 +9845,7 @@
       "day_night_plan": "0c0195b5c1b9c14e",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "0cb1220724010bb9",
+      "decision_trace": "3e73046d6216afcb",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "3ad675c1c26afecf",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -9803,6 +9868,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "f5ca38f748a1d6ea",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "d1648e112d992f15",
       "forecast_uncapped_moisture_effect_ml": "f5ca38f748a1d6ea",
@@ -9822,8 +9888,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "6d5641c34987d239",
-      "iq_state": "6f058e0d4c9b3c41",
+      "intelligent_recommendation": "43cd5e17234ccce4",
+      "iq_state": "9c6b88c44cf3c34d",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "1cc1ea9f2ca42513",
@@ -9879,10 +9945,10 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "cc811c81659039ef",
-      "remaining_duration_min": "86169bcf42397928",
+      "recommended_duration_min": "ef2d127de37b942b",
+      "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fe874efac5bcc5f7",
+      "rooms": "91564829c2fafc6d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b5aec4de78298bee",
       "runtime_robustness": "578449656bc8f9c7",
@@ -9892,7 +9958,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "0a51f6eb029de6c9",
+      "status_text": "1636acf378b66171",
       "system_check": "9ee359a871cc8d38",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "718127812c05853f",
@@ -9912,10 +9978,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "cc1ede401f2fef26"
+     "store": "9496acde75a85fe0"
     },
     {
-     "all": "8c142dc3b515a5b0",
+     "all": "3835c96ed908d015",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -9953,6 +10019,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "f5ca38f748a1d6ea",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "d1648e112d992f15",
       "forecast_uncapped_moisture_effect_ml": "f5ca38f748a1d6ea",
@@ -10032,7 +10099,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fe86723b0234adf7",
+      "rooms": "1c5227a2027532de",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0771d28b9c308f0",
       "runtime_robustness": "3993d3c6ee46f9a7",
@@ -10062,10 +10129,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 1",
-     "store": "991c3ec937632039"
+     "store": "e12d283fd775daae"
     },
     {
-     "all": "922f3fb627458280",
+     "all": "a77391145f9b7d02",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10103,10 +10170,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "8828e10d48210313",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d4da6601cc2e6131",
+      "forecast_validation": "278ea7def7cedfa8",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "3fc9809cf731abd9",
       "guardian": "c1c4f3f043a34045",
@@ -10182,7 +10250,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "90c90dbee159e18a",
+      "rooms": "ea03817b7c4fef76",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "adb94f570800c78a",
       "runtime_robustness": "d3bb337062e3a6e1",
@@ -10212,10 +10280,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 2",
-     "store": "c66507ec36bb17ff"
+     "store": "9821ce8d46d9e4f7"
     },
     {
-     "all": "2b18ca7c2ee42a5c",
+     "all": "e1f819427135ae22",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10253,10 +10321,11 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "8828e10d48210313",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
-      "forecast_validation": "d4da6601cc2e6131",
+      "forecast_validation": "278ea7def7cedfa8",
       "future_weather_available": "b5bea41b6c623f7c",
       "future_weather_boundaries": "79e4079c5a113fb1",
       "guardian": "c1c4f3f043a34045",
@@ -10332,7 +10401,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b795a84bd2708478",
+      "rooms": "737339e8090e3234",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e9fa31f5bb483fca",
       "runtime_robustness": "01392c69dddb7ee1",
@@ -10362,16 +10431,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 3",
-     "store": "30e0542a36878b42"
+     "store": "4773d0eaa88540de"
     }
    ],
    "network_calls": [],
-   "persisted": "6369747b966292c9"
+   "persisted": "3071e7af37c2ee62"
   },
   "structure_room_only": {
    "cycles": [
     {
-     "all": "61b628ca9a760e74",
+     "all": "50b8c7a7d11649a0",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10409,6 +10478,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -10521,7 +10591,7 @@
      "store": "d58c5fe7a0a25dcf"
     },
     {
-     "all": "0f9dbfc619b3af2c",
+     "all": "cc3f408261f0220e",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10559,6 +10629,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -10671,7 +10742,7 @@
      "store": "d58c5fe7a0a25dcf"
     },
     {
-     "all": "85ac8eb8e9452b86",
+     "all": "68ea2f2539bfc7fb",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10709,6 +10780,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -10821,7 +10893,7 @@
      "store": "d58c5fe7a0a25dcf"
     },
     {
-     "all": "5b1ff2d28da0d2d8",
+     "all": "d59c6faebd469ce8",
      "keys": {
       "actionable_potential_ml": "5feceb66ffc86f38",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10859,6 +10931,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -10977,7 +11050,7 @@
   "summer_cooling_and_exhaust": {
    "cycles": [
     {
-     "all": "50b5cb6fb0dc42ba",
+     "all": "a9e676768c30684a",
      "keys": {
       "actionable_potential_ml": "8722616204217edd",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11015,6 +11088,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -11127,7 +11201,7 @@
      "store": "9c246b0b1b65bc44"
     },
     {
-     "all": "71e063bbf618e304",
+     "all": "71ebed58aaf70674",
      "keys": {
       "actionable_potential_ml": "8722616204217edd",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11165,6 +11239,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -11244,7 +11319,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e27b18cefadab390",
+      "rooms": "5387cb5c3337d0d2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d720619ce31f84c4",
       "runtime_robustness": "8f4ee1863363bf60",
@@ -11277,7 +11352,7 @@
      "store": "6470e11c4e78262c"
     },
     {
-     "all": "f9f7eb975ce28c7a",
+     "all": "fa63777dbad54466",
      "keys": {
       "actionable_potential_ml": "8722616204217edd",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11315,6 +11390,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -11394,7 +11470,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "153bc62a8c7e5485",
+      "rooms": "503e4c7d0d9d4bec",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "015ef0843566d94c",
       "runtime_robustness": "4339d59f58aac8ce",
@@ -11427,7 +11503,7 @@
      "store": "13e15ca70d4fb4e1"
     },
     {
-     "all": "86e68d2b3f4e3071",
+     "all": "ba8840f274d7be08",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11465,6 +11541,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -11544,7 +11621,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "95d90d488a0da414",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "efecdde2d298767c",
+      "rooms": "acdcade123fe7a32",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cd8b3a545c75e72e",
       "runtime_robustness": "80dceca20d96a319",
@@ -11577,7 +11654,7 @@
      "store": "cfbf9421dca8c38e"
     },
     {
-     "all": "b56b0c7b3b1ff8d1",
+     "all": "0ee2f51da68e2afb",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11615,6 +11692,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "b7a56873cd771f2c",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "6441bd75cd9bcfb2",
       "forecast_uncapped_moisture_effect_ml": "b7a56873cd771f2c",
@@ -11694,7 +11772,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "bd8a8f86863435bc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e891a7b132bbdf7f",
+      "rooms": "48c29c0f7a9a3d99",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a4a34d87e9773d8c",
       "runtime_robustness": "c9ce073f15c893cc",
@@ -11724,10 +11802,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom open for cooling",
-     "store": "01bbae04d00d88e2"
+     "store": "0b2e7272ecbd25e1"
     },
     {
-     "all": "b142fb324567ad2c",
+     "all": "a692a871758b962d",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11765,6 +11843,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "535fa30d7e25dd8a",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "1c52469fed2f3391",
       "forecast_uncapped_moisture_effect_ml": "535fa30d7e25dd8a",
@@ -11844,7 +11923,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "bb125c347cc5324a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "19f0bfb8c5018659",
+      "rooms": "13745424a666598f",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a2dea3f5a6f05df0",
       "runtime_robustness": "abd452f44d916490",
@@ -11874,10 +11953,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 1",
-     "store": "ae1b2194c232019b"
+     "store": "8cdf3ba5c4e63688"
     },
     {
-     "all": "394638ad0acfc250",
+     "all": "3cf602480e44c216",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -11915,6 +11994,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "6f4b6612125fb3a0",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "1468a8f809a90bdf",
       "forecast_uncapped_moisture_effect_ml": "6f4b6612125fb3a0",
@@ -11994,7 +12074,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "b763c74ed41d27af",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "551b622a93af374b",
+      "rooms": "b7deffa90c3fa1a3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9ac17e4c1cd838d9",
       "runtime_robustness": "2896163e6a16e4b4",
@@ -12024,10 +12104,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 2",
-     "store": "844f759e1f6b577d"
+     "store": "8766fbd4a1e03313"
     },
     {
-     "all": "a9a46d5e2abd00c3",
+     "all": "fd69738249b81b15",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12065,6 +12145,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "9400f1b21cb527d7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "07ab313cb82dab38",
       "forecast_uncapped_moisture_effect_ml": "9400f1b21cb527d7",
@@ -12144,7 +12225,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "ed6cca0a64012053",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9b2717e7f7b05422",
+      "rooms": "340926aaa41d5f6e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c52f9cfd6f0012c7",
       "runtime_robustness": "6950951f9083173f",
@@ -12174,10 +12255,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 3",
-     "store": "a199ec8c37173b52"
+     "store": "59869aef77917f27"
     },
     {
-     "all": "23c7dc4ac1b4b01a",
+     "all": "50e80954c3d0cac4",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12215,6 +12296,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "4ec9599fc203d176",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "39970753a6420fc7",
       "forecast_uncapped_moisture_effect_ml": "4ec9599fc203d176",
@@ -12294,7 +12376,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "5f7b9b51467bf417",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0d040709e95772b8",
+      "rooms": "0fc0880599e0ee36",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b92e10a6ffb4256",
       "runtime_robustness": "3515e236671554de",
@@ -12324,10 +12406,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 4",
-     "store": "de6a2f55578d1ca6"
+     "store": "70661550c5da3fee"
     },
     {
-     "all": "cad54adbdf29c1b3",
+     "all": "0ec62b2212d201bf",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12365,6 +12447,7 @@
       "forecast_live_observation_weight": "ee67062321af9f78",
       "forecast_moisture_effect_ml": "9400f1b21cb527d7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "3afe83354c7367d8",
       "forecast_uncapped_moisture_effect_ml": "b17ef6d19c7a5b1e",
@@ -12444,7 +12527,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0d9f62abbb5bc3c3",
+      "rooms": "0d5d1025c8d19a85",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4beacf82b98e0114",
       "runtime_robustness": "83b63f300d9a4e22",
@@ -12474,10 +12557,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 5",
-     "store": "e7c99132950b2f90"
+     "store": "827746f711dfaf65"
     },
     {
-     "all": "5316d41287861e17",
+     "all": "2ed421c1957fcbba",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12515,6 +12598,7 @@
       "forecast_live_observation_weight": "3bbc96ce85f6a11c",
       "forecast_moisture_effect_ml": "9400f1b21cb527d7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "2b366ac7a44288b3",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -12594,7 +12678,7 @@
       "recommended_duration_min": "bd8a8f86863435bc",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b6022058d0b2fc0d",
+      "rooms": "0a5a2838bb06b4c8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c54b2ee90c7abbb8",
       "runtime_robustness": "ccff539bee9e2a01",
@@ -12624,10 +12708,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 6",
-     "store": "ee5cebe32c7ddb2a"
+     "store": "353b8d1c68a20e14"
     },
     {
-     "all": "35d7ce264555e49f",
+     "all": "49784831d96b5c5f",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12642,7 +12726,7 @@
       "day_night_plan": "aa29dd0a2e598499",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "fc3263542344ef2c",
+      "decision_trace": "efb3d31cf4eff016",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "852f88b80d28ded7",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -12665,6 +12749,7 @@
       "forecast_live_observation_weight": "51165ae1ea9dd1bf",
       "forecast_moisture_effect_ml": "7688b6ef52555962",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "39970753a6420fc7",
       "forecast_uncapped_moisture_effect_ml": "031b4af5197ec30a",
@@ -12684,8 +12769,8 @@
       "house_ventilation_active_ratio": "10bc5b531aad39c3",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "3844515eedc7da8a",
-      "iq_state": "ea6706a58c3873a9",
+      "intelligent_recommendation": "0f9996d62e274b85",
+      "iq_state": "a60091ef8dc8dc72",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "57b493c201314785",
@@ -12741,8 +12826,8 @@
       "property_type": "78f4d79e3e4d4a0e",
       "recommendation_engine": "1cdaedef147c6c17",
       "recommendation_quality": "c66ba028b3718701",
-      "recommended_duration_min": "bd8a8f86863435bc",
-      "remaining_duration_min": "86169bcf42397928",
+      "recommended_duration_min": "1c1ffc8112d9b134",
+      "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
       "rooms": "50c6230648ed160b",
       "routine_night_maturity": "5feceb66ffc86f38",
@@ -12754,7 +12839,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "3e9651842ce280e3",
+      "status_text": "0cde711eed2287b2",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "25e514badf3ed38d",
       "theoretical_actionable_potential_ml": "2c69bc9b34fb0800",
@@ -12774,10 +12859,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed, exhaust on",
-     "store": "57ca8654af130604"
+     "store": "b683a6f7e2ff1720"
     },
     {
-     "all": "8e49166e5d13dedc",
+     "all": "2b398615e3849315",
      "keys": {
       "actionable_potential_ml": "eeca91fd439b6d5e",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12792,7 +12877,7 @@
       "day_night_plan": "380fe38ae319ce28",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "df996c7624b03a75",
+      "decision_trace": "a6c9da86d1ae5644",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "fbb62e78f6b83b8c",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -12815,6 +12900,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "1a6562590ef19d10",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "729d12513902c308",
       "forecast_uncapped_moisture_effect_ml": "1a6562590ef19d10",
@@ -12834,8 +12920,8 @@
       "house_ventilation_active_ratio": "16522468b17d5af6",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "b58b25444a296006",
-      "iq_state": "b182c483feba4656",
+      "intelligent_recommendation": "6f7d151ee457e80f",
+      "iq_state": "959268d70789cca7",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "89fca1c6e197a212",
@@ -12904,7 +12990,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "46cace2d65dbf20c",
+      "status_text": "18291d31e1104029",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "25e514badf3ed38d",
       "theoretical_actionable_potential_ml": "1158e7e12c5e7362",
@@ -12924,10 +13010,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 1",
-     "store": "38e52d37b82cdfe9"
+     "store": "77957ee4a3e32c7b"
     },
     {
-     "all": "e254c324f6d340f9",
+     "all": "95048609e791248e",
      "keys": {
       "actionable_potential_ml": "6566230e3a3ce377",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12965,6 +13051,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "c6f3ac57944a5314",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "1468a8f809a90bdf",
       "forecast_uncapped_moisture_effect_ml": "c6f3ac57944a5314",
@@ -13074,10 +13161,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 2",
-     "store": "2f2350596b905cda"
+     "store": "3013a3f4b34d12bf"
     },
     {
-     "all": "36c54e4636048426",
+     "all": "f36abc17f610074b",
      "keys": {
       "actionable_potential_ml": "65a699905c026193",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13115,6 +13202,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "e29c9c180c6279b0",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "1468a8f809a90bdf",
       "forecast_uncapped_moisture_effect_ml": "e29c9c180c6279b0",
@@ -13224,10 +13312,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 3",
-     "store": "1ad851b787e4ac2f"
+     "store": "4d926877593cc6e5"
     },
     {
-     "all": "2c4aab1f0bf8b361",
+     "all": "7697492a63e5d8d0",
      "keys": {
       "actionable_potential_ml": "6affdae3b3c1aa6a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13265,6 +13353,7 @@
       "forecast_live_observation_weight": "5211920a953abd41",
       "forecast_moisture_effect_ml": "624b60c58c9d8bfb",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "8c3b65555a371169",
       "forecast_uncapped_moisture_effect_ml": "eb1e33e8a81b697b",
@@ -13374,10 +13463,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 4",
-     "store": "56f5db06a47f5f35"
+     "store": "b6c72fe70fdb94ea"
     },
     {
-     "all": "599641307bcde1e7",
+     "all": "cfec426010aa54d3",
      "keys": {
       "actionable_potential_ml": "6affdae3b3c1aa6a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13415,6 +13504,7 @@
       "forecast_live_observation_weight": "69be8fc1781b9aaf",
       "forecast_moisture_effect_ml": "624b60c58c9d8bfb",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "04108aaf6fcf693e",
       "forecast_uncapped_moisture_effect_ml": "eb1e33e8a81b697b",
@@ -13434,8 +13524,8 @@
       "house_ventilation_active_ratio": "16522468b17d5af6",
       "house_ventilation_mode": "fcbcf165908dd18a",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "4c38002a2914e8e6",
-      "iq_state": "c7645ba949e3bb17",
+      "intelligent_recommendation": "71f562e0094eb8a6",
+      "iq_state": "04e08dd01ea3ad4f",
       "last_learning_diagnosis": "dde4858605f6d7c1",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "dd7e8301bd5b8296",
@@ -13504,7 +13594,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "cd5a4406a989514d",
+      "status_text": "ceb8e8ffe60528df",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "064c3e311ef63912",
@@ -13524,10 +13614,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust off",
-     "store": "86308a53f0fcfdef"
+     "store": "287929bd2f2f515c"
     },
     {
-     "all": "027d536482cce780",
+     "all": "bf462fe2db325864",
      "keys": {
       "actionable_potential_ml": "6affdae3b3c1aa6a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13565,6 +13655,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "eb1e33e8a81b697b",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "3c0d9a64c3d7d5f2",
       "forecast_uncapped_moisture_effect_ml": "eb1e33e8a81b697b",
@@ -13674,16 +13765,16 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "5d0f332b0c0c4228"
+     "store": "5e779ef83ac5feec"
     }
    ],
    "network_calls": [],
-   "persisted": "ed528247943ecbdb"
+   "persisted": "8169e1f8e3f1a058"
   },
   "tilt_dropout_and_passive": {
    "cycles": [
     {
-     "all": "59021e77d6416e06",
+     "all": "873ac46ca825f394",
      "keys": {
       "actionable_potential_ml": "0f8ef3377b30fc47",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13721,6 +13812,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -13833,7 +13925,7 @@
      "store": "e8bdadca21218e69"
     },
     {
-     "all": "6e63bc084ea824ef",
+     "all": "0b70174bae34c726",
      "keys": {
       "actionable_potential_ml": "0f8ef3377b30fc47",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13871,6 +13963,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -13950,7 +14043,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "99655e4ee8f00804",
+      "rooms": "4f3c481069b3f159",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f86dd7303bd8fba9",
       "runtime_robustness": "1fd50771f32321d1",
@@ -13983,7 +14076,7 @@
      "store": "ec073931761297ef"
     },
     {
-     "all": "21c369aeccd4b3f7",
+     "all": "560c4f49756db0e2",
      "keys": {
       "actionable_potential_ml": "0f8ef3377b30fc47",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14021,6 +14114,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -14100,7 +14194,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f131e0235fb52cbe",
+      "rooms": "8ca8ccf6b4a8160e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5ef7703648bf092",
       "runtime_robustness": "8f98a1e80a756aea",
@@ -14133,7 +14227,7 @@
      "store": "7f01d950d7ba78da"
     },
     {
-     "all": "56fa2e01e6c2e07a",
+     "all": "1c68d461d299a7cd",
      "keys": {
       "actionable_potential_ml": "0f8ef3377b30fc47",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14171,6 +14265,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5feceb66ffc86f38",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "16522468b17d5af6",
       "forecast_uncapped_moisture_effect_ml": "5feceb66ffc86f38",
@@ -14250,7 +14345,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "5cc31a244d7ddd1e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1c873dc27f938dc3",
+      "rooms": "7ff0f0354a4d5782",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "ec27c5083e521f34",
       "runtime_robustness": "a13980f2972a9442",
@@ -14283,7 +14378,7 @@
      "store": "1188f62abacc5dc3"
     },
     {
-     "all": "5e5bef374502ec10",
+     "all": "be6ac49afbda2c03",
      "keys": {
       "actionable_potential_ml": "0f8ef3377b30fc47",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14321,6 +14416,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "f5ca38f748a1d6ea",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "caced5c63557f986",
       "forecast_uncapped_moisture_effect_ml": "f5ca38f748a1d6ea",
@@ -14400,7 +14496,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "16522468b17d5af6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "916c6de569d2d4d6",
+      "rooms": "bee6973efa364579",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e48a6f5e99404c59",
       "runtime_robustness": "304014a5a55ce7d7",
@@ -14430,10 +14526,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 1",
-     "store": "4aad5db97e2d87af"
+     "store": "6c57de9011cc61e1"
     },
     {
-     "all": "4ce49bfecd44ff4b",
+     "all": "2243700cd74aabb9",
      "keys": {
       "actionable_potential_ml": "6affdae3b3c1aa6a",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14471,6 +14567,7 @@
       "forecast_live_observation_weight": "ee67062321af9f78",
       "forecast_moisture_effect_ml": "b17ef6d19c7a5b1e",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "d8c021202fb61d30",
       "forecast_uncapped_moisture_effect_ml": "9400f1b21cb527d7",
@@ -14550,7 +14647,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "193839deb342d36c",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cafda6b818d8f220",
+      "rooms": "d83cbf73be41b793",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3153e63227b3a900",
       "runtime_robustness": "c12eb79b5c11f584",
@@ -14580,10 +14677,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 2",
-     "store": "87a351188e2805d6"
+     "store": "67e0c01f7e33aba1"
     },
     {
-     "all": "2c78eb30b5ed9599",
+     "all": "adeb44b4de346066",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14621,6 +14718,7 @@
       "forecast_live_observation_weight": "7a51b580ab4a10a9",
       "forecast_moisture_effect_ml": "6b51d431df5d7f14",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "32a97ce45cdcd83f",
       "forecast_uncapped_moisture_effect_ml": "4ec9599fc203d176",
@@ -14700,7 +14798,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7a4632cf400d946a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d9afbeeaa685f69f",
+      "rooms": "211e9b7cafdffd7b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb79aecf4df1e37a",
       "runtime_robustness": "3adec81b28e0eab3",
@@ -14730,10 +14828,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 3",
-     "store": "a2e63d422f33cfe2"
+     "store": "7a44da42d81639e3"
     },
     {
-     "all": "f619702d493dcf97",
+     "all": "5053b0194593b9ca",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14771,6 +14869,7 @@
       "forecast_live_observation_weight": "07f458801618d885",
       "forecast_moisture_effect_ml": "2c624232cdd22177",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "1468a8f809a90bdf",
       "forecast_uncapped_moisture_effect_ml": "4ec9599fc203d176",
@@ -14850,7 +14949,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "60e67e3c2c782b96",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "71a168fd36095a42",
+      "rooms": "5ba6b2ad577d9cac",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "64e0b4f2b119f7be",
       "runtime_robustness": "5d9a8ddd94c35957",
@@ -14880,10 +14979,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 4",
-     "store": "cf4a79ffa9171023"
+     "store": "e6bf24b1edac36b8"
     },
     {
-     "all": "2d3b24d64e374361",
+     "all": "4e96469c0859cb5d",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14921,6 +15020,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "e7f6c011776e8db7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "f5479916d8fe177c",
       "forecast_uncapped_moisture_effect_ml": "4523540f1504cd17",
@@ -15000,7 +15100,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6ca219f0eea2235b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3ce6b8abad31cd9c",
+      "rooms": "87062b9629b034e0",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "47e53707c7a75b55",
       "runtime_robustness": "17b79560ff51f352",
@@ -15030,10 +15130,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 5",
-     "store": "a1068c60da8b93b9"
+     "store": "8ecf3fd9ee715a81"
     },
     {
-     "all": "ab01911122f512be",
+     "all": "fac49b4bdc04463b",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15071,6 +15171,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "e7f6c011776e8db7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b10abbdd5d54bf94",
       "forecast_uncapped_moisture_effect_ml": "b17ef6d19c7a5b1e",
@@ -15150,7 +15251,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6d5bcc98d1457497",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8f8f0d193a31329a",
+      "rooms": "c2325375087abeba",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9e06c1f6089b0f9e",
       "runtime_robustness": "9e6804bf3ee52eab",
@@ -15180,10 +15281,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 6",
-     "store": "59a53bf2bbccc410"
+     "store": "1028c8950eb7731d"
     },
     {
-     "all": "cc3618abd5234436",
+     "all": "6a694cedc2836f80",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15221,6 +15322,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "e7f6c011776e8db7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b10abbdd5d54bf94",
       "forecast_uncapped_moisture_effect_ml": "b17ef6d19c7a5b1e",
@@ -15300,7 +15402,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "579325314ca47adc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e906907326389625",
+      "rooms": "da60f0be09a799fa",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "2dda91c6b026cbc3",
       "runtime_robustness": "a3b389038701f9c6",
@@ -15330,10 +15432,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "radio drop-out",
-     "store": "fa752496d51382fe"
+     "store": "e1f187b36ef3af4f"
     },
     {
-     "all": "0672e6ff0dc2a71c",
+     "all": "76b7eeada6e575af",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15371,6 +15473,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "e7f6c011776e8db7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b10abbdd5d54bf94",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -15450,7 +15553,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5e6443ddd6800c4e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d9f2057ff9f1e933",
+      "rooms": "9f1c0ecd9c15d874",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "b25cf99a433ff49a",
       "runtime_robustness": "87acfe6c096e7998",
@@ -15480,10 +15583,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "still dropped",
-     "store": "2ec4070bdd28ac24"
+     "store": "4b9781651030941f"
     },
     {
-     "all": "6b79b1a154fc3fdf",
+     "all": "66c1eff904f087b7",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15521,6 +15624,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "e7f6c011776e8db7",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b10abbdd5d54bf94",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -15600,7 +15704,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7803d0c9e1cf80ff",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "35434ddddb7a89ed",
+      "rooms": "7228fc2aed22ad0d",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "f3ab3867b131b82c",
       "runtime_robustness": "3b0a45bbd9f04342",
@@ -15630,10 +15734,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "back: fully open",
-     "store": "39234bc430e8507e"
+     "store": "1edf83cc34212fd7"
     },
     {
-     "all": "fb26a01b0f1b3098",
+     "all": "0a0ea1f143f509a1",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15671,6 +15775,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "8527a891e2241369",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b4fc86e2dd7db621",
       "forecast_uncapped_moisture_effect_ml": "8527a891e2241369",
@@ -15750,7 +15855,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "8dd63c1b40fb8cb9",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "300d447ef1715711",
+      "rooms": "db53b2f0ded6e3de",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5db7b502c75558cc",
       "runtime_robustness": "b019d3325d318b06",
@@ -15780,10 +15885,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 1",
-     "store": "2e5aa43fbe513438"
+     "store": "ae2941ae3ca93f2b"
     },
     {
-     "all": "9a372a599483d740",
+     "all": "504935b89c793d9b",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15821,6 +15926,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "8527a891e2241369",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b4fc86e2dd7db621",
       "forecast_uncapped_moisture_effect_ml": "3fdba35f04dc8c46",
@@ -15900,7 +16006,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "982de196341a7abc",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6c4099b22d33ed7e",
+      "rooms": "f83f0d87f0f9b3a5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8c1d4fa7980060cc",
       "runtime_robustness": "98658b60e1e5947b",
@@ -15930,10 +16036,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 2",
-     "store": "86dda98f9b98bad3"
+     "store": "65a80d080ed41d76"
     },
     {
-     "all": "6f9af580f5b8be4e",
+     "all": "aeb24c28aaf3e9db",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15971,6 +16077,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "8527a891e2241369",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b4fc86e2dd7db621",
       "forecast_uncapped_moisture_effect_ml": "6b51d431df5d7f14",
@@ -16050,7 +16157,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "fd300b638b165a75",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0579d931f8b1d751",
+      "rooms": "c787ffa98e628125",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "005f9bcab578c86b",
       "runtime_robustness": "1fdba1069c171a33",
@@ -16080,10 +16187,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 3",
-     "store": "27e921db6d23ea63"
+     "store": "d6a76cb7f2b415ed"
     },
     {
-     "all": "be4f1c03281ef06e",
+     "all": "e19fbc2c0f2e8b8b",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16121,6 +16228,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "8527a891e2241369",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b4fc86e2dd7db621",
       "forecast_uncapped_moisture_effect_ml": "4fc82b26aecb47d2",
@@ -16200,7 +16308,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "9db1813de0d989e3",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7829184afa0bc997",
+      "rooms": "e1d5306e50c66cfd",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0bb2e900d31e40a0",
       "runtime_robustness": "2f936f4a73351a60",
@@ -16230,10 +16338,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 4",
-     "store": "a755a099fd401ccd"
+     "store": "9ef825b8a2af8b87"
     },
     {
-     "all": "10c56802d3cfc0e6",
+     "all": "822d363f9f6c4f5a",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16271,6 +16379,7 @@
       "forecast_live_observation_weight": "2651a7de133888b8",
       "forecast_moisture_effect_ml": "8527a891e2241369",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "b4fc86e2dd7db621",
       "forecast_uncapped_moisture_effect_ml": "4fc82b26aecb47d2",
@@ -16350,7 +16459,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "dc8e4ff6b39dc41e",
+      "rooms": "67e020c2a5cb8770",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9d2b57769645cfa9",
       "runtime_robustness": "db0099342b52b50d",
@@ -16380,10 +16489,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "8045d60e6a164584"
+     "store": "6a07bb7c3f0903ea"
     },
     {
-     "all": "4dcf07bd9de057e4",
+     "all": "2463a45b7b6056cd",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16421,6 +16530,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "eb624dbe56eb6620",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "ba4b8be383e89a0e",
       "forecast_uncapped_moisture_effect_ml": "eb624dbe56eb6620",
@@ -16500,7 +16610,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fc3f5da9a97e036f",
+      "rooms": "74cd05ee221deb1c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b339243d23188143",
       "runtime_robustness": "cf13f235fcfd5d45",
@@ -16530,10 +16640,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap open",
-     "store": "5647266b918bee46"
+     "store": "6621c7dc44106444"
     },
     {
-     "all": "f1c0773ab8fe7456",
+     "all": "58ae99eacf49a025",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16571,6 +16681,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "eb624dbe56eb6620",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "ba4b8be383e89a0e",
       "forecast_uncapped_moisture_effect_ml": "eb624dbe56eb6620",
@@ -16650,7 +16761,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "939d776a11e7fba9",
+      "rooms": "ca2e7ab73d09b5c8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "40f92d9cbdc8550f",
       "runtime_robustness": "5e8f155db98f9058",
@@ -16680,10 +16791,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap closed",
-     "store": "98c4239cf6b88e55"
+     "store": "0ca2afa58e2e7e39"
     },
     {
-     "all": "90b63f644e059318",
+     "all": "6389eb0573e8f2b5",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16721,6 +16832,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "5316ca1c5ddca8e6",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "ce40a5eb3c0acd7d",
       "forecast_uncapped_moisture_effect_ml": "5316ca1c5ddca8e6",
@@ -16800,7 +16912,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1631e3bbcb93e499",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "08e96b67d89c21a3",
+      "rooms": "24ac6bcc9b35ebec",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8f0c27aaa8d9e55f",
       "runtime_robustness": "173980f570e02aed",
@@ -16830,10 +16942,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door open",
-     "store": "75e727b7d63af090"
+     "store": "0570d994c9dbf8b1"
     },
     {
-     "all": "b7c357657abc75f1",
+     "all": "cb0502d8b915eb69",
      "keys": {
       "actionable_potential_ml": "5ef6fdf32513aa7c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16871,6 +16983,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "4523540f1504cd17",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "127a7862366fbbcf",
       "forecast_uncapped_moisture_effect_ml": "4523540f1504cd17",
@@ -16950,7 +17063,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c1ffc8112d9b134",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3b31191c535dafbb",
+      "rooms": "6110ca7a415001c6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9293e1554a9005d3",
       "runtime_robustness": "49602fa27226135a",
@@ -16980,10 +17093,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 1",
-     "store": "78ff04b28499c27e"
+     "store": "9d83ee55ec9872dd"
     },
     {
-     "all": "7d50c277862c0775",
+     "all": "07944c7a6da797ab",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17021,6 +17134,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "b17ef6d19c7a5b1e",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "127a7862366fbbcf",
       "forecast_uncapped_moisture_effect_ml": "b17ef6d19c7a5b1e",
@@ -17100,7 +17214,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "a51162aeeb057ca4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f916fea9977d3588",
+      "rooms": "4d73aecb876fd8a3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d80f2fc3fa621228",
       "runtime_robustness": "b66a7962adaf8785",
@@ -17130,10 +17244,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 2",
-     "store": "28d2f4c915fc39f7"
+     "store": "cb71f5cd9b62da47"
     },
     {
-     "all": "e75674a5fba860cd",
+     "all": "00b5ee8a8a8cf10a",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17171,6 +17285,7 @@
       "forecast_live_observation_weight": "52e4d55cf700422d",
       "forecast_moisture_effect_ml": "e629fa6598d73276",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "634b78431a76bcd7",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -17250,7 +17365,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1c52469fed2f3391",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cdf00eddae5432d4",
+      "rooms": "6b47eb232f46ddc4",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "63e4c8db9cf6bbf7",
       "runtime_robustness": "332122901293bbf0",
@@ -17280,10 +17395,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 3",
-     "store": "46cfc28802b125d4"
+     "store": "7c2150cd7dbfe5e0"
     },
     {
-     "all": "8ba2c6fbd3f67b3b",
+     "all": "3e9458aef24f7d06",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17321,6 +17436,7 @@
       "forecast_live_observation_weight": "30be679025b58a1e",
       "forecast_moisture_effect_ml": "e629fa6598d73276",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "e0c2a511ddca339b",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -17400,7 +17516,7 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "44e1ee624725a019",
+      "rooms": "a1e57114855feeb2",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "e11a89b24eed3a60",
       "runtime_robustness": "3288db0c7d86ad37",
@@ -17430,10 +17546,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door closed",
-     "store": "34722f0cf04f6d36"
+     "store": "3be5e687f5bae47f"
     },
     {
-     "all": "9702f13acbb6fc58",
+     "all": "c5613e5e064d9bbd",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17471,6 +17587,7 @@
       "forecast_live_observation_weight": "16522468b17d5af6",
       "forecast_moisture_effect_ml": "e629fa6598d73276",
       "forecast_optimal_close_in_min": "74234e98afe7498f",
+      "forecast_shadow_comparison": "2e3753b91d9394e4",
       "forecast_target_limited": "fcbcf165908dd18a",
       "forecast_temperature_change_c": "9b661c463350314b",
       "forecast_uncapped_moisture_effect_ml": "e629fa6598d73276",
@@ -17550,7 +17667,7 @@
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "98e1c754c1876bb6",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "69aa4ac9389981ef",
+      "rooms": "d8664f40ede1daad",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "015fb09b57da150f",
       "runtime_robustness": "bbb4639ad8a005e9",
@@ -17580,11 +17697,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "977f0decb1e8b138"
+     "store": "03799feaf86db195"
     }
    ],
    "network_calls": [],
-   "persisted": "a61a81b2879c8089"
+   "persisted": "83c58ee5404322f4"
   }
  },
  "schema": 1

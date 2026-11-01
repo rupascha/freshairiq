@@ -26,7 +26,7 @@ from .const import (
     ORIENTATION_UNKNOWN,
 )
 from .climate_sources import entity_ids
-from .coordinator_sources import _float_state
+from .coordinator_sources import _float_state, _humidity_percent
 from .model import RoomInput, absolute_humidity, evaluate_room
 from .opening_state import normalize_opening_state, stable_state_seconds
 
@@ -39,11 +39,19 @@ def _contact_ids(room: dict[str, Any]) -> list[str]:
     return [legacy] if legacy else []
 
 
+def _unit_checked_reference(hass: HomeAssistant, pair: tuple[str | None, str | None, float | None, float | None]) -> tuple[str | None, str | None, float | None, float | None]:
+    """0.26.5.5: an opening-specific humidity sensor in another unit than % gives no value (fails closed)."""
+    te, he, tv, hv = pair
+    if he and hv is not None and _humidity_percent(hass, he)[1]:
+        return te, he, None, None
+    return pair
+
+
 def _contact_specific_reference(
     hass: HomeAssistant, room: dict[str, Any], *,
     default_temp_entity: str | None, default_humidity_entity: str | None,
     default_temp: float | None, default_humidity: float | None,
-    contact_modes: dict[str, str] | None = None,
+    contact_modes: dict[str, str] | None = None, humidity_reader: Any = None,
 ) -> tuple[str | None, str | None, float | None, float | None]:
     """Return the conservative reference-air pair for the currently open contacts.
 
@@ -53,6 +61,9 @@ def _contact_specific_reference(
     are open at once, the moistest valid source is used. This is deliberately
     conservative: FreshAirIQ must not promise more dehumidification than the
     least favourable incoming air stream supports.
+
+    F02 (0.26.5.5): ``humidity_reader`` checks every open source before the choice – one
+    source in another unit than % hidden behind a valid one makes the incoming air unknown.
     """
     temp_map = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidity_map = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
@@ -77,7 +88,7 @@ def _contact_specific_reference(
         # the combined incoming air unknown as well, so fail closed for the room.
         if contact_te and contact_he:
             te, he = contact_te, contact_he
-            tv, hv = _float_state(hass, te), _float_state(hass, he)
+            tv, hv = _float_state(hass, te), (humidity_reader or _float_state)(hass, he)
         elif local_configured:
             return contact_te, contact_he, None, None
         else:
@@ -279,6 +290,33 @@ def _room_closed_for_seconds(hass: HomeAssistant, room: dict[str, Any], now: dat
     if open_count:
         return None
     return min(closed_seconds) if closed_seconds else 0.0
+
+
+def _delay_confirmed_modes(
+    hass: HomeAssistant, room: dict[str, Any], now: datetime, modes: dict[str, str], *,
+    contact_since: dict[str, datetime] | None = None, session_active: bool = False,
+) -> dict[str, str]:
+    """Physical contact modes as seen by the reference-air choice.
+
+    0.26.5.4 (community report): an opening only switches the incoming-air source once
+    it would also start a session, i.e. after its own configured delay (same
+    per-contact value as the session gate). Passing through a delayed door must
+    not flip the room to the door's reference air. A running session keeps the
+    immediate behaviour, like the session gate's re-open rule.
+    """
+    if session_active:
+        return dict(modes)
+    delays = room.get(CONF_CONTACT_DELAYS) or {}
+    fallback = int(room.get(CONF_CONTACT_DELAY, 0))
+    confirmed: dict[str, str] = {}
+    for entity_id, mode in modes.items():
+        if mode in {"open", "tilted"}:
+            since = (contact_since or {}).get(entity_id)
+            sec = stable_state_seconds(now, since) if isinstance(since, datetime) else _open_seconds(hass, entity_id, now)
+            if sec is None or sec < float(delays.get(entity_id, fallback)):
+                mode = "closed"
+        confirmed[entity_id] = mode
+    return confirmed
 
 
 def _room_ventilation_state(hass: HomeAssistant, room: dict[str, Any], now: datetime, *, honour_delays: bool = False, contact_modes: dict[str, str] | None = None, contact_since: dict[str, datetime] | None = None) -> tuple[bool, float]:

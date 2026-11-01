@@ -1,0 +1,304 @@
+{
+ "room_a": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   0,
+   2
+  ]
+ ],
+ "cases": [
+  {
+   "name": "shared wall (0 cm)",
+   "b": [
+    [
+     2,
+     0
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     2,
+     2
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 1.0
+   },
+   "target": "b"
+  },
+  {
+   "name": "4 cm apart",
+   "b": [
+    [
+     2.04,
+     0
+    ],
+    [
+     4.04,
+     0
+    ],
+    [
+     4.04,
+     2
+    ],
+    [
+     2.04,
+     2
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 1.0
+   },
+   "target": "b"
+  },
+  {
+   "name": "12 cm apart",
+   "b": [
+    [
+     2.12,
+     0
+    ],
+    [
+     4.12,
+     0
+    ],
+    [
+     4.12,
+     2
+    ],
+    [
+     2.12,
+     2
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 1.0
+   },
+   "target": null
+  },
+  {
+   "name": "26 cm apart",
+   "b": [
+    [
+     2.26,
+     0
+    ],
+    [
+     4.26,
+     0
+    ],
+    [
+     4.26,
+     2
+    ],
+    [
+     2.26,
+     2
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 1.0
+   },
+   "target": null
+  },
+  {
+   "name": "shared corner only",
+   "b": [
+    [
+     2,
+     2
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     2,
+     4
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.98,
+    "width_m": 0.9
+   },
+   "target": null
+  },
+  {
+   "name": "short partial wall",
+   "b": [
+    [
+     2,
+     1.4
+    ],
+    [
+     4,
+     1.4
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     2,
+     3
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 1.0
+   },
+   "target": null
+  },
+  {
+   "name": "opening on the shared part of a partial wall",
+   "b": [
+    [
+     2,
+     1.4
+    ],
+    [
+     4,
+     1.4
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     2,
+     3
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.85,
+    "width_m": 0.5
+   },
+   "target": "b"
+  },
+  {
+   "name": "longer neighbour wall",
+   "b": [
+    [
+     2,
+     -1
+    ],
+    [
+     4,
+     -1
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     2,
+     3
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 1.0
+   },
+   "target": "b"
+  },
+  {
+   "name": "L-shaped neighbour, wall split by a corner",
+   "b": [
+    [
+     2,
+     0
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     0.5
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.25,
+    "width_m": 0.6
+   },
+   "target": "b"
+  },
+  {
+   "name": "default width near a corner beyond the shared wall",
+   "b": [
+    [
+     2,
+     0
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     4,
+     0.8
+    ],
+    [
+     2,
+     0.8
+    ]
+   ],
+   "opening": {
+    "edge": 1,
+    "offset": 0.3,
+    "width_m": null
+   },
+   "target": null
+  }
+ ]
+}

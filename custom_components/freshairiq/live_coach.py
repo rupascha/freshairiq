@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Any
 from math import isfinite
 
-from .close_wording import close_instruction, fan_only, keep_instruction
+from .close_wording import airing_running, close_instruction, fan_only, keep_instruction
 from .consolidation import moisture_coming_in, opening_phase_protected, planned_target_min
 from .model import min_return_volume_factor
 
@@ -25,6 +25,19 @@ def _clamp(value: float, low: float, high: float) -> float:
     return min(max(float(value), low), high)
 
 
+def _aired_now(room: dict[str, Any]) -> bool:
+    """F06 (0.26.5.5, GitHub #24): the room is really aired right now.
+
+    A room whose windows are closed again stays ``active`` until its final measurement – it must
+    neither time a window opened later nor count in the coach's forecast. A running exhaust fan
+    airs the room although every window is closed.
+    """
+    if not airing_running(room):
+        return False
+    actuators = room.get("configured_actuators") if isinstance(room.get("configured_actuators"), dict) else {}
+    return bool(actuators.get("mechanical_exhaust_active")) or str(room.get("opening_state") or "") != "closed"
+
+
 def refine_live_recommendation(
     rooms: dict[str, dict[str, Any]],
     options: dict[str, Any],
@@ -34,7 +47,7 @@ def refine_live_recommendation(
     active = [r for r in rooms.values()
               if r.get("calculation_enabled", True)
               and r.get("data_quality") == "ok"
-              and r.get("active")]
+              and _aired_now(r)]
     if not active or str(recommendation.get("kind") or "") not in {"continue", "close"}:
         return recommendation
 
@@ -57,6 +70,7 @@ def refine_live_recommendation(
     # 0.26.4.10: a long-running exhaust fan does not time the windows opened later.
     timed = [r for r in active if not fan_only(r)] or active
     elapsed = max((_f(r.get("session_elapsed_min")) for r in timed), default=0.0)
+    youngest = min((_f(r.get("session_elapsed_min")) for r in timed), default=0.0)  # F06: every window has its own minimum
     min_duration = max(_f(options.get("min_duration_min"), 3.0), 2.0)
     max_duration = max(_f(options.get("max_duration_min"), 20.0), min_duration)
 
@@ -123,7 +137,7 @@ def refine_live_recommendation(
         baseline_target=baseline_target, confidence=confidence, elapsed=elapsed, expected_now=expected_now,
         feedback_samples=feedback_samples, learning_weight=learning_weight, max_duration=max_duration,
         min_duration=min_duration, next5=next5, next5_temp=next5_temp, options=options,
-        progress_ratio=progress_ratio, recommendation=recommendation, target=target,
+        progress_ratio=progress_ratio, recommendation=recommendation, target=target, youngest=youngest,
     )
 
 
@@ -132,7 +146,7 @@ def _coach_close_or_extend(
     active: Any, actual_removed: Any, all_close_decisions_ready: Any, baseline_target: Any, confidence: Any,
     elapsed: Any, expected_now: Any, feedback_samples: Any, learning_weight: Any, max_duration: Any,
     min_duration: Any, next5: Any, next5_temp: Any, options: Any, progress_ratio: Any, recommendation: Any,
-    target: Any,
+    target: Any, youngest: Any = None,
 ) -> Any:
     """Close/hold/extend decision from the marginal benefit, health and goal priorities."""
 
@@ -230,8 +244,9 @@ def _coach_close_or_extend(
     if (
         not hold
         and all_close_decisions_ready
-        and elapsed >= min_duration
-        and remaining <= 0.35
+        # F06: never before the youngest window's minimum time; 0.26.5.5 (audit F01): moisture really
+        # coming in (net 5-minute change below zero) is protection and closes before the minimum.
+        and ((ingress and signed_next5 < 0) or (elapsed >= min_duration and (youngest is None or youngest >= min_duration) and remaining <= 0.35))
         and next5 < max(min_return * 1.25, 35.0 * volume_factor)
         and not health_urgent
     ):
@@ -274,3 +289,30 @@ def _coach_close_or_extend(
     reasons.insert(0, reason)
     out["reasons"] = reasons[:6]
     return out
+
+
+_CLOSE_STATES = frozenset({"close", "protection_close"})
+
+
+def align_live_coach_state(recommendation: dict[str, Any]) -> None:
+    """Hotfix S2 (01.11.): the live-coach fields describe the final decision, not an earlier one.
+
+    The coach runs before the floor/house aggregate. When that aggregate turns a close into
+    "keep ventilating" (or a running airing into a close), the earlier ``live_coach_state`` and
+    remaining time stayed and reached the IQ time and the explanation. Same values as the
+    consolidation uses for a blocked close: ``awaiting_measurements`` without a remaining time,
+    and ``close`` with 0 min for a close.
+    """
+    if not isinstance(recommendation, dict) or not recommendation.get("live_coach"):
+        return
+    kind = str(recommendation.get("kind") or "")
+    state = str(recommendation.get("live_coach_state") or "")
+    if kind == "continue" and state in _CLOSE_STATES:
+        recommendation["live_coach_state"] = "awaiting_measurements"
+        recommendation["live_coach_reason"] = str(recommendation.get("summary") or recommendation.get("live_coach_reason") or "")
+        recommendation["live_coach_remaining_min"] = None
+        if recommendation.get("duration_min") in (0, 0.0):
+            recommendation["duration_min"] = None
+    elif kind == "close" and state not in _CLOSE_STATES:
+        recommendation["live_coach_state"] = "close"
+        recommendation["live_coach_remaining_min"] = 0.0

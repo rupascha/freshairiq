@@ -651,13 +651,15 @@
               "auto_sun_protection": "Close covers against the sun automatically",
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
             }
           }
         },
@@ -835,13 +837,15 @@
               "auto_sun_protection": "Close covers against the sun automatically",
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
             }
           }
         }
@@ -1054,13 +1058,15 @@
               "auto_sun_protection": "Close covers against the sun automatically",
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
             }
           }
         },
@@ -1238,13 +1244,15 @@
               "auto_sun_protection": "Close covers against the sun automatically",
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
             }
           }
         }
@@ -2591,13 +2599,15 @@
               "auto_sun_protection": "Close covers against the sun automatically",
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
             }
           }
         },
@@ -2775,13 +2785,15 @@
               "auto_sun_protection": "Close covers against the sun automatically",
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+              "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+              "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
             }
           }
         }
@@ -3509,13 +3521,15 @@
                 "auto_sun_protection": "Close covers against the sun automatically",
                 "exhaust_fan_control": "Switch the exhaust fan automatically",
                 "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+                "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
                 "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
                 "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
               }
             }
           },
@@ -3837,13 +3851,15 @@
                 "auto_sun_protection": "Close covers against the sun automatically",
                 "exhaust_fan_control": "Switch the exhaust fan automatically",
                 "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+                "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
                 "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
                 "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
               }
             }
           },
@@ -4089,13 +4105,15 @@
                 "auto_sun_protection": "Close covers against the sun automatically",
                 "exhaust_fan_control": "Switch the exhaust fan automatically",
                 "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
-                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime"
+                "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
+                "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
                 "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
                 "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
-                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest."
+                "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
+                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
               }
             }
           },

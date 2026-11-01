@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
@@ -21,17 +22,21 @@ from .actuator_control import (
     COVER_POSITION,
     DEFAULT_FAN_FOLLOW_UP_MIN,
     DEFAULT_FAN_MAX_RUNTIME_MIN,
+    FAN_CONTROL_MOISTURE_SOURCE,
     FAN_CONTROL_OFF,
     FAN_COMMAND_TIMEOUT_S,
     FAN_CONTROL_RECOMMENDATION,
     FAN_OFF_CONFIRM_S,
+    FAN_RECOMMENDATION_ON,
     CoverView,
     cover_setups,
     decide_cover,
     decide_fan,
+    external_lock_active,
     fan_demand,
     room_controls_covers,
     settle_removed_off,
+    still_holding,
 )
 from .const import DOMAIN
 from .fan_automation import fan_restart_lock_min, fan_trace_row
@@ -122,10 +127,11 @@ class ActuatorController:
                     # 0.26.5.4 (review A06): the switch-off is recorded with its result; the room is
                     # no longer controlled, so a fan that did not react stays visible in the trace
                     # audit S05: a fan another controlled room still needs stays on; it is switched off
-                    # once nobody needs it any more (see _async_settle_removed)
-                    needed = set().union(*self._fan_demand_by_room().values())
+                    # once nobody needs it any more (see _async_settle_removed). Hotfix F1: "needs" includes
+                    # a follow-up time or an off confirmation (holding); a locked fan is left to its automation.
+                    needed = self._held_fans()
                     now_off = [fan for fan in _fan_entities(room) if fan not in needed]
-                    sent = await self._async_call("homeassistant", "turn_off", {"entity_id": now_off}) if now_off else True
+                    sent = await self._async_switch_fans("turn_off", now_off) if now_off else True
                     # audit P2-08: followed until the fans report off (or the timeout); "waiting" while only
                     # fans another room still needs are left (audit N02)
                     mem.update(owned=False, command="off", command_at=dt_util.now().isoformat(),
@@ -133,6 +139,8 @@ class ActuatorController:
                                off_entities=now_off if sent else None,
                                deferred_off=[fan for fan in _fan_entities(room) if fan in needed] or None)
                     self._trace(key, FAN_CONTROL_OFF, mem, dt_util.now())
+                elif key in still and isinstance(mem, dict) and mem.get("owned"):
+                    await self._async_drop_fans(key, room)
         if self._rooms or self._removed_pending():
             await self._async_evaluate(fans=True)
 
@@ -201,7 +209,9 @@ class ActuatorController:
 
     async def _async_evaluate_locked(self, *, fans: bool) -> None:
         changed = await self._async_settle_removed() if fans else False
-        demanded = self._fan_demand_by_room() if fans else {}
+        if fans:
+            changed |= self._block_after_manual_off()  # hotfix A2: before any room may switch the fan on again
+        demanded = self._fan_holding_by_room() if fans else {}
         for room in self._rooms:
             data = self._room_data(str(room["key"]))
             if room_controls_covers(room):
@@ -261,10 +271,16 @@ class ActuatorController:
                     self._trace(str(key), FAN_CONTROL_OFF, mem, dt_util.now())
                 changed = True
             deferred = list(mem.get("deferred_off") or [])
-            if not deferred or mem.get("command_state") == "pending" or set(deferred) & set().union(*self._fan_demand_by_room().values()):
-                continue  # nothing waits, the first switch-off is still open, or another room still needs it
-            sent = await self._async_call("homeassistant", "turn_off", {"entity_id": deferred})
-            mem.update(off_entities=deferred, deferred_off=None, command_at=dt_util.now().isoformat(),
+            if not deferred or mem.get("command_state") == "pending":
+                continue  # nothing waits, or the switch-off sent before is still open
+            # Hotfix F2: per device – a free fan goes off, a fan another room still holds (or another
+            # automation controls) keeps waiting
+            held = self._held_fans()
+            free = [fan for fan in deferred if fan not in held]
+            if not free:
+                continue
+            sent = await self._async_switch_fans("turn_off", free)
+            mem.update(off_entities=free, deferred_off=[fan for fan in deferred if fan in held] or None, command_at=dt_util.now().isoformat(),
                        command_state="pending" if sent else "failed")
             self._trace(str(key), FAN_CONTROL_OFF, mem, dt_util.now())
             changed = True
@@ -302,9 +318,48 @@ class ActuatorController:
             "off_pending_since": mem.get("off_pending_since"),
             "completed_at": mem.get("completed_at"),
             "restart_locked": self._restart_locked(key, mem),
+            **self._sharing(key, mem),
             "own_off": (mem.get("own_off") or {}).get("state"),
+            "fans_unknown": self._fans_unknown(_fan_entities(next((r for r in self._rooms if str(r.get("key")) == str(key)), {}))),
             **self._fan_group(key),
         }
+
+    def _sharing(self, key: str, mem: dict[str, Any]) -> dict[str, Any]:
+        """0.26.5.5: one picture of a fan several rooms share (no entity IDs).
+
+        ``shared_owner``: another room's control switched this room's fan on – FreshAirIQ runs it,
+        not the user. ``shared_for``: this room switched it on and it runs on for another room.
+        ``external_lock``: another automation controls the fans right now.
+        """
+        room = next((r for r in self._rooms if str(r.get("key")) == str(key)), {})
+        fans = set(_fan_entities(room)) if room else set()
+        if not fans or not _room_controls_fan(room):
+            return {}
+        sharers = [r for r in self._rooms if str(r["key"]) != str(key) and _room_controls_fan(r) and set(_fan_entities(r)) & fans]
+        owner = any(isinstance(m := self._memory["fans"].get(str(r["key"])), dict) and m.get("owned") for r in sharers)
+        holding = self._fan_holding_by_room()
+        others = any(str(r["key"]) in holding for r in sharers)
+        return {"shared_owner": bool(owner and not mem.get("owned")), "shared_for": bool(mem.get("owned") and others and str(key) not in holding),
+                "external_lock": fans <= self._locked_fans(), **self._timing([room, *sharers])}
+
+    def _timing(self, rooms: list[dict[str, Any]]) -> dict[str, Any]:
+        """0.26.5.5: when the follow-up of the fans ends and when the owner's maximum runtime stops them.
+
+        Fixed points in time from the control data (the card counts down itself, nothing changes
+        every minute); the latest follow-up of all rooms sharing the fans counts.
+        """
+        now = dt_util.now()
+        ends, limits = [], []
+        for room in rooms:
+            mem = self._memory["fans"].get(str(room["key"])) or {}
+            last = dt_util.parse_datetime(str(mem.get("last_demand") or ""))
+            if str(room.get("exhaust_fan_control")) == "moisture_source" and last is not None:
+                ends.append(last + timedelta(minutes=float(room.get("exhaust_fan_follow_up_min", DEFAULT_FAN_FOLLOW_UP_MIN))))
+            since = dt_util.parse_datetime(str(mem.get("since") or ""))
+            if mem.get("owned") and since is not None:
+                limits.append(since + timedelta(minutes=float(room.get("exhaust_fan_max_runtime_min", DEFAULT_FAN_MAX_RUNTIME_MIN))))
+        end = max((e for e in ends if e > now), default=None)
+        return {"follow_up_until": end.isoformat() if end else None, "runtime_limit_at": min(limits).isoformat() if limits else None}
 
     def _fan_group(self, key: str) -> dict[str, Any]:
         """Audit P1-05: how many of several fans are on (no entity IDs); empty for a single fan."""
@@ -312,7 +367,11 @@ class ActuatorController:
         fans = _fan_entities(room) if room else []
         if len(fans) < 2:
             return {}
-        return {"fans_total": len(fans), "fans_on": self._fan_states(fans)[2]}
+        return {"fans_total": len(fans), "fans_on": self._fan_states(fans)[2], "fans_unknown": self._fans_unknown(fans)}
+
+    def _fans_unknown(self, fans: list[str]) -> int:
+        """Hotfix F3: fans without an on/off state (unavailable, unknown, missing)."""
+        return sum(1 for fan in fans if (state := self.hass.states.get(fan)) is None or state.state not in {"on", "off"})
 
     def _restart_locked(self, key: str, mem: dict[str, Any]) -> bool:
         room = next((r for r in self._rooms if str(r.get("key")) == str(key)), {})
@@ -338,6 +397,15 @@ class ActuatorController:
             window_open=bool(actuators.get("window_open")),
         )
 
+    @staticmethod
+    def _source_hold(room: dict[str, Any], data: dict[str, Any]) -> bool:
+        """Community hotfix: after a moisture source (recovery window, at most 15 min) the room's valid
+        recommendation still says to air – the fan it already runs keeps running."""
+        actuators = data.get("configured_actuators") if isinstance(data.get("configured_actuators"), dict) else {}
+        return (str(room.get("exhaust_fan_control") or FAN_CONTROL_OFF) == FAN_CONTROL_MOISTURE_SOURCE
+                and bool(data.get("moisture_source_recovery")) and not actuators.get("window_open")
+                and str(data.get("house_aligned_action") or "") in FAN_RECOMMENDATION_ON)
+
     def _fan_demand_by_room(self) -> dict[str, set[str]]:
         """Fans each controlled room needs right now (0.26.5.3: one fan, several rooms)."""
         return {
@@ -346,21 +414,102 @@ class ActuatorController:
             if _room_controls_fan(room) and self._demand(room, self._room_data(str(room["key"])))
         }
 
+    def _fan_holding_by_room(self) -> dict[str, set[str]]:
+        """Fans each controlled room needs now or still holds (0.26.5.5: follow-up, off confirmation)."""
+        now = dt_util.now()
+        holding = self._fan_demand_by_room()
+        for room in self._rooms:
+            key = str(room["key"])
+            mem = self._memory["fans"].get(key)
+            if key not in holding and _room_controls_fan(room) and isinstance(mem, dict) and self._source_hold(room, self._room_data(key)):
+                holding[key] = set(_fan_entities(room))  # community hotfix: a shared fan is held the same way
+            elif key not in holding and _room_controls_fan(room) and isinstance(mem, dict) and still_holding(
+                str(room.get("exhaust_fan_control") or FAN_CONTROL_OFF), mem, now,
+                follow_up_min=float(room.get("exhaust_fan_follow_up_min", DEFAULT_FAN_FOLLOW_UP_MIN)), off_confirm_s=FAN_OFF_CONFIRM_S,
+            ):
+                holding[key] = set(_fan_entities(room))
+        return holding
+
+    def _held_fans(self) -> set[str]:
+        """Fans another room needs now or still holds, or another automation controls (hotfix F1/F2)."""
+        return set().union(*self._fan_holding_by_room().values()) | self._locked_fans()
+
+    async def _async_drop_fans(self, key: str, room: dict[str, Any]) -> None:
+        """Hotfix F1: fans FreshAirIQ switched on that were removed from a still controlled room's list.
+
+        Switched off like a removed control (followed to its result, held fans deferred), recorded
+        under ``<room>:removed_fans`` so the room's own control state is unchanged.
+        """
+        current = next((r for r in self._rooms if str(r["key"]) == key), {})
+        dropped = [fan for fan in _fan_entities(room) if fan not in set(_fan_entities(current))]
+        if not dropped:
+            return
+        needed = self._held_fans()
+        now_off = [fan for fan in dropped if fan not in needed]
+        sent = await self._async_switch_fans("turn_off", now_off) if now_off else True
+        mem = self._memory["fans"].setdefault(f"{key}:removed_fans", {})
+        mem.update(owned=False, command="off", command_at=dt_util.now().isoformat(),
+                   command_state=("pending" if now_off else "waiting") if sent else "failed", reason="control_removed",
+                   off_entities=now_off if sent else None, deferred_off=[fan for fan in dropped if fan in needed] or None)
+        self._trace(f"{key}:removed_fans", FAN_CONTROL_OFF, mem, dt_util.now())
+
+    def _locked(self, room: dict[str, Any]) -> bool:
+        lock = str(room.get("exhaust_fan_external_lock") or "").strip()
+        state = self.hass.states.get(lock) if lock else None
+        return external_lock_active(state.state if state is not None else None)
+
+    def _locked_fans(self) -> set[str]:
+        """Every fan an active lock of any room covers (F01): the lock protects the device, not one room.
+
+        A shared fan another automation runs because of room B is never switched by room A either.
+        """
+        locked: set[str] = set()
+        for room in self.entry.data.get("rooms", []) or []:
+            if isinstance(room, dict) and self._locked(room):
+                locked.update(_fan_entities(room))
+        return locked
+
+    async def _async_switch_fans(self, service: str, entities: list[str]) -> bool:
+        """Switch fans – never one another automation controls right now (F01: reload, deferred, own)."""
+        locked = self._locked_fans()
+        free = [fan for fan in entities if fan not in locked]
+        return await self._async_call("homeassistant", service, {"entity_id": free}) if free else True
+
     async def _async_fans(self, room: dict[str, Any], data: dict[str, Any], *, needed_elsewhere: set[str] = frozenset()) -> bool:
-        fans = _fan_entities(room)
+        locked = self._locked_fans()
+        fans = [fan for fan in _fan_entities(room) if fan not in locked]  # F01: locked fans are not this room's to switch
         fan_on, all_on, _count, all_off = self._fan_states(fans)  # 0.26.5.4 (review A05): confirmed only when all on
         mode = str(room.get("exhaust_fan_control") or FAN_CONTROL_OFF)
         mem = self._memory["fans"].setdefault(str(room["key"]), {})
         before = dict(mem)
         now = dt_util.now()
-        if fan_on and mem.get("owned") and set(fans) & needed_elsewhere and not self._demand(room, data):
+        if not fans:
+            # 0.26.5.5: another automation (Alexa, washing machine …) controls the fans – FreshAirIQ
+            # sends nothing and gives up its ownership: it never switches off what the other one runs
+            mem.update(owned=False, reason="external_lock")
+            mem.pop("off_pending_since", None)
+            return mem != before
+        runtime_over = bool(mem.get("owned")) and now - (dt_util.parse_datetime(str(mem.get("since") or "")) or now) >= timedelta(
+            minutes=float(room.get("exhaust_fan_max_runtime_min", DEFAULT_FAN_MAX_RUNTIME_MIN)))
+        if fan_on and mem.get("owned") and set(fans) & needed_elsewhere and not self._demand(room, data) and not runtime_over:
             # another room still needs this fan: it stays on, this room keeps
             # trying to switch it off once nobody needs it any more
             if mem.get("command") == "on" and mem.get("command_state") == "pending" and all_on:
                 mem["command_state"] = "confirmed"  # the start this room sent is reported
             own_changed = await self._async_stop_own_fans(room, [fan for fan in fans if fan not in needed_elsewhere], mode, mem, now)
             return mem != before or own_changed  # audit F01: own_off changes in place (a flat copy cannot see it)
+        # Hotfix A1 (01.11.): own fans this room already switched off on their own (confirmed) are no
+        # longer FreshAirIQ's – one that is on again (switched on by hand) is not part of the group's
+        # later switch-off (still off, it stays in the group as before). They are taken over again
+        # only by a new automatic start of the group.
+        own_off = mem.get("own_off") if isinstance(mem.get("own_off"), dict) else {}
+        if own_off.get("state") == "confirmed":
+            mem["released_fans"] = sorted(set(mem.get("released_fans") or []) | set(own_off.get("entities") or []))
         mem.pop("own_off", None)  # the room decides for its whole group again
+        released = set(mem.get("released_fans") or [])
+        group = [fan for fan in fans if fan not in released or getattr(self.hass.states.get(fan), "state", None) != "on"] or fans
+        if group != fans:
+            fan_on, all_on, _count, all_off = self._fan_states(group)
         options = getattr(self.coordinator, "options", None) or {}
         recommendation = mode == FAN_CONTROL_RECOMMENDATION
         decision = decide_fan(
@@ -377,9 +526,15 @@ class ActuatorController:
             safety_off=_moisture_coming_in(data),
             all_on=all_on,
             all_off=all_off,
+            source_hold=self._source_hold(room, data),
         )
+        if decision == "off" and mem.get("reason") == "max_runtime":
+            self._block_sharers(room, fans)  # 0.26.5.5: the maximum runtime protects the device, not one room
+        if decision == "on":
+            mem.pop("released_fans", None)  # a new automatic start takes the whole group over again
+            group = fans
         if decision is not None:
-            if not await self._async_call("homeassistant", f"turn_{decision}", {"entity_id": fans}):
+            if not await self._async_call("homeassistant", f"turn_{decision}", {"entity_id": group}):
                 mem["command_state"] = "failed"
                 if decision == "on":
                     mem["owned"] = False
@@ -388,6 +543,38 @@ class ActuatorController:
         if decision is not None or (before.get("command_state") == "pending" and mem.get("command_state") != "pending"):
             self._trace(str(room["key"]), mode, mem, now)
         return mem != before
+
+    def _block_after_manual_off(self) -> bool:
+        """Hotfix A2 (01.11.): a fan switched off by hand stays off for every room that controls it.
+
+        Room A had started the shared fan, room B still needs it; the user switches it off. Only A
+        noticed ("manual_off") – B, never its owner and not blocked, switched it on again at once
+        (in the same cycle when B came first). The owner's manual switch-off now blocks every
+        sharer that needs the fan right now, the same way as the maximum runtime does; each block
+        ends when that room's own demand has ended. A start that is not reported yet is no manual off.
+        """
+        changed = False
+        locked = self._locked_fans()
+        for room in self._rooms:
+            mem = self._memory["fans"].get(str(room["key"]))
+            if not _room_controls_fan(room) or not isinstance(mem, dict) or not mem.get("owned"):
+                continue
+            if mem.get("command") == "on" and mem.get("command_state") == "pending":
+                continue
+            fans = [fan for fan in _fan_entities(room) if fan not in locked]
+            if not fans or self._fan_states(fans)[0] is not False:
+                continue
+            before = {key: bool(m.get("blocked")) for key, m in self._memory["fans"].items() if isinstance(m, dict)}
+            self._block_sharers(room, fans)
+            changed |= before != {key: bool(m.get("blocked")) for key, m in self._memory["fans"].items() if isinstance(m, dict)}
+        return changed
+
+    def _block_sharers(self, room: dict[str, Any], fans: list[str]) -> None:
+        """Rooms sharing a fan stopped at its maximum runtime do not restart it until their demand ends."""
+        for other in self._rooms:
+            if str(other["key"]) != str(room["key"]) and _room_controls_fan(other) and set(_fan_entities(other)) & set(fans):
+                mem = self._memory["fans"].setdefault(str(other["key"]), {})
+                mem["blocked"] = mem.get("blocked") or self._demand(other, self._room_data(str(other["key"])))
 
     async def _async_stop_own_fans(self, room: dict[str, Any], own: list[str], mode: str, mem: dict[str, Any], now: Any) -> bool:
         """Audit S03: the shared fan stays on for the other room, this room's own fans are switched off.
@@ -413,7 +600,7 @@ class ActuatorController:
         pending = dt_util.parse_datetime(str(mem.setdefault("off_pending_since", now.isoformat()))) or now
         if mode == FAN_CONTROL_RECOMMENDATION and (now - pending).total_seconds() < FAN_OFF_CONFIRM_S:
             return False
-        sent = await self._async_call("homeassistant", "turn_off", {"entity_id": running})
+        sent = await self._async_switch_fans("turn_off", running)
         mem.pop("off_pending_since", None)
         mem["own_off"] = {"entities": running, "at": now.isoformat(), "state": "pending" if sent else "failed"}
         self._trace(str(room["key"]), mode, {"command": "off", "reason": "shared_fan_kept", "command_state": mem["own_off"]["state"]}, now)

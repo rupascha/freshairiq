@@ -506,7 +506,7 @@ async def test_naive_clock_paths_are_aligned(hass, berlin, hub, monkeypatch) -> 
     assert await client.async_activity_heartbeat() is False
     assert await client.async_maybe_upload() is False
     assert client.status["state"] == "backoff"
-    result = await client.async_submit_support_diagnostics("x")
+    result = await client.async_submit_support_diagnostics("Card stays empty")  # 0.26.5.5: description required
     assert result["reason"] == "cooldown" and result["retry_after_seconds"] == 600
     # Error-driven first sync with an aware first-seen timestamp and a naive clock:
     # enrollment happens, the diagnostic payload waits for the onboarding grace.
@@ -738,13 +738,13 @@ async def test_support_diagnostics_success_and_cooldown(hass, berlin, hub, freez
     assert client.status["support_last_case_id"] == case_id
     assert client._state["client_error_queue"] == []
 
-    again = await client.async_submit_support_diagnostics("again")
+    again = await client.async_submit_support_diagnostics("Still nothing shown")  # 0.26.5.5: description required
     assert again["accepted"] is False and again["reason"] == "cooldown"
     assert again["retry_after_seconds"] == 3600
 
     # Naive persisted cooldown from an older release.
     client._state["support_cooldown_until"] = (dt_util.now() + timedelta(minutes=2)).replace(tzinfo=None).isoformat()
-    assert (await client.async_submit_support_diagnostics(""))["retry_after_seconds"] == 120
+    assert (await client.async_submit_support_diagnostics("Still nothing shown"))["retry_after_seconds"] == 120  # 0.26.5.5: "" is refused now
 
 
 async def test_support_diagnostics_401_retry_and_http_errors(hass, berlin, hub) -> None:
@@ -753,22 +753,22 @@ async def test_support_diagnostics_401_retry_and_http_errors(hass, berlin, hub) 
     client._state = {"client_token": TOKEN, "hub_enrolled": True}
     hub.queue("/v1/support/diagnostics", status=401)
     hub.queue("/v1/support/diagnostics", status=202)
-    assert (await client.async_submit_support_diagnostics("x"))["accepted"] is True
+    assert (await client.async_submit_support_diagnostics("Upload keeps failing"))["accepted"] is True
     assert hub.paths() == ["/v1/support/diagnostics", "/v1/enroll", "/v1/support/diagnostics"]
 
     client._state.pop("support_cooldown_until")
     hub.queue("/v1/support/diagnostics", status=401)
     hub.queue("/v1/support/diagnostics", status=500)
     with pytest.raises(RuntimeError, match="support_diagnostics_http_500"):
-        await client.async_submit_support_diagnostics("x")
+        await client.async_submit_support_diagnostics("Upload keeps failing")
 
     hub.queue("/v1/support/diagnostics", status=413)
     with pytest.raises(RuntimeError, match="support_diagnostics_http_413"):
-        await client.async_submit_support_diagnostics("x")
+        await client.async_submit_support_diagnostics("Upload keeps failing")
 
     hub.queue("/v1/support/diagnostics", exc=ClientError("reset"))
     with pytest.raises(ClientError):
-        await client.async_submit_support_diagnostics("x")
+        await client.async_submit_support_diagnostics("Upload keeps failing")
     messages = [item["message"] for item in client._state["client_error_queue"]]
     assert "RuntimeError: support_diagnostics_http_500" in messages
     assert "ClientError: ClientError" in messages
@@ -779,19 +779,23 @@ async def test_support_diagnostics_validation_and_preflight_errors(hass, berlin,
     client = _client(hass, _entry(hass), FakeRecorder())
     with pytest.raises(ValueError, match="support_message_too_long"):
         await client.async_submit_support_diagnostics("x" * 5000)
+    # 0.26.5.5: without a description of at least 10 characters nothing is sent.
+    for text in ("", "   ", "kaputt", "  123456789  "):
+        with pytest.raises(ValueError, match="support_message_required"):
+            await client.async_submit_support_diagnostics(text)
 
     unconfigured = _client(hass, _entry(hass), FakeRecorder(), endpoint="")
     with pytest.raises(RuntimeError, match="hub_unconfigured"):
-        await unconfigured.async_submit_support_diagnostics("help")
+        await unconfigured.async_submit_support_diagnostics("1234567890")  # exactly 10 characters pass the check
     assert unconfigured._state["client_error_queue"][0]["code"] == "FAIQ-SUPPORT-UPLOAD-001"
 
     nobody = _client(hass, _entry(hass), FakeRecorder(installation_id=""))
     with pytest.raises(RuntimeError, match="identity_unavailable"):
-        await nobody.async_submit_support_diagnostics("help")
+        await nobody.async_submit_support_diagnostics("Please help me")
     assert nobody._state["client_error_queue"][0]["message"] == "RuntimeError: identity_unavailable"
 
     broken = _client(hass, _entry(hass), FakeRecorder(fail=True))
     with pytest.raises(OSError):
-        await broken.async_submit_support_diagnostics("help")
+        await broken.async_submit_support_diagnostics("Please help me")
     assert broken._state["client_error_queue"][0]["message"] == "OSError: OSError"
     assert hub.calls == []

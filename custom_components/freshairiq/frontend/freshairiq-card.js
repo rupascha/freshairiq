@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.5.4";
+const FAIQ_VERSION = "0.26.5.5";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -50,8 +50,8 @@ const FAIQ_UI = Object.freeze({
   "feedback.cooldown_hint": { de: "Feedback ist alle 15 Minuten möglich.", en: "Feedback can be sent once every 15 minutes." },
   "feedback.cooldown_next": { de: "Feedback ist nur alle 15 Minuten möglich. Nächstes Feedback in {mins} Min.", en: "Feedback can only be sent once every 15 minutes. Next feedback in {mins} min." },
   "feedback.sent_next": { de: "nächstes Feedback in 15 Min. möglich", en: "next feedback possible in 15 min" },
-  "support.prompt": { de: "Beschreibe kurz dein Anliegen oder den beobachteten Fehler (optional). Die detaillierte FreshAirIQ-Diagnose wird nach deiner Bestätigung direkt an den FreshAirIQ-Support übertragen.", en: "Briefly describe your issue or the problem you observed (optional). After your confirmation, the detailed FreshAirIQ diagnostic report will be sent directly to FreshAirIQ Support." },
-  "support.message_too_long": { de: "Bitte verwende maximal 4.000 Zeichen.", en: "Please use no more than 4,000 characters." },
+  "support.prompt": { de: "Beschreibe den beobachteten Fehler (Pflicht).", en: "Describe the problem you observed (required)." },
+  "support.message_too_long": { de: "Bitte beschreibe den Fehler (10 bis 4.000 Zeichen) – ohne Beschreibung lässt sich die Diagnose nicht zuordnen.", en: "Please describe the problem (10 to 4,000 characters) – without a description the report cannot be assigned." },
   "support.confirm": { de: "Detaillierte Diagnose jetzt direkt an den FreshAirIQ-Support senden? Nach erfolgreichem Versand ist ein erneuter Diagnoseversand für 60 Minuten gesperrt.", en: "Send the detailed diagnostic report directly to FreshAirIQ Support now? After a successful upload, another diagnostic upload will be locked for 60 minutes." },
   "support.sending": { de: "Diagnose wird gesendet", en: "Sending diagnostic report" },
   "support.please_wait": { de: "bitte warten", en: "please wait" },
@@ -67,11 +67,10 @@ const FAIQ_UI = Object.freeze({
 // Frontend locale bridge: the historical dashboard copy is authored in German.
 // Keep that rendering path untouched and translate the rendered UI for English
 // Home Assistant profiles. English is also the fallback for non-German locales.
-// 0.26.4.8: the English phrase tables (about 165 kB, a third of the card) live in
-// freshairiq-card-i18n-en.js and are loaded only when a dashboard is shown in
-// English. German dashboards never download or parse them.
-// 0.26.5.3: card parts in their own modules, loaded with the card version like the English module
-const faiqModule = name => import(new URL(`./${name}?v=${FAIQ_VERSION}`, import.meta.url).href);
+// 0.26.4.8: English phrase tables load only for English dashboards (freshairiq-card-i18n-en.js).
+// 0.26.5.5: parts load with the card's own query (version + build b=), never an older cached build
+const FAIQ_Q = new URL(import.meta.url).search || `?v=${FAIQ_VERSION}`;
+const faiqModule = name => import(new URL(`./${name}${FAIQ_Q}`, import.meta.url).href);
 const [{ faiqThemeCss, faiqThemeColor, faiqThemeInline, FAIQ_THEME_AUTO_CSS, faiqLiftOverlays, faiqDesign, faiqDesignChoice }, { FRESHY_EPOCH, freshyClock, freshySvg }, { reasonDE, statusTextDE, consentHint, FAIQ_LIVE_METHODS, FAIQ_EXPORT_METHODS }] = await Promise.all([faiqModule("freshairiq-card-style.js"), faiqModule("freshairiq-card-freshy.js"), faiqModule("freshairiq-card-data.js")]);
 const FAIQ_EN_MODULE = "freshairiq-card-i18n-en.js";
 const FAIQ_EN_READY_EVENT = "freshairiq-i18n-en-ready";
@@ -87,7 +86,7 @@ const faiqLoadEnglish = () => {
   if (!faiqEnglishPromise && faiqEnglishFailedAt && Date.now() - faiqEnglishFailedAt < FAIQ_EN_RETRY_MS)
     return Promise.reject(new Error("FreshAirIQ English texts unavailable"));
   if (!faiqEnglishPromise) {
-    const url = new URL(`./${FAIQ_EN_MODULE}?v=${FAIQ_VERSION}`, import.meta.url).href;
+    const url = new URL(`./${FAIQ_EN_MODULE}${FAIQ_Q}`, import.meta.url).href;
     faiqEnglishPromise = import(url).then(mod => {
       FAIQ_EN_RULES = Array.isArray(mod.FAIQ_EN_RULES) ? mod.FAIQ_EN_RULES : [];
       FAIQ_EN_PATTERNS = Array.isArray(mod.FAIQ_EN_PATTERNS) ? mod.FAIQ_EN_PATTERNS : [];
@@ -179,7 +178,7 @@ const faiqLocalizeTree = root => {
 };
 const esc = v => String(v !== null && v !== void 0 ? v : "").split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#039;");
 const lastItem = arr => (arr && arr.length ? arr[arr.length - 1] : undefined);
-// 0.26.4.6: number/date format follows the dashboard language (set at the start of _render).
+// 0.26.4.6: number/date format follows the dashboard language.
 let FAIQ_NUMBER_LOCALE = "de";
 const fmt = (v, d = 1) => { const n = Number(v); if (!Number.isFinite(n)) return "–"; const s = n.toFixed(d); return FAIQ_NUMBER_LOCALE === "de" ? s.replace(".", ",") : s; };
 // 0.26.4.1: "4 Personen", not "4,0"; shares keep one decimal.
@@ -196,14 +195,16 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
         ? { text: `−${Math.abs(Math.round(n))} ml`, color: "#67df92", kind: "removed" }
         : { text: `+${Math.abs(Math.round(n))} ml`, color: "#ff7770", kind: "added" };
 };
-// 0.26.4.7: rooms the whole-house decision deliberately holds back.
+// 0.26.4.7: held back by the house.
 const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
 // Fan-only: nothing to close; server label/hint.
 const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
-// F02: tolerated long opening, never "Schließen".
+// F02: tolerated long opening (blue, never Close).
 const houseMonitoredRoom = r => !!r && !!r.active && String(r.house_aligned_action || "") === "monitor_open";
-const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : houseMonitoredRoom(r) ? "Daueröffnung überwachen" : (r && (r.fan_automation?.label || r.action_hint)) || ((r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action));
-const roomStyleAction = r => houseHeldRoom(r) ? "Wait" : (r && r.action);
+// 0.26.5.5: fan follow-up end (not the 95 % exchange)
+const fanLeft = r => { const m = Math.ceil((Date.parse(r?.fan_automation?.follow_up_until || "") - Date.now()) / 60000); return m > 0 ? ` · Nachlauf noch ${m} min` : ""; };
+const roomActionLabel = r => houseHeldRoom(r) ? "Lüften möglich · noch warten" : houseMonitoredRoom(r) ? "Daueröffnung überwachen" : (r && (r.fan_automation?.label ? r.fan_automation.label + fanLeft(r) : r.action_hint)) || ((r && r.action === "Close" && fanOnlyRoom(r)) ? "Lüfter ausschalten" : actionDE(r && r.action));
+const roomStyleAction = r => houseHeldRoom(r) ? "Wait" : houseMonitoredRoom(r) ? "Monitor open" : (r && r.action);
 const actionDE = v => ({ "Ventilate": "Lüften", "Continue ventilating": "Weiterlüften", "Close": "Schließen", "Do not ventilate": "Nicht lüften", "Wait": "Warten", "Okay": "Alles okay", "Check sensor": "Sensor prüfen", "Ventilate for cooling": "Zum Kühlen lüften", "Monitor only": "Nur anzeigen", "Open fully": "Vollständig öffnen", "Ventilate indirectly": "Über Nachbarraum lüften" }[v] || v || "–");
 const mouldDE = v => ({ "Very high": "Sehr hoch", "High": "Hoch", "Elevated": "Erhöht", "Slightly elevated": "Leicht erhöht", "Low": "Niedrig", "Unknown": "Unbekannt" }[v] || v || "Unbekannt");
 const learnDE = v => ({ "Very stable": "Sehr stabil", "Stable": "Stabil", "Usable": "Brauchbar", "Learning": "Lernt", "Base estimate": "Grundschätzung" }[v] || v || "–");
@@ -251,7 +252,8 @@ const styleFor = a => ({
     "Do not ventilate": ["#ff7770", "rgba(220,90,80,.07)", "mdi:water-plus"],
     "Wait": ["#e2bd69", "rgba(210,175,95,.06)", "mdi:progress-clock"],
     "Check sensor": ["#ff7770", "rgba(220,90,80,.07)", "mdi:alert-circle-outline"],
-    "Monitor only": ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:eye-outline"]
+    "Monitor only": ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:eye-outline"],
+    "Monitor open": ["#63d2f7", "rgba(99,210,247,.08)", "mdi:window-open"]
 }[a] || ["#9aa7b3", "rgba(255,255,255,.025)", "mdi:check-circle-outline"]);
 const FAIQ_FONT_SCALE_STEPS = Object.freeze([0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2]);
 // 0.26.5.3: small fixed text sizes follow the text size settings.
@@ -1920,9 +1922,6 @@ class FreshAirIQCard extends HTMLElement {
         const freshyTimeKind = this._freshyTimeKind(st);
         const isNight = freshyTimeKind === "night";
         const isPreNight = freshyTimeKind === "pre-night";
-        // Semantic Freshy state: a primary night recommendation must stay visually "night" even
-        // when its selected rooms also carry the normal Ventilate action. Active ventilation
-        // still wins so an already running session keeps the live sailing animation.
         const nightStrategy = st.night_strategy || {};
         const nightRecommendation = !active.length && (
             Boolean(nightStrategy.primary || st.night_strategy_primary) ||
@@ -2130,9 +2129,6 @@ class FreshAirIQCard extends HTMLElement {
             const p = moisture(potential);
             if (showMoisture)
                 contextCards.push(`<div class="decision-impact clickable" data-info="moisture"><span>JETZT ENTFERNBAR</span><b style="color:${p.color}">${p.text}</b><small>Schwelle ${Math.round(Number(st.ventilation_threshold_ml || 0))} ml</small></div>`);
-            // v0.20.4.2: Vor Lüftungsbeginn keine zeitgebundene Lüftungsprognose anzeigen.
-            // Prognose intern vollständig, sichtbar erst bei aktiver Lüftung
-            // als "WEITERE <Horizont> MIN" (reine Entscheidungshilfe).
             if (showMoisture)
                 contextCards.push(`<div class="decision-impact clickable" data-info="water"><span>WASSER IN DER LUFT</span><b>${Math.round(Number(st.total_water_ml || 0))} ml</b><small>${calcRooms.length} berechnete Räume</small></div>`);
             const nightWithoutRaw = nightStrategy.forecast_without_action_ml;
@@ -2407,7 +2403,7 @@ class FreshAirIQCard extends HTMLElement {
             return;
         }
         const message = String(this.shadowRoot?.getElementById("diagnostics-message")?.value || "").trim();
-        if (message.length > 4000) { window.alert(this._t("support.message_too_long")); return; }
+        if (message.length < 10 || message.length > 4000) { window.alert(this._t("support.message_too_long")); return; }
         try {
             if (button) { button.disabled = true; button.innerHTML = `<ha-icon icon="mdi:progress-clock"></ha-icon><b>${esc(this._t("support.sending"))}</b><span>${esc(this._t("support.please_wait"))}</span>`; }
             await this._registerFieldTestClient(true);
@@ -2475,7 +2471,7 @@ class FreshAirIQCard extends HTMLElement {
             const modeLabel = {off:"Aus",errors:"Nur bei erkannten Problemen",daily:"Täglich nachts",weekly:"Wöchentlich"}[mode] || mode;
             // 0.26.5.3: one feedback per 15 minutes; the remaining time is shown.
             const feedbackMins = this._feedbackCooldownMinutes(st);
-            return `<section class="info-panel settings-panel"><div class="tiny info-kicker">FRESHAIRIQ SUPPORT</div><h3>Hilfe, Diagnose & Feedback</h3><p>Alle Support-Funktionen sind hier zentral gebündelt.</p><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">DIAGNOSE</div><span>Diagnosedaten lokal exportieren oder direkt an den FreshAirIQ-Support senden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Nachricht an den Support (optional)</b><span>Die Diagnose wird verschlüsselt über Home Assistant direkt an den FreshAirIQ-Diagnose-Server übertragen – nicht an die hier angezeigte lokale Home-Assistant-Adresse. Zugangsdaten und Tokens werden nicht übertragen.</span></div><textarea id="diagnostics-message" class="settings-input settings-textarea" rows="4" maxlength="4000" placeholder="Optional: Was ist passiert?"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="settings-save" id="diagnostics-send"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>Diagnosedaten</b><span>an Support senden</span></button></div></section><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">FEEDBACK</div><span>Fehler und Verbesserungsvorschläge direkt melden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Art der Meldung</b></div><select id="feedback-type" class="settings-input"><option value="bug">Fehler / Bug</option><option value="improvement">Verbesserungsvorschlag</option><option value="other">Sonstiges</option></select></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Beschreibung</b><span>Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.</span></div><textarea id="feedback-message" class="settings-input settings-textarea" rows="6" maxlength="10000"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="feedback-send"${feedbackMins ? " disabled" : ""}><ha-icon icon="mdi:${feedbackMins ? "timer-sand" : "send-outline"}"></ha-icon> ${feedbackMins ? esc(this._t("feedback.cooldown_button", { mins: feedbackMins })) : "Meldung senden"}</button></div><div id="feedback-result" class="muted">${esc(feedbackMins ? this._t("feedback.cooldown_next", { mins: feedbackMins }) : this._t("feedback.cooldown_hint"))}</div></section><section class="settings-group support-contact"><div class="settings-field-copy"><b>Support per E-Mail</b><span class="support-email">support@freshairiq.com</span></div><div class="settings-field"><div class="settings-field-copy"><b>Automatische Diagnoseübertragung</b><span>Aktuell: ${esc(modeLabel)}. Ändern unter Geräte & Dienste → FreshAirIQ → Konfigurieren → Daten & Lernen → Diagnose-Freigabe.</span></div></div></section></section>`;
+            return `<section class="info-panel settings-panel"><div class="tiny info-kicker">FRESHAIRIQ SUPPORT</div><h3>Hilfe, Diagnose & Feedback</h3><p>Alle Support-Funktionen sind hier zentral gebündelt.</p><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">DIAGNOSE</div><span>Diagnosedaten lokal exportieren oder direkt an den FreshAirIQ-Support senden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Fehlerbeschreibung (Pflicht)</b><span>Die Diagnose wird verschlüsselt über Home Assistant direkt an den FreshAirIQ-Diagnose-Server übertragen – nicht an die hier angezeigte lokale Home-Assistant-Adresse. Zugangsdaten und Tokens werden nicht übertragen.</span></div><textarea id="diagnostics-message" class="settings-input settings-textarea" rows="4" minlength="10" maxlength="4000" required placeholder="Was ist passiert?"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="diagnostics-export"><ha-icon icon="mdi:download"></ha-icon><b>Diagnosedaten</b><span>exportieren</span></button><button class="settings-save" id="diagnostics-send"><ha-icon icon="mdi:shield-lock-outline"></ha-icon><b>Diagnosedaten</b><span>an Support senden</span></button></div></section><section class="settings-group"><div class="settings-group-head"><div><div class="tiny">FEEDBACK</div><span>Fehler und Verbesserungsvorschläge direkt melden.</span></div></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Art der Meldung</b></div><select id="feedback-type" class="settings-input"><option value="bug">Fehler / Bug</option><option value="improvement">Verbesserungsvorschlag</option><option value="other">Sonstiges</option></select></div><div class="settings-field settings-field-stack"><div class="settings-field-copy"><b>Beschreibung</b><span>Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.</span></div><textarea id="feedback-message" class="settings-input settings-textarea" rows="6" maxlength="10000"></textarea></div><div class="settings-room-actions"><button class="settings-save" id="feedback-send"${feedbackMins ? " disabled" : ""}><ha-icon icon="mdi:${feedbackMins ? "timer-sand" : "send-outline"}"></ha-icon> ${feedbackMins ? esc(this._t("feedback.cooldown_button", { mins: feedbackMins })) : "Meldung senden"}</button></div><div id="feedback-result" class="muted">${esc(feedbackMins ? this._t("feedback.cooldown_next", { mins: feedbackMins }) : this._t("feedback.cooldown_hint"))}</div></section><section class="settings-group support-contact"><div class="settings-field-copy"><b>Support per E-Mail</b><span class="support-email">support@freshairiq.com</span></div><div class="settings-field"><div class="settings-field-copy"><b>Automatische Diagnoseübertragung</b><span>Aktuell: ${esc(modeLabel)}. Ändern unter Geräte & Dienste → FreshAirIQ → Konfigurieren → Daten & Lernen → Diagnose-Freigabe.</span></div></div></section></section>`;
         }
         const r = this._info.startsWith("room:") ? rooms.find(x => x.key === this._info.slice(5)) : null;
         if (r) {
@@ -2510,7 +2506,7 @@ class FreshAirIQCard extends HTMLElement {
             const passiveOpenRoom = String(st.intelligent_recommendation?.status || st.status || "") === "passive_open_monitor" && r.active && monitoredRoomKeys.has(String(r.key));
             // 0.26.4.7: follow the whole-house decision (house_aligned_action).
             const houseHoldsRoom = !passiveOpenRoom && String(r.house_aligned_action || "") === "ventilate_later";
-            const actionStyle = passiveOpenRoom ? ["#63d2f7", "rgba(99,210,247,.08)", "mdi:window-open"] : houseHoldsRoom ? styleFor("Wait") : styleFor(r.action), roomReasons = (r.recommendation_reasons || []).filter(Boolean);
+            const actionStyle = styleFor(passiveOpenRoom ? "Monitor open" : houseHoldsRoom ? "Wait" : roomStyleAction(r)), roomReasons = (r.recommendation_reasons || []).filter(Boolean);
             const qualityOk = r.data_quality === "ok" && r.last_measurement_valid !== false;
             const roomLead = passiveOpenRoom
                 ? `FreshAirIQ behandelt die lange, stabile Öffnung als wahrscheinliche Dauer- oder Kipplüftung und überwacht sie weiter.`

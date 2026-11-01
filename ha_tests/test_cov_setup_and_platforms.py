@@ -643,7 +643,9 @@ async def test_room_creation_trace_records_sparse_events(hass) -> None:
 
 
 def test_future_boundaries_skip_invalid_rows_and_out_of_range_horizons() -> None:
-    now = dt_util.now()
+    # 31.10.: in UTC – with the local test time zone, "now + 14 h" crossed the end of summer time (US/Pacific,
+    # 1.11.) and was 15 real hours away, so the "beyond the last row" case was not reached any more.
+    now = dt_util.utcnow()
     rows = [
         {"datetime": now + timedelta(hours=1), "temperature_c": 12.0, "humidity": 70.0},
         {"datetime": now + timedelta(hours=2), "temperature_c": "nan", "humidity": 70.0},
@@ -661,3 +663,26 @@ def test_forecast_datetime_parser_rejects_empty_and_unparseable_values() -> None
     assert weather_future._dt("not-a-date") is None
     parsed = weather_future._dt("2026-10-16T12:00:00+00:00")
     assert parsed is not None and parsed.utcoffset() is not None
+
+
+# Hotfix 0.26.5.5 (31.10.): the formula-test section was missing on an iPhone – every build of 0.26.5.5
+# had the same resource URL, an older cached module kept running. The registered URL carries the build.
+async def test_the_registered_resource_carries_the_build_revision(hass, loaded) -> None:
+    from pathlib import Path
+
+    from custom_components.freshairiq.const import VERSION
+    from custom_components.freshairiq.frontend_assets import ensure_precompressed
+
+    frontend = Path(integration.__file__).parent / "frontend"
+    revision = (await hass.async_add_executor_job(ensure_precompressed, frontend))["revision"]
+    expected = f"/freshairiq/frontend/freshairiq-card.js?v={VERSION}&b={revision}"
+    resources = hass.data[LOVELACE_DATA].resources
+    ours = [item for item in resources.async_items() if integration._is_freshairiq_resource(item.get("url"))]
+    assert [item["url"] for item in ours] == [expected] and integration._FRONTEND_MODULE == expected
+    # a new build of the same version replaces the stored URL of the previous build
+    await resources.async_update_item(ours[0]["id"], {"url": f"/freshairiq/frontend/freshairiq-card.js?v={VERSION}&b=000000000000"})
+    assert await integration._async_register_lovelace_resource(hass) is True
+    assert [item["url"] for item in resources.async_items() if integration._is_freshairiq_resource(item.get("url"))] == [expected]
+    # without a revision (compression step failed) the plain version URL stays
+    assert integration._frontend_module_url(None) == f"/freshairiq/frontend/freshairiq-card.js?v={VERSION}"
+    assert integration._frontend_module_url("") == f"/freshairiq/frontend/freshairiq-card.js?v={VERSION}"

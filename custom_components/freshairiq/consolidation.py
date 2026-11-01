@@ -183,6 +183,28 @@ def opening_phase_protected(rooms: list[dict[str, Any]], target_min: float | Non
     return bool(elapsed) and max(elapsed) < target
 
 
+def _younger_window_unreleased(rooms: list[dict[str, Any]], min_duration_min: float | None, net_next5_ml: float | None) -> bool:
+    """F04 (0.26.5.5, GitHub #23): a window opened later has not had its minimum time yet.
+
+    Another room's own close or every room saying "Close" must not end it early – only its
+    own released close or real protection (moisture coming into that room, or no net drying
+    of the whole group) may. Rooms without a known age never block.
+    """
+    if min_duration_min is None or (net_next5_ml is not None and float(net_next5_ml) <= 0):
+        return False
+    for room in _timed(rooms):
+        elapsed = _elapsed_min(room)
+        if elapsed is None or elapsed >= float(min_duration_min) or bool((room.get("goal_state") or {}).get("hard_close")):
+            continue
+        try:
+            moisture_in = float(room.get("delta_g_m3")) < 0
+        except (TypeError, ValueError):
+            moisture_in = False
+        if not moisture_in:
+            return True
+    return False
+
+
 def aggregate_close_allowed(
     rooms: list[dict[str, Any]],
     *,
@@ -207,6 +229,8 @@ def aggregate_close_allowed(
     room (protection limits and unanimous room decisions still close at once).
     """
     if not aggregate_close_gate_ready(rooms):
+        return False
+    if _younger_window_unreleased(rooms, min_duration_min, net_next5_ml):
         return False
     if any(bool((room.get("goal_state") or {}).get("hard_close")) for room in rooms):
         return True
@@ -341,7 +365,9 @@ def _active_session_invariant(
     # Final real-time invariant: an already open ventilation session must never
     # be turned into a future wait/prepare/okay action by a later prediction layer.
     source_running = [r for r in active if r.get("moisture_source_active") and _f(r.get("delta_g_m3")) > _f(options.get("close_delta"), 0.4)]
-    if source_running:
+    # 0.26.5.5 (audit F03): a source room never hides the close of another room; both are kept
+    # (close the others, keep the source rooms open). ``closing`` holds no source room.
+    if source_running and not closing:
         kind = "continue"
         out["room_keys"] = [str(r.get("key")) for r in source_running if r.get("key") is not None]
         labels = ", ".join(dict.fromkeys(str(r.get("moisture_source_label") or "Feuchtequelle") for r in source_running))
@@ -409,6 +435,10 @@ def _active_session_invariant(
             out["instruction"] = close_instruction(selected_closing, "Fenster der genannten Räume")
             out["summary"] = "Die laufende Lüftung hat ihren sinnvollen Endpunkt erreicht."
             checks.append("hard_close_subset_selected" if selected_closing is hard_closing else "close_state_authoritative")
+            if source_running:
+                out["instruction"] = f"{out['instruction']} · {keep_instruction(source_running, None)}"
+                out["moisture_source_kept_open"] = [str(r.get("key")) for r in source_running if r.get("key") is not None]
+                checks.append("moisture_source_kept_open_beside_close")
     elif tolerated_long_open and not effective_active:
         kind = "okay"
         out["status"] = "passive_open_monitor"

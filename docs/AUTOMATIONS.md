@@ -112,7 +112,9 @@ Fires when FreshAirIQ detects an internal moisture source in a room (`phase: sta
 
 ### `freshairiq_fan_automation` – the automatic fan control changed its status (0.26.5.4+)
 
-Only for rooms with the fan's "Automatic control". Fires when the state, the command result or whether you have to act changes – also while the room action stays the same (e.g. the recommendation stays "ventilate" while the fan goes from `requested` to `running` to `failed`). Silent after a restart. Fields: `room_key`, `room_name`, `floor`, `category` (`action` when you have to do something, else `status`), `state` / `previous_state` (`recommended`, `requested`, `running`, `partial`, `waiting`, `stopping`, `source`, `follow_up`, `completed`, `failed`, `manual`, `manual_off`, `idle`), `mode`, `owned`, `command`, `command_state` (`pending`, `confirmed`, `partial`, `failed`), `user_action_needed`, with several fans `fans_on`, `fans_total`, `group_incomplete`, `label`, `message` ("Bathroom: Not every exhaust fan came on – please check the others."), `action`, `house_aligned_action`. No entity IDs.
+Only for rooms with the fan's "Automatic control". Fires when the state, the command result or whether you have to act changes – also while the room action stays the same (e.g. the recommendation stays "ventilate" while the fan goes from `requested` to `running` to `failed`). Silent after a restart. Fields: `room_key`, `room_name`, `floor`, `category` (`action` when you have to do something, else `status`), `state` / `previous_state` (`recommended`, `requested`, `running`, `partial`, `waiting`, `stopping`, `source`, `follow_up`, `completed`, `failed`, `manual`, `manual_off`, `idle`; 0.26.5.5+ `shared` – a shared fan FreshAirIQ controls through another room –, `external` – another automation controls it right now), `mode`, `owned`, `command`, `command_state` (`pending`, `confirmed`, `partial`, `failed`), `user_action_needed`, with several fans `fans_on`, `fans_total`, `group_incomplete`, `label`, `message` ("Bathroom: Not every exhaust fan came on – please check the others."), `action`, `house_aligned_action`. No entity IDs.
+
+From 0.26.5.5 the room result's `fan_automation` also carries `follow_up_until` (end of the follow-up time while it runs) and `runtime_limit_at` (latest automatic stop by the maximum runtime) – fixed points in time that do not change every minute. With the room setting "Other automation controls the fan" (switch, helper or timer, e.g. for Alexa after the dryer) FreshAirIQ leaves the fans to that automation while it is on and never switches them off.
 
 ### Which signal for what?
 
@@ -135,9 +137,9 @@ Exactly the texts FreshAirIQ would send as a push notification to your phone –
 | `category` | `action` / `status` / `warning` | 0.26.5.3+; status messages can be switched off under Notifications → "Send status messages" |
 | `reminder` | `true` | only on a reminder of a still open action (0.26.5.3+) |
 | `room_key`, `room_name` | `bathroom`, `Bathroom` | Affected room (empty for whole-home messages) |
-| `title` | `FreshAirIQ · Bathroom` | Title, same as the push |
-| `message` | `Ventilate now. Alternatively switch on the fan.` | Text, same as the push |
-| `speech` | `Bathroom: Ventilate now. Alternatively switch on the fan.` | **Ready-to-speak sentence for Alexa/TTS** |
+| `title` | `FreshAirIQ · Bathroom · Ventilate now` | Title, same as the push; from 0.26.5.5 with the action (`· Close now`, `· Cool down`, `· Switch off the fan`, `· Reminder: …`), status messages without an action |
+| `message` | `Ventilate now. Alternatively switch on the fan.`<br>`Why:`<br>`• Room humidity 70 % is too high (limit 68 %)` | Text, same as the push; from 0.26.5.5 on several lines: recommendation, "Why:" with at most three reasons, then details |
+| `speech` | `Bathroom: Ventilate now. Alternatively switch on the fan. Why: Room humidity 70 % is too high (limit 68 %).` | **Ready-to-speak sentence for Alexa/TTS** (always one line) |
 | `kind`, `room_keys` | `ventilate`, `["bathroom"]` | Whole-home messages only |
 | `night_quiet_hours` | `true` | Quiet hours according to your FreshAirIQ settings – you decide whether to announce anyway |
 | `created_at` | ISO timestamp | |

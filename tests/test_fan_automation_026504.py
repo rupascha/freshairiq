@@ -187,7 +187,8 @@ def _room(*, mode="recommendation", fan_on=False, window=False, aligned="ventila
     (_room(), {}, "recommended", "Automatische Lüftung empfohlen – Ablüfter wird automatisch eingeschaltet"),
     (_room(), {"owned": True, "command": "on", "command_state": "pending"}, "requested", "Ablüfter wird automatisch eingeschaltet"),
     (_room(fan_on=True, aligned="continue_ventilating"), {"owned": True, "command": "on", "command_state": "confirmed"}, "running", "Automatische Lüftung läuft"),
-    (_room(fan_on=True, aligned="close"), {"owned": True, "command": "on", "command_state": "confirmed"}, "stopping", "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung"),
+    # corrected (hotfix F3): goal reached, the switch-off is not sent yet (30-s confirmation)
+    (_room(fan_on=True, aligned="close"), {"owned": True, "command": "on", "command_state": "confirmed"}, "stopping", "Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus"),
     (_room(fan_on=True, mode="moisture_source", source=True, aligned="close"), {"owned": True}, "source", "Ablüfter läuft wegen erkannter Feuchtequelle"),
     (_room(fan_on=True, mode="moisture_source", aligned="close"), {"owned": True}, "follow_up", "Feuchtequelle beendet – automatische Nachlaufzeit aktiv"),
     (_room(fan_on=True, aligned="close"), {}, "manual", None),
@@ -240,7 +241,8 @@ def test_close_instruction_names_only_what_the_user_has_to_do() -> None:
 
 
 def test_fan_stop_message_by_cause_air_path_and_command_result() -> None:
-    assert fan_stop_message(_with(_room(fan_on=True, aligned="close"), OWNED)) == "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung."
+    assert fan_stop_message(_with(_room(fan_on=True, aligned="close"), OWNED)) == "Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus."  # corrected (hotfix F3): no switch-off sent yet – "beendet die Lüftung" only once it is
+    assert fan_stop_message(_with(_room(fan_on=True, aligned="close"), {"command": "off", "command_state": "pending"})) == "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung."
     manual = _room(fan_on=True, aligned="close", delta_g_m3=-0.5)
     assert fan_stop_message(manual) == "Die Außenluft ist gerade feuchter als die Raumluft. Lüfter ausschalten."
     neighbour = _room(fan_on=True, aligned="close", delta_g_m3=0.2, reference_path="neighbour_room")
@@ -254,11 +256,11 @@ def test_events_tell_status_instead_of_a_task_and_stay_compatible() -> None:
     auto = _with(_room(fan_on=True, aligned="close", action="Close"), OWNED)
     payload = room_payload(auto, previous_action="Continue ventilating", language="de", entry_id="e")
     assert (payload["action"], payload["category"]) == ("close", "status")  # the raw action stays
-    assert payload["action_label"] == "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung"
+    assert payload["action_label"] == "Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus"  # corrected (hotfix F3): no switch-off sent yet – "beendet die Lüftung" only once it is
     assert payload["fan_automation"]["state"] == "stopping"
     english = recommendation_payload(auto, previous_recommendation="continue_ventilating", language="en", entry_id="e")
     assert (english["recommendation"], english["category"]) == ("close", "status")
-    assert english["recommendation_label"] == "Airing goal reached – FreshAirIQ ends the airing"
+    assert english["recommendation_label"] == "Airing goal reached – FreshAirIQ checks briefly and then ends the airing"  # corrected (hotfix F3)
     manual = _room(fan_on=True, aligned="close", action="Close")
     payload = room_payload(manual, previous_action=None, language="de", entry_id="e")
     assert (payload["category"], payload["action_label"], payload["fan_automation"]) == ("action", "Bitte Lüfter ausschalten", None)
@@ -270,7 +272,7 @@ def test_events_tell_status_instead_of_a_task_and_stay_compatible() -> None:
 def test_notifications_and_reminders_follow_the_automation() -> None:
     auto = _with(_room(fan_on=True, aligned="close", action="Close", active=True), OWNED)
     assert auto_room_event("close", auto, "Bitte Lüfter ausschalten") == (
-        "fan_auto", "FreshAirIQ · Garage", "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung.")
+        "fan_auto", "FreshAirIQ · Garage", "Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus.")  # corrected (hotfix F3): no switch-off sent yet – "beendet die Lüftung" only once it is
     manual = _room(fan_on=True, aligned="close", action="Close")
     assert auto_room_event("close", manual, "Lüfter ausschalten")[0] == "close"
     rooms = {"garage": auto}

@@ -107,7 +107,9 @@ Feuert, wenn FreshAirIQ in einem Raum eine innere Feuchtequelle erkennt (`phase:
 
 ### `freshairiq_fan_automation` – Status der automatischen Lüftersteuerung hat sich geändert (ab 0.26.5.4)
 
-Nur für Räume mit „Automatische Steuerung“ des Ablüfters. Feuert, wenn sich Zustand, Befehlsergebnis oder Handlungsbedarf der Lüftersteuerung ändert – auch wenn die Raum-Aktion gleich bleibt (Beispiel: Empfehlung bleibt „Lüften“, der Lüfter geht von `requested` über `running` zu `failed`). Nach einem Neustart still. Felder: `room_key`, `room_name`, `floor`, `category` (`action`, wenn du etwas tun musst, sonst `status`), `state` / `previous_state` (`recommended`, `requested`, `running`, `partial`, `waiting`, `stopping`, `source`, `follow_up`, `completed`, `failed`, `manual`, `manual_off`, `idle`), `mode`, `owned`, `command`, `command_state` (`pending`, `confirmed`, `partial`, `failed`), `user_action_needed`, bei mehreren Lüftern `fans_on`, `fans_total`, `group_incomplete`, `label`, `message` („Bad: Nicht alle Ablüfter sind angesprungen – bitte die übrigen prüfen.“), `action`, `house_aligned_action`. Keine Entity-IDs.
+Nur für Räume mit „Automatische Steuerung“ des Ablüfters. Feuert, wenn sich Zustand, Befehlsergebnis oder Handlungsbedarf der Lüftersteuerung ändert – auch wenn die Raum-Aktion gleich bleibt (Beispiel: Empfehlung bleibt „Lüften“, der Lüfter geht von `requested` über `running` zu `failed`). Nach einem Neustart still. Felder: `room_key`, `room_name`, `floor`, `category` (`action`, wenn du etwas tun musst, sonst `status`), `state` / `previous_state` (`recommended`, `requested`, `running`, `partial`, `waiting`, `stopping`, `source`, `follow_up`, `completed`, `failed`, `manual`, `manual_off`, `idle`; ab 0.26.5.5 `shared` – gemeinsamer Lüfter, den FreshAirIQ über einen anderen Raum steuert –, `external` – eine andere Automation steuert ihn gerade), `mode`, `owned`, `command`, `command_state` (`pending`, `confirmed`, `partial`, `failed`), `user_action_needed`, bei mehreren Lüftern `fans_on`, `fans_total`, `group_incomplete`, `label`, `message` („Bad: Nicht alle Ablüfter sind angesprungen – bitte die übrigen prüfen.“), `action`, `house_aligned_action`. Keine Entity-IDs.
+
+Ab 0.26.5.5 enthält das Raum-Ergebnis `fan_automation` zusätzlich `follow_up_until` (Ende der Nachlaufzeit, solange sie läuft) und `runtime_limit_at` (spätestes automatisches Aus durch die Höchstlaufzeit) – feste Zeitpunkte, die sich nicht jede Minute ändern. Mit der Raum-Einstellung „Andere Automation steuert den Lüfter“ (Schalter, Helfer oder Timer, z. B. für Alexa nach dem Trockner) überlässt FreshAirIQ die Lüfter dieser Automation, solange sie an ist, und schaltet sie nie aus.
 
 ### Welches Signal wofür? (Aktion, Empfehlung, Haus, Benachrichtigung)
 
@@ -130,9 +132,9 @@ Genau die Texte, die FreshAirIQ als Push aufs Handy schicken würde – **auch w
 | `category` | `action` / `status` / `warning` | ab 0.26.5.3; Statusmeldungen lassen sich unter Benachrichtigungen → „Statusmeldungen ausgeben“ abschalten |
 | `reminder` | `true` | nur bei einer Erinnerung an eine noch offene Aktion (ab 0.26.5.3) |
 | `room_key`, `room_name` | `bad`, `Bad` | Betroffener Raum (bei Haus-Meldungen leer) |
-| `title` | `FreshAirIQ · Bad` | Titel wie beim Push |
-| `message` | `Jetzt lüften. Alternativ den Lüfter einschalten.` | Text wie beim Push |
-| `speech` | `Bad: Jetzt lüften. Alternativ den Lüfter einschalten.` | **Fertiger Satz für Alexa/TTS** |
+| `title` | `FreshAirIQ · Bad · Jetzt lüften` | Titel wie beim Push; ab 0.26.5.5 mit der Aktion (`· Jetzt schließen`, `· Kühlen`, `· Lüfter ausschalten`, `· Erinnerung: …`), Statusmeldungen ohne Aktion |
+| `message` | `Jetzt lüften. Alternativ den Lüfter einschalten.`<br>`Warum:`<br>`• Raumluftfeuchte 70 % ist zu hoch (Grenze 68 %)` | Text wie beim Push; ab 0.26.5.5 mehrzeilig: Empfehlung, „Warum:“ mit höchstens drei Gründen, dann Details |
+| `speech` | `Bad: Jetzt lüften. Alternativ den Lüfter einschalten. Warum: Raumluftfeuchte 70 % ist zu hoch (Grenze 68 %).` | **Fertiger Satz für Alexa/TTS** (immer eine Zeile) |
 | `kind`, `room_keys` | `ventilate`, `["bad"]` | nur bei Haus-Meldungen |
 | `night_quiet_hours` | `true` | Ruhezeit laut FreshAirIQ-Einstellung – selbst entscheiden, ob angesagt wird |
 | `created_at` | ISO-Zeit | |

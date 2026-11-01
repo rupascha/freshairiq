@@ -6,6 +6,11 @@ browser accepts that encoding, aiohttp sends the compressed sibling instead
 (``Content-Encoding`` set, content type taken from the original file). Without
 siblings every phone downloaded the full card (about 400 kB) uncompressed.
 
+``ensure_precompressed`` writes those siblings once per file version and returns the content
+``revision`` of all dashboard modules (12 hex digits of a SHA-256 over every file name and hash).
+The revision goes into the resource URL (``&b=``) and every module passes the URL query on to the
+modules it imports, so a new build of the same product version is never served from a cache:
+
 ``ensure_precompressed`` writes those siblings once per file version:
 
 * a sibling is rewritten only when the SHA-256 of its source changed
@@ -80,6 +85,7 @@ def ensure_precompressed(directory: Path, brotli_compress: Callable[[bytes], byt
         result["errors"].append(f"{directory.name}: {err}")
         return result
     new_manifest: dict[str, str] = {}
+    revision = hashlib.sha256()
     for source in sources:
         try:
             data = source.read_bytes()
@@ -89,6 +95,7 @@ def ensure_precompressed(directory: Path, brotli_compress: Callable[[bytes], byt
                 _remove(source.with_name(source.name + suffix), result)
             continue
         digest = hashlib.sha256(data).hexdigest()
+        revision.update(f"{source.name}:{digest}\n".encode())
         for suffix in ENCODINGS:
             target = source.with_name(source.name + suffix)
             compress = compressors.get(suffix)
@@ -112,6 +119,7 @@ def ensure_precompressed(directory: Path, brotli_compress: Callable[[bytes], byt
                 continue
             new_manifest[target.name] = digest
             result["written"].append(target.name)
+    result["revision"] = revision.hexdigest()[:12]
     # Compressed files whose source no longer exists.
     known = {s.name for s in sources}
     for path in sorted(directory.iterdir()):

@@ -54,6 +54,21 @@ def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
     return finite_float(state.state)
 
 
+def _humidity_percent(hass: HomeAssistant, entity_id: str | None) -> tuple[float | None, str | None]:
+    """A reference humidity in % and, if its unit is another one, that unit (0.26.5.5).
+
+    Community diagnosis: a neighbouring-room humidity of 9.79 – an absolute humidity in
+    g/m³ – was read as 9.79 % and made the supply air look far too dry (2.1 instead of
+    9.8 g/m³). A sensor that states another unit is no relative humidity: no value
+    (the reference pair then fails closed, never falls back to outdoor air).
+    """
+    state = hass.states.get(entity_id) if entity_id else None
+    unit = str(state.attributes.get("unit_of_measurement") or "").strip() if state is not None else ""
+    if unit and unit != "%":
+        return None, unit
+    return _float_state(hass, entity_id), None
+
+
 def _pollen_level(hass: HomeAssistant, configured: Any) -> float:
     """Highest valid value of all configured pollen sensors (0.26.4.6).
 
@@ -148,3 +163,8 @@ def _weather_wind(hass: HomeAssistant, entity_id: str | None) -> tuple[float | N
     bearing = finite_float(bearing)
     speed = finite_float(speed)
     return bearing, speed
+
+
+def _humidity_value(hass: HomeAssistant, entity_id: str | None) -> float | None:
+    """A relative humidity in % – no value for a sensor stating another unit (F02)."""
+    return _humidity_percent(hass, entity_id)[0]

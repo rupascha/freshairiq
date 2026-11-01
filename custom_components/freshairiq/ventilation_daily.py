@@ -82,14 +82,16 @@ _CSV_TEXT = {
     "de": {
         "session": ["Datum", "Beginn", "Ende", "Raum", "Dauer (min)", "Entfernte Feuchte (ml)", "Gemessen", "Temperatur vorher (°C)",
                     "Temperatur nachher (°C)", "Luftfeuchte vorher (%)", "Luftfeuchte nachher (%)", "Abs. Feuchte vorher (g/m³)",
-                    "Abs. Feuchte nachher (g/m³)", "Querlüftung", "Empfehlung befolgt"],
+                    "Abs. Feuchte nachher (g/m³)", "Querlüftung", "Empfehlung befolgt", "FreshAirIQ-Version", "Prognoseformel",
+                    "Version bei Lüftungsbeginn", "Testformel", "Fehler Prognoseformel (ml)", "Fehler Testformel (ml)"],
         "day": ["Datum", "Lüftungen", "Minuten gesamt", "Ø Minuten je Lüftung", "Entfernte Feuchte (ml)", "Gemessene Lüftungen", "Räume"],
         "yes": "ja", "no": "nein",
     },
     "en": {
         "session": ["Date", "Start", "End", "Room", "Duration (min)", "Moisture removed (mL)", "Measured", "Temperature before (°C)",
                     "Temperature after (°C)", "Humidity before (%)", "Humidity after (%)", "Abs. humidity before (g/m³)",
-                    "Abs. humidity after (g/m³)", "Cross ventilation", "Recommendation followed"],
+                    "Abs. humidity after (g/m³)", "Cross ventilation", "Recommendation followed", "FreshAirIQ version", "Forecast formula",
+                    "Version at airing start", "Test formula", "Forecast formula error (mL)", "Test formula error (mL)"],
         "day": ["Date", "Ventilations", "Total minutes", "Avg minutes per ventilation", "Moisture removed (mL)", "Measured ventilations", "Rooms"],
         "yes": "yes", "no": "no",
     },
@@ -131,6 +133,11 @@ def ventilation_csv(events: list[dict[str, Any]], start: date, end: date, tz: tz
                     ("start_temperature_c", 1), ("end_temperature_c", 1), ("start_humidity_percent", 0), ("end_humidity_percent", 0),
                     ("start_absolute_humidity_g_m3", 2), ("end_absolute_humidity_g_m3", 2))),
                 flag(event.get("cross_ventilation")), flag(event.get("recommendation_followed")),
+                # audit F02: empty for airings logged before 0.26.5.5 (unknown, not guessed)
+                _cell(event.get("freshairiq_version"), german), _cell(event.get("production_formula_id"), german),
+                # audit G01: the passive formula test of the airing – errors only for a valid pair (stored that way)
+                _cell(event.get("freshairiq_version_at_start"), german), _cell(event.get("candidate_formula_id"), german),
+                _cell(_num(event.get("production_abs_error_ml")), german), _cell(_num(event.get("candidate_abs_error_ml")), german),
             ])
     return "﻿" + out.getvalue()
 

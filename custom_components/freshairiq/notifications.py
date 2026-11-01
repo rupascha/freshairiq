@@ -10,12 +10,11 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .automation_events import notification_category
-from .fan_automation import auto_start
-from .notification_policy import auto_house as _auto_house, auto_room_event as _auto_room_event, reminder_interval_min, room_notification_events, status_messages_wanted
+from .notification_policy import auto_house as _auto_house, house_reopen_held, record_room_push, reminder_interval_min, room_notification_events, status_messages_wanted
+from .notification_text import continuation as _continuation, fan_hint as _fan_hint, house_message, room_messages, speech_text
 from .const import NOTIFY_SCOPE_BOTH, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_ROOM
 from .forecast import in_night_window, night_window_hours
 from .intelligence import mark_recommendation_notified
-from .language_confidence import room_notification_message
 from .localize import Translator, is_german, protected_names
 from .presence import normalize_presence_state
 
@@ -27,7 +26,9 @@ def _localized(title: str, message: str) -> tuple[str, str]:
     translator = _OUTPUT_TRANSLATOR.get()
     if translator is None:
         return title, message
-    return translator.text(str(title or "")), translator.text(str(message or ""))
+    # notification hotfix: title segment by segment (room names stay), text line by line (keeps the layout)
+    lines = [f"• {translator.text(x[2:])}" if x.startswith("• ") else translator.text(x) for x in str(message or "").split("\n")]
+    return " · ".join(x if translator.is_protected(x) else translator.text(x) for x in str(title or "").split(" · ")), "\n".join(lines)
 
 def _finite_float(value: Any, default: float = 0.0) -> float:
     """Return a finite float; corrupted/runtime values degrade to a safe default."""
@@ -443,43 +444,12 @@ async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title
     return sent
 
 
-def _continuation(room: dict[str, Any]) -> str:
-    """User-facing forecast using the configured horizon, never the internal 5-min gate."""
-    horizon = max(int(round(_finite_float(room.get("forecast_horizon_min", 5), 5.0))), 1)
-    effect = _finite_float(room.get("forecast_moisture_effect_ml", room.get("forecast_5_min_moisture_effect_ml", 0)), 0.0)
-    dt = _finite_float(room.get("forecast_temperature_change_c", room.get("forecast_5_min_temperature_change_c", 0)), 0.0)
-    cost = max(_finite_float(room.get("forecast_cost", room.get("next_5_min_cost", 0)), 0.0), 0.0)
-    moisture = f"−{round(abs(effect))} ml" if effect > 0 else f"+{round(abs(effect))} ml" if effect < 0 else "±0 ml"
-    sign = "+" if dt > 0 else "−" if dt < 0 else "±"
-    temp = f"{sign}{abs(dt):.1f} °C" if dt else "±0.0 °C"
-    return f"Weitere {horizon} Min: {moisture} · Temperatur {temp} · Energiekosten ca. {cost:.2f} €"
-
-
 EVENT_NOTIFICATION = "freshairiq_notification"
-
-
-def _fan_hint(room: dict[str, Any]) -> str:
-    """0.26.4.9: rooms with an exhaust fan can also be aired by the fan."""
-    actuators = room.get("configured_actuators") if isinstance(room.get("configured_actuators"), dict) else {}
-    if not actuators.get("exhaust_fan") or actuators.get("mechanical_exhaust_active") or auto_start(room):
-        return ""  # 0.26.5.4: not while FreshAirIQ switches the fan itself
-    return " Alternativ den Lüfter einschalten."
 
 
 def _house_message(iq: dict[str, Any], rooms: dict[str, Any]) -> tuple[str, str]:
     """Title and text of a whole-house recommendation (push and event)."""
-    title = f"FreshAirIQ · {iq.get('title', 'Empfehlung')}"
-    message_parts = [str(iq.get("instruction") or "").strip(), str(iq.get("summary") or "").strip()]
-    reasons = [str(x).strip() for x in (iq.get("reasons") or []) if str(x).strip()]
-    if reasons:
-        message_parts.append("Warum: " + " · ".join(reasons[:3]))
-    if iq.get("secondary"):
-        message_parts.append(str(iq.get("secondary")))
-    if str(iq.get("kind") or "") == "ventilate":
-        fan_rooms = [str(r.get("name") or k) for k, r in rooms.items() if isinstance(r, dict) and str(k) in {str(x) for x in (iq.get("room_keys") or [])} and _fan_hint(r)]
-        if fan_rooms:
-            message_parts.append(f"Alternativ den Lüfter einschalten ({', '.join(fan_rooms)}).")
-    return title, " ".join(x for x in message_parts if x)
+    return house_message(iq, rooms, _auto_house(iq, rooms))
 
 
 def _publish_event(
@@ -509,7 +479,7 @@ def _publish_event(
         "title": title_out,
         "message": message_out,
         # Speech-friendly text for Alexa & co.: without the "FreshAirIQ ·" prefix.
-        "speech": message_out if not room else f"{room.get('name')}: {message_out}",
+        "speech": speech_text(message_out) if not room else f"{room.get('name')}: {speech_text(message_out)}",
         "night_quiet_hours": bool(night_quiet),
         "created_at": now.isoformat(),
     }
@@ -578,9 +548,11 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
         if _publish_event(hass, store, now, cooldown, event, title, message, room_key, rooms, suppress_at_night, extra, options):
             changed = True
 
-    async def emit(event: str, title: str, message: str, room_key: str | None = None, *, push: bool = True, reminder: bool = False) -> bool:
+    async def emit(event: str, title: str, message: str, room_key: str | None = None, *, push: bool = True, reminder: bool = False, publish_event: bool = True) -> bool:
+        """False only when a push was attempted and not accepted (F4: a held-back push is no failure)."""
         nonlocal changed
-        publish(event, title, message, room_key, {"reminder": True} if reminder else None)
+        if publish_event:
+            publish(event, title, message, room_key, {"reminder": True} if reminder else None)
         if not push_enabled or not push or not status_messages_wanted(options, event):
             return True
         target_count, available_count = _notification_service_counts(hass, options)
@@ -611,38 +583,26 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             )
             changed = True
             return False
+        away = not sender_ok and _absence_filter(hass, options, event)[1]
         if _record_notification_diagnostic(
             store, now=now, event=event, scope="room" if room_key else "house",
             status="sent" if sender_ok else "not_sent", target_count=target_count,
             available_service_count=available_count,
-            reason=None if sender_ok else (
-                "recipients_away" if _absence_filter(hass, options, event)[1] else "no_available_notify_service"
-            ),
+            reason=None if sender_ok else ("recipients_away" if away else "no_available_notify_service"),
         ):
             changed = True
         if sender_ok:
             _mark_sent(store, key, now)
             changed = True
-            return True
-        return False
+        return sender_ok or away
 
     # Room-scope messages (events always; phone push per scope and toggle)
-    room_push = scope in {NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_BOTH}
-    for r in room_events["Ventilate"]:
-        reasons = ' · '.join(r.get('recommendation_reasons') or [])
-        await emit(*_auto_room_event("ventilate", r, f"{room_notification_message('ventilate', r, store.data)}{_fan_hint(r)} {reasons}".strip()), r["key"], push=room_push and bool(options.get("notify_ventilate")))
-    for r in room_events["Ventilate for cooling"]:
-        await emit("cool", f"FreshAirIQ · {r['name']}", f"{room_notification_message('cool', r, store.data)} {_continuation(r)}", r["key"], push=room_push and bool(options.get("notify_cooling")))
-    for r in room_events["Close"]:
-        await emit(*_auto_room_event("close", r, f"{room_notification_message('close', r, store.data)} {_continuation(r)}"), r["key"], push=room_push and bool(options.get("notify_close")))
-    for r in room_events["mould"]:
-        await emit("mould", f"FreshAirIQ · {r['name']}", f"Schimmelrisiko {r['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(r['surface_rh'])} %.{_fan_hint(r)}", r["key"], push=room_push and bool(options.get("notify_mould")))
-    for r in room_events["reminder"]:
-        event = {"Ventilate": "ventilate", "Ventilate for cooling": "cool"}.get(store.room(r["key"]).get("last_action"), "close")
-        await emit(event, f"FreshAirIQ · {r['name']}", f"Erinnerung: {room_notification_message(event, r, store.data)}", r["key"], push=room_push and bool(options.get(f"notify_{'cooling' if event == 'cool' else event}")), reminder=True)
-    if not sensor_recovery_active:
-        for r in room_events["sensor"]:
-            await emit("sensor", f"FreshAirIQ · {r['name']}", room_notification_message("sensor", r, store.data), r["key"], push=room_push and bool(options.get("notify_sensor")))
+    # Room-scope messages (events always; phone push per scope and toggle). F4: a push that was
+    # attempted and not accepted is retried (bounded); "close was said" is stored once it is out.
+    for m in room_messages(room_events, store, options, scope in {NOTIFY_SCOPE_ROOM, NOTIFY_SCOPE_BOTH}, sensor_recovery=sensor_recovery_active):
+        accepted = await emit(m["event"], m["title"], m["message"], m["room_key"], push=m["push"], reminder=m["reminder"], publish_event=not m["retry"])
+        if record_room_push(store.room(m["room_key"]), m, accepted, now):
+            changed = True
 
     # House-scope messages use Recommendation Engine v2. The user receives one
     # coherent action instead of a dump of competing room recommendations.
@@ -663,7 +623,7 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
         kind = "fan_auto" if _auto_house(iq, rooms) else str(iq.get("kind") or "")  # 0.26.5.4: FreshAirIQ switches the fans itself
         signature = f"{kind}:{','.join(iq.get('room_keys') or [])}:{iq.get('instruction','')}"
         previous_signature = store.data.get("last_house_recommendation_signature")
-        if signature != previous_signature:
+        if signature != previous_signature and not house_reopen_held(kind, store.data.get("notifications", {}).get("iq_close:house"), now, options, iq, rooms):  # GitHub #15
             title, message = _house_message(iq, rooms)
             # 0.26.4.9 (user feedback): "Lüftung läuft · Lüftung weiter beobachten"
             # asks nothing of the user, so a running airing is no longer pushed.

@@ -448,7 +448,7 @@ def _live_session_recommendation(
         physical = sum(max(_f(r.get("forecast_physical_moisture_effect_ml", r.get("forecast_moisture_effect_ml"))), 0.0) for r in source_running)
         horizon = max(int(round(_f(source_running[0].get("forecast_horizon_min"), options.get("forecast_horizon_min", 5)))), 1)
         reasons = [
-            f"{labels} wahrscheinlich aktiv · {confidence} % Sicherheit",
+            f"{labels} wahrscheinlich aktiv · Modellindikator {confidence}/100",
             f"Geschätzte interne Feuchteproduktion aktuell rund +{round(generated_rate_h)} ml/h",
             f"Außen-/Referenzluft bleibt trockener; Lüften kann in {horizon} min physikalisch etwa {round(physical)} ml abführen",
         ]
@@ -468,7 +468,7 @@ def _live_session_recommendation(
         return result(
             "ventilate", "moisture_source_active", f"{label} erkannt", f"{name} jetzt lüften",
             str(chosen_source.get("moisture_source_message") or "Im Raum wird aktuell zusätzliche Feuchtigkeit erzeugt und die Referenzluft ist trockener. Frühzeitiges Lüften begrenzt den Feuchteanstieg."),
-            selected=[chosen_source], reasons=[f"{label} wahrscheinlich aktiv · {conf} % Sicherheit", f"Außen-/Referenzluft ist {_f(chosen_source.get('delta_g_m3')):.1f} g/m³ trockener"],
+            selected=[chosen_source], reasons=[f"{label} wahrscheinlich aktiv · Modellindikator {conf}/100", f"Außen-/Referenzluft ist {_f(chosen_source.get('delta_g_m3')):.1f} g/m³ trockener"],
             severity="warning", duration=recommended_duration_min, removed=max(_f(chosen_source.get("forecast_moisture_effect_ml")), 0.0),
         )
 

@@ -693,13 +693,15 @@
               "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
             }
           }
         },
@@ -835,13 +837,15 @@
               "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
             }
           }
         }
@@ -1096,13 +1100,15 @@
               "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
             }
           }
         },
@@ -1238,13 +1244,15 @@
               "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
             }
           }
         }
@@ -2633,13 +2641,15 @@
               "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
             }
           }
         },
@@ -2775,13 +2785,15 @@
               "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+              "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+              "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
             }
           }
         }
@@ -3509,13 +3521,15 @@
                 "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
                 "exhaust_fan_control": "Ablüfter automatisch schalten",
                 "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-                "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+                "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
                 "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
                 "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-                "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+                "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
               }
             }
           },
@@ -3837,13 +3851,15 @@
                 "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
                 "exhaust_fan_control": "Ablüfter automatisch schalten",
                 "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-                "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+                "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
                 "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
                 "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-                "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+                "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
               }
             }
           },
@@ -4089,13 +4105,15 @@
                 "auto_sun_protection": "Rollos automatisch gegen die Sonne schließen",
                 "exhaust_fan_control": "Ablüfter automatisch schalten",
                 "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
-                "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters"
+                "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
+                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
                 "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
                 "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
-                "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet."
+                "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
+                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
               }
             }
           },

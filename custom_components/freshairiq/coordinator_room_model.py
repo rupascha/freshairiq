@@ -16,6 +16,7 @@ from .const import (
     CONF_ROOM_REFERENCE_HUMIDITY,
     CONF_ROOM_REFERENCE_TEMPERATURE,
     CONF_ROOM_VOLUME,
+    VERSION,
 )
 from .consolidation import session_target_min as _session_target_min
 from .coordinator_contacts import _contact_ids, _room_orientation_factor
@@ -28,6 +29,7 @@ from .energy import (
 from .forecast import horizon_forecast
 from .goals import room_comfort_target
 from .humidity_plateau import track_session
+from .forecast_shadow import freeze_shadow_start
 from .forecast_validation import evaluate_start_forecast_at_duration, freeze_start_forecast_context
 from .learning_effectiveness import freeze_learning_effectiveness_context
 from .model import RoomInput, absolute_humidity, evaluate_room, scaled_min_return
@@ -58,6 +60,21 @@ def _remember_airing_kind(mem: dict[str, Any], result: Any, has_ventilation_cont
     return changed
 
 
+# F05 (0.26.5.5, FAIQ-LEARN-001): exchange rate of the physical base model. When objective evidence shows the
+# learned model doing worse than physics (learning effectiveness "regressing"), every path that uses the exchange
+# rate – room decision, 5-minute check, costs, forecast – takes this rate. Nothing learned is deleted; learning
+# goes on and the learned rate returns once the evidence does.
+PHYSICS_FALLBACK_RATE = 0.03
+
+
+def _minutes_since(value: Any, now: datetime) -> float | None:
+    """0.26.5.5 (audit F02): minutes since an ISO time stamp (None when unknown or unreadable)."""
+    try:
+        then = datetime.fromisoformat(str(value)) if value else None
+        return (now - then).total_seconds() / 60.0 if then is not None else None
+    except (TypeError, ValueError):
+        return None
+
 class RoomModelMixin:
     """Per-room physics: room model, recommendation, forecast and the frozen session prediction."""
 
@@ -72,7 +89,7 @@ class RoomModelMixin:
         outdoor_pm25: Any, physical_contact_modes: Any, pollen: Any, raw_contact_open: Any,
         raw_open_seconds: Any, ref_rh: Any, ref_t: Any, reference_humidity_entity: Any,
         reference_temperature_entity: Any, rh: Any, specialist_opening_mode: Any, t: Any, wind_bearing: Any,
-        wind_speed: Any,
+        wind_speed: Any, _learning_v2_force_physics: Any = False,
     ) -> Any:
         """Elapsed time, moisture source, post-close observation and the physical room model."""
         if mem["session_active"] and (mem.get("session_physical_started") or mem.get("session_started")):
@@ -146,6 +163,8 @@ class RoomModelMixin:
         effective_learning_samples = int(mem["learning_samples"] if has_ventilation_contact else mem.get("passive_learning_samples", 0))
         opening_learning = mem.get("opening_learning") if isinstance(mem.get("opening_learning"), dict) else {}
         opening_model_key = "cross" if cross and opening_mode == "open" else specialist_opening_mode
+        if mechanical_exhaust_active and not raw_contact_open:  # 0.26.5.4 (LM-01): fan-only airing reads the model its sessions learn
+            opening_model_key = "mechanical_exhaust"
         opening_model = opening_learning.get(opening_model_key) if opening_model_key and isinstance(opening_learning.get(opening_model_key), dict) else None
         # Open/tilt specialist models require provenance from the currently
         # active proven three-state contacts. Binary/mixed-source ventilation
@@ -156,6 +175,7 @@ class RoomModelMixin:
             effective_learning_samples = int(opening_model.get("samples", effective_learning_samples))
         elif has_ventilation_contact and opening_model_key in ((mem.get("start_model") or {}).get("rates") or {}):  # not learned yet: start model
             effective_learning_rate = float(mem["start_model"]["rates"][opening_model_key])
+        effective_learning_rate = PHYSICS_FALLBACK_RATE if _learning_v2_force_physics else effective_learning_rate  # F05: see PHYSICS_FALLBACK_RATE
         if mem.get("session_active") and mem.get("session_target_fan_start") and raw_contact_open:
             joined = _session_target_min(self.data, options)
             mem["session_target_min"] = round(elapsed + joined, 1) if joined is not None else None
@@ -171,7 +191,7 @@ class RoomModelMixin:
             session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),
             session_start_temp=mem.get("session_start_temp"), session_result_base_ml=float(mem.get("session_result_base_ml", 0.0)),
             session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)),
-            airflow_factor=airflow, pollen_index=pollen,
+            airflow_factor=airflow, pollen_index=pollen, measurements_stale=measurement_frame.get("quality") == "stale",
             session_fresh_measurements=int(mem.get("session_fresh_measurements", 0)),
             session_target_min=mem.get("session_target_min") if mem.get("session_active") else None,
             mechanical_only=bool(mechanical_exhaust_active and not raw_contact_open),
@@ -196,6 +216,7 @@ class RoomModelMixin:
             moisture_source_label=str(moisture_source.get("label") or "Feuchtequelle"),
             moisture_source_confidence=int(moisture_source.get("confidence") or 0),
             moisture_source_rate_ml_min=float(moisture_source.get("source_rate_ml_min") or 0.0),
+            moisture_source_ended_min=_minutes_since(moisture_source.get("last_ended_at"), now),
             ventilation_latched=bool(mem.get("ventilation_candidate_latched", False)),
             outdoor_pm25=outdoor_pm25,
         )
@@ -265,7 +286,7 @@ class RoomModelMixin:
                             avg_ref_ah = (float(prev_ref_ah) + curr_ref_ah) / 2.0 if prev_ref_ah is not None else curr_ref_ah
                             avg_room_ah = (float(prev_ah) + curr_ah) / 2.0
                             interval_fraction = exchanged_air_fraction(
-                                float(mem.get("learning_rate", .03)), age_min,
+                                float(room_input.learning_rate), age_min,
                                 (1.25 if cross else 1.0) * airflow,
                             )
                             physical_removed = (avg_room_ah - avg_ref_ah) * volume * interval_fraction
@@ -398,7 +419,7 @@ class RoomModelMixin:
             source_ah=float(result.reference_humidity or 0.0),
             current_temp_c=t, source_temp_c=ref_t,
             volume_m3=float(cfg[CONF_ROOM_VOLUME]),
-            rate_per_min=(0.03 if _learning_v2_force_physics else float(mem.get("learning_rate", .03))),
+            rate_per_min=(0.03 if _learning_v2_force_physics else float(effective_learning_rate)),  # 0.26.5.4 (LM-02): the active model
             airflow_bonus=(1.25 if cross else 1.0) * airflow,
             prior_source_ml_min=room_prior_ml_min,
             learned_source_ml_min=(None if _learning_v2_force_physics else learned_source_for_forecast),
@@ -452,7 +473,7 @@ class RoomModelMixin:
         if result.data_quality == "ok":
             # horizon_forecast always returns at least one temperature step.
             fdel, fpurchased, fcost = ventilation_cost_for_temperature_path(
-                float(cfg[CONF_ROOM_VOLUME]), float(mem.get("learning_rate", .03)),
+                float(cfg[CONF_ROOM_VOLUME]), float(effective_learning_rate),
                 (1.25 if cross else 1.0) * airflow, dynamic["temperature_path"], options,
             )
         else:
@@ -471,7 +492,7 @@ class RoomModelMixin:
         *,
         cfg: Any, changed: Any, dynamic: Any, elapsed: Any, forecast_args: Any, forecast_horizon: Any,
         measurement_frame: Any, mem: Any, now: Any, options: Any, ref_rh: Any, ref_t: Any, result: Any,
-        rh: Any, t: Any,
+        rh: Any, t: Any, cross: Any = False,
     ) -> Any:
         """Freeze the first forecast after the physical opening as the session prediction."""
         if (
@@ -527,6 +548,8 @@ class RoomModelMixin:
                 )
                 if effectiveness_context is not None:
                     start_context["learning_effectiveness"] = effectiveness_context
+                # passive shadow formula: cross-ventilation known at the start and the version that froze it
+                start_context["shadow"] = freeze_shadow_start(cross_ventilated=bool(cross), integration_version=VERSION)
                 start_prediction = evaluate_start_forecast_at_duration(start_context, initial_horizon)
                 if start_prediction is not None:
                     mem["session_prediction_start_context"] = start_context

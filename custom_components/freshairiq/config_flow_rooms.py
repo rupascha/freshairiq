@@ -34,6 +34,7 @@ from .const import (
     CONF_ROOM_EXHAUST_FAN_CONTROL,
     CONF_ROOM_EXHAUST_FAN_FOLLOW_UP,
     CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME,
+    CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK,
     CONF_ROOM_FLOOR,
     CONF_ROOM_DISABLED_GOALS,
     CONF_ROOM_GOAL_PRIORITIES,
@@ -278,6 +279,9 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             ),
             vol.Required(CONF_ROOM_EXHAUST_FAN_FOLLOW_UP, default=_bounded(room.get(CONF_ROOM_EXHAUST_FAN_FOLLOW_UP), DEFAULT_FAN_FOLLOW_UP_MIN, 0, 60)): _number(0, 60, 1, "min"),
             vol.Required(CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME, default=_bounded(room.get(CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME), DEFAULT_FAN_MAX_RUNTIME_MIN, 5, 240)): _number(5, 240, 5, "min"),
+            _optional(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK, room.get(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=["input_boolean", "binary_sensor", "switch", "timer"])
+            ),
         }), {"collapsed": True}),
     })
 
@@ -536,6 +540,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
 
 def _normalise_room_control(room: dict[str, Any], previous: dict[str, Any]) -> None:
     """0.26.5.1: automatic cover/fan control; values missing from a form keep the stored ones."""
+    submitted = dict(room)
     room[CONF_ROOM_AUTO_SUN_PROTECTION] = bool(room.get(CONF_ROOM_AUTO_SUN_PROTECTION, previous.get(CONF_ROOM_AUTO_SUN_PROTECTION, False)))
     room[CONF_ROOM_EXHAUST_FAN_CONTROL] = _choice(
         room.get(CONF_ROOM_EXHAUST_FAN_CONTROL, previous.get(CONF_ROOM_EXHAUST_FAN_CONTROL)), FAN_CONTROL_OFF, FAN_CONTROL_MODES,
@@ -546,6 +551,9 @@ def _normalise_room_control(room: dict[str, Any], previous: dict[str, Any]) -> N
     room[CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME] = _bounded(
         room.get(CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME, previous.get(CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME)), DEFAULT_FAN_MAX_RUNTIME_MIN, 5, 240,
     )
+    # 0.26.5.5: the form with the automation settings was sent – a missing lock means it was cleared
+    lock = room.get(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK) if CONF_ROOM_EXHAUST_FAN_CONTROL in submitted else previous.get(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK)
+    room[CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK] = str(lock or "").strip() or None
 
 
 def _normalise_legacy_entry_data(data: dict[str, Any]) -> dict[str, Any]:

@@ -47,11 +47,11 @@ from .const import (
 )
 from .automation_events import action_code
 from .climate_sources import aggregate_states
-from .coordinator_contacts import _contact_ids, _contact_specific_reference, _cover_openings
-from .coordinator_sources import _aggregate_state_proxy, _float_state
+from .coordinator_contacts import _contact_ids, _contact_specific_reference, _cover_openings, _unit_checked_reference
+from .coordinator_sources import _aggregate_state_proxy, _float_state, _humidity_value
 from .goals import normalise_disabled_goals
 from .intelligence import ensure_behaviour_defaults
-from .exhaust_reference import NEIGHBOUR_REFERENCE_REASON
+from .exhaust_reference import NEIGHBOUR_REFERENCE_REASON, REFERENCE_UNIT_REASON
 from .fan_automation import room_fan_automation
 from .intervention import build_interventions, voc_scale
 from .measurement_frame import build_measurement_frame
@@ -250,7 +250,7 @@ class RoomEvaluationMixin:
             reference_humidity_entity=reference_humidity_entity,
             reference_temperature_entity=reference_temperature_entity, rh=rh,
             specialist_opening_mode=specialist_opening_mode, t=t, wind_bearing=wind_bearing,
-            wind_speed=wind_speed,
+            wind_speed=wind_speed, _learning_v2_force_physics=_learning_v2_force_physics,
         )
         (
             changed, high_duration, humidity_trend, indirect_candidate, indirect_cooling_candidate,
@@ -274,7 +274,7 @@ class RoomEvaluationMixin:
             now=now, opening_mode=opening_mode, options=options, ref_t=ref_t, result=result, t=t,
         )
         (changed,) = self._freeze_session_prediction(
-            cfg=cfg, changed=changed, dynamic=dynamic, elapsed=elapsed, forecast_args=forecast_args,
+            cfg=cfg, changed=changed, cross=cross, dynamic=dynamic, elapsed=elapsed, forecast_args=forecast_args,
             forecast_horizon=forecast_horizon, measurement_frame=measurement_frame, mem=mem, now=now,
             options=options, ref_rh=ref_rh, ref_t=ref_t, result=result, rh=rh, t=t,
         )
@@ -390,6 +390,11 @@ class RoomEvaluationMixin:
         results[key]["air_exchange"] = self.__dict__.get("_air_exchange", {}).get(key)  # 0.26.5.4: display only
         if results[key]["reference_path"] == "neighbour_room" and isinstance(results[key].get("recommendation_reasons"), list):
             results[key]["recommendation_reasons"].append(NEIGHBOUR_REFERENCE_REASON)
+        # 0.26.5.5: a reference humidity sensor with another unit than % is not used – say why
+        if unit_issue := self.__dict__.get("_reference_unit_issues", {}).get(str(key)):
+            results[key]["reference_unit_issue"] = unit_issue
+            if isinstance(results[key].get("recommendation_reasons"), list):
+                results[key]["recommendation_reasons"].append(REFERENCE_UNIT_REASON)
         # 0.26.5.4: what the automatic fan control does (final value after the house decision)
         results[key]["fan_automation"] = room_fan_automation(
             {**results[key], "house_aligned_action": action_code(results[key].get("action"))}, self._fan_snapshot(key)
@@ -494,12 +499,12 @@ class RoomEvaluationMixin:
         default_reference_humidity_entity = room_reference_humidity_entity or outdoor_humidity_entity
         default_ref_t = _float_state(self.hass, room_reference_temperature_entity) if room_reference_temperature_entity else outdoor_t
         default_ref_rh = _float_state(self.hass, room_reference_humidity_entity) if room_reference_humidity_entity else outdoor_rh
-        reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _contact_specific_reference(
+        reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _unit_checked_reference(self.hass, _contact_specific_reference(
             self.hass, cfg,
             default_temp_entity=default_reference_temperature_entity,
             default_humidity_entity=default_reference_humidity_entity,
-            default_temp=default_ref_t, default_humidity=default_ref_rh,
-        )
+            default_temp=default_ref_t, default_humidity=default_ref_rh, humidity_reader=_humidity_value,
+        ))
         reference_temperature_state = self.hass.states.get(reference_temperature_entity) if reference_temperature_entity else outdoor_temp_state
         reference_humidity_state = self.hass.states.get(reference_humidity_entity) if reference_humidity_entity else outdoor_humidity_state
         t = temperature_source.value; rh = humidity_source.value

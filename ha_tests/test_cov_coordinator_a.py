@@ -488,8 +488,10 @@ def test_recommendation_ventilate_latch_profile_and_wind() -> None:
     action, _t, reasons = _rec(result, {"operating_profile": "dehumidify"}, ventilation_latched=True,
                                wind_bearing=270.0, airflow=1.2)
     assert action == "Ventilate"
-    # Dehumidify profile lowers the required delta to 85 %.
-    assert any("mindestens 2.1 g/m³" in r for r in reasons)
+    # Dehumidify profile lowers the required delta to 85 %; notification hotfix F3: the latched
+    # recommendation lowers it by another 0.4 g/m³ (2.5 × 0.85 − 0.4 = 1.7, as the decision uses it;
+    # the old expectation 2.1 encoded the text that ignored the hysteresis).
+    assert any("mindestens 1.7 g/m³" in r for r in reasons)
     assert any("Empfehlung bleibt trotz leichter Schwankung" in r for r in reasons)
     assert reasons[-1] == "Windrichtung unterstützt den Luftwechsel"
     action, _t, reasons = _rec(_result(humidity=70.0, ventilation_candidate=True, delta_g_m3=2.0),
@@ -514,7 +516,8 @@ def test_recommendation_active_session_branches() -> None:
                moisture_source_confidence=80, moisture_source_rate_ml_min=5.0, delta_g_m3=2.0)
     action, _t, reasons = _rec(_result(**src))
     assert action == "Continue ventilating"
-    assert any("Dusche wahrscheinlich aktiv (80 % Sicherheit)" in r and "300 ml/h" in r for r in reasons)
+    # notification hotfix F3: a model indicator, not "80 % Sicherheit" (read like a calibrated probability)
+    assert any("Dusche wahrscheinlich aktiv (Modellindikator 80/100)" in r and "300 ml/h" in r for r in reasons)
     assert "aktiven Feuchtequelle" in reasons[-1]
 
     action, _t, reasons = _rec(_result(active=True, close_recommended=True))

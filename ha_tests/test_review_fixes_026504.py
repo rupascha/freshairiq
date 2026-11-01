@@ -83,6 +83,10 @@ async def test_two_fans_one_does_not_react(hass, freezer) -> None:
     assert snapshot("garage")["command_state"] == "pending"
     freezer.tick(timedelta(seconds=FAN_COMMAND_TIMEOUT_S))
     await _push(hass, coordinator, "garage", house_aligned_action="ventilate_indirectly")
+    # corrected (hotfix F4): the fan that did not react is asked once more before "partial"
+    assert snapshot("garage")["command_state"] == "pending" and [s for s, _ in log] == ["turn_on"] * 4
+    freezer.tick(timedelta(seconds=FAN_COMMAND_TIMEOUT_S + 1))
+    await _push(hass, coordinator, "garage", house_aligned_action="ventilate_indirectly")
     snap = snapshot("garage")
     assert (snap["command_state"], snap["owned"], snap["fans_on"], snap["fans_total"]) == ("partial", True, 1, 2)
     assert coordinator.actuator_controller.fan_trace()[-1]["result"] == "partial"
@@ -90,7 +94,7 @@ async def test_two_fans_one_does_not_react(hass, freezer) -> None:
     await _push(hass, coordinator, "garage", house_aligned_action="close")
     freezer.tick(timedelta(seconds=FAN_OFF_CONFIRM_S + 1))
     await _push(hass, coordinator, "garage", house_aligned_action="close")
-    assert [s for s, _ in log] == ["turn_on", "turn_on", "turn_off", "turn_off"]  # one group command each (two fans)
+    assert [s for s, _ in log] == ["turn_on"] * 4 + ["turn_off", "turn_off"]  # one group command each (two fans), one retry
     await _unload(hass, entry)
 
 

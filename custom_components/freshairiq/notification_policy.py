@@ -20,11 +20,17 @@ from typing import Any
 from .automation_events import CATEGORY_STATUS, action_code, notification_category, ventilation_measures_active
 from .close_wording import fan_only, house_handled_by_automation
 from .fan_automation import fan_automation, handled_label
+from .notification_text import auto_room_event  # noqa: F401 - imported from here by older callers
 from .open_connections import connection_map
 
 ROOM_EVENT_ACTIONS = ("Ventilate", "Ventilate for cooling", "Close")
 _ALIGNED_TO_ACTION = {"ventilate": "Ventilate", "ventilate_for_cooling": "Ventilate for cooling", "close": "Close"}
 REMINDER_OPTION = "action_reminder_min"
+# F4 (notification hotfix): a room push that was attempted but not accepted is tried again – at most
+# once a minute and only within this window, while the action is unchanged and still open.
+PUSH_PENDING = "push_pending"
+PUSH_RETRY_WINDOW_MIN = 30.0
+PUSH_RETRY_STEP_MIN = 1.0
 STATUS_OPTION = "notify_status_messages"
 
 
@@ -108,7 +114,7 @@ def room_notification_events(
     ``reminder`` lists rooms whose action is unchanged and still open after the
     reminder interval. The action state is persisted, so a restart does not spam.
     """
-    events: dict[str, list[dict[str, Any]]] = {**{name: [] for name in ROOM_EVENT_ACTIONS}, "sensor": [], "mould": [], "reminder": []}
+    events: dict[str, list[dict[str, Any]]] = {**{name: [] for name in ROOM_EVENT_ACTIONS}, "sensor": [], "mould": [], "reminder": [], "retry": []}
     changed = False
     interval = reminder_interval_min(options)
     connections = connection_map(options, rooms)
@@ -122,11 +128,15 @@ def room_notification_events(
         elif action != mem.get("last_action"):
             mem["last_action"] = action
             mem["action_notified_at"] = now.isoformat()
-            if action == "Close":
-                mem["last_close_message_at"] = now.isoformat()
+            mem.pop(PUSH_PENDING, None)  # F4: a push of the previous action is no longer valid
             changed = True
             if action in events:
                 events[action].append(room)
+        elif PUSH_PENDING in mem:
+            due, dropped = _push_retry(action, room, mem, now)
+            changed = changed or dropped
+            if due:
+                events["retry"].append(room)
         elif interval is not None and action in ROOM_EVENT_ACTIONS and _still_open(action, room) and not _automatic(action, room):
             notified = _parse(mem.get("action_notified_at"))
             if notified is None:
@@ -144,6 +154,39 @@ def room_notification_events(
         if room.get("mould_level") in {"High", "Very high"} and not ventilation_measures_active(room):
             events["mould"].append(room)
     return events, changed
+
+
+def _push_retry(action: Any, room: dict[str, Any], mem: dict[str, Any], now: datetime) -> tuple[bool, bool]:
+    """F4: (push due again, pending state dropped) for a room push that was not accepted."""
+    pending = mem.get(PUSH_PENDING) if isinstance(mem.get(PUSH_PENDING), dict) else {}
+    first, attempt = _parse(pending.get("first_at")), _parse(pending.get("attempt_at"))
+    if (pending.get("action") != action or first is None or attempt is None or now - first > timedelta(minutes=PUSH_RETRY_WINDOW_MIN)
+            or not _still_open(action, room) or _automatic(action, room)):
+        mem.pop(PUSH_PENDING, None)
+        return False, True
+    return now - attempt >= timedelta(minutes=PUSH_RETRY_STEP_MIN), False
+
+
+def record_room_push(mem: dict[str, Any], message: dict[str, Any], accepted: bool, now: datetime) -> bool:
+    """F4: after a room message of an action – whether the persisted state changed.
+
+    ``accepted`` is False only when a push was attempted and no notify service accepted it (a push the
+    user's options, the night window, the room selection, presence or the cooldown hold back is not a
+    failure). Only then the push is kept for a bounded retry. "Close was said" (GitHub #15 hold) is
+    stored once the close message is out, never before.
+    """
+    action = message.get("action")
+    if action not in ROOM_EVENT_ACTIONS or mem.get("last_action") != action:
+        return False
+    if not accepted:
+        pending = mem.get(PUSH_PENDING) if isinstance(mem.get(PUSH_PENDING), dict) else {}
+        first = pending.get("first_at") if pending.get("action") == action else None
+        mem[PUSH_PENDING] = {"action": action, "first_at": first or now.isoformat(), "attempt_at": now.isoformat()}
+        return True
+    mem.pop(PUSH_PENDING, None)
+    if action == "Close":
+        mem["last_close_message_at"] = now.isoformat()
+    return True
 
 
 def _reopen_held(action: Any, room: dict[str, Any], mem: dict[str, Any], now: datetime, options: dict[str, Any]) -> bool:
@@ -164,6 +207,20 @@ def _reopen_held(action: Any, room: dict[str, Any], mem: dict[str, Any], now: da
     return not _protection_needed(room, options)
 
 
+def house_reopen_held(kind: str, last_close_at: Any, now: datetime, options: dict[str, Any], iq: dict[str, Any], rooms: dict[str, Any]) -> bool:
+    """Community hotfix (GitHub #15): the house "ventilate" push waits after a house "close" push.
+
+    The two pushes have separate cooldowns, so "open" could follow "close" within minutes. Same rule
+    as ``_reopen_held`` for room messages: within the repeat cooldown, unless a named room needs
+    protection (critical mould risk or CO2). Not stored as sent – it follows once the time is over.
+    """
+    if kind != "ventilate":
+        return False
+    held = _reopen_held("Ventilate", {}, {"last_close_message_at": last_close_at}, now, options)  # the time rule only
+    keys = [str(k) for k in (iq.get("room_keys") or [])]
+    return held and not any(_protection_needed(rooms[k], options) for k in keys if isinstance(rooms.get(k), dict))
+
+
 def _protection_needed(room: dict[str, Any], options: dict[str, Any]) -> bool:
     try:
         surface = float(room.get("surface_rh") or 0.0)
@@ -178,19 +235,6 @@ def _parse(value: Any) -> datetime | None:
         return datetime.fromisoformat(str(value))
     except (TypeError, ValueError):
         return None
-
-
-def auto_room_event(event: str, room: dict[str, Any], message: str) -> tuple[str, str, str]:
-    """0.26.5.4: event, title and text of a room message.
-
-    When FreshAirIQ switches the room's fan itself, the message is a status
-    ("fan_auto") with the automation's wording instead of a task for the user.
-    """
-    label = handled_label(room, "close" if event == "close" else "ventilate")
-    title = f"FreshAirIQ · {room.get('name')}"
-    if label and fan_automation(room).get("user_action_needed"):
-        return event, title, f"{label}."  # audit S08: e.g. not every fan came on – a task, not a status
-    return ("fan_auto", title, f"{label}.") if label else (event, title, message)
 
 
 def auto_house(iq: dict[str, Any], rooms: dict[str, Any]) -> bool:

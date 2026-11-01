@@ -133,7 +133,7 @@ class HouseStageMixin:
         """Log completed sessions and finalise the house ventilation group once every room closed."""
         if completed_sessions:
             self.store.data["ventilation_log"] = append_ventilation_log(
-                self.store.data.get("ventilation_log", []), completed_sessions, now
+                self.store.data.get("ventilation_log", []), completed_sessions, now, VERSION
             )
             changed = True
             if not isinstance(ventilation_group, dict) or not ventilation_group.get("active"):

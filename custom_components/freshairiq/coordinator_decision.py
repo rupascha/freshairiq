@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .forecast_shadow import published_comparison
 from .const import CONF_LEVELS, PROPERTY_HOUSE, SESSION_END_MEASUREMENT_WAIT_SECONDS
 from .anticipation import refine_with_anticipation
 from .consolidation import stabilise_recommendation
@@ -24,11 +25,12 @@ from .intelligence import build_intelligence_state, sync_active_recommendation
 from .language_confidence import adapt_language_confidence
 from .learning_components import build_learning_components_status
 from .learning_v2 import build_learning_v2_status
-from .live_coach import refine_live_recommendation
+from .live_coach import align_live_coach_state, refine_live_recommendation
 from .model import absolute_humidity
 from .open_connections import connection_map
 from .opening_strategy import (
     enrich_opening_recommendation,
+    close_rooms_released_on_their_own,
     house_aligned_room_actions,
     keep_moisture_sources_open,
     synchronize_room_presentation_actions,
@@ -112,7 +114,11 @@ class HouseDecisionMixin:
         )
         # 0.26.5.2: after the house/floor aggregate and the opening overlay, a
         # room with a running moisture source (sauna, shower ...) is never closed.
+        # Hotfix S1/S2 (01.11.): a room's own released close survives a floor/house "continue",
+        # and the live-coach fields follow the final decision.
+        close_rooms_released_on_their_own(intelligent_recommendation, results)
         keep_moisture_sources_open(intelligent_recommendation, results, options)
+        align_live_coach_state(intelligent_recommendation)
         # Three-state mode selection is the last action-specific presentation
         # layer so generic wording/personalisation cannot erase the explicit
         # tilt-vs-shock recommendation or a running user's selected mode.
@@ -144,7 +150,8 @@ class HouseDecisionMixin:
             displayed_recommended = float(intelligent_recommendation["duration_min"])
         elif active and intelligent_recommendation.get("live_coach_target_min") is not None:
             displayed_recommended = float(intelligent_recommendation["live_coach_target_min"])
-            remaining = float(intelligent_recommendation.get("live_coach_remaining_min", remaining))
+            coach_remaining = intelligent_recommendation.get("live_coach_remaining_min")
+            remaining = float(remaining if coach_remaining is None else coach_remaining)  # S2: None is "no coach time"
         if str(intelligent_recommendation.get("kind") or "") == "close":
             # A close action is immediate, but the dashboard's IQ-ZEIT tile should
             # still show how far the real session has already passed its target.
@@ -164,7 +171,7 @@ class HouseDecisionMixin:
         # Keep every dashboard surface semantically aligned with the final
         # recommendation. Canonical room actions are preserved as metadata and
         # this happens only after all physics/learning decisions are complete.
-        synchronize_room_presentation_actions(intelligent_recommendation, results)
+        synchronize_room_presentation_actions(intelligent_recommendation, results, min_duration_min=float(options.get("min_duration_min", 3.0)))
         house_aligned_room_actions(intelligent_recommendation, results)
         for _key, _room in results.items():
             if isinstance(_room, dict) and _room.get("fan_automation") is not None:
@@ -326,6 +333,8 @@ class HouseDecisionMixin:
             "decision_trace": intelligent_recommendation.get("decision_trace", {}),
             "forecast_backtest": forecast_backtest_status,
             "learning_effectiveness": learning_effectiveness_status,
+            # passive shadow formula: separate paired comparison, never mixed into the KPIs above
+            "forecast_shadow_comparison": published_comparison(self.store.data.get("forecast_validation_history"), days=30, now=now),
             "post_close_stabilization": post_close_status,
             "learning_components": learning_components_status, "learning_v2": learning_v2_status,
             "post_close_stabilization_history": list(self.store.data.get("post_close_stabilization_history") or [])[-100:],

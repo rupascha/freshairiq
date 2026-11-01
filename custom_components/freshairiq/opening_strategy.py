@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .close_wording import airing_running
+from .close_wording import airing_running, close_instruction, fan_only, keep_instruction
 
 
 def _f(value: Any, default: float = 0.0) -> float:
@@ -264,6 +264,55 @@ def enrich_opening_recommendation(
     return recommendation
 
 
+def close_rooms_released_on_their_own(
+    recommendation: dict[str, Any],
+    rooms: dict[str, dict[str, Any]],
+) -> None:
+    """Hotfix S1 (01.11.): a floor/house "keep ventilating" never swallows a room's own released close.
+
+    Room A aired for 20 minutes and released its own close (two fresh readings, ``Close``); room B
+    was opened half a minute ago. The floor/house aggregate correctly keeps B open, but it said
+    "continue" for both and the presentation turned A's ``Close`` into "Continue ventilating".
+    Only rooms whose *own* decision is a released close are taken out (``Close`` +
+    ``close_recommended`` + ``close_decision_ready``, really aired, not a fan alone); the others
+    keep ventilating. When every aired room released its close the aggregate stays as it is.
+    """
+    if not isinstance(recommendation, dict) or not isinstance(rooms, dict):
+        return
+    if str(recommendation.get("kind") or "") != "continue" or recommendation.get("presentation_scope") not in {"floor", "house"}:
+        return
+    selected = [str(key) for key in (recommendation.get("room_keys") or []) if isinstance(rooms.get(str(key)), dict)]
+    aired = [key for key in selected if airing_running(rooms[key])]
+    released = [
+        key for key in aired
+        if not fan_only(rooms[key]) and str(rooms[key].get("action") or "") == "Close"
+        and rooms[key].get("close_recommended") and rooms[key].get("close_decision_ready")
+    ]
+    running = [key for key in aired if key not in released]
+    if not released or not running:
+        return
+    close_text = close_instruction([rooms[key] for key in released])
+    keep_names = " + ".join(str(rooms[key].get("name") or key) for key in running)
+    reason = f"{' + '.join(str(rooms[key].get('name') or key) for key in released)}: eigenes Schließkriterium erreicht; {keep_names} läuft noch"
+    reasons = [str(x) for x in (recommendation.get("reasons") or []) if str(x).strip()]
+    recommendation.update({
+        "kind": "close", "status": "close_windows", "room_keys": released,
+        "title": "Einzelne Räume schließen",
+        "instruction": f"{close_text} · {keep_instruction([rooms[key] for key in running], None)}",
+        "summary": "Ein Raum hat sein eigenes Schließkriterium erreicht; die übrigen geöffneten Räume lüften weiter.",
+        "duration_min": 0.0,
+        "released_close_room_keys": released, "kept_running_room_keys": running,
+        "reasons": [reason, *[x for x in reasons if x != reason]][:6],
+    })
+    brain = recommendation.get("decision_brain")
+    if isinstance(brain, dict):
+        brain.update({"decision_label": "JETZT SCHLIESSEN", "headline": recommendation["title"], "action_line": recommendation["instruction"],
+                      "summary": recommendation["summary"], "why": list(recommendation["reasons"]),
+                      "selected_rooms": [str(rooms[key].get("name") or key) for key in released]})
+        if isinstance(brain.get("impact"), dict):
+            brain["impact"]["duration_min"] = 0.0
+
+
 def keep_moisture_sources_open(
     recommendation: dict[str, Any],
     rooms: dict[str, dict[str, Any]],
@@ -320,9 +369,28 @@ def keep_moisture_sources_open(
         brain["why"] = list(recommendation["reasons"])
 
 
+def _close_before_own_gate(room: dict[str, Any], min_duration_min: float | None) -> bool:
+    """F04/F06 (0.26.5.5): a house close would reach a room before its own minimum time.
+
+    Invariant: a non-urgent house close never sets ``action`` to Close for a room whose own close
+    is not released (``close_recommended`` off) before its minimum time. Moisture coming into the
+    room (reference air wetter) is protection and still closes it.
+    """
+    if min_duration_min is None or not airing_running(room) or room.get("close_recommended"):
+        return False
+    try:
+        elapsed = float(room.get("session_elapsed_min"))
+        moisture_in = float(room.get("delta_g_m3", 0.0)) < 0
+    except (TypeError, ValueError):
+        return False
+    return elapsed == elapsed and elapsed < float(min_duration_min) and not moisture_in
+
+
 def synchronize_room_presentation_actions(
     recommendation: dict[str, Any],
     rooms: dict[str, dict[str, Any]],
+    *,
+    min_duration_min: float | None = None,
 ) -> None:
     """Align exported room actions with the final user-facing recommendation.
 
@@ -351,7 +419,7 @@ def synchronize_room_presentation_actions(
         current = str(room.get("action") or "")
         final_action: str | None = None
         if kind == "close":
-            final_action = "Close"
+            final_action = "Continue ventilating" if _close_before_own_gate(room, min_duration_min) else "Close"
         elif kind == "continue" and airing_running(room):
             final_action = "Continue ventilating"
         elif kind == "ventilate" and not airing_running(room):

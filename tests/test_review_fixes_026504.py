@@ -93,6 +93,7 @@ def test_with_several_fans_a_switch_on_needs_every_fan() -> None:
     mem = {"owned": True, "since": T0.isoformat(), "command": "on", "command_state": "pending", "command_at": T0.isoformat()}
     assert _decide(mem, fan_on=True, all_on=False, seconds=10) is None and mem["command_state"] == "pending"
     _decide(mem, fan_on=True, all_on=False, seconds=FAN_COMMAND_TIMEOUT_S + 1)
+    _decide(mem, fan_on=True, all_on=False, seconds=2 * FAN_COMMAND_TIMEOUT_S + 2)  # corrected (hotfix F4): one retry first
     # audit P1-06 (0.26.5.4): only part of the group came on – not confirmed, but FreshAirIQ keeps the
     # fans it started (before: "failed" and released, the fan that came on ran unattended)
     assert mem["command_state"] == "partial" and mem["owned"] is True

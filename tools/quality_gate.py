@@ -51,7 +51,7 @@ def static_gate(policy: dict) -> tuple[dict, list[str]]:
     if not match or match.group(1) != version:
         failures.append("const.py VERSION is not consistent with quality policy")
 
-    for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
+    for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js", "freshairiq-house-card.js", "freshairiq-house-editor.js"):
         text = (ROOT / "custom_components/freshairiq/frontend" / name).read_text(encoding="utf-8")
         match = re.search(r'const FAIQ_VERSION\s*=\s*"([^"]+)"', text)
         if not match or match.group(1) != version:
@@ -77,7 +77,7 @@ def static_gate(policy: dict) -> tuple[dict, list[str]]:
     node_checks: list[dict] = []
     node = shutil.which("node")
     if node:
-        for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
+        for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js", "freshairiq-house-card.js", "freshairiq-house-editor.js", "freshairiq-house-geometry.js", "freshairiq-house-view.js", "freshairiq-house-trace.js"):
             row = _run(f"frontend syntax: {name}", [node, "--check", f"custom_components/freshairiq/frontend/{name}"])
             node_checks.append(row)
             if row["returncode"] != 0:

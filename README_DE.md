@@ -140,6 +140,8 @@ FreshAirIQ schätzt aus dem verfügbaren Raumklima eine konservative Oberfläche
 
 FreshAirIQ unterstützt frei definierbare Stockwerke und Räume, mehrere Fenster-/Türkontakte je Raum, Öffnungsverzögerungen, Fensterausrichtung und Windkontext, alternative Außen-/Referenzluft, Pollen-Veto, CO₂-Kontext, VOC/TVOC, PM2.5 und Helligkeit. Bewohner können mit `person.*`/`device_tracker.*` verknüpft werden; Kinder oder andere Personen ohne Tracker bleiben unterstützt. Ein schneller Gästemodus passt Kurzzeit- und Nachtprognosen unmittelbar an.
 
+**Hauskarte (optional):** eine zusätzliche Karte `custom:freshairiq-house-card` zeigt die Räume auf einem frei formbaren Grundriss mit Wind, Fenster-/Türzuständen und vermuteten Luftwegen – mit Grundrissvorschlag, Editor und Grundriss-Vorlage (Bild hochladen, Räume antippen): **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)**.
+
 Für Energieabschätzungen können Wärmepumpe, Gas, Heizöl, Fernwärme oder Direktstrom mit den jeweils relevanten Parametern konfiguriert werden. Optional konfigurierte Aktoren führen **nicht automatisch** zu autonomer Steuerung: FreshAirIQ bleibt standardmäßig empfehlungsorientiert und führt nur explizit freigegebene, eindeutig abbildbare Interventionen aus.
 
 ---

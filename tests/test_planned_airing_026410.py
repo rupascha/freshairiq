@@ -55,7 +55,10 @@ def _active(elapsed=3.5, action="Close", hard=False):
 
 def test_house_aggregate_ignores_unanimous_small_room_closes_while_planned():
     rooms = [_active(), _active(elapsed=2.0)]
-    assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=True, min_duration_min=3.0) is True  # before
+    # Expectation corrected in 0.26.5.5 (F04, GitHub #23): "every room says Close" no longer closes a
+    # window that has not had its minimum time (2.0 < 3.0 min); once it has, the group closes as before.
+    assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=True, min_duration_min=3.0) is False
+    assert aggregate_close_allowed([_active(), _active(elapsed=3.0)], low_return=True, thermal_bad=True, min_duration_min=3.0) is True
     assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=True, min_duration_min=3.0, target_min=9, net_next5_ml=93) is False
     # moisture would come in -> close, even early
     assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=False, min_duration_min=3.0, target_min=9, net_next5_ml=-5) is True

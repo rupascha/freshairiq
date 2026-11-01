@@ -140,6 +140,8 @@ FreshAirIQ estimates a conservative surface RH from the available room climate a
 
 FreshAirIQ supports freely configurable floors and rooms, multiple window/door contacts per room, opening delays, window orientation and wind context, alternative outdoor/reference air, pollen veto, CO₂ context, VOC/TVOC, PM2.5, and illuminance. Residents can be linked to `person.*`/`device_tracker.*`; children or other people without trackers remain supported. A quick guest mode immediately adjusts short-term and night forecasts.
 
+**House map (optional):** an additional card `custom:freshairiq-house-card` shows the rooms on a freely shaped floor plan with wind, window/door states and presumed air paths – with a proposed plan, an editor and a floor plan template (upload a picture, tap the rooms): **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)**.
+
 For energy estimates, heat pumps, gas, heating oil, district heating, or direct electric heating can be configured with the relevant parameters. Optional actuators do **not** automatically imply autonomous control: FreshAirIQ remains recommendation-oriented by default and only performs explicitly enabled, clearly defined interventions.
 
 ---

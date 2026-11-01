@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.5.4"
+VERSION = "0.26.5.5"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -17,6 +17,9 @@ DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS = 20
 SUPPORT_DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS = 90
 SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS = 60 * 60
 SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS = 4000
+# 0.26.5.5: a support diagnostic needs a description of the problem (owner request: files
+# without one cannot be assigned to a case).
+SUPPORT_DIAGNOSTICS_MESSAGE_MIN_CHARS = 10
 POST_VENTILATION_RESULT_MINUTES = 5
 SESSION_CLOSE_CONFIRM_SECONDS = 3.0
 SESSION_END_MEASUREMENT_WAIT_SECONDS = 10.0
@@ -81,6 +84,9 @@ CONF_ROOM_AUTO_SUN_PROTECTION = "auto_sun_protection"
 CONF_ROOM_EXHAUST_FAN_CONTROL = "exhaust_fan_control"
 CONF_ROOM_EXHAUST_FAN_FOLLOW_UP = "exhaust_fan_follow_up_min"
 CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME = "exhaust_fan_max_runtime_min"
+# 0.26.5.5: optional switch/timer of another automation (Alexa, washing machine …) – while it is on,
+# FreshAirIQ leaves the room's fans to it and never switches them off.
+CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK = "exhaust_fan_external_lock"
 THREE_STATE_TRANSITION_STABLE_SECONDS = 3.0
 THREE_STATE_UNKNOWN_HOLD_SECONDS = 30.0
 # 0.26.5.3: an unavailable/missing contact keeps a running airing open only this

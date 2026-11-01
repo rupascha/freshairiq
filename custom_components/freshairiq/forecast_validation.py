@@ -433,6 +433,8 @@ def _collect_session_validation(
             "end_measurement_frame_skew_s": _number(item.get("end_measurement_frame_skew_s")),
             "end_measurement_frame_max_age_s": _number(item.get("end_measurement_frame_max_age_s")),
             "learning_effectiveness": deepcopy(item.get("learning_effectiveness")) if isinstance(item.get("learning_effectiveness"), dict) else None,
+            # passive shadow formula (observation only; None for sessions before it existed)
+            "shadow_forecast": deepcopy(item.get("shadow_forecast")) if isinstance(item.get("shadow_forecast"), dict) else None,
         }
         timeline = _timeline_rows(item, actual_moisture, actual_temp)
         row["forecast_timeline"] = timeline

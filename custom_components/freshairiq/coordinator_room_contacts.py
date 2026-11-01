@@ -19,13 +19,15 @@ from .const import (
 from .coordinator_contacts import (
     _contact_ids,
     _contact_specific_reference,
+    _unit_checked_reference,
     _contact_unknown_for,
+    _delay_confirmed_modes,
     _open_seconds,
     _room_closed_for_seconds,
     _room_contacts_known,
     _room_ventilation_state,
 )
-from .coordinator_sources import _cover_learning_guard, _entity_active, _exhaust_stopped_for_seconds, _float_state
+from .coordinator_sources import _cover_learning_guard, _entity_active, _exhaust_stopped_for_seconds, _float_state, _humidity_percent, _humidity_value
 from .exhaust_reference import exhaust_reference_applies, exhaust_reference_pair
 from .measurement_frame import build_measurement_frame
 from .opening_state import (
@@ -36,6 +38,39 @@ from .opening_state import (
     stabilise_explicit_mode,
 )
 from .robustness import finite_float
+
+
+def _fan_only_session(mem: dict[str, Any]) -> bool:
+    """A session the exhaust fan runs alone (no opening counted yet) keeps the contacts' start delay."""
+    return bool(mem.get("session_active")) and mem.get("session_opening_mode") == "mechanical_exhaust" and not mem.get("session_opening_mode_mixed")
+
+
+def _counted_open(is_open: bool, delay_confirmed: bool, mem: dict[str, Any]) -> bool:
+    """Whether an opening counts for the airing (0.26.5.5, community report).
+
+    A door opened inside its delay is not an opening yet – neither before a session nor during
+    an airing by the exhaust fan alone. Passing through must not end the fan's demand, switch
+    the airing type, change the advice or send anything. The room's published ``open`` keeps
+    showing the physical state; a running window session keeps the immediate re-open rule.
+    """
+    return is_open and (delay_confirmed or (bool(mem.get("session_active")) and not _fan_only_session(mem)))
+
+
+def _session_reference_modes(hass: Any, cfg: Any, now: Any, modes: dict[str, str], since: Any, mem: dict[str, Any], counted: set[str]) -> dict[str, str]:
+    """Contact modes for the reference-air choice (F03, 0.26.5.5).
+
+    Every opening waits for its own delay. A running session keeps the immediate re-open
+    rule only for the openings it already counted (``counted``, kept in memory only – after a
+    restart every opening waits again); a door opened for the first time during a window
+    airing still waits for its delay. Fan-only airings and rooms without a session use the
+    delayed modes for every contact.
+    """
+    gated = _delay_confirmed_modes(hass, cfg, now, modes, contact_since=since)
+    if not mem.get("session_active") or _fan_only_session(mem):
+        counted.clear()
+        return gated
+    counted.update(contact for contact, mode in gated.items() if mode in {"open", "tilted"})
+    return {contact: (mode if contact in counted else gated[contact]) for contact, mode in modes.items()}
 
 
 class RoomContactsMixin:
@@ -164,6 +199,19 @@ class RoomContactsMixin:
             three_state_stale_contacts, three_state_unknown_contacts, transition_suppressed,
         )
 
+    def _neighbour_reference(self, cfg: Any, temperature_entity: str, humidity_entity: str) -> tuple[float | None, float | None]:
+        """The neighbouring-room pair; atomic and unit-checked (0.26.5.5): no value, no outdoor fallback."""
+        ref_t = _float_state(self.hass, temperature_entity)
+        ref_rh, unit_issue = _humidity_percent(self.hass, humidity_entity)
+        issues = self.__dict__.setdefault("_reference_unit_issues", {})
+        if unit_issue:
+            issues[str(cfg.get("key") or "")] = {"role": "neighbour_room_humidity", "unit": unit_issue}
+        else:
+            issues.pop(str(cfg.get("key") or ""), None)
+        if ref_t is None or ref_rh is None or not (-30 < ref_t < 60 and 0 <= ref_rh <= 100):
+            return None, None
+        return ref_t, ref_rh
+
     def _room_session_contact_state(
         self,
         *,
@@ -187,13 +235,13 @@ class RoomContactsMixin:
             for c in configured_contact_ids
         }
         cover_learning_guard = _cover_learning_guard(self.hass, cfg, physical_contact_modes, self.options)
-        reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _contact_specific_reference(
+        reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _unit_checked_reference(self.hass, _contact_specific_reference(
             self.hass, cfg,
             default_temp_entity=default_reference_temperature_entity,
             default_humidity_entity=default_reference_humidity_entity,
-            default_temp=default_ref_t, default_humidity=default_ref_rh,
-            contact_modes=physical_contact_modes,
-        )
+            default_temp=default_ref_t, default_humidity=default_ref_rh, humidity_reader=_humidity_value,
+            contact_modes=_session_reference_modes(self.hass, cfg, now, physical_contact_modes, stable_since, mem, self.__dict__.setdefault("_session_counted_contacts", {}).setdefault(str(cfg.get("key") or ""), set())),
+        ))
         reference_temperature_state = self.hass.states.get(reference_temperature_entity) if reference_temperature_entity else outdoor_temp_state
         reference_humidity_state = self.hass.states.get(reference_humidity_entity) if reference_humidity_entity else outdoor_humidity_state
         measurement_frame = build_measurement_frame(
@@ -203,10 +251,9 @@ class RoomContactsMixin:
         is_open, raw_open_seconds = _room_ventilation_state(
             self.hass, cfg, now, honour_delays=False, contact_modes=stable_session_modes, contact_since=stable_since
         )
+        session_should, _ = _room_ventilation_state(self.hass, cfg, now, honour_delays=True, contact_modes=stable_session_modes, contact_since=stable_since)
         raw_contact_open = bool(is_open)
-        session_should, _ = _room_ventilation_state(
-            self.hass, cfg, now, honour_delays=True, contact_modes=stable_session_modes, contact_since=stable_since
-        )
+        raw_contact_open = _counted_open(raw_contact_open, bool(session_should), mem)  # 0.26.5.5: delay gate
         mechanical_exhaust_active = _entity_active(self.hass, cfg.get(CONF_ROOM_EXHAUST_FAN))
         reference_path = "default" if reference_temperature_entity == default_reference_temperature_entity else "opening"
         # 0.26.5.3: an exhaust fan draws its replacement air from the neighbouring
@@ -220,16 +267,15 @@ class RoomContactsMixin:
         ):
             reference_path = "neighbour_room"
             reference_temperature_entity, reference_humidity_entity = exhaust_pair
-            ref_t = _float_state(self.hass, reference_temperature_entity)
-            ref_rh = _float_state(self.hass, reference_humidity_entity)
-            if ref_t is None or ref_rh is None or not (-30 < ref_t < 60 and 0 <= ref_rh <= 100):
-                ref_t, ref_rh = None, None
+            ref_t, ref_rh = self._neighbour_reference(cfg, reference_temperature_entity, reference_humidity_entity)
             measurement_frame = build_measurement_frame(
                 now, temperature_state=temperature_state, humidity_state=humidity_state,
                 reference_temperature_state=self.hass.states.get(reference_temperature_entity),
                 reference_humidity_state=self.hass.states.get(reference_humidity_entity),
             )
         self.__dict__.setdefault("_reference_paths", {})[str(cfg.get("key") or "")] = reference_path  # 0.26.5.4: wording, diagnostics
+        if reference_path != "neighbour_room":
+            self.__dict__.setdefault("_reference_unit_issues", {}).pop(str(cfg.get("key") or ""), None)
         # Mechanical exhaust is a first-class ventilation trigger. It shares
         # the session lifecycle but remains explicitly typed so its learning
         # evidence can never silently contaminate window-opening models.

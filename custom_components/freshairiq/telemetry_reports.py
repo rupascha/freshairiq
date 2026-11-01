@@ -14,6 +14,7 @@ from .const import (
     DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS,
     SUPPORT_DIAGNOSTICS_COOLDOWN_SECONDS,
     SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS,
+    SUPPORT_DIAGNOSTICS_MESSAGE_MIN_CHARS,
     SUPPORT_DIAGNOSTICS_UPLOAD_TIMEOUT_SECONDS,
     VERSION,
 )
@@ -169,11 +170,14 @@ class TelemetryReportsMixin:
 
         This path is deliberately separate from automatic telemetry. A successful
         Hub acknowledgement starts a persisted 60-minute cooldown. Failed sends
-        never consume the cooldown.
+        never consume the cooldown. A description of the problem is required
+        (at least ``SUPPORT_DIAGNOSTICS_MESSAGE_MIN_CHARS`` characters).
         """
         text = str(message or "").strip()
         if len(text) > SUPPORT_DIAGNOSTICS_MESSAGE_MAX_CHARS:
             raise ValueError("support_message_too_long")
+        if len(text) < SUPPORT_DIAGNOSTICS_MESSAGE_MIN_CHARS:
+            raise ValueError("support_message_required")
         if not self.endpoint:
             payload=self._client_error_payload(code="FAIQ-SUPPORT-UPLOAD-001", component="support_diagnostics", operation="submit_support_diagnostics", message="RuntimeError: hub_unconfigured")
             await self._async_queue_client_error(payload)

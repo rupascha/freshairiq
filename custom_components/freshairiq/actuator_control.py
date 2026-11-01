@@ -206,6 +206,25 @@ def fan_demand(mode: str, *, source_active: bool, recommendation: str, window_op
     return False
 
 
+def still_holding(mode: str, mem: dict[str, Any], now: datetime, *, follow_up_min: float, off_confirm_s: float) -> bool:
+    """A room still needs its fans although its demand ended (0.26.5.5, community diagnosis).
+
+    Its moisture-source follow-up time runs (also when another room switched the shared
+    fan on), or – as the fans' owner – the switch-off still waits for its confirmation.
+    A room sharing the fans must not end this time by switching them off.
+    """
+    last = _parse(mem.get("last_demand"))
+    if mode == FAN_CONTROL_MOISTURE_SOURCE and last is not None and now - last < timedelta(minutes=follow_up_min):
+        return True
+    pending = _parse(mem.get("off_pending_since"))
+    return bool(mem.get("owned")) and pending is not None and now - pending < timedelta(seconds=off_confirm_s)
+
+
+def external_lock_active(state: str | None) -> bool:
+    """0.26.5.5: the other automation's switch/timer says it controls the fans right now."""
+    return str(state or "").lower() in {"on", "active", "paused"}
+
+
 def decide_fan(
     *,
     mode: str,
@@ -221,6 +240,7 @@ def decide_fan(
     safety_off: bool = False,
     all_on: bool | None = None,
     all_off: bool | None = None,
+    source_hold: bool = False,
 ) -> str | None:
     """"on", "off" or None for the exhaust fan(s) of one room; ``mem`` is updated.
 
@@ -250,6 +270,11 @@ def decide_fan(
         elif now - (_parse(mem.get("command_at")) or now) < timedelta(seconds=FAN_COMMAND_TIMEOUT_S):
             return None  # Home Assistant has not reported the new state yet
         elif command == "on" and fan_on:
+            if demand and not mem.get("group_retry"):
+                # hotfix F4: the fans that did not come on are asked once more (a fan that is
+                # already on is not affected); a second miss is reported as "partial"
+                mem["group_retry"] = True
+                return _fan_command(mem, "on", now, "partial_start")
             # audit P1-06: only part of the group came on – FreshAirIQ keeps the fans it
             # switched on and stops them later as usual (never left running unattended)
             mem["command_state"], mem["reason"] = "partial", "partial_start"
@@ -287,7 +312,9 @@ def decide_fan(
         if not demand:
             if mode == FAN_CONTROL_MOISTURE_SOURCE:
                 last = _parse(mem.get("last_demand")) or since
-                if now - last >= timedelta(minutes=follow_up_min):
+                # community hotfix (Simon42 #167/#170/#181): while the room's recommendation still says
+                # to air after the source (``source_hold``), the follow-up does not end the airing
+                if now - last >= timedelta(minutes=follow_up_min) and not source_hold:
                     return _fan_command(mem, "off", now, "follow_up_ended")
                 mem["reason"] = "follow_up"
                 return None
@@ -307,6 +334,7 @@ def decide_fan(
             return None
         mem["owned"] = True
         mem["since"] = now.isoformat()
+        mem.pop("group_retry", None)
         return _fan_command(mem, "on", now, "moisture_source" if mode == FAN_CONTROL_MOISTURE_SOURCE else "recommendation")
     return None
 

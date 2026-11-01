@@ -59,6 +59,7 @@ from .ventilation_log_api import FreshAirIQVentilationLogView
 from .room_history_api import FreshAirIQRoomHistoryView
 from .frontend_assets import ensure_precompressed
 from .dashboard_live import async_register_dashboard_live, async_track_dashboard
+from .house_map import async_register_house_map, async_remove_house_map
 from .validation import RELATION_OPTION_KEYS, repair_option_relationships
 from .runtime import clear_runtime_coordinator, get_runtime_coordinator, iter_runtime_coordinators, set_runtime_coordinator
 from .intervention import executable_intervention
@@ -74,6 +75,15 @@ _FRONTEND_URL = "/freshairiq/frontend"
 _FRONTEND_MODULE = f"{_FRONTEND_URL}/freshairiq-card.js?v={VERSION}"
 _FRONTEND_MODULE_BASE = f"{_FRONTEND_URL}/freshairiq-card.js"
 _FRONTEND_OLD_LOADER_BASE = f"{_FRONTEND_URL}/freshairiq-loader.js"
+
+
+def _frontend_module_url(revision: object) -> str:
+    """Resource URL of the card: product version plus the content revision of all dashboard modules.
+
+    Several builds of one product version used the same ``?v=`` – a phone could keep running an
+    older module from its cache. The card passes this query on to every module it imports.
+    """
+    return f"{_FRONTEND_MODULE_BASE}?v={VERSION}&b={revision}" if isinstance(revision, str) and revision else f"{_FRONTEND_MODULE_BASE}?v={VERSION}"
 
 
 def _is_freshairiq_resource(url: object) -> bool:
@@ -213,10 +223,12 @@ def _precompress_frontend() -> dict[str, Any]:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register the bundled FreshAirIQ frontend once."""
+    global _FRONTEND_MODULE  # gets the build revision below; read by the resource registration
     # 0.26.4.8: refresh the compressed copies *before* the files are served, so a
     # browser never receives an outdated compressed card after an update.
     try:
         precompressed = await hass.async_add_executor_job(_precompress_frontend)
+        _FRONTEND_MODULE = _frontend_module_url(precompressed.get("revision"))
         if precompressed.get("errors"):
             _LOGGER.debug("FreshAirIQ frontend compression skipped for some files: %s", precompressed["errors"])
     except Exception:  # noqa: BLE001 - compression is an optimisation only
@@ -246,6 +258,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         hass.data[f"{DOMAIN}_settings_view_registered"] = True
     if not hass.data.get(f"{DOMAIN}_dashboard_live_registered"):
         async_register_dashboard_live(hass)  # 0.26.5.3: live channel of the dashboard
+        async_register_house_map(hass)  # 0.26.5.4: optional house map (layout + live hypothesis)
         hass.data[f"{DOMAIN}_dashboard_live_registered"] = True
     if not hass.services.has_service(DOMAIN, "execute_intervention"):
         hass.services.async_register(
@@ -599,6 +612,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) 
     except Exception:  # noqa: BLE001 - repair cleanup is secondary to successful unload
         _LOGGER.debug("Could not clear FreshAirIQ repair issue during unload", exc_info=True)
     return True
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> None:
+    """The entry is deleted: remove the house map files (floor plan and template picture)."""
+    await async_remove_house_map(hass, entry.entry_id)
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> bool:

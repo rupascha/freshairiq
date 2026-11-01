@@ -125,6 +125,10 @@ class Translator:
         parts = [p.strip() for p in re.split(r"\s*(?:\+|,|/)\s*", stripped) if p.strip()]
         return bool(parts) and all(p in self._protected for p in parts)
 
+    def is_protected(self, text: str) -> bool:
+        """A user's room, level or resident name (kept as written)."""
+        return self._is_protected(text)
+
     def _value(self, text: str, depth: int) -> str | None:
         """Translate an interpolated value; None if it is untranslatable German."""
         if self._is_protected(text) or not _HAS_WORD.search(text):

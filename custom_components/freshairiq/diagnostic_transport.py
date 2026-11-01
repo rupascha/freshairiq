@@ -36,6 +36,9 @@ _TECHNICAL_TOKEN_RE = re.compile(
     r"|20\d\d\.\d{1,2}\.\d{1,2}(?![\d.]))"
 )
 _VERSION_LITERAL_KEYS = {"freshairiq_version", "freshairiq_frontend_version", "model_version"}
+# Technical formula IDs of the passive shadow comparison are never room labels or personal data.
+_FORMULA_ID_KEYS = {"production_formula_id", "candidate_formula_id", "production_formula_ids", "candidate_formula_ids"}
+_FORMULA_ID_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,63}")
 
 
 def normalise_resident_names(value: Any) -> list[str]:
@@ -380,6 +383,8 @@ def _sanitize_tree(
     if isinstance(value, tuple):
         return [_sanitize_tree(item, room_map, path) for item in value]
     if isinstance(value, str):
+        if path and path[-1] in _FORMULA_ID_KEYS and _FORMULA_ID_RE.fullmatch(value):
+            return value
         return _redact_text(value, room_map, preserve_ipv4_shaped_version=_version_literal_path(path))
     if value is None or isinstance(value, (bool, int, float)):
         return value

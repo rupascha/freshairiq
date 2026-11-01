@@ -170,6 +170,9 @@ def test_mood_selection_in_the_real_card_code(kind, extra, weather, time_kind, e
 
 
 def test_the_card_loads_the_freshy_module_with_its_version():
-    assert 'const faiqModule = name => import(new URL(`./${name}?v=${FAIQ_VERSION}`, import.meta.url).href);' in CARD
+    # Hotfix 31.10. (formula test section missing on iOS): the fixed ?v=${FAIQ_VERSION} let several builds of one
+    # version share a module URL (stale cache); the parts now load with the card's own query (version + build b=).
+    assert 'const FAIQ_Q = new URL(import.meta.url).search || `?v=${FAIQ_VERSION}`;' in CARD
+    assert 'const faiqModule = name => import(new URL(`./${name}${FAIQ_Q}`, import.meta.url).href);' in CARD
     assert 'faiqModule("freshairiq-card-freshy.js")' in CARD and "{ FRESHY_EPOCH, freshyClock, freshySvg }" in CARD
     assert "function freshySvg(" not in CARD and "export function freshySvg(" in FRESHY_JS

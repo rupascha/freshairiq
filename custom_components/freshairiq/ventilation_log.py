@@ -17,7 +17,26 @@ def _num(value: Any) -> float | None:
     return number if isfinite(number) else None
 
 
-def compact_ventilation_event(event: dict[str, Any]) -> dict[str, Any]:
+def _formula_fields(event: dict[str, Any], version: str | None) -> dict[str, Any]:
+    """Audit F02: version and formula ids of the airing (None when unknown – never made up).
+
+    ``freshairiq_version`` is the version that logged the airing; the start version and the formula
+    ids come from the frozen start (passive formula test). The errors only for a valid pair.
+    """
+    shadow = event.get("shadow_forecast") if isinstance(event.get("shadow_forecast"), dict) else {}
+    valid = shadow.get("paired_valid") is True
+    return {
+        "freshairiq_version": version,
+        "freshairiq_version_at_start": shadow.get("freshairiq_version_at_start"),
+        "production_formula_id": shadow.get("production_formula_id"),
+        "candidate_formula_id": shadow.get("candidate_formula_id"),
+        "formula_pair_valid": valid if shadow else None,
+        "production_abs_error_ml": _num(shadow.get("production_abs_error_ml")) if valid else None,
+        "candidate_abs_error_ml": _num(shadow.get("candidate_abs_error_ml")) if valid else None,
+    }
+
+
+def compact_ventilation_event(event: dict[str, Any], version: str | None = None) -> dict[str, Any]:
     """Keep only user-facing local evidence required for the ventilation log."""
     return {
         "event_id": str(event.get("event_id") or ""),
@@ -37,15 +56,16 @@ def compact_ventilation_event(event: dict[str, Any]) -> dict[str, Any]:
         "end_humidity_percent": _num(event.get("end_humidity_percent")),
         "start_absolute_humidity_g_m3": _num(event.get("start_absolute_humidity_g_m3")),
         "end_absolute_humidity_g_m3": _num(event.get("end_absolute_humidity_g_m3")),
+        **_formula_fields(event, version),
     }
 
 
-def append_ventilation_log(history: Any, events: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:
+def append_ventilation_log(history: Any, events: list[dict[str, Any]], now: datetime, version: str | None = None) -> list[dict[str, Any]]:
     """Append completed sessions once and prune the fully local history."""
     rows = [dict(item) for item in history if isinstance(item, dict)] if isinstance(history, list) else []
     existing = {str(item.get("event_id")) for item in rows if item.get("event_id")}
     for event in events:
-        item = compact_ventilation_event(event)
+        item = compact_ventilation_event(event, version)
         if item["event_id"] and item["event_id"] in existing:
             continue
         rows.append(item)

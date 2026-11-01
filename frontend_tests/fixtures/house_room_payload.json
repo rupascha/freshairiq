@@ -1,0 +1,9 @@
+{
+ "_comment": "Room fields the house map reads, in the format the coordinator publishes over freshairiq/dashboard/subscribe. ha_tests/test_house_map_026504.py checks that every key exists in a real published room payload.",
+ "room": {
+  "key": "bad", "name": "Bad", "action": "Okay", "house_aligned_action": "okay", "reason": "Grund", "data_quality": "ok",
+  "temperature": 21.4, "humidity": 58.0, "absolute_humidity": 10.9, "co2": null, "comfort_target_c": null,
+  "surface_rh": 60.0, "mould_level": "Slightly elevated", "active": false, "learning_samples": 4,
+  "learned_exchange_rate_per_min": 0.031, "contact_entities": [], "floor": "EG"
+ }
+}

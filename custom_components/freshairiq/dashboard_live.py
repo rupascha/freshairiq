@@ -141,6 +141,7 @@ class DashboardPayload:
             "forecast_validation": self.coordinator.data.get("forecast_validation", {}),
             "forecast_backtest": self.coordinator.data.get("forecast_backtest", {}),
             "learning_effectiveness": self.coordinator.data.get("learning_effectiveness", {}),
+            "forecast_shadow_comparison": self.coordinator.data.get("forecast_shadow_comparison", {}),
             "post_close_stabilization": self.coordinator.data.get("post_close_stabilization", {}),
             "learning_components": self.coordinator.data.get("learning_components", {}),
             "diagnostics": self.coordinator.data.get("diagnostics", {}),

@@ -414,6 +414,8 @@ class DiagnosticsExportMixin:
                 "forecast_validation": _json_safe(latest_validation),
                 "forecast_backtest": _json_safe(latest_backtest),
                 "learning_effectiveness": _json_safe(latest_effectiveness),
+                # passive shadow formula: the newest comparison summary (observation only)
+                "forecast_shadow_comparison": _json_safe(next((r["forecast_shadow_comparison"] for r in reversed(records) if isinstance(r, dict) and isinstance(r.get("forecast_shadow_comparison"), dict)), {})),
             },
             "record_count": len(records),
             "truncated": len(records) >= DIAGNOSTICS_MAX_EXPORT_RECORDS or truncated_by_bytes,

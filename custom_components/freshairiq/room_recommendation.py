@@ -23,6 +23,32 @@ def _running_reasons(result: Any) -> list[str]:
     return reasons
 
 
+def _dryness_reason(result: Any, options: dict[str, Any], latched: bool) -> str | None:
+    """Notification hotfix F3: the dryness the decision really used (same thresholds as ``evaluate_room``).
+
+    Start value, high humidity, the dehumidify profile and the hysteresis of a running
+    recommendation each have their own threshold; an active moisture source needs only the
+    close threshold (at least 0.4 g/m³). None when dryness did not decide (critical CO₂).
+    """
+    start_rh, high_rh = float(options.get("start_rh", 62.0)), float(options.get("high_rh", 68.0))
+    min_delta, min_delta_high = float(options.get("min_delta", 2.5)), float(options.get("min_delta_high_rh", 1.5))
+    if str(options.get("operating_profile", "comfort")) == "dehumidify":
+        start_rh, min_delta, min_delta_high = max(40.0, start_rh - 2.0), max(0.1, min_delta * 0.85), max(0.1, min_delta_high * 0.85)
+    if latched and not getattr(result, "active", False):
+        start_rh, high_rh = start_rh - VENTILATION_HYSTERESIS_RH, high_rh - VENTILATION_HYSTERESIS_RH
+        min_delta = max(0.1, min_delta - VENTILATION_HYSTERESIS_DELTA_G_M3)
+        min_delta_high = max(0.1, min_delta_high - VENTILATION_HYSTERESIS_DELTA_G_M3)
+    humidity, delta = float(result.humidity or 0), float(result.delta_g_m3)
+    # the smallest threshold that is met is the one that is needed
+    met = [need for rh, need in ((start_rh, min_delta), (high_rh, min_delta_high)) if humidity >= rh and delta >= need]
+    if met:
+        return f"Außen-/Referenzluft ist {delta:.1f} g/m³ trockener (mindestens {min(met):.1f} g/m³ nötig)"
+    source_delta = max(float(options.get("close_delta", 0.4)), 0.4)
+    if bool(getattr(result, "moisture_source_active", False)) and delta >= source_delta:
+        return f"Außen-/Referenzluft ist {delta:.1f} g/m³ trockener; bei aktiver Feuchtequelle genügen {source_delta:.1f} g/m³"
+    return None
+
+
 def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2: float | None, airflow: float, wind_bearing: float | None, wind_speed: float | None, outdoor_pm25: float | None = None, ventilation_latched: bool = False, co2_latched: bool = False) -> tuple[str, str, list[str]]:
     """Build a room-specific recommendation with an explicit trigger and suitability reason.
 
@@ -74,7 +100,8 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
     source_conf = int(getattr(result, "moisture_source_confidence", 0) or 0)
     source_rate = float(getattr(result, "moisture_source_rate_ml_min", 0.0) or 0.0)
     if source_active:
-        reasons.append(f"{source_label} wahrscheinlich aktiv ({source_conf} % Sicherheit); interne Feuchteproduktion etwa {source_rate * 60:.0f} ml/h")
+        # notification hotfix F3: a heuristic indicator of the source model, not a calibrated probability
+        reasons.append(f"{source_label} wahrscheinlich aktiv (Modellindikator {source_conf}/100); interne Feuchteproduktion etwa {source_rate * 60:.0f} ml/h")
 
     # the airing only runs while the window is open: after closing, the session lives on for its final measurement
     running = result.active and bool(getattr(result, "open", True))
@@ -114,8 +141,9 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
             reasons.append("Zusätzlich kühlt die Außenluft den Raum; der Feuchteeintrag bleibt vertretbar")
     elif result.ventilation_candidate:
         action = "Ventilate"
-        required_delta = min_delta_high if humidity_high else min_delta
-        reasons.append(f"Außen-/Referenzluft ist {float(result.delta_g_m3):.1f} g/m³ trockener (mindestens {required_delta:.1f} g/m³ nötig)")
+        dryness = _dryness_reason(result, options, ventilation_latched)
+        if dryness:
+            reasons.append(dryness)
         reasons.append(f"Aktuell sind etwa {max(round(result.potential_ml),0)} ml Feuchtigkeit entfernbar")
         delta_now = float(result.delta_g_m3)
         meets_fresh_start = (humidity_start and delta_now >= min_delta) or (humidity_high and delta_now >= min_delta_high)

@@ -55,6 +55,9 @@ class RoomInput:
     moisture_source_label: str = "Feuchtequelle"
     moisture_source_confidence: int = 0
     moisture_source_rate_ml_min: float = 0.0
+    # 0.26.5.5 (audit F02): minutes since the moisture source ended; None = unknown
+    # (the follow-up then counts from the start of the airing, as before).
+    moisture_source_ended_min: float | None = None
     # 0.26.4.7 (GitHub #15): the room recommended airing in the previous cycle.
     ventilation_latched: bool = False
     # 0.26.4.7 (user feedback): outdoor fine dust (PM2.5, µg/m³); None = no sensor.
@@ -79,6 +82,9 @@ class RoomInput:
     # 0.26.5.3 (community: fan stuck at 59 % for half an hour): the humidity did
     # not fall noticeably during the last 15 minutes of this airing.
     humidity_plateau: bool = False
+    # 0.26.5.5 (community diagnosis): the measurement frame is too old or out of step to trust
+    # ("stale") – a stored close is then not lifted for comfort cooling.
+    measurements_stale: bool = False
 
 
 @dataclass(slots=True)
@@ -198,13 +204,16 @@ def _learning_status(samples: int) -> str:
     return "Base estimate"
 
 
-def _comfort_cooling(room: RoomInput, options: dict[str, Any], cooling_delta: float, moisture_effect_next5: float) -> bool:
+def _comfort_cooling(room: RoomInput, options: dict[str, Any], cooling_delta: float, moisture_effect_next5: float,
+                     drying_delta: float = 0.0) -> bool:
     """0.26.5.3: an open window still cools the room towards its comfort target.
 
     Only for rooms with a temperature goal: above the target, clearly cooler
     reference air, not too humid inside – and, outside the summer profile,
-    without bringing in any moisture. The house-wide 24 °C summer threshold
-    knows nothing about a 19 °C bedroom, so it is not used here.
+    without bringing in any noteworthy moisture. The house-wide 24 °C summer
+    threshold knows nothing about a 19 °C bedroom, so it is not used here.
+    0.26.5.4 (community report): reference air at most ``close_delta`` wetter than the
+    room counts as equal – the same significance limit the close rule uses.
     """
     return (
         room.cooling_allowed
@@ -212,7 +221,7 @@ def _comfort_cooling(room: RoomInput, options: dict[str, Any], cooling_delta: fl
         and room.temperature >= float(room.comfort_target_c) + COMFORT_COOLING_MARGIN_C
         and cooling_delta >= float(options.get("cooling_min_outdoor_delta_c", 2.0))
         and room.humidity <= float(options.get("cooling_max_indoor_rh", 70.0))
-        and moisture_effect_next5 >= 0.0
+        and (moisture_effect_next5 >= 0.0 or drying_delta >= -float(options.get("close_delta", 0.4)))
     )
 
 
@@ -230,6 +239,19 @@ def _cooling_start_c(room: RoomInput, options: dict[str, Any], profile: str) -> 
     if profile == "comfort" and room.comfort_target_c is not None:
         return max(start, float(room.comfort_target_c) + COMFORT_COOLING_MARGIN_C)
     return start
+
+
+def _close_released(large_return: bool, proven_cooling: bool, *, still_closing: bool, within_duration: bool) -> bool:
+    """Whether a stored close ("close_notified") is lifted again.
+
+    Only when its reason is gone (0.26.5.5, community diagnosis: 85 flips in 15 minutes). A
+    measured plateau, a finished CO2 airing (it never closed for low drying), poor thermal
+    efficiency or summer warming still close – a large forecast alone would otherwise lift the
+    close and the next cycle would close again. Comfort cooling lifts it when proven: temperature
+    goal on, clearly cooler air without noteworthy moisture (``_comfort_cooling``), confirmed and
+    trustworthy readings. The maximum duration still applies.
+    """
+    return (large_return or proven_cooling) and not still_closing and within_duration
 
 
 def _plateau_close(room: RoomInput, *, keep_open: bool) -> bool:
@@ -252,6 +274,84 @@ def _co2_airing_done(room: RoomInput, options: dict[str, Any], moisture_candidat
     return bool(room.session_co2_only and room.session_active and not moisture_candidate and not keep_open
                 and not room.co2_sensor_missing  # audit P1-04: no value is no "CO2 is down"
                 and not co2_lead(room.co2, options, room.co2_lead_latched))
+
+
+def _source_postrun(room: RoomInput, options: dict[str, Any], *, running: bool, delta: float, mins: float) -> bool:
+    """Keep airing after a moisture source while the reference air is still drier.
+
+    0.26.5.5 (audit F02): the follow-up counts from the end of the source
+    (``moisture_source_ended_min``), not from the start of the airing; unknown end = airing time.
+    """
+    since_end = mins if room.moisture_source_ended_min is None else max(float(room.moisture_source_ended_min), 0.0)
+    return (
+        bool(room.moisture_source_recovery)
+        and running
+        and delta >= max(float(options.get("close_delta", 0.4)), 0.4)
+        and since_end < max(float(options.get("moisture_source_postrun_min", 8.0)), float(options.get("min_duration_min", 3.0)))
+    )
+
+def _running_close(
+    room: RoomInput, options: dict[str, Any], *, delta: float, mins: float, profile: str, candidate: bool, urgent: bool,
+    co2_held: bool, source_drying_useful: bool, outdoor_blocked: bool, low_return: bool, cooling_still_useful: bool,
+    comfort_cooling: bool, thermal_bad: bool, moisture_effect_next5: float, next5: float, min_return: float,
+    sensor_confirmed: bool, close_decision_ready: bool,
+) -> tuple[bool, bool, bool]:
+    """(source keeps the window open, summer warming, close signal) of a running airing."""
+    running = True
+    source_postrun = _source_postrun(room, options, running=running, delta=delta, mins=mins)
+    source_keep_open = running and (source_drying_useful or source_postrun) and not outdoor_blocked
+    # Hotfix 0.19.1.1: reaching target RH or the close-delta is no longer
+    # sufficient on its own to stop an active airing session.  In a dry-air
+    # situation a room can still remove a meaningful amount of water even after
+    # crossing the nominal target.  Moisture-driven closing therefore requires
+    # the *marginal* 5-minute return to have fallen below the configured
+    # threshold.  The configured hard maximum duration and a genuinely poor
+    # thermal efficiency remain independent close reasons.
+    moisture_close = low_return and not cooling_still_useful
+    # 0.26.4.10 (support case): within the planned airing duration a close is only
+    # recommended when moisture would come in or the reference air is at most
+    # ``close_delta`` drier (drying exhausted) – not merely because the next five
+    # minutes look small or the room cools down as forecast.
+    moisture_ingress, drying_exhausted = moisture_effect_next5 <= 0.0, delta <= float(options.get("close_delta", 0.4))  # 0.26.5.4 (review A01): two reasons, named apart
+    air_no_longer_helps = moisture_ingress or drying_exhausted  # moisture coming in, or reference air barely drier (close_delta)
+    planned_phase = running and room.session_target_min is not None and mins < float(room.session_target_min)
+    co2_done = _co2_airing_done(room, options, candidate, keep_open=source_keep_open or cooling_still_useful or urgent); plateau_close = _plateau_close(room, keep_open=source_keep_open or co2_held or cooling_still_useful or urgent) or co2_done
+    soft_close_allowed = not planned_phase or air_no_longer_helps or plateau_close
+    # 0.26.4.10 (community: "Garage schließen", although only the exhaust fan
+    # runs): a fan may run for hours on purpose. There is nothing to close, and
+    # neither the maximum window duration nor a small return is a reason to stop
+    # it – only moisture coming in is ("Lüfter ausschalten").
+    summer_night_cooling = (profile == "summer_cooling" and cooling_still_useful) or comfort_cooling
+    summer_warming = (
+        profile == "summer_cooling"
+        and running
+        and room.cooling_allowed
+        and not room.mechanical_only
+        and not urgent
+        and room.temperature >= float(options.get("cooling_start_temp_c", 24.0)) - 1.0
+        and room.reference_temperature >= room.temperature - SUMMER_WARMING_MARGIN_C
+    )
+    if room.mechanical_only:
+        should_close = running and close_decision_ready and not source_keep_open and (not room.close_notified or co2_held) and ((air_no_longer_helps and not co2_held) or plateau_close)  # audit N04: CO2 keeps a fan running
+    else:
+        should_close = running and close_decision_ready and not source_keep_open and (not room.close_notified or co2_held) and (
+            (mins >= float(options["max_duration_min"]) and not summer_night_cooling)
+            or summer_warming
+            or (
+                (mins >= float(options["min_duration_min"]) or (delta < 0 and moisture_ingress))  # 0.26.5.5 (audit F01): moisture coming in is protection
+                and soft_close_allowed
+                and (
+                    moisture_close
+                    or thermal_bad or plateau_close
+                )
+            )
+        )
+    close_released = _close_released(next5 >= min_return * CLOSE_RELEASE_FACTOR, comfort_cooling and sensor_confirmed and not room.measurements_stale,
+                                     still_closing=co2_done or plateau_close or thermal_bad or summer_warming, within_duration=mins < float(options["max_duration_min"]) or summer_night_cooling)
+    # audit S01: CO2 needing the air again lifts an earlier close – the close is decided anew (protection limits still apply)
+    close_latched = room.close_notified and not close_released and not co2_held
+    close_signal = running and close_decision_ready and not source_keep_open and (close_latched or should_close)
+    return source_keep_open, summer_warming, close_signal
 
 
 def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: bool) -> RoomResult:
@@ -354,7 +454,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         and room.pollen_index > float(options.get("pollen_max", 4.0))
         and not urgent
     )
-    pm25_blocked = _outdoor_pm25_blocked(options, room.outdoor_pm25) and not urgent
+    pm25_blocked = room.outdoor_pm25 is not None and _outdoor_pm25_blocked(options, room.outdoor_pm25) and not urgent  # P01: no reading, no check
     outdoor_blocked = pollen_blocked or pm25_blocked
     min_return = scaled_min_return(options["min_return_next_5_min_ml"], room.volume_m3)
     max_temp_loss, min_efficiency = float(options["max_temp_loss_next_5_min_c"]), float(options["min_efficiency_ml_per_01c"])
@@ -366,7 +466,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         # Cooling is the desired thermal effect; do not close merely because
         # temperature falls. Moisture safety still applies.
         min_return *= 0.50
-    comfort_cooling = running and _comfort_cooling(room, options, cooling_delta, moisture_effect_next5)
+    comfort_cooling = running and _comfort_cooling(room, options, cooling_delta, moisture_effect_next5, delta)
     cooling_still_useful = comfort_cooling or (
         room.cooling_allowed and profile == "summer_cooling"
         and room.temperature >= float(options.get("cooling_start_temp_c", 24.0))
@@ -407,68 +507,15 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
             future_moisture_risk_15 = False
 
     close_decision_ready = sensor_confirmed or model_fallback
-    source_postrun = (
-        bool(room.moisture_source_recovery)
-        and running
-        and delta >= max(float(options.get("close_delta", 0.4)), 0.4)
-        and mins < max(float(options.get("moisture_source_postrun_min", 8.0)), float(options.get("min_duration_min", 3.0)))
-    )
-    source_keep_open = running and (source_drying_useful or source_postrun) and not outdoor_blocked
-    # Hotfix 0.19.1.1: reaching target RH or the close-delta is no longer
-    # sufficient on its own to stop an active airing session.  In a dry-air
-    # situation a room can still remove a meaningful amount of water even after
-    # crossing the nominal target.  Moisture-driven closing therefore requires
-    # the *marginal* 5-minute return to have fallen below the configured
-    # threshold.  The configured hard maximum duration and a genuinely poor
-    # thermal efficiency remain independent close reasons.
-    moisture_close = low_return and not cooling_still_useful
-    # 0.26.4.10 (support case): within the planned airing duration a close is only
-    # recommended when moisture would come in or the reference air is at most
-    # ``close_delta`` drier (drying exhausted) – not merely because the next five
-    # minutes look small or the room cools down as forecast.
-    moisture_ingress, drying_exhausted = moisture_effect_next5 <= 0.0, delta <= float(options.get("close_delta", 0.4))  # 0.26.5.4 (review A01): two reasons, named apart
-    air_no_longer_helps = moisture_ingress or drying_exhausted  # moisture coming in, or reference air barely drier (close_delta)
-    planned_phase = running and room.session_target_min is not None and mins < float(room.session_target_min)
-    co2_done = _co2_airing_done(room, options, candidate, keep_open=source_keep_open or cooling_still_useful or urgent); plateau_close = _plateau_close(room, keep_open=source_keep_open or co2_held or cooling_still_useful or urgent) or co2_done
-    soft_close_allowed = not planned_phase or air_no_longer_helps or plateau_close
-    # 0.26.4.10 (community: "Garage schließen", although only the exhaust fan
-    # runs): a fan may run for hours on purpose. There is nothing to close, and
-    # neither the maximum window duration nor a small return is a reason to stop
-    # it – only moisture coming in is ("Lüfter ausschalten").
-    summer_night_cooling = (profile == "summer_cooling" and cooling_still_useful) or comfort_cooling
-    summer_warming = (
-        profile == "summer_cooling"
-        and running
-        and room.cooling_allowed
-        and not room.mechanical_only
-        and not urgent
-        and room.temperature >= float(options.get("cooling_start_temp_c", 24.0)) - 1.0
-        and room.reference_temperature >= room.temperature - SUMMER_WARMING_MARGIN_C
-    )
-    if room.mechanical_only:
-        should_close = running and close_decision_ready and not source_keep_open and (not room.close_notified or co2_held) and ((air_no_longer_helps and not co2_held) or plateau_close)  # audit N04: CO2 keeps a fan running
-    else:
-        should_close = running and close_decision_ready and not source_keep_open and (not room.close_notified or co2_held) and (
-            (mins >= float(options["max_duration_min"]) and not summer_night_cooling)
-            or summer_warming
-            or (
-                mins >= float(options["min_duration_min"])
-                and soft_close_allowed
-                and (
-                    moisture_close
-                    or thermal_bad or plateau_close
-                )
-            )
-        )
-    close_released = (
-        next5 >= min_return * CLOSE_RELEASE_FACTOR and not co2_done  # a CO2 airing never closed for low drying
-        and not thermal_bad
-        and not summer_warming
-        and (mins < float(options["max_duration_min"]) or summer_night_cooling)
-    )
-    # audit S01: CO2 needing the air again lifts an earlier close – the close is decided anew (protection limits still apply)
-    close_latched = room.close_notified and not close_released and not co2_held
-    close_signal = running and close_decision_ready and not source_keep_open and (close_latched or should_close)
+    # Close decision of a running airing (P01, 0.26.5.5: only evaluated while the airing runs; for any
+    # other room all three are False by definition, as before).
+    source_keep_open, summer_warming, close_signal = _running_close(
+        room, options, delta=delta, mins=mins, profile=profile, candidate=candidate, urgent=urgent, co2_held=co2_held,
+        source_drying_useful=source_drying_useful, outdoor_blocked=outdoor_blocked, low_return=low_return,
+        cooling_still_useful=cooling_still_useful, comfort_cooling=comfort_cooling, thermal_bad=thermal_bad,
+        moisture_effect_next5=moisture_effect_next5, next5=next5, min_return=min_return, sensor_confirmed=sensor_confirmed,
+        close_decision_ready=close_decision_ready,
+    ) if running else (False, False, False)
 
     if close_signal:
         if model_fallback and future_moisture_risk_15:

@@ -167,7 +167,7 @@ FAIQ_NATIVE_EN.push(
   ["Raum braucht Aufmerksamkeit", "room needs attention"],
   ["Räume brauchen Aufmerksamkeit", "rooms need attention"],
   ["in Ordnung", "fine"],
-  ["Nachricht an den Support (optional)", "Message to support (optional)"],
+  ["Fehlerbeschreibung (Pflicht)", "Problem description (required)"],
   ["Beschreibung", "Description"],
   ["Meldung senden", "Send report"],
   ["Aktuell: ", "Current: "],
@@ -218,7 +218,7 @@ FAIQ_NATIVE_EN.push(
   ["Fehler / Bug", "Error / bug"],
   ["Verbesserungsvorschlag", "Suggestion"],
   ["Support per E-Mail", "Support by email"],
-  ["Optional: Was ist passiert?", "Optional: What happened?"],
+  ["Was ist passiert?", "What happened?"],
   ["Paarvergleiche", "Pair comparisons"],
   ["Generationenvergleiche", "Generation comparisons"],
   ["Gelerntes Modell MAE", "Learned model MAE"],
@@ -699,6 +699,7 @@ FAIQ_NATIVE_EN.push(
 // 0.26.5.0: phrases with numbers, applied before the phrase rules (regex, replacement).
 export const FAIQ_EN_PATTERNS = [
   [/Prognose weitere (\d+) Minuten/g, "Forecast for the next $1 minutes"],
+  [/· Nachlauf noch (\d+) min/g, "· follow-up $1 min left"],
   [/(^|[^\d.])1 Kinder\b/g, "$11 child"],
   [/(^|[^\d.])1 Erwachsene\b/g, "$11 adult"],
   [/(\d+) \/ 4 Jahreszeiten/g, "$1 / 4 seasons"],

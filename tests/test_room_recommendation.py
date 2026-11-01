@@ -37,7 +37,8 @@ def test_active_moisture_source_keeps_ventilating_and_wind_support_is_explained(
     action, reason, reasons = _rec(result, {"operating_profile": "dehumidify"}, co2=1500.0, airflow=1.2, wind_bearing=180.0)
     assert action == "Continue ventilating"
     assert "zu hoch" in reasons[0] and "Schimmelrisiko" in reasons[1] and "kritisch" in reasons[2]
-    assert "Dusche wahrscheinlich aktiv (80 % Sicherheit)" in reason and "120 ml/h" in reason
+    # Notification hotfix F3: "80 % Sicherheit" read like a calibrated probability; it is a heuristic indicator.
+    assert "Dusche wahrscheinlich aktiv (Modellindikator 80/100)" in reason and "120 ml/h" in reason and "Sicherheit" not in reason
     assert reasons[-1] == "Windrichtung unterstützt den Luftwechsel"
 
 
@@ -83,10 +84,13 @@ def test_outdoor_air_veto_names_pollen_and_fine_dust():
 
 
 def test_ventilation_candidate_with_latched_advice_and_cooling_candidate():
-    high = _result(humidity=69.0, delta_g_m3=1.0, ventilation_candidate=True, potential_ml=210.4)
+    # Notification hotfix F3: the old expectation "1.0 g/m³ trockener (mindestens 1.5 g/m³ nötig)" encoded the
+    # wrong explanation (a threshold the decision did not use, and one not even met). With the latched
+    # recommendation the decision uses 1.5 − 0.4 = 1.1 g/m³; the input is now one the decision can produce.
+    high = _result(humidity=69.0, delta_g_m3=1.2, ventilation_candidate=True, potential_ml=210.4)
     action, _reason, reasons = _rec(high, ventilation_latched=True)
     assert action == "Ventilate"
-    assert "mindestens 1.5 g/m³ nötig" in reasons[1] and reasons[2] == "Aktuell sind etwa 210 ml Feuchtigkeit entfernbar"
+    assert reasons[1] == "Außen-/Referenzluft ist 1.2 g/m³ trockener (mindestens 1.1 g/m³ nötig)" and reasons[2] == "Aktuell sind etwa 210 ml Feuchtigkeit entfernbar"
     assert reasons[3].startswith("Empfehlung bleibt trotz leichter Schwankung bestehen")
     start = _result(humidity=63.0, delta_g_m3=3.0, ventilation_candidate=True)
     assert len(_rec(start, ventilation_latched=True)[2]) == 3

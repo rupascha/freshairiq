@@ -373,7 +373,7 @@ _ROOM_KEYS = (
     "shadow_learning_samples", "shadow_learning_total_samples", "shadow_learning_status", "shadow_learning_last_action",
     "shadow_learning_last_improvement_pct", "shadow_learning_promotions", "shadow_learning_rollbacks", "shadow_rollback_active",
     "outcome_avg_temperature_error_c",
-    "fan_automation", "reference_path", "air_exchange",
+    "fan_automation", "reference_path", "air_exchange", "reference_unit_issue",
     # 0.26.5.4 (support case): temperature target and the action at each decision step
     "comfort_target_c", "comfort_target_source", "canonical_action", "house_aligned_action",
     "close_recommended", "close_decision_ready", "contact_count", "action_hint",

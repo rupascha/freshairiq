@@ -48,6 +48,9 @@ Wachstumsgrenzen: `tools/maintainability_gate.py` (≤ 800 Zeilen je Python-Date
 ≤ 200 000 Byte je Frontend-Modul); bestehende Ausnahmen stehen mit Begründung in `quality/maintainability_baseline.json`
 und dürfen nur schrumpfen.
 
+## Hauskarte (optional, 0.26.5.4)
+Rein: `house_layout.py` (Schema v1, Geometrie, Validierung), `house_autolayout.py` (deterministischer Vorschlag), `house_wind.py` (Wind), `house_airflow.py` (Luftweg-Hypothese, Modellstufen). `house_underlay.py` (Prüfung der Grundriss-Vorlage). HA: `house_map.py` (Store `freshairiq.house_layout.<entry>`, Vorlagen-Store `freshairiq.house_underlay.<entry>`, WebSocket get/propose/save/subscribe/underlay_get/underlay_save/underlay_delete; beim Löschen der Integration entfernt `async_remove_entry` beide Stores). Frontend: `freshairiq-house-card.js` (Karte, Lovelace-Editor), `freshairiq-house-editor.js` (Grundriss-Editor, lazy), `freshairiq-house-geometry.js`, `freshairiq-house-view.js` (Stil, Windströme), `freshairiq-house-trace.js` (Raumerkennung auf der Vorlage); Proxy `freshairiq-house-card` im Loader. Die Karte liest Raumaktionen aus `freshairiq/dashboard/subscribe` und schreibt nichts in `coordinator.data`, Entities, Recorder oder Diagnose. Details: `docs/HOUSE_MAP.md`.
+
 ## Entscheidungs-Datenfluss (Sensor → Ausgabe)
 1. HA-States (Temp/RH/CO₂/Kontakte/Wetter) → `FreshAirIQCoordinator._async_update_data_impl` (Takt 30 s, zusätzlich Quellereignisse); die Phasen liegen seit 0.26.5.2 in den `coordinator_*`-Modulen (siehe Modulkarte).
 2. Je Raum `model.evaluate_room` → `RoomResult.action` (`Ventilate`, `Continue ventilating`, `Close` mit Latch `close_notified`, `Wait`, `Okay`, `Do not ventilate`, `Ventilate for cooling`, `Check sensor`, `Monitor only`); Coordinator ersetzt für Räume ohne Öffnungskontakt `Ventilate*` → `Ventilate indirectly`.
@@ -62,6 +65,6 @@ und dürfen nur schrumpfen.
 Collector-Loop in `api.create_app` (`_collector_loop`, Intervall `EXTERNAL_COLLECTOR_INTERVAL_MINUTES`=60, sequentiell): `external_collector.collect_sources` (GitHub-Issues+Kommentare, Discourse-Thread/Suche, YouTube, Reddit, RSS) und – falls `SUPPORT_MAIL_ENABLED` – `mail_collector.collect_mailbox` (IMAP read-only) → `_store_collected_reports` (Dedupe über `external_id`, Lifecycle, Owner-Filter `EXTERNAL_COLLECTOR_IGNORED_REPORTERS`) → `ExternalReport` → `triage_work_queue` (GitHub: 1 To-do je Issue; sonst Gruppierung nach Finding-Ähnlichkeit, Mail-Antworten nach Thread) → Read-API/Overview → Diagnostics-HA.
 
 ## Persistenz
-- Integration: HA `Store` (`storage.LearningStore`, Telemetrie-Zustand `freshairiq.diagnostics_upload.<entry>`, Steuerungsgedächtnis `freshairiq.actuators.<entry>`), Config-Entry-Daten/Optionen/Subentries (Räume), Device-/Entity-Registry (Raumgeräte, `room_devices.py`).
+- Integration: HA `Store` (`storage.LearningStore`, Telemetrie-Zustand `freshairiq.diagnostics_upload.<entry>`, Steuerungsgedächtnis `freshairiq.actuators.<entry>`, Hauskarte `freshairiq.house_layout.<entry>`), Config-Entry-Daten/Optionen/Subentries (Räume), Device-/Entity-Registry (Raumgeräte, `room_devices.py`).
 - Hub: SQLAlchemy (Postgres prod, SQLite Tests); Laufzeit-Schalter/Cursor in `HubRuntimeSetting` (z. B. `support_mail_cursor`).
 - Runtime-Health (`runtime_health.py`) ist nur im Speicher (Neustart = neue Baseline).

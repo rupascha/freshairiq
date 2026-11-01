@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .fan_automation import auto_start, auto_stop, fan_automation
+from .fan_automation import auto_start, auto_stop, automation_text, fan_automation
 
 
 def airing_running(room: Any) -> bool:
@@ -91,6 +91,8 @@ def fan_stop_message(room: Any) -> str:
     except (TypeError, ValueError):
         delta = None
     if auto_stop(room):
+        if fan_automation(room).get("state") in {"shared", "external"} or fan_automation(room).get("label_key") == "stop_check":
+            return f"{automation_text(fan_automation(room))}."  # 0.26.5.5: runs on for another room / automation; hotfix F3
         return "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung."
     # 0.26.5.4: the fan draws its air from the neighbouring room when one is configured
     neighbour = isinstance(room, dict) and room.get("reference_path") == "neighbour_room"
