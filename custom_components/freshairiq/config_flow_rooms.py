@@ -17,6 +17,8 @@ from .const import (
     CONF_CONTACT_MODE,
     CONF_CONTACT_ORIENTATIONS,
     CONF_CONTACT_PASSAGE_DOORS,
+    CONF_CONTACT_KINDS,
+    CONTACT_KINDS,
     CONF_CONTACT_REFERENCE_HUMIDITIES,
     CONF_CONTACT_REFERENCE_TEMPERATURES,
     CONF_ROOMS,
@@ -35,6 +37,8 @@ from .const import (
     CONF_ROOM_EXHAUST_FAN_FOLLOW_UP,
     CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME,
     CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK,
+    CONF_ROOM_EXHAUST_FAN_BLOCK_START,
+    CONF_ROOM_EXHAUST_FAN_BLOCK_END,
     CONF_ROOM_FLOOR,
     CONF_ROOM_DISABLED_GOALS,
     CONF_ROOM_GOAL_PRIORITIES,
@@ -77,6 +81,7 @@ from .const import (
     ROOM_THRESHOLD_PERCENT,
 )
 from .actuator_control import (
+    clock_minutes,
     DEFAULT_FAN_FOLLOW_UP_MIN,
     DEFAULT_FAN_MAX_RUNTIME_MIN,
     FAN_CONTROL_MODES,
@@ -282,6 +287,8 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             _optional(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK, room.get(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK)): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain=["input_boolean", "binary_sensor", "switch", "timer"])
             ),
+            _optional(CONF_ROOM_EXHAUST_FAN_BLOCK_START, room.get(CONF_ROOM_EXHAUST_FAN_BLOCK_START)): selector.TimeSelector(),
+            _optional(CONF_ROOM_EXHAUST_FAN_BLOCK_END, room.get(CONF_ROOM_EXHAUST_FAN_BLOCK_END)): selector.TimeSelector(),
         }), {"collapsed": True}),
     })
 
@@ -311,6 +318,7 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
     passage_doors = room.get(CONF_CONTACT_PASSAGE_DOORS) or {}
     orientations = room.get(CONF_CONTACT_ORIENTATIONS) or {}
     delays = room.get(CONF_CONTACT_DELAYS) or {}
+    kinds = room.get(CONF_CONTACT_KINDS) or {}
     temp = str(temperatures.get(contact) or "").strip()
     humidity = str(humidities.get(contact) or "").strip()
     fields: dict[Any, Any] = {
@@ -318,6 +326,8 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
             _climate_sensor_selector(device_class="temperature"),
         (vol.Optional("reference_humidity", default=humidity) if humidity else vol.Optional("reference_humidity")):
             _climate_sensor_selector(device_class="humidity"),
+        vol.Required("contact_kind", default=_choice(kinds.get(contact), "unknown", CONTACT_KINDS)):
+            selector.SelectSelector(selector.SelectSelectorConfig(options=CONTACT_KINDS, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="contact_kind")),
         vol.Required("delay_seconds", default=_safe_int(delays.get(contact, room.get(CONF_CONTACT_DELAY, 0)), 0, minimum=0, maximum=600)):
             _number(0, 600, 1, "s"),
         vol.Required("orientation", default=str(orientations.get(contact, room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)))):
@@ -378,6 +388,13 @@ def _apply_single_contact_reference(
     orientations[contact] = str(user_input.get("orientation", orientations.get(contact, ORIENTATION_UNKNOWN)) or ORIENTATION_UNKNOWN)
     delays[contact] = _safe_int(user_input.get("delay_seconds", delays.get(contact, 0)), 0, minimum=0, maximum=600)
     passage_doors[contact] = bool(user_input.get("passage_door", False))
+    kinds = dict(room.get(CONF_CONTACT_KINDS) or {})
+    kind = _choice(user_input.get("contact_kind", kinds.get(contact)), "unknown", CONTACT_KINDS)
+    if kind == "unknown":
+        kinds.pop(contact, None)
+    else:
+        kinds[contact] = kind
+    room[CONF_CONTACT_KINDS] = kinds
     follow = dict(room.get(CONF_CONTACT_COVER_FOLLOW) or {})
     follow[contact] = bool(user_input.get("cover_follow", False) and selected_covers)
     room[CONF_CONTACT_COVER_FOLLOW] = follow
@@ -495,6 +512,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_CONTACT_COVERS: deepcopy(previous.get(CONF_CONTACT_COVERS, {})),
         "cover_position_zero_means": str(user_input.get("cover_position_zero_means", previous.get("cover_position_zero_means", "closed")) or "closed"),
         CONF_CONTACT_PASSAGE_DOORS: deepcopy(previous.get(CONF_CONTACT_PASSAGE_DOORS, {})),
+        CONF_CONTACT_KINDS: dict(previous.get(CONF_CONTACT_KINDS, {})),
         CONF_CONTACT_COVER_FOLLOW: deepcopy(previous.get(CONF_CONTACT_COVER_FOLLOW, {})),
     })
     _normalise_room_control(room, previous)
@@ -532,6 +550,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         for c in contacts if room[CONF_CONTACT_COVERS].get(c)
     }
     room[CONF_CONTACT_PASSAGE_DOORS] = {c: bool(room.get(CONF_CONTACT_PASSAGE_DOORS, {}).get(c, False)) for c in contacts}
+    room[CONF_CONTACT_KINDS] = {c: str(room[CONF_CONTACT_KINDS][c]) for c in contacts if room[CONF_CONTACT_KINDS].get(c) in {"window", "door"}}
     room[CONF_CONTACT_COVER_FOLLOW] = {
         c: True for c in contacts if room[CONF_CONTACT_COVER_FOLLOW].get(c) and room[CONF_CONTACT_COVERS].get(c)
     }
@@ -554,6 +573,11 @@ def _normalise_room_control(room: dict[str, Any], previous: dict[str, Any]) -> N
     # 0.26.5.5: the form with the automation settings was sent – a missing lock means it was cleared
     lock = room.get(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK) if CONF_ROOM_EXHAUST_FAN_CONTROL in submitted else previous.get(CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK)
     room[CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK] = str(lock or "").strip() or None
+    # 0.26.5.5: lock period – both times or none (a cleared field switches it off); stored as "HH:MM"
+    for key in (CONF_ROOM_EXHAUST_FAN_BLOCK_START, CONF_ROOM_EXHAUST_FAN_BLOCK_END):
+        value = room.get(key) if CONF_ROOM_EXHAUST_FAN_CONTROL in submitted else previous.get(key)
+        minutes = clock_minutes(value)
+        room[key] = f"{minutes // 60:02d}:{minutes % 60:02d}" if minutes is not None else None
 
 
 def _normalise_legacy_entry_data(data: dict[str, Any]) -> dict[str, Any]:

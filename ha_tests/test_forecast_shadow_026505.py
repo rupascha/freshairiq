@@ -106,7 +106,8 @@ async def test_a_restart_during_the_airing_keeps_the_start_provenance(hass, free
     d = await _make(hass, freezer, start=START)
     await _airing(d, restart=True)
     shadow = _rooms(d.store.data["forecast_validation_history"])[0]["shadow_forecast"]
-    assert shadow["freshairiq_version_at_start"] == "0.26.5.5" and shadow["paired_valid"] is True
+    # 0.26.6.0: the running version (VERSION) instead of a fixed number – the version bump changed it, not the behaviour
+    assert shadow["freshairiq_version_at_start"] == VERSION and shadow["paired_valid"] is True
     assert len(_rooms(d.store.data["forecast_validation_history"])) == 1  # evaluated once
 
 

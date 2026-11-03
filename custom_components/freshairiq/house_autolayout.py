@@ -2,8 +2,11 @@
 
 Home Assistant knows room names and floors, not wall coordinates. The proposal
 therefore only uses what FreshAirIQ really has – floors, room dimensions or
-volumes, contacts shared by two rooms (doors), configured open connections and
-window orientations – and marks every object with where it came from:
+volumes, door contacts shared by two rooms, configured open connections and
+window orientations – and marks every object with where it came from. A contact
+used by several rooms is a door only when the setup or Home Assistant says so;
+a shared window (or a shared contact of unknown kind) is drawn once as a window
+(see ``contact_role`` and ``window_homes``):
 
 * ``config``   – length × width from the room setup;
 * ``estimated``– floor area from volume ÷ height (2.5 m when unknown), square;
@@ -60,14 +63,49 @@ def _contacts(room: dict[str, Any]) -> list[str]:
     return [str(c) for c in contacts if c] if isinstance(contacts, list) else []
 
 
-def adjacency(rooms: list[dict[str, Any]], open_connections: dict[str, Iterable[str]] | None = None) -> dict[tuple[str, str], dict[str, Any]]:
-    """Known neighbour pairs: shared contacts (doors) and configured open connections."""
+DOOR_CLASSES = {"door", "garage_door"}
+
+
+def contact_role(rooms: list[dict[str, Any]], contact: str, contact_classes: dict[str, Any] | None = None) -> str:
+    """What a contact is, from what the setup and Home Assistant say – never from how often it is used.
+
+    ``door``: stated as a door (contact kind or "door to a neighbouring room") in a room using it, or a door
+    sensor in Home Assistant (device class door/garage_door); ``window``: stated as a window or a window sensor;
+    ``unknown``: nothing says which. A contact used by several rooms (e.g. a guest WC window that also airs the
+    hall) is still one physical opening in one place."""
+    kinds = set()
+    passage = False
+    for room in rooms:
+        if contact not in _contacts(room):
+            continue
+        stated = room.get("contact_kinds") if isinstance(room.get("contact_kinds"), dict) else {}
+        doors = room.get("contact_passage_doors") if isinstance(room.get("contact_passage_doors"), dict) else {}
+        kinds.add(stated.get(contact))
+        passage = passage or doors.get(contact) is True
+    device_class = str((contact_classes or {}).get(contact) or "")
+    if "door" in kinds or passage or (not kinds & {"window"} and device_class in DOOR_CLASSES):
+        return "door"
+    if "window" in kinds or device_class == "window":
+        return "window"
+    return "unknown"
+
+
+def adjacency(rooms: list[dict[str, Any]], open_connections: dict[str, Iterable[str]] | None = None,
+              contact_classes: dict[str, Any] | None = None) -> dict[tuple[str, str], dict[str, Any]]:
+    """Known neighbour pairs: shared door contacts and configured open connections.
+
+    Hotfix after review (F02): a contact used by two rooms is a door between them only when it is known to be a door.
+    A shared window – and a shared contact of unknown kind, like an unknown contact of one room – is no connection:
+    it is drawn once as a window (see ``window_homes``)."""
     pairs: dict[tuple[str, str], dict[str, Any]] = {}
     owners: dict[str, list[str]] = {}
     for room in rooms:
         for contact in _contacts(room):
             owners.setdefault(contact, []).append(str(room["key"]))
     for contact, keys in sorted(owners.items()):
+        role = contact_role(rooms, contact, contact_classes) if len(set(keys)) > 1 else "single"
+        if role != "door":
+            continue
         for i, a in enumerate(sorted(set(keys))):
             for b in sorted(set(keys))[i + 1:]:
                 pairs.setdefault((a, b), {"kind": "door", "contacts": []})["contacts"].append(contact)
@@ -135,6 +173,20 @@ def _touching(first: list[list[float]], second: list[list[float]]) -> float:
     return best
 
 
+def _shared_offset(a1: tuple[float, float], a2: tuple[float, float], other: list[list[float]]) -> float:
+    """Centre (0–1) of the longest stretch of wall ``a1–a2`` that ``other`` shares (0.5 when none)."""
+    length = math.dist(a1, a2)
+    ux, uy = (a2[0] - a1[0]) / length, (a2[1] - a1[1]) / length
+    best, centre = 0.0, 0.5
+    for j in range(len(other)):
+        b1, b2 = tuple(other[j]), tuple(other[(j + 1) % len(other)])
+        shared = shared_length(a1, a2, b1, b2)
+        if shared > best:
+            t1, t2 = sorted(((b1[0] - a1[0]) * ux + (b1[1] - a1[1]) * uy, (b2[0] - a1[0]) * ux + (b2[1] - a1[1]) * uy))
+            best, centre = shared, (max(t1, 0.0) + min(t2, length)) / 2 / length
+    return round(centre, 3)
+
+
 def _free_offset(a1: tuple[float, float], a2: tuple[float, float], others: list[list[list[float]]]) -> float | None:
     """Centre (0–1) of the longest stretch of wall ``a1–a2`` not shared with another room (None = fully shared)."""
     length = math.dist(a1, a2)
@@ -190,20 +242,49 @@ def _best_edge(key: str, placed: dict[str, list[list[float]]], orientation: str 
     return index, exterior[index], "auto"
 
 
-def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]], pairs: dict[tuple[str, str], Any]) -> list[dict[str, Any]]:
+def window_homes(rooms: list[dict[str, Any]], sizes: dict[str, tuple[float, float, str]], pairs: dict[tuple[str, str], Any]) -> dict[str, str]:
+    """The one room a window used by several rooms is drawn in (a shared door is drawn between them).
+
+    The room that states it as a window wins, then the room with fewer contacts (a bathroom or guest WC lists its
+    own window, a hall borrows its neighbours' windows on top of its own), then the smaller room, then the room key –
+    the same input always gives the same place; the editor can move it."""
+    in_pairs = {c for info in pairs.values() for c in info.get("contacts", [])}
+    users: dict[str, list[dict[str, Any]]] = {}
+    for room in rooms:
+        for contact in _contacts(room):
+            users.setdefault(contact, []).append(room)
+    homes = {}
+    for contact, members in users.items():
+        if len({str(r["key"]) for r in members}) < 2 or contact in in_pairs:
+            continue
+        homes[contact] = str(min(members, key=lambda r, c=contact: _home_rank(r, c, sizes))["key"])
+    return homes
+
+
+def _home_rank(room: dict[str, Any], contact: str, sizes: dict[str, tuple[float, float, str]]) -> tuple[bool, int, float, str]:
+    stated = room.get("contact_kinds") if isinstance(room.get("contact_kinds"), dict) else {}
+    size = sizes.get(room["key"])
+    return (stated.get(contact) != "window", len(_contacts(room)), size[0] * size[1] if size else math.inf, str(room["key"]))
+
+
+def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]], pairs: dict[tuple[str, str], Any],
+              homes: dict[str, str] | None = None) -> list[dict[str, Any]]:
     shared = {c for info in pairs.values() for c in info.get("contacts", [])}
     openings: list[dict[str, Any]] = []
     per_edge: dict[tuple[str, int], list[dict[str, Any]]] = {}
     for room in rooms:
         key = room["key"]
         orientations = room.get("contact_orientations") if isinstance(room.get("contact_orientations"), dict) else {}
+        kinds = room.get("contact_kinds") if isinstance(room.get("contact_kinds"), dict) else {}  # 0.26.5.5
         for contact in _contacts(room):
-            if contact in shared:
+            if contact in shared or (homes or {}).get(contact, key) != key:
                 continue
             orientation = orientations.get(contact) or room.get("window_orientation")
             index, offset, provenance = _best_edge(key, placed, orientation if orientation in ORIENTATION_DEG else None)
             item = {"id": f"o_{key}_{len([o for o in openings if o['room_id'] == f'r_{key}'])}", "room_id": f"r_{key}", "edge": index,
-                    "offset": 0.5 if offset is None else offset, "width_m": None, "kind": "window", "mechanics": "unknown",
+                    "offset": 0.5 if offset is None else offset, "width_m": None,
+                    # a contact stated as a door is an outside door, every other one a window (as before)
+                    "kind": "door" if kinds.get(contact) == "door" else "window", "mechanics": "door" if kinds.get(contact) == "door" else "unknown",
                     "contacts": [contact], "provenance": provenance if offset is not None else "unplaced"}
             openings.append(item)
             if offset is not None:
@@ -213,10 +294,11 @@ def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]],
             continue
         pts_a = placed[a]
         index = max(range(len(pts_a)), key=lambda i: (_touching([pts_a[i], pts_a[(i + 1) % len(pts_a)]], placed[b]), -i))
-        item = {"id": f"d_{a}_{b}", "room_id": f"r_{a}", "edge": index, "offset": 0.5, "width_m": None, "kind": "door",
+        # hotfix after review: the door sits in the middle of the stretch both rooms share, not of the whole wall
+        offset = _shared_offset(tuple(pts_a[index]), tuple(pts_a[(index + 1) % len(pts_a)]), placed[b])
+        item = {"id": f"d_{a}_{b}", "room_id": f"r_{a}", "edge": index, "offset": offset, "width_m": None, "kind": "door",
                 "mechanics": "door", "contacts": list(info["contacts"]), "provenance": "auto"}
-        openings.append(item)
-        per_edge.setdefault((a, index), []).append(item)
+        openings.append(item)  # hotfix after review: a door stays on the shared stretch – only windows are spread
     for items in per_edge.values():
         if len(items) > 1:  # several windows on one wall: spread them over the wall's free stretch
             centre = items[0]["offset"]
@@ -225,15 +307,19 @@ def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]],
     return openings
 
 
-def propose(rooms: list[dict[str, Any]], levels: list[str], open_connections: dict[str, Iterable[str]] | None = None) -> dict[str, Any]:
-    """A complete proposal for the configured rooms (calculated rooms with a key only)."""
+def propose(rooms: list[dict[str, Any]], levels: list[str], open_connections: dict[str, Iterable[str]] | None = None,
+            contact_classes: dict[str, Any] | None = None) -> dict[str, Any]:
+    """A complete proposal for the configured rooms (calculated rooms with a key only).
+
+    ``contact_classes``: Home Assistant device class per contact entity (door, window, …) where known."""
     rooms = [r for r in rooms if isinstance(r, dict) and r.get("key")]
     layout = empty_layout()
     floors = list(dict.fromkeys([str(level) for level in levels] + [str(r.get("floor") or "unassigned") for r in rooms]))
     layout["floors"] = [{"id": f"f_{level}", "name": level, "level_key": level, "order": i} for i, level in enumerate(floors)]
-    pairs = adjacency(rooms, open_connections)
+    pairs = adjacency(rooms, open_connections, contact_classes)
     sizes = {r["key"]: room_size(r) for r in rooms}
-    windows = {r["key"]: _contacts(r) for r in rooms}
+    homes = window_homes(rooms, sizes, pairs)
+    windows = {r["key"]: [c for c in _contacts(r) if homes.get(c, r["key"]) == r["key"]] for r in rooms}
     quality: dict[str, Any] = {"floors": {}, "provenance": {k: v[2] for k, v in sizes.items()}}
     for level in floors:
         members = sorted((r for r in rooms if str(r.get("floor") or "unassigned") == level), key=lambda r: (int(r.get("sort_order", 0) or 0), r["key"]))
@@ -247,7 +333,7 @@ def propose(rooms: list[dict[str, Any]], levels: list[str], open_connections: di
         for room in members:
             layout["rooms"].append({"id": f"r_{room['key']}", "room_key": room["key"], "floor_id": f"f_{level}",
                                     "polygon": placed[room["key"]], "provenance": sizes[room["key"]][2]})
-        layout["openings"].extend(_openings(members, placed, floor_pairs))
+        layout["openings"].extend(_openings(members, placed, floor_pairs, homes))
     doors = {o["id"] for o in layout["openings"] if o["kind"] == "door"}
     for (a, b), info in sorted(pairs.items()):
         if f"d_{a}_{b}" in doors:

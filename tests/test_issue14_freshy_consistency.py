@@ -5,7 +5,9 @@ CARD = (Path(__file__).resolve().parents[1] / "custom_components/freshairiq/fron
 
 
 def _panel() -> str:
-    return CARD[CARD.index("    _compactAIPanel(st, rooms = []) {"):CARD.index("    _intelligentPanel(st, rooms = []) {")]
+    # Hotfix 0.26.6.0 (9) F07: the IQ view's decision head moved into ``_iqFacts`` (shared with the house map, directly
+    # before _compactAIPanel); the panel's contract therefore covers both methods – the rules checked are unchanged
+    return CARD[CARD.index("    _iqFacts(st, rooms = []) {"):CARD.index("    _intelligentPanel(st, rooms = []) {")]
 
 
 def test_wait_kind_comes_from_the_canonical_house_decision_not_the_headline():
@@ -17,7 +19,9 @@ def test_wait_kind_comes_from_the_canonical_house_decision_not_the_headline():
 
 def test_rooms_and_facts_follow_a_holding_house_decision():
     panel = _panel()
-    assert 'const houseHolds = !active.length && (kind === "wait" || (kind === "night" && !freshyNightAction));' in panel
+    # Hotfix (9) F05: a session in its final measurement still counts (``live``, as the backend's live balance) – the
+    # house holds back only when no session is running at all; the wait/night rule itself is unchanged
+    assert 'const houseHolds = !live && !active.length && (kind === "wait" || (kind === "night" && !freshyNightAction));' in panel
     assert 'this._t("iq.room_waiting")' in panel
     assert "const factTime = !houseHolds &&" in panel
     assert '"iq.room_waiting": { de: "Lüften möglich · noch warten"' in CARD

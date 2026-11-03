@@ -12,11 +12,13 @@ from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import async_track_state_change_event, async_track_time_change
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .actuator_control import (
+    clock_minutes,
+    fan_block_active,
     COVER_CLOSE,
     COVER_OPEN,
     COVER_POSITION,
@@ -24,6 +26,8 @@ from .actuator_control import (
     DEFAULT_FAN_MAX_RUNTIME_MIN,
     FAN_CONTROL_MOISTURE_SOURCE,
     FAN_CONTROL_OFF,
+    FAN_BLOCK_ATTEMPTS,
+    FAN_BLOCK_RETRY_S,
     FAN_COMMAND_TIMEOUT_S,
     FAN_CONTROL_RECOMMENDATION,
     FAN_OFF_CONFIRM_S,
@@ -96,7 +100,32 @@ class ActuatorController:
                     watched.update(setup.contacts)
         if watched:
             self._unsubs.append(async_track_state_change_event(self.hass, sorted(watched), self._on_state_change))
+        # 0.26.5.5: the fan lock period starts and ends on time, not only with the next coordinator update
+        edges = {clock_minutes(room.get(key)) for room in self._rooms if _room_controls_fan(room) and self._block_times(room)
+                 for key in ("exhaust_fan_block_start", "exhaust_fan_block_end")}
+        for minute in sorted(m for m in edges if m is not None):
+            self._unsubs.append(async_track_time_change(self.hass, self._on_block_edge, hour=minute // 60, minute=minute % 60, second=0))
         return True
+
+    @staticmethod
+    def _block_times(room: dict[str, Any]) -> tuple[Any, Any] | None:
+        start, end = room.get("exhaust_fan_block_start"), room.get("exhaust_fan_block_end")
+        return (start, end) if clock_minutes(start) is not None and clock_minutes(end) is not None and clock_minutes(start) != clock_minutes(end) else None
+
+    def _block_fans(self) -> set[str]:
+        """0.26.5.5: fans in a running lock period of any controlled room – the lock protects the device,
+        so a room sharing it does not start it either."""
+        now = dt_util.now()
+        blocked: set[str] = set()
+        for room in self._rooms:
+            times = self._block_times(room) if _room_controls_fan(room) else None
+            if times and fan_block_active(times[0], times[1], now):
+                blocked.update(_fan_entities(room))
+        return blocked
+
+    @callback
+    def _on_block_edge(self, _now: Any) -> None:
+        self.hass.async_create_task(self._async_evaluate(fans=True), eager_start=True)
 
     async def async_sync(self) -> None:
         """Re-read the room setup when it changed since the last attach (0.26.5.3).
@@ -320,6 +349,7 @@ class ActuatorController:
             "restart_locked": self._restart_locked(key, mem),
             **self._sharing(key, mem),
             "own_off": (mem.get("own_off") or {}).get("state"),
+            "block_time": bool(set(_fan_entities(next((r for r in self._rooms if str(r.get("key")) == str(key)), {}))) & self._block_fans()),
             "fans_unknown": self._fans_unknown(_fan_entities(next((r for r in self._rooms if str(r.get("key")) == str(key)), {}))),
             **self._fan_group(key),
         }
@@ -489,6 +519,9 @@ class ActuatorController:
             mem.update(owned=False, reason="external_lock")
             mem.pop("off_pending_since", None)
             return mem != before
+        if set(fans) & self._block_fans():
+            changed = await self._async_block_time(room, fans, mode, mem, now, fan_on, all_off)
+            return mem != before or changed
         runtime_over = bool(mem.get("owned")) and now - (dt_util.parse_datetime(str(mem.get("since") or "")) or now) >= timedelta(
             minutes=float(room.get("exhaust_fan_max_runtime_min", DEFAULT_FAN_MAX_RUNTIME_MIN)))
         if fan_on and mem.get("owned") and set(fans) & needed_elsewhere and not self._demand(room, data) and not runtime_over:
@@ -543,6 +576,47 @@ class ActuatorController:
         if decision is not None or (before.get("command_state") == "pending" and mem.get("command_state") != "pending"):
             self._trace(str(room["key"]), mode, mem, now)
         return mem != before
+
+    async def _async_block_time(self, room: dict[str, Any], fans: list[str], mode: str, mem: dict[str, Any], now: Any,
+                                fan_on: bool | None, all_off: bool) -> bool:
+        """0.26.5.5: inside the room's lock period nothing is switched on; FreshAirIQ's own run is switched off.
+
+        Before moisture source, follow-up and recommendation. A fan switched on by hand or by another
+        automation is not FreshAirIQ's and stays as it is. The switch-off is followed to its result once.
+        """
+        mem.pop("off_pending_since", None)
+        mem.pop("own_off", None)
+        key = str(room["key"])
+        if mem.get("command") == "off" and mem.get("command_state") == "pending":
+            at = dt_util.parse_datetime(str(mem.get("command_at") or "")) or now
+            if all_off or (now - at).total_seconds() >= FAN_COMMAND_TIMEOUT_S:
+                # hotfix 0.26.6.0: a switch-off that did not arrive keeps the run FreshAirIQ's (failed, retried below)
+                if all_off:
+                    mem["command_state"] = "confirmed"
+                    mem.pop("block_attempts", None)
+                else:
+                    mem.update(command_state="failed", owned=True)
+                self._trace(key, mode, mem, now)
+            return False
+        if mem.get("owned") and fan_on:
+            attempts = int(mem.get("block_attempts") or 0)
+            if mem.get("command") == "off" and mem.get("command_state") == "failed":
+                at = dt_util.parse_datetime(str(mem.get("command_at") or "")) or now
+                if attempts >= FAN_BLOCK_ATTEMPTS or (now - at).total_seconds() < FAN_BLOCK_RETRY_S:
+                    return False  # stays failed and FreshAirIQ's: shown as "please switch off by hand", no retry storm
+            else:
+                attempts = 0
+            mem.update(owned=False, command="off", command_at=now.isoformat(), command_state="pending", reason="block_time",
+                       block_attempts=attempts + 1)
+            if not await self._async_call("homeassistant", "turn_off", {"entity_id": fans}):
+                mem.update(command_state="failed", owned=True)
+            self._trace(key, mode, mem, now)
+            return True
+        if mem.get("owned") and fan_on is None:
+            return False  # the fan's state is unknown: the switch-off is not proven, the run stays FreshAirIQ's
+        mem.update(owned=False, reason="block_time")
+        mem.pop("block_attempts", None)
+        return False
 
     def _block_after_manual_off(self) -> bool:
         """Hotfix A2 (01.11.): a fan switched off by hand stays off for every room that controls it.

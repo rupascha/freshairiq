@@ -83,6 +83,8 @@ def wind_state(*, bearing: Any, speed: Any, unit: Any = None, gust: Any = None, 
     calm = ms is not None and ms < CALM_MS
     if from_deg is None:
         reason = "no_direction"
+    elif ms is None:  # Hotfix (9) F04: speed missing or in an unsupported unit – unknown, not calm and not shown
+        reason = "no_speed"
     elif stale:
         reason = "stale"
     elif calm:

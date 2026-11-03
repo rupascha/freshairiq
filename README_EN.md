@@ -53,6 +53,38 @@ The reasoning remains visible: thresholds, expected net effect, learned patterns
 
 ---
 
+## House map – your home at a glance (optional)
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_cross_ventilation_en.png" alt="House map: cross ventilation through the house (demo render)" width="620">
+</p>
+
+An **additional** card, `custom:freshairiq-house-card`, draws your FreshAirIQ rooms on your own floor plan. It adds to the dashboard card – entities, recommendations, notifications and automations stay exactly as they are.
+
+| | |
+| --- | --- |
+| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_sunny_en.png" alt="Sunny day on the house map" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_strong_wind_en.png" alt="Strong wind around the house" width="300"> |
+| **Sun and weather** – the sun stands where `sun.sun` reports it, turned by your plan's north | **Wind** – a modelled wind field around the house, calm to stormy, with gusts |
+| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_airing_en.png" alt="Active airing in the bathroom" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_editor_90_locks_en.png" alt="Editor with lengths, angles, 90° and locks" width="300"> |
+| **Active airing** – fresh air at the open window, removable moisture and time left | **Editor** – one wall at a time, 90° corners, locked lengths and angles |
+
+- Every room shows its state: wait, air now, keep airing, close – with the reason one tap away.
+- Honest window and door states (open, tilted, closed, delay) and presumed air paths through open doors; nothing is invented when data is missing.
+- Rooms measured one by one can be **fitted together** – preview first, nothing scaled, locked dimensions win:
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_before_en.png" alt="Rooms before fitting together" width="300">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_after_en.png" alt="Rooms after fitting together" width="300">
+</p>
+
+- Floor plan proposal from your FreshAirIQ rooms, floor plan template (upload a picture, tap the rooms), floors as buttons, readable floor names.
+
+Guide: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)** · Deutsch: **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)**
+
+<sub>Pictures: rendered from the card code of this release with demo data (demo rooms, no real installation).</sub>
+
+---
+
 ## What makes FreshAirIQ different
 
 | Feature | What FreshAirIQ does with it |

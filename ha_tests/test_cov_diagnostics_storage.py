@@ -194,7 +194,9 @@ def _house(rooms: Any, **extra: Any) -> dict[str, Any]:
 
 async def test_record_reasons_window_events_and_file_rows(hass, cfg) -> None:
     recorder = _recorder(hass)
-    t0 = dt_util.now().replace(microsecond=0)
+    # Note (0.26.6.0): noon of today – the rows span 31 minutes and must all fall into one day file; started shortly
+    # before midnight the test failed on the clock, not on the recorder (assertions unchanged)
+    t0 = dt_util.now().replace(hour=12, minute=0, second=0, microsecond=0)
     store = {"rooms": {"bath": {"recommendation_followed": 3, "opening_learning": {"open": {"rate": 0.05, "samples": 2}}}, "junk": 1},
              "notification_diagnostics": [{"ok": True}]}
     bath_closed = {"name": "Bad", "active": False, "humidity": 70, "data_quality": "ok", "contact_orientations": {"binary_sensor.x": "south"}}

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any, Iterable
 
-from .close_wording import airing_running, close_instruction
+from .close_wording import airing_running, close_instruction, opening_kind
 from .outdoor_air import pm25_reason, veto_cause
 
 
@@ -644,6 +644,8 @@ def _chosen_room_recommendation(
         chosen_scope, chosen_floor = _scope_for(selected_rooms)
         title = "Jetzt querlüften" if is_pair else (f"{_floor_label(chosen_floor)} lüften" if chosen_scope == "floor" else ("Jetzt gezielt lüften" if has_problem and not house_ready else "Jetzt lüften"))
         opening_labels=[]
+        # 0.26.5.5: every chosen room's contacts stated as windows (doors): "Fenster in Bad + Küche öffnen"
+        kinds = {opening_kind(rr) for rr in selected_rooms}
         for rr in selected_rooms:
             contacts=list(rr.get("contact_entities") or [])
             if contacts:
@@ -651,6 +653,12 @@ def _chosen_room_recommendation(
             else:
                 opening_labels.append(str(rr.get("name")))
         instruction = f"{' + '.join(opening_labels)} öffnen · ca. {round(recommended_duration_min)} min"
+        if kinds == {"window"}:
+            instruction = f"Fenster in {names} öffnen · ca. {round(recommended_duration_min)} min"
+        elif kinds == {"door"} and len(selected_rooms) == 1:
+            instruction = f"Tür in {names} öffnen · ca. {round(recommended_duration_min)} min"
+        elif kinds == {"door"}:
+            instruction = f"Türen in {names} öffnen · ca. {round(recommended_duration_min)} min"
         reason_pool: list[str] = []
         # Put health/room trigger before physics to answer "why this room?".
         for c in sorted(chosen, key=lambda x: (not x.problem, -x.score)):

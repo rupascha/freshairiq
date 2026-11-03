@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.5.5";
+const FAIQ_VERSION = "0.26.6.0";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -68,7 +68,7 @@ const FAIQ_UI = Object.freeze({
 // Keep that rendering path untouched and translate the rendered UI for English
 // Home Assistant profiles. English is also the fallback for non-German locales.
 // 0.26.4.8: English phrase tables load only for English dashboards (freshairiq-card-i18n-en.js).
-// 0.26.5.5: parts load with the card's own query (version + build b=), never an older cached build
+// 0.26.5.5: parts load with the card's own query (version + build b=)
 const FAIQ_Q = new URL(import.meta.url).search || `?v=${FAIQ_VERSION}`;
 const faiqModule = name => import(new URL(`./${name}${FAIQ_Q}`, import.meta.url).href);
 const [{ faiqThemeCss, faiqThemeColor, faiqThemeInline, FAIQ_THEME_AUTO_CSS, faiqLiftOverlays, faiqDesign, faiqDesignChoice }, { FRESHY_EPOCH, freshyClock, freshySvg }, { reasonDE, statusTextDE, consentHint, FAIQ_LIVE_METHODS, FAIQ_EXPORT_METHODS }] = await Promise.all([faiqModule("freshairiq-card-style.js"), faiqModule("freshairiq-card-freshy.js"), faiqModule("freshairiq-card-data.js")]);
@@ -195,7 +195,8 @@ const moisture = (physicalRemovedMl, zero = "0 ml") => {
         ? { text: `−${Math.abs(Math.round(n))} ml`, color: "#67df92", kind: "removed" }
         : { text: `+${Math.abs(Math.round(n))} ml`, color: "#ff7770", kind: "added" };
 };
-// 0.26.4.7: held back by the house.
+// Removable now + time; shared with the house map.
+const removableNow=(st,rooms=[])=>{const a=rooms.filter(r=>r.calculation_enabled!==false&&r.active).length;return{active:a,duration:Number((a?st.remaining_duration_min:st.recommended_duration_min)||0),amount:Number((a?st.live_balance_ml:st.potential_total_ml)||0)}};
 const houseHeldRoom = r => !!r && !r.active && String(r.house_aligned_action || "") === "ventilate_later";
 // Fan-only: nothing to close; server label/hint.
 const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
@@ -1903,7 +1904,7 @@ class FreshAirIQCard extends HTMLElement {
             cap: ["pre-night", "night"].includes(timeKind) && mood !== "rain",
         };
     }
-    _compactAIPanel(st, rooms = []) {
+    _iqFacts(st, rooms = []) {
         const calc = rooms.filter(r => r.calculation_enabled !== false);
         const active = calc.filter(r => r.active && !r.session_finalization_pending);
         const hero = this._hero(st, rooms, Number(st.live_balance_ml || 0), Number(st.potential_total_ml || 0));
@@ -1917,8 +1918,7 @@ class FreshAirIQCard extends HTMLElement {
         const bad = calc.filter(r => r.data_quality !== "ok");
         const priority = passiveOpenMonitor && active.length ? active : (close.length ? close : (active.length ? active : (vent.length ? vent : bad)));
 
-        const duration = active.length ? Number(st.remaining_duration_min || 0) : Number(st.recommended_duration_min || 0);
-        const amount = active.length ? Math.abs(Number(st.live_balance_ml || 0)) : Math.max(0, Number(st.potential_total_ml || 0));
+        const { duration, amount, active: live } = removableNow(st, rooms);
         const freshyTimeKind = this._freshyTimeKind(st);
         const isNight = freshyTimeKind === "night";
         const isPreNight = freshyTimeKind === "pre-night";
@@ -1939,32 +1939,28 @@ class FreshAirIQCard extends HTMLElement {
             : heroTitle.includes("abwarten") || heroTitle.includes("nicht lüften") || heroTitle.includes("wait for") || heroTitle.includes("do not ventilate") ? "wait"
             : ["completed", "complete", "success", "ventilation_completed"].includes(status) ? "success"
             : nightRecommendation ? "night"
-            // 0.26.4.6 (GitHub #14): the headline wording varies ("Ein günstigerer
-            // Zeitpunkt ist noch nicht erreicht" …), so detecting "wait" from the
-            // title failed and the card fell through to "recommend". The canonical
-            // house decision kind/status is authoritative.
+            // GitHub #14: the canonical house decision is authoritative
             : houseWaits ? "wait"
             : vent.length || status === "ventilate" ? "recommend"
             : isNight ? "night"
             : isPreNight ? "pre-night"
             : "good";
-        // 0.26.4.8: Freshy's mood follows the same situation logic, but the rain
-        // picture only appears when it really rains (weather_now) – before, any
-        // rain expected during the coming night showed the umbrella.
         const freshyNightAction = ["pre_ventilate", "open_selected"].includes(String(nightStrategy.action || ""));
+        const houseHolds = !live && !active.length && (kind === "wait" || (kind === "night" && !freshyNightAction));
+        return { calc, active, hero, heroTitle, status, passiveOpenMonitor, isCanonicalMonitorRoom, close, vent, bad, priority, duration, amount, live, freshyTimeKind, isNight, isPreNight, nightStrategy, nightRecommendation, kind, freshyNightAction, houseHolds };
+    }
+    _compactAIPanel(st, rooms = []) {
+        const { calc, active, hero, heroTitle, status, passiveOpenMonitor, isCanonicalMonitorRoom, close, vent, bad, priority, duration, amount, live, freshyTimeKind, isNight, isPreNight, nightStrategy, nightRecommendation, kind, freshyNightAction, houseHolds } = this._iqFacts(st, rooms);
+        // 0.26.4.8: rain picture only when it really rains (weather_now)
         const freshyMood = this._freshyMood(st, { kind, close, nightRecommendation, nightStrategy, isNight, isPreNight, timeKind: freshyTimeKind, calc });
         const freshyProgress = active.length && Number(st.recommended_duration_min || 0) > 0 ? 1 - Math.max(0, Number(st.remaining_duration_min || 0)) / Number(st.recommended_duration_min) : null;
         const color = kind === "sensor" ? "#ff7770" : ["close", "wait", "pollen"].includes(kind) ? "#ffb45f" : ["good", "success", "recommend"].includes(kind) ? "#62e889" : ["live", "continuous", "cooling"].includes(kind) ? "#63d2f7" : ["night", "pre-night"].includes(kind) ? "#8796ff" : (hero.color || "#63d2f7");
         const roomNames = priority.slice(0, 2).map(r => r.name).filter(Boolean);
-        // House says "not now" (wait, or keep closed at night) while single rooms still
-        // carry the physical Ventilate action: present those rooms as "possible, but wait"
-        // instead of a conflicting "Lüften · 9 min" call to action (GitHub #14).
-        const houseHolds = !active.length && (kind === "wait" || (kind === "night" && !freshyNightAction));
         const waitingVent = r => (houseHolds && ["Ventilate", "Ventilate for cooling"].includes(r.action) && !r.active) || houseHeldRoom(r);
         const prioritySummaryKey = priority.some(waitingVent) ? (roomNames.length > 1 ? "iq.priority_waiting_many" : "iq.priority_waiting_one") : (roomNames.length > 1 ? "iq.priority_many" : "iq.priority_one");
         const summary = active.length ? this._t("iq.room_tracking", { count: active.length }) : roomNames.length ? this._t(prioritySummaryKey, { rooms: roomNames.join(this._t("iq.and")) }) : (hero.sub || this._t("iq.no_action"));
-        const factTime = !houseHolds && Number.isFinite(duration) && Math.abs(duration) >= .5 ? `<span><ha-icon icon="mdi:clock-outline"></ha-icon>${active.length && duration >= 0 ? this._t("iq.remaining", { count: Math.ceil(duration) }) : `${Math.max(1, Math.round(Math.abs(duration)))} min`}</span>` : "";
-        const factMoisture = amount >= 1 ? `<span><ha-icon icon="mdi:water-outline"></ha-icon>${houseHolds ? esc(this._t("iq.removable_possible", { ml: Math.round(amount) })) : `≈ ${Math.round(amount)} ml`}</span>` : "";
+        const factTime = !houseHolds && Number.isFinite(duration) && Math.abs(duration) >= .5 ? `<span><ha-icon icon="mdi:clock-outline"></ha-icon>${live ? (duration >= 0 ? this._t("iq.remaining", { count: Math.ceil(duration) }) : `+${Math.ceil(-duration)} min`) : `${Math.max(1, Math.round(duration))} min`}</span>` : "";
+        const factMoisture = Math.abs(amount) >= 1 ? `<span><ha-icon icon="mdi:water-outline"></ha-icon>${amount < 0 ? moisture(amount).text : houseHolds ? esc(this._t("iq.removable_possible", { ml: Math.round(amount) })) : `≈ ${Math.round(amount)} ml`}</span>` : "";
         const roomCards = priority.slice(0, 2).map(r => {
             const canonicalMonitor = isCanonicalMonitorRoom(r);
             const roomWaits = waitingVent(r);
@@ -2431,6 +2427,26 @@ class FreshAirIQCard extends HTMLElement {
             }
         } finally {
             setTimeout(() => { if (button && original) { button.disabled = false; button.innerHTML = original; } }, 3500);
+        }
+    }
+    async _sendFeedback(feedbackSend) {
+        const entryId=this._settingsEntryId(); const type=this.shadowRoot.getElementById("feedback-type")?.value||"bug"; const message=(this.shadowRoot.getElementById("feedback-message")?.value||"").trim(); const result=this.shadowRoot.getElementById("feedback-result");
+        if (!entryId || message.length < 3) { if(result) result.textContent=this._tx("Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben."); return; }
+        feedbackSend.disabled=true; if(result) result.textContent=this._tx("Wird sicher an den Diagnose-Hub übertragen …");
+        let locked = false;
+        try { const response=await this._hass.callApi("POST", `freshairiq/feedback/${entryId}`, {type,message,client_context:this._fieldTestClientContext()}); if(response?.error) throw new Error(response.error); if (response?.cooldown_until) { this._feedbackCooldownUntil = response.cooldown_until; locked = true; } if(result) result.textContent=`${this._uiLanguage() === "de" ? "Gesendet" : "Sent"} · Feedback-ID ${response.feedback_id||"–"} · ${this._t("feedback.sent_next")}`; const box=this.shadowRoot.getElementById("feedback-message"); if(box) box.value=""; }
+        catch(err) {
+            let parsed = null; const body = err?.body || err?.message || "";
+            try { parsed = typeof body === "string" ? JSON.parse(body) : body; } catch (_) { parsed = null; }
+            if (parsed?.reason === "cooldown" || err?.status_code === 429) {
+                if (parsed?.cooldown_until) this._feedbackCooldownUntil = parsed.cooldown_until;
+                locked = true;
+                const mins = Math.max(1, Math.ceil(Number(parsed?.retry_after_seconds || 900) / 60));
+                if(result) result.textContent=this._t("feedback.cooldown_next", { mins });
+            } else if(result) result.textContent=`${this._tx("Senden fehlgeschlagen")}: ${this._formatApiError(err, this._tx("Bitte Verbindung zum Diagnose-Hub prüfen."))}`;
+        } finally {
+            feedbackSend.disabled = locked;
+            if (locked) { const mins = this._feedbackCooldownMinutes(); feedbackSend.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon> ${esc(this._t("feedback.cooldown_button", { mins: mins || 15 }))}`; }
         }
     }
     _settingsEntryId() {
@@ -2905,8 +2921,6 @@ class FreshAirIQCard extends HTMLElement {
         const moistureMain = active.length ? balance : pot;
         const rec = st.intelligent_recommendation || {};
         const dashboardVariant = this._config.dashboard_variant === "classic" ? "classic" : "iq";
-        // The classic branch intentionally preserves the v0.25.0.75 landing surface.
-        // Both variants share the same backend state, details, rooms and settings.
         const intelligentPanel = dashboardVariant === "classic" ? this._intelligentPanel(st, rooms) : this._compactAIPanel(st, rooms);
         const showBranding = this._config.show_branding !== false;
         const showProfileBadge = this._config.show_profile_badge !== false;
@@ -2954,26 +2968,7 @@ class FreshAirIQCard extends HTMLElement {
         this.shadowRoot.getElementById("ventlog-csv")?.addEventListener("click", async (e) => { e.stopPropagation(); await this._exportVentilationLog("csv"); });
         this.shadowRoot.getElementById("ventlog-daily")?.addEventListener("change", e => { this._ventLogDaily = e.target.checked; });
         const feedbackSend = this.shadowRoot.getElementById("feedback-send");
-        if (feedbackSend) feedbackSend.addEventListener("click", async (e) => {
-            e.stopPropagation(); const entryId=this._settingsEntryId(); const type=this.shadowRoot.getElementById("feedback-type")?.value||"bug"; const message=(this.shadowRoot.getElementById("feedback-message")?.value||"").trim(); const result=this.shadowRoot.getElementById("feedback-result");
-            if (!entryId || message.length < 3) { if(result) result.textContent=this._tx("Bitte eine Beschreibung mit mindestens 3 Zeichen eingeben."); return; }
-            feedbackSend.disabled=true; if(result) result.textContent=this._tx("Wird sicher an den Diagnose-Hub übertragen …");
-            let locked = false;
-            try { const response=await this._hass.callApi("POST", `freshairiq/feedback/${entryId}`, {type,message,client_context:this._fieldTestClientContext()}); if(response?.error) throw new Error(response.error); if (response?.cooldown_until) { this._feedbackCooldownUntil = response.cooldown_until; locked = true; } if(result) result.textContent=`${this._uiLanguage() === "de" ? "Gesendet" : "Sent"} · Feedback-ID ${response.feedback_id||"–"} · ${this._t("feedback.sent_next")}`; const box=this.shadowRoot.getElementById("feedback-message"); if(box) box.value=""; }
-            catch(err) {
-                let parsed = null; const body = err?.body || err?.message || "";
-                try { parsed = typeof body === "string" ? JSON.parse(body) : body; } catch (_) { parsed = null; }
-                if (parsed?.reason === "cooldown" || err?.status_code === 429) {
-                    if (parsed?.cooldown_until) this._feedbackCooldownUntil = parsed.cooldown_until;
-                    locked = true;
-                    const mins = Math.max(1, Math.ceil(Number(parsed?.retry_after_seconds || 900) / 60));
-                    if(result) result.textContent=this._t("feedback.cooldown_next", { mins });
-                } else if(result) result.textContent=`${this._tx("Senden fehlgeschlagen")}: ${this._formatApiError(err, this._tx("Bitte Verbindung zum Diagnose-Hub prüfen."))}`;
-            } finally {
-                feedbackSend.disabled = locked;
-                if (locked) { const mins = this._feedbackCooldownMinutes(); feedbackSend.innerHTML = `<ha-icon icon="mdi:timer-sand"></ha-icon> ${esc(this._t("feedback.cooldown_button", { mins: mins || 15 }))}`; }
-            }
-        });
+        if (feedbackSend) feedbackSend.addEventListener("click", e => { e.stopPropagation(); this._sendFeedback(feedbackSend); });
         this.shadowRoot.querySelectorAll("summary[data-classic-disclosure]").forEach(summary => {
             const el = summary.parentElement;
             const key = summary.dataset.classicDisclosure;
@@ -3251,3 +3246,4 @@ window.customStrategies = window.customStrategies || [];
 if (!window.customStrategies.some(s => s.type === FAIQ_STRATEGY && s.strategyType === "dashboard"))
     window.customStrategies.push({ type: FAIQ_STRATEGY, strategyType: "dashboard", name: "FreshAirIQ Dashboard", description: "Automatisch erzeugtes Live-Dashboard mit Detail-Popup, Räumen, Nachtprognose, Lernen und Energie." });
 console.info(`FreshAirIQ frontend ${FAIQ_VERSION} loaded`);
+export { FreshAirIQCard, removableNow };

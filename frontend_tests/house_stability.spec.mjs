@@ -63,7 +63,8 @@ const frame = page => impl(page).evaluate(el => { const card = [...el.shadowRoot
 
 for (const nested of [false, true]) {
   test(`F02: ten room and house pushes keep the page where the user scrolled (${nested ? 'inner view scroller' : 'page scroll'}, long page)`, async ({ page }) => {
-    const errors = await mount(page, { nested, before: 2600 });
+    // 0.26.5.5: the card is shorter (header in the menu) – a longer view above keeps the page longer than 2000 px
+    const errors = await mount(page, { nested, before: 3000 });
     const bottom = await setY(page, nested, 99999);  // the house map at the very end of a long view
     expect(bottom).toBeGreaterThan(2000);
     for (let i = 1; i <= 10; i += 1) {
@@ -87,7 +88,8 @@ test('F02: switching layers and floors, the room window, banners and longer text
   await mount(page, { before: 1200, after: 1500 });
   const y = await setY(page, false, 1300);
   const click = selector => impl(page).evaluate((el, s) => el.shadowRoot.querySelector(s).click(), selector);
-  for (const step of ['[data-layer="temperature"]', '[data-layer="airflow"]', '[data-floor="f_og"]', '[data-floor="__all"]', '[data-floor="f_eg"]']) {
+  // UI hotfix 0.26.6.0: no "All floors" button any more – the floors are switched one by one
+  for (const step of ['[data-layer="temperature"]', '[data-layer="airflow"]', '[data-floor="f_og"]', '[data-floor="f_eg"]']) {
     await click(step); await page.waitForTimeout(30);
     expect(await getY(page, false), step).toBe(y);
   }
@@ -114,9 +116,14 @@ test('F02: switching layers and floors, the room window, banners and longer text
 test('F02: a live push keeps the focused button, the open room window (no second showModal) and its scroll', async ({ page }) => {
   await mount(page);
   await page.evaluate(() => { window.__modal = 0; const show = HTMLDialogElement.prototype.showModal; HTMLDialogElement.prototype.showModal = function () { window.__modal += 1; return show.call(this); }; });
+  // 0.26.6: the layer buttons are in the menu – open it first
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-layer="humidity"]').focus({ preventScroll: true }));
   await push(page, 1); await page.waitForTimeout(40);
   expect(await impl(page).evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.dataset.layer)).toBe('humidity');
+  // 0.26.6.0(2): the menu is its own window – closed again before the room window is counted
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-close-menu]').click());
+  await page.evaluate(() => { window.__modal = 0; });
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
   await page.waitForTimeout(40);
   await impl(page).evaluate(el => { window.__dialog = el.shadowRoot.querySelector('dialog.roomdlg'); el.shadowRoot.querySelector('[data-close-detail]').focus({ preventScroll: true }); });

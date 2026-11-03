@@ -1,0 +1,16 @@
+{
+  "about": "Hotfix 0.26.6.0: where air may pass between room a and room b. Read by frontend_tests/house.spec.mjs (passage in freshairiq-house-geometry.js) and tests/test_house_shared_walls_026600.py (validate in house_layout.py).",
+  "room_a": [[0, 0], [2, 0], [2, 2], [0, 2]],
+  "cases": [
+    {"name": "door on a whole shared wall", "b": [[2, 0], [4, 0], [4, 2], [2, 2]], "connection": "door", "opening": null, "passage": [2, 1], "warnings": []},
+    {"name": "open passage, 0.6 m shared", "b": [[2, 1.4], [4, 1.4], [4, 3], [2, 3]], "connection": "open_passage", "opening": null, "passage": [2, 1.7], "warnings": []},
+    {"name": "only a corner", "b": [[2, 2], [4, 2], [4, 4], [2, 4]], "connection": "door", "opening": null, "passage": null, "warnings": ["W_CONNECTION_NO_WALL"]},
+    {"name": "a 12 cm gap", "b": [[2.12, 0], [4, 0], [4, 2], [2.12, 2]], "connection": "door", "opening": null, "passage": null, "warnings": ["W_CONNECTION_NO_WALL"]},
+    {"name": "0.2 m shared is too short", "b": [[2, 1.8], [4, 1.8], [4, 3], [2, 3]], "connection": "open_passage", "opening": null, "passage": null, "warnings": ["W_CONNECTION_NO_WALL"]},
+    {"name": "another floor", "b": [[2, 0], [4, 0], [4, 2], [2, 2]], "floor_b": "g", "connection": "door", "opening": null, "passage": null, "warnings": ["W_CONNECTION_NO_WALL"]},
+    {"name": "stairs are no way through the wall", "b": [[2, 0], [4, 0], [4, 2], [2, 2]], "connection": "stairs", "opening": null, "passage": null, "warnings": []},
+    {"name": "a drawn passage on the shared wall", "b": [[2, 0], [4, 0], [4, 2], [2, 2]], "connection": null, "opening": {"kind": "passage", "edge": 1, "offset": 0.25, "width_m": 0.8}, "passage": [2, 0.5], "warnings": []},
+    {"name": "room b moved away: the passage keeps a stale target", "b": [[4, 0], [6, 0], [6, 2], [4, 2]], "connection": null, "opening": {"kind": "passage", "edge": 1, "offset": 0.5, "width_m": 0.8, "target": "b"}, "passage": null, "warnings": ["W_OPENING_NOT_SHARED"]},
+    {"name": "room b moved away: the door connection has no wall any more", "b": [[4, 0], [6, 0], [6, 2], [4, 2]], "connection": "door", "opening": null, "passage": null, "warnings": ["W_CONNECTION_NO_WALL"]}
+  ]
+}

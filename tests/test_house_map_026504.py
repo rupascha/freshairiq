@@ -206,9 +206,16 @@ def test_room_size_provenance() -> None:
     assert auto.room_size({"volume": -3}) == (4.0, 4.0, "schematic")
 
 
+# Hotfix after review (F02, requirement change): a contact used by two rooms is drawn as a door between them only when
+# it is known to be a door – here, as in Home Assistant, by the sensor's device class "door" (ws_propose passes it).
+# The same contact without any known kind is no door any more – like an unknown contact of one room it is drawn as a
+# window, once (see the unknown-kind check at the end).
+DOOR_CLASSES = {"binary_sensor.bad_tuer": "door"}
+
+
 def test_proposal_is_deterministic_valid_and_honest() -> None:
-    first = auto.propose(ROOMS, ["ground_floor", "upper_floor"], {"flur": ["wohnen", "buero", "flur"]})
-    second = auto.propose(ROOMS, ["ground_floor", "upper_floor"], {"flur": ["wohnen", "buero", "flur"]})
+    first = auto.propose(ROOMS, ["ground_floor", "upper_floor"], {"flur": ["wohnen", "buero", "flur"]}, DOOR_CLASSES)
+    second = auto.propose(ROOMS, ["ground_floor", "upper_floor"], {"flur": ["wohnen", "buero", "flur"]}, DOOR_CLASSES)
     assert first == second
     layout = hl.normalise(first["layout"])
     assert hl.validate(layout, ["flur", "bad", "wohnen", "buero", "schlaf", "keller"]) == []
@@ -232,6 +239,10 @@ def test_proposal_is_deterministic_valid_and_honest() -> None:
     room = next(r for r in layout["rooms"] if r["id"] == "r_bad")
     assert wind.angle_between(hl.edge_bearing([tuple(p) for p in room["polygon"]], bad_window["edge"], 0.0), 315.0) <= 45.0
     assert layout["building"]["units"] == "m"
+    # the same shared contact with nothing saying what it is: no door and no connection – one window (in the bath)
+    unknown = hl.normalise(auto.propose(ROOMS, ["ground_floor", "upper_floor"], {"flur": ["wohnen", "buero", "flur"]})["layout"])
+    assert [(o["room_id"], o["kind"]) for o in unknown["openings"] if "binary_sensor.bad_tuer" in o["contacts"]] == [("r_bad", "window")]
+    assert not [c for c in unknown["connections"] if "binary_sensor.bad_tuer" in c.get("contacts", [])]
 
 
 def test_shelf_layout_without_connections_and_schematic_units() -> None:

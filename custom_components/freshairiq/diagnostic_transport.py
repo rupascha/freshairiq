@@ -84,7 +84,7 @@ _REMOTE_SAFE_MODEL_OPTIONS = {
     "moisture_source_postrun_min", "house_ventilation_enter_ratio",
     "house_ventilation_exit_ratio", "forecast_horizon_min",
     "max_temp_loss_next_5_min_c", "min_efficiency_ml_per_01c", "surface_factor",
-    "mould_warn_surface_rh", "mould_critical_surface_rh", "co2_warn",
+    "mould_slight_surface_rh", "mould_elevated_surface_rh", "mould_warn_surface_rh", "mould_critical_surface_rh", "co2_warn",
     "co2_critical", "voc_sensor_enabled", "pm25_sensor_enabled",
     "illuminance_sensor_enabled", "voc_warn", "voc_critical", "pm25_warn",
     "pm25_critical", "humidify_below_rh", "shade_above_temp_c",

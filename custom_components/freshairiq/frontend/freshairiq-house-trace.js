@@ -333,7 +333,7 @@ export const openingAt = (layout, floorId, p, maxDist = 0.6, kind = "window") =>
     offset = r3(Math.min(Math.max(at, stretch[0] + width / 2), stretch[1] - width / 2) / len);
   }
   const opening = { id: `o_${best.room.room_key}_${Date.now().toString(36)}`, room_id: best.room.id, edge: best.index, offset,
-    width_m: width, kind, mechanics: kind === "door" ? "door" : "unknown", contacts: [], provenance: "user" };
+    width_m: width, kind, mechanics: kind === "door" ? "door" : "unknown", contacts: [], provenance: "user", ...(INTERIOR_KINDS.has(kind) ? { interior: true } : {}) };
   if (INTERIOR_KINDS.has(kind) && !openingTarget(layout, best.room, opening)) return { error: "no_interior_wall" };
   return opening;
 };

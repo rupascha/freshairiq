@@ -125,6 +125,9 @@ class DashboardPayload:
             "outdoor_pm25_blocked": self.coordinator.data.get("outdoor_pm25_blocked", False),
             "outdoor_air_veto_cause": self.coordinator.data.get("outdoor_air_veto_cause"),
             "weather_now": self.coordinator.data.get("weather_now", {}),
+            # 0.26.6.0(7): outdoor readings for the house map's weather corner (additive)
+            "outdoor_temperature": self.coordinator.data.get("outdoor_temperature"),
+            "outdoor_humidity": self.coordinator.data.get("outdoor_humidity"),
             "wind_bearing": self.coordinator.data.get("wind_bearing"),
             "wind_speed": self.coordinator.data.get("wind_speed"),
             "last_ventilation": self.coordinator.data.get("last_ventilation"),

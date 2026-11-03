@@ -1,0 +1,9 @@
+{"rooms":[
+ {"id":"r_sz","room_key":"schlaf","floor_id":"f_eg","polygon":[[0,8.5],[4,8.5],[4,13],[0,13]]},
+ {"id":"r_kz","room_key":"kind","floor_id":"f_eg","polygon":[[4,10.5],[8,10.5],[8,13],[4,13]]},
+ {"id":"r_bz","room_key":"badz","floor_id":"f_eg","polygon":[[5,7.5],[8,7.5],[8,10.5],[5,10.5]]},
+ {"id":"r_az","room_key":"arbeit","floor_id":"f_eg","polygon":[[0,6],[4,6],[4,8.5],[0,8.5]]},
+ {"id":"r_fl","room_key":"flureg","floor_id":"f_eg","polygon":[[4,3.5],[8,3.5],[8,7.5],[5,7.5],[5,10.5],[4,10.5]]},
+ {"id":"r_wc","room_key":"wc","floor_id":"f_eg","polygon":[[6.8,3.5],[8,3.5],[8,4.7],[6.8,4.7]]},
+ {"id":"r_wk","room_key":"wohnkueche","floor_id":"f_eg","polygon":[[0,0],[8,0],[8,3.5],[4,3.5],[4,6],[0,6]]}
+]}

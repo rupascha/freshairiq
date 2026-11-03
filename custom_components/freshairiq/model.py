@@ -180,14 +180,15 @@ def scaled_min_return(min_return_ml: Any, volume_m3: Any) -> float:
     return max(base, 0.0) * min_return_volume_factor(volume_m3)
 
 
-def _mould_level(surface_rh: float, warn: float, critical: float) -> str:
+def _mould_level(surface_rh: float, warn: float, critical: float, slight: float = 60.0, elevated: float = 70.0) -> str:
+    """Mould risk level of the estimated surface humidity (four settable limits, checked from the top)."""
     if surface_rh >= critical:
         return "Very high"
     if surface_rh >= warn:
         return "High"
-    if surface_rh >= 70:
+    if surface_rh >= elevated:
         return "Elevated"
-    if surface_rh >= 60:
+    if surface_rh >= slight:
         return "Slightly elevated"
     return "Low"
 
@@ -569,7 +570,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         temp_next_5_min_c=round(dt, 1),
         efficiency_ml_per_01c=round(efficiency, 1),
         surface_rh=round(surf_rh),
-        mould_level=_mould_level(surf_rh, warn, critical),
+        mould_level=_mould_level(surf_rh, warn, critical, float(options.get("mould_slight_surface_rh", 60.0)), float(options.get("mould_elevated_surface_rh", 70.0))),
         learning_status=_learning_status(room.learning_samples),
         learning_samples=room.learning_samples,
         active=room.session_active,

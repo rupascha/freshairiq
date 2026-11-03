@@ -77,7 +77,7 @@ def static_gate(policy: dict) -> tuple[dict, list[str]]:
     node_checks: list[dict] = []
     node = shutil.which("node")
     if node:
-        for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js", "freshairiq-house-card.js", "freshairiq-house-editor.js", "freshairiq-house-geometry.js", "freshairiq-house-view.js", "freshairiq-house-trace.js"):
+        for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js", "freshairiq-house-card.js", "freshairiq-house-editor.js", "freshairiq-house-geometry.js", "freshairiq-house-view.js", "freshairiq-house-trace.js", "freshairiq-house-atmos.js", "freshairiq-house-flow.js", "freshairiq-house-flowlayer.js"):
             row = _run(f"frontend syntax: {name}", [node, "--check", f"custom_components/freshairiq/frontend/{name}"])
             node_checks.append(row)
             if row["returncode"] != 0:

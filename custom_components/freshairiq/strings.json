@@ -139,6 +139,7 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "covers": "Blind/shutter",
+          "contact_kind": "Kind of opening",
           "passage_door": "Passage door – pulled shut from outside after passing through",
           "cover_follow": "Open the cover when this window/door opens"
         },
@@ -148,6 +149,7 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
+          "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
           "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
           "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
         }
@@ -181,7 +183,7 @@
       "invalid_humidity_order": "Humidity values must be ordered logically: target ≤ ventilation start ≤ high humidity.",
       "invalid_delta_order": "Humidity differences are inconsistent: close difference ≤ high-humidity minimum difference ≤ normal minimum difference.",
       "invalid_duration_order": "Minimum ventilation duration must not exceed maximum duration.",
-      "invalid_mould_order": "The mould warning threshold must be lower than the critical mould threshold.",
+      "invalid_mould_order": "The four mould limits must rise: slightly elevated < elevated < warning (high) < critical (very high).",
       "invalid_co2_order": "The CO₂ warning threshold must be lower than the critical CO₂ threshold.",
       "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
       "outdoor_pair_required": "Outdoor temperature and outdoor humidity must be selected together or both left empty.",
@@ -330,6 +332,13 @@
         "co2": "CO₂ / air quality",
         "temperature": "Temperature comfort",
         "off": "Off"
+      }
+    },
+    "contact_kind": {
+      "options": {
+        "unknown": "Not stated",
+        "window": "Window",
+        "door": "Door"
       }
     },
     "cover_position_zero_means": {
@@ -652,14 +661,18 @@
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
               "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+              "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+              "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
               "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+              "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+              "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
             }
           }
         },
@@ -838,14 +851,18 @@
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
               "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+              "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+              "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
               "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+              "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+              "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
             }
           }
         }
@@ -1059,14 +1076,18 @@
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
               "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+              "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+              "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
               "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+              "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+              "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
             }
           }
         },
@@ -1245,14 +1266,18 @@
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
               "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+              "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+              "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
               "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+              "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+              "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
             }
           }
         }
@@ -1287,6 +1312,8 @@
           "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C)",
           "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C)",
           "surface_factor": "Estimated surface factor",
+          "mould_slight_surface_rh": "Mould risk \"slightly elevated\" from surface RH (%)",
+          "mould_elevated_surface_rh": "Mould risk \"elevated\" from surface RH (%)",
           "mould_warn_surface_rh": "Mould warning surface RH (%)",
           "mould_critical_surface_rh": "Critical mould surface RH (%)",
           "co2_warn": "CO₂ warning threshold (ppm)",
@@ -1320,6 +1347,8 @@
           "max_temp_loss_next_5_min_c": "Limits the additional temperature loss tolerated over the next five minutes.",
           "min_efficiency_ml_per_01c": "Evaluates how much moisture is removed per 0.1 °C of temperature loss.",
           "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
+          "mould_slight_surface_rh": "From this estimated surface humidity (not the room air humidity) the mould risk counts as slightly elevated. Default 60 %.",
+          "mould_elevated_surface_rh": "From this estimated surface humidity the mould risk counts as elevated. Default 70 %. The four limits must rise from \"slightly elevated\" to \"very high\".",
           "mould_warn_surface_rh": "Above this estimated surface humidity, FreshAirIQ reports elevated mould risk.",
           "mould_critical_surface_rh": "Above this estimated surface humidity, mould risk is considered critical.",
           "co2_warn": "Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available.",
@@ -1396,6 +1425,8 @@
             "description": "Limits for estimated surface humidity and CO₂ air quality.",
             "data": {
               "surface_factor": "Estimated surface factor",
+              "mould_slight_surface_rh": "Mould risk \"slightly elevated\" from surface RH (%)",
+              "mould_elevated_surface_rh": "Mould risk \"elevated\" from surface RH (%)",
               "mould_warn_surface_rh": "Mould warning surface RH (%)",
               "mould_critical_surface_rh": "Critical mould surface RH (%)",
               "co2_warn": "CO₂ warning threshold (ppm)",
@@ -1403,6 +1434,8 @@
             },
             "data_description": {
               "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
+              "mould_slight_surface_rh": "From this estimated surface humidity (not the room air humidity) the mould risk counts as slightly elevated. Default 60 %.",
+              "mould_elevated_surface_rh": "From this estimated surface humidity the mould risk counts as elevated. Default 70 %. The four limits must rise from \"slightly elevated\" to \"very high\".",
               "mould_warn_surface_rh": "Above this estimated surface humidity, FreshAirIQ reports elevated mould risk.",
               "mould_critical_surface_rh": "Above this estimated surface humidity, mould risk is considered critical.",
               "co2_warn": "Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available.",
@@ -1490,6 +1523,8 @@
             "description": "Limits for estimated surface humidity and CO₂ air quality.",
             "data": {
               "surface_factor": "Estimated surface factor",
+              "mould_slight_surface_rh": "Mould risk \"slightly elevated\" from surface RH (%)",
+              "mould_elevated_surface_rh": "Mould risk \"elevated\" from surface RH (%)",
               "mould_warn_surface_rh": "Mould warning surface RH (%)",
               "mould_critical_surface_rh": "Critical mould surface RH (%)",
               "co2_warn": "CO₂ warning threshold (ppm)",
@@ -1497,6 +1532,8 @@
             },
             "data_description": {
               "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
+              "mould_slight_surface_rh": "From this estimated surface humidity (not the room air humidity) the mould risk counts as slightly elevated. Default 60 %.",
+              "mould_elevated_surface_rh": "From this estimated surface humidity the mould risk counts as elevated. Default 70 %. The four limits must rise from \"slightly elevated\" to \"very high\".",
               "mould_warn_surface_rh": "Above this estimated surface humidity, FreshAirIQ reports elevated mould risk.",
               "mould_critical_surface_rh": "Above this estimated surface humidity, mould risk is considered critical.",
               "co2_warn": "Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available.",
@@ -2067,6 +2104,7 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "covers": "Blind/shutter",
+          "contact_kind": "Kind of opening",
           "passage_door": "Passage door – pulled shut from outside after passing through",
           "cover_position_zero_means": "Blind/shutter position logic",
           "wizard_back": "← Back to previous page",
@@ -2078,6 +2116,7 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
+          "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
           "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
           "cover_position_zero_means": "Choose whether 0% means fully closed or fully open. This setting applies to blinds/shutters assigned to this room.",
           "wizard_back": "Enable and confirm with OK to go back without changing this page.",
@@ -2600,14 +2639,18 @@
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
               "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+              "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+              "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
               "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+              "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+              "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
             }
           }
         },
@@ -2786,14 +2829,18 @@
               "exhaust_fan_control": "Switch the exhaust fan automatically",
               "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
               "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-              "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+              "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+              "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+              "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
               "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
               "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
               "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+              "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+              "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+              "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
             }
           }
         }
@@ -2930,7 +2977,7 @@
       "invalid_humidity_order": "Humidity values must be ordered logically: target ≤ ventilation start ≤ high humidity.",
       "invalid_delta_order": "Humidity differences are inconsistent: close difference ≤ high-humidity minimum difference ≤ normal minimum difference.",
       "invalid_duration_order": "Minimum ventilation duration must not exceed maximum duration.",
-      "invalid_mould_order": "The mould warning threshold must be lower than the critical mould threshold.",
+      "invalid_mould_order": "The four mould limits must rise: slightly elevated < elevated < warning (high) < critical (very high).",
       "invalid_co2_order": "The CO₂ warning threshold must be lower than the critical CO₂ threshold.",
       "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
       "outdoor_pair_required": "Outdoor temperature and outdoor humidity must be selected together or both left empty.",
@@ -3522,14 +3569,18 @@
                 "exhaust_fan_control": "Switch the exhaust fan automatically",
                 "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
                 "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-                "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+                "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+                "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+                "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
                 "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
                 "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
                 "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+                "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+                "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
               }
             }
           },
@@ -3591,6 +3642,7 @@
             "delay_seconds": "Opening delay",
             "orientation": "Compass orientation",
             "covers": "Blind/shutter",
+            "contact_kind": "Kind of opening",
             "passage_door": "Door is used as a passage and pulled shut from outside",
             "wizard_back": "← Back to previous page",
             "cover_follow": "Open the cover when this window/door opens"
@@ -3601,6 +3653,7 @@
             "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
             "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
             "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
+            "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
             "passage_door": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample.",
             "wizard_back": "Tick and press OK to return to the previous page. Entries on this page are not saved.",
             "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
@@ -3615,6 +3668,7 @@
             "delay_seconds": "Opening delay",
             "orientation": "Compass orientation",
             "covers": "Blind/shutter",
+            "contact_kind": "Kind of opening",
             "passage_door": "Passage door – pulled shut from outside after passing through",
             "cover_follow": "Open the cover when this window/door opens"
           },
@@ -3624,6 +3678,7 @@
             "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
             "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
             "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
+            "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
             "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
             "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
           }
@@ -3852,14 +3907,18 @@
                 "exhaust_fan_control": "Switch the exhaust fan automatically",
                 "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
                 "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-                "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+                "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+                "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+                "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
                 "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
                 "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
                 "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+                "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+                "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
               }
             }
           },
@@ -4106,14 +4165,18 @@
                 "exhaust_fan_control": "Switch the exhaust fan automatically",
                 "exhaust_fan_follow_up_min": "Exhaust fan follow-up time",
                 "exhaust_fan_max_runtime_min": "Exhaust fan maximum runtime",
-                "exhaust_fan_external_lock": "Other automation controls the fan (optional)"
+                "exhaust_fan_external_lock": "Other automation controls the fan (optional)",
+                "exhaust_fan_block_start": "Exhaust fan lock period – start (optional)",
+                "exhaust_fan_block_end": "Exhaust fan lock period – end (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Only in the \"summer cooling\" mode: covers of windows the sun is about to shine on close ahead of it (lead time in the settings) when a warm day is expected and the sky is not densely clouded, and open again once the sun has left these windows. A cover of a passage door never closes while that door is open.",
                 "exhaust_fan_control": "After a moisture source: on while a shower, cooking … is detected, off after the follow-up time. Following the recommendation: on while FreshAirIQ recommends airing and no window is open. FreshAirIQ only switches off a fan it switched on itself; if you switch it off, it stays off until the reason has ended.",
                 "exhaust_fan_follow_up_min": "How long the fan keeps running after the moisture source has ended.",
                 "exhaust_fan_max_runtime_min": "The fan is switched off after this time at the latest.",
-                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off."
+                "exhaust_fan_external_lock": "A switch, helper or timer of another automation (e.g. Alexa after the dryer). While it is on, FreshAirIQ leaves the fans to it and never switches them off.",
+                "exhaust_fan_block_start": "In this time (e.g. 22:00–07:00) FreshAirIQ does not switch the exhaust fan on and switches off a fan it switched on. Leave both empty = no lock period.",
+                "exhaust_fan_block_end": "End of the lock period; afterwards FreshAirIQ controls as usual again. May span midnight."
               }
             }
           },

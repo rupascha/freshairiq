@@ -1,0 +1,222 @@
+{
+ "note": "Hotfix after review (F03): the join fixture with the kitchen and the hall drawn clockwise – fitted with G.joinRooms (shared with pytest)",
+ "layout": {
+  "schema_version": 1,
+  "revision": 1,
+  "building": {
+   "north_deg": 0,
+   "units": "m",
+   "north_confirmed": true
+  },
+  "floors": [
+   {
+    "id": "f_eg",
+    "name": "",
+    "level_key": "ground_floor",
+    "order": 0
+   }
+  ],
+  "rooms": [
+   {
+    "id": "r_wohn",
+    "room_key": "wohnen",
+    "floor_id": "f_eg",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      5,
+      0
+     ],
+     [
+      5,
+      4
+     ],
+     [
+      0,
+      4
+     ]
+    ],
+    "locked_walls": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "provenance": "user"
+   },
+   {
+    "id": "r_kueche",
+    "room_key": "kueche",
+    "floor_id": "f_eg",
+    "polygon": [
+     [
+      5.14,
+      0.06
+     ],
+     [
+      5.14,
+      3.98
+     ],
+     [
+      8.12,
+      3.98
+     ],
+     [
+      8.12,
+      0.06
+     ]
+    ],
+    "locked_walls": [
+     2,
+     3
+    ],
+    "provenance": "user"
+   },
+   {
+    "id": "r_flur",
+    "room_key": "flur",
+    "floor_id": "f_eg",
+    "polygon": [
+     [
+      -0.03,
+      4.18
+     ],
+     [
+      -0.03,
+      6.2
+     ],
+     [
+      8.1,
+      6.2
+     ],
+     [
+      8.1,
+      4.18
+     ]
+    ],
+    "locked_walls": [
+     3
+    ],
+    "provenance": "user"
+   }
+  ],
+  "openings": [
+   {
+    "id": "d_wk",
+    "room_id": "r_wohn",
+    "edge": 1,
+    "offset": 0.5,
+    "width_m": 0.9,
+    "kind": "door",
+    "mechanics": "door",
+    "contacts": []
+   },
+   {
+    "id": "w_k",
+    "room_id": "r_kueche",
+    "edge": 2,
+    "offset": 0.5,
+    "width_m": 1,
+    "kind": "window",
+    "mechanics": "unknown",
+    "contacts": []
+   }
+  ],
+  "connections": [],
+  "shading": []
+ },
+ "joined": {
+  "r_wohn": [
+   [
+    0,
+    0
+   ],
+   [
+    5,
+    0
+   ],
+   [
+    5,
+    4
+   ],
+   [
+    0,
+    4
+   ]
+  ],
+  "r_kueche": [
+   [
+    5,
+    0.08
+   ],
+   [
+    5,
+    4
+   ],
+   [
+    7.98,
+    4
+   ],
+   [
+    7.98,
+    0.08
+   ]
+  ],
+  "r_flur": [
+   [
+    -0.086,
+    4
+   ],
+   [
+    -0.086,
+    6.02
+   ],
+   [
+    8.044,
+    6.02
+   ],
+   [
+    8.044,
+    4
+   ]
+  ]
+ },
+ "matches": [
+  {
+   "a": "r_wohn",
+   "b": "r_kueche",
+   "wall_a": 1,
+   "wall_b": 0,
+   "gap": 0.14
+  },
+  {
+   "a": "r_wohn",
+   "b": "r_flur",
+   "wall_a": 2,
+   "wall_b": 3,
+   "gap": 0.18
+  },
+  {
+   "a": "r_kueche",
+   "b": "r_flur",
+   "wall_a": 1,
+   "wall_b": 3,
+   "gap": 0.2
+  }
+ ],
+ "conflicts": [
+  {
+   "code": "length_differs",
+   "a": "r_wohn",
+   "b": "r_kueche",
+   "wall_a": 1,
+   "wall_b": 0,
+   "length_a": 4,
+   "length_b": 3.92,
+   "info": true
+  }
+ ]
+}

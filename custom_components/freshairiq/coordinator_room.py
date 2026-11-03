@@ -10,6 +10,7 @@ from .const import (
     CONF_CONTACT_COVERS,
     CONF_CONTACT_DELAYS,
     CONF_CONTACT_MODE,
+    CONF_CONTACT_KINDS,
     CONF_CONTACT_ORIENTATIONS,
     CONF_CONTACT_REFERENCE_HUMIDITIES,
     CONF_CONTACT_REFERENCE_TEMPERATURES,
@@ -472,6 +473,8 @@ class RoomEvaluationMixin:
             "contact_entities": _contact_ids(cfg),
             "contact_delays": dict(cfg.get(CONF_CONTACT_DELAYS, {})),
             "contact_orientations": dict(cfg.get(CONF_CONTACT_ORIENTATIONS, {})),
+            # 0.26.5.5: window/door per contact – only when stated (older setups: no field, no assumption)
+            **({"contact_kinds": dict(cfg[CONF_CONTACT_KINDS])} if cfg.get(CONF_CONTACT_KINDS) else {}),
             "contact_reference_temperatures": dict(cfg.get(CONF_CONTACT_REFERENCE_TEMPERATURES, {})),
             "contact_reference_humidities": dict(cfg.get(CONF_CONTACT_REFERENCE_HUMIDITIES, {})),
             "moisture_sources": list(cfg.get(CONF_ROOM_MOISTURE_SOURCES, [])),

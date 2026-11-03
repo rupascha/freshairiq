@@ -42,6 +42,10 @@ DEFAULT_FAN_MAX_RUNTIME_MIN = 60
 # being switched off, a manual switch-off or moisture coming in.
 FAN_OFF_CONFIRM_S = 30.0
 FAN_COMMAND_TIMEOUT_S = 60.0
+# Hotfix 0.26.6.0: a switch-off at the start of a lock period that failed is tried again after this time,
+# at most FAN_BLOCK_ATTEMPTS times in all (no endless retries); the room keeps its ownership until then.
+FAN_BLOCK_RETRY_S = 600.0
+FAN_BLOCK_ATTEMPTS = 3
 
 COVER_OPEN = "open"
 COVER_CLOSE = "close"
@@ -376,3 +380,27 @@ def _fan_command(mem: dict[str, Any], command: str, now: datetime, reason: str) 
         mem.pop("off_pending_since", None)
     mem.update(command=command, command_at=now.isoformat(), command_state="pending", reason=reason)
     return command
+
+
+def clock_minutes(value: Any) -> int | None:
+    """0.26.5.5: "HH:MM" or "HH:MM:SS" (Home Assistant time selector) as minutes of the day, else None."""
+    if not isinstance(value, str) or ":" not in value:
+        return None
+    try:
+        hour, minute = (int(part) for part in value.split(":")[:2])
+    except ValueError:
+        return None
+    return hour * 60 + minute if 0 <= hour < 24 and 0 <= minute < 60 else None
+
+
+def fan_block_active(start: Any, end: Any, now: datetime) -> bool:
+    """0.26.5.5: the room's fan lock period is running at the local wall-clock time of ``now``.
+
+    Off unless both times are set and differ; a period over midnight (22:00–07:00) is supported.
+    The wall clock is used, so summer/winter time changes need nothing extra.
+    """
+    first, last = clock_minutes(start), clock_minutes(end)
+    if first is None or last is None or first == last:
+        return False
+    minute = now.hour * 60 + now.minute
+    return first <= minute < last if first < last else (minute >= first or minute < last)

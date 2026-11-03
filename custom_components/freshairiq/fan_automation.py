@@ -26,8 +26,9 @@ FAN_ON_RECOMMENDATIONS = frozenset({"ventilate", "continue_ventilating", "ventil
 # the close is already carried out, no "switch off the fan" for the user.
 # 0.26.5.5: "shared" – the fan runs for another room's control (FreshAirIQ switches it, not the user);
 # "external" – another automation (Alexa, washing machine …) controls it: no request to the user either.
-AUTO_STOP_STATES = frozenset({"stopping", "follow_up", "source", "completed", "shared", "external"})
-AUTO_START_STATES = frozenset({"recommended", "requested", "running", "waiting", "partial", "shared", "external"})
+# 0.26.5.5: "blocked_time" – the room's lock period: FreshAirIQ keeps the fan off on purpose, no request either way.
+AUTO_STOP_STATES = frozenset({"stopping", "follow_up", "source", "completed", "shared", "external", "blocked_time"})
+AUTO_START_STATES = frozenset({"recommended", "requested", "running", "waiting", "partial", "shared", "external", "blocked_time"})
 
 _LABELS = {
     "recommended": "Automatische Lüftung empfohlen – Ablüfter wird automatisch eingeschaltet",
@@ -46,6 +47,7 @@ _LABELS = {
     "shared_for": "Gemeinsamer Ablüfter läuft für einen anderen Raum weiter – FreshAirIQ schaltet ihn danach aus",
     "shared_owner": "Gemeinsamer Ablüfter läuft – FreshAirIQ steuert ihn über einen anderen Raum",
     "external": "Ablüfter wird gerade von einer anderen Automation gesteuert – FreshAirIQ schaltet ihn nicht aus",
+    "block_time": "Ablüfter wegen eingestellter Sperrzeit ausgeschaltet",
 }
 COMPLETED_LABEL = _LABELS["completed"]
 _LABELS_EN = {
@@ -64,6 +66,7 @@ _LABELS_EN = {
     "shared_for": "Shared exhaust fan keeps running for another room – FreshAirIQ switches it off afterwards",
     "shared_owner": "Shared exhaust fan running – FreshAirIQ controls it through another room",
     "external": "The exhaust fan is controlled by another automation right now – FreshAirIQ does not switch it off",
+    "block_time": "Exhaust fan switched off because of the set lock period",
 }
 
 
@@ -132,6 +135,11 @@ def _group(snap: dict[str, Any]) -> dict[str, Any]:
 def _state(mode, fan_on, owned, aligned, room, snap, command, command_state) -> tuple[str, str | None]:
     if snap.get("external_lock"):
         return "external", "external"
+    # 0.26.5.5: lock period – off (or FreshAirIQ's own switch-off on its way); a fan switched on by hand stays the user's
+    if snap.get("block_time") and fan_on and command == "off" and command_state == "failed":
+        return "failed", "failed_off"  # hotfix 0.26.6.0: the switch-off at the lock period did not arrive – never "stopping"
+    if snap.get("block_time") and (not fan_on or command == "off"):
+        return ("blocked_time" if not fan_on else "stopping"), "block_time"
     failed = snap.get("own_off") == "failed" or (command_state == "failed" and ((command == "on" and not fan_on) or (command == "off" and fan_on)))
     shared = None if failed else _shared_state(fan_on, owned, aligned, room, snap)
     return shared if shared is not None else _own_state(mode, fan_on, owned, aligned, room, snap, command, command_state)

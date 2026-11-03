@@ -53,6 +53,38 @@ Die Begründung bleibt sichtbar: Schwellenwerte, erwarteter Nettoeffekt, gelernt
 
 ---
 
+## Hauskarte – dein Zuhause auf einen Blick (optional)
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_cross_ventilation_de.png" alt="Hauskarte: Querlüftung durchs Haus (Demo-Render)" width="620">
+</p>
+
+Eine **zusätzliche** Karte, `custom:freshairiq-house-card`, zeichnet deine FreshAirIQ-Räume auf deinen eigenen Grundriss. Sie ergänzt die Dashboard-Karte – Entities, Empfehlungen, Meldungen und Automationen bleiben genau, wie sie sind.
+
+| | |
+| --- | --- |
+| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_sunny_de.png" alt="Sonniger Tag auf der Hauskarte" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_strong_wind_de.png" alt="Starker Wind ums Haus" width="300"> |
+| **Sonne und Wetter** – die Sonne steht dort, wo `sun.sun` sie meldet, gedreht nach der Nordrichtung deines Plans | **Wind** – ein modelliertes Windfeld ums Haus, ruhig bis stürmisch, mit Böen |
+| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_airing_de.png" alt="Aktives Lüften im Bad" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_editor_90_locks_de.png" alt="Editor mit Längen, Winkeln, 90° und Sperren" width="300"> |
+| **Aktives Lüften** – Frischluft am offenen Fenster, entfernbare Feuchte und Restzeit | **Editor** – Wand für Wand, 90°-Ecken, gesperrte Längen und Winkel |
+
+- Jeder Raum zeigt seinen Zustand: warten, jetzt lüften, weiterlüften, schließen – die Begründung einen Tipp entfernt.
+- Ehrliche Fenster- und Türzustände (offen, gekippt, geschlossen, Verzögerung) und vermutete Luftwege durch offene Türen; fehlen Daten, wird nichts erfunden.
+- Einzeln ausgemessene Räume lassen sich **zusammenfügen** – erst Vorschau, nichts wird skaliert, gesperrte Maße haben Vorrang:
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_before_de.png" alt="Räume vor dem Zusammenfügen" width="300">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_after_de.png" alt="Räume nach dem Zusammenfügen" width="300">
+</p>
+
+- Grundrissvorschlag aus deinen FreshAirIQ-Räumen, Grundriss-Vorlage (Bild hochladen, Räume antippen), Etagen als Buttons, lesbare Etagennamen.
+
+Anleitung: **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)** · English: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)**
+
+<sub>Bilder: aus dem Kartencode dieses Releases mit Demodaten gerendert (Demo-Räume, keine echte Installation).</sub>
+
+---
+
 ## Was FreshAirIQ besonders macht
 
 | Funktion | Was FreshAirIQ daraus macht |

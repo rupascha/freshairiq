@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.5.5"
+VERSION = "0.26.6.0"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -78,6 +78,9 @@ CONF_ROOM_ILLUMINANCE = "illuminance"
 CONF_ROOM_COVERS = "covers"  # legacy room-wide fallback; new UI assigns covers per opening
 CONF_CONTACT_COVERS = "contact_covers"
 CONF_CONTACT_PASSAGE_DOORS = "contact_passage_doors"
+# 0.26.5.5: what each contact is on – "window" or "door"; missing = not stated (old setups: no assumption)
+CONF_CONTACT_KINDS = "contact_kinds"
+CONTACT_KINDS = ["unknown", "window", "door"]
 # 0.26.5.3: optional automatic control (off unless the user enables it)
 CONF_CONTACT_COVER_FOLLOW = "contact_cover_follow"
 CONF_ROOM_AUTO_SUN_PROTECTION = "auto_sun_protection"
@@ -87,6 +90,9 @@ CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME = "exhaust_fan_max_runtime_min"
 # 0.26.5.5: optional switch/timer of another automation (Alexa, washing machine …) – while it is on,
 # FreshAirIQ leaves the room's fans to it and never switches them off.
 CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK = "exhaust_fan_external_lock"
+# 0.26.5.5: optional lock period of the automatic fan control (e.g. 22:00–07:00); off without both times
+CONF_ROOM_EXHAUST_FAN_BLOCK_START = "exhaust_fan_block_start"
+CONF_ROOM_EXHAUST_FAN_BLOCK_END = "exhaust_fan_block_end"
 THREE_STATE_TRANSITION_STABLE_SECONDS = 3.0
 THREE_STATE_UNKNOWN_HOLD_SECONDS = 30.0
 # 0.26.5.3: an unavailable/missing contact keeps a running airing open only this
@@ -200,6 +206,8 @@ DEFAULT_OPTIONS = {
     "max_temp_loss_next_5_min_c": 0.6,
     "min_efficiency_ml_per_01c": 8.0,
     "surface_factor": 0.25,
+    "mould_slight_surface_rh": 60.0,  # 0.26.6.0(7): all four mould risk limits are settings
+    "mould_elevated_surface_rh": 70.0,
     "mould_warn_surface_rh": 80.0,
     "mould_critical_surface_rh": 90.0,
     "co2_warn": 1000.0,

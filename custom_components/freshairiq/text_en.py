@@ -348,6 +348,7 @@ EXACT: dict[str, str] = {
     'Jetzt passt der Zeitpunkt zum Lüften.': 'Now is the right time to ventilate.',
     'Jetzt querlüften': 'Cross-ventilate now',
     'Jetzt schließen': 'Close now',
+    'Ablüfter wegen eingestellter Sperrzeit ausgeschaltet': 'Exhaust fan switched off because of the set lock period',
     'Einzelne Räume schließen': 'Close single rooms',
     'Ein Raum hat sein eigenes Schließkriterium erreicht; die übrigen geöffneten Räume lüften weiter.': 'One room has reached its own close criterion; the other open rooms keep airing.',
     'Jetzt schließen – der Zusatznutzen wird klein': 'Close now – the extra benefit is getting small',

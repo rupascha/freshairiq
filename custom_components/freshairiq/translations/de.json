@@ -139,6 +139,7 @@
           "delay_seconds": "Öffnungsverzögerung",
           "orientation": "Himmelsrichtung",
           "covers": "Rollo/Jalousie",
+          "contact_kind": "Art der Öffnung",
           "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
           "cover_follow": "Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird"
         },
@@ -148,6 +149,7 @@
           "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
+          "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
           "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
           "cover_follow": "FreshAirIQ steuert dann die oben gewählten Rollos: Wird das Fenster bzw. die Tür geöffnet (auch gekippt), fahren sie ganz hoch; wird es wieder geschlossen, fahren sie in die vorherige Position zurück – außer jemand hat sie zwischendurch bewegt. Bei einer Durchgangstür schließt das Rollo nie, solange die Tür offen ist; ein Schließen durch andere wird gestoppt und das Rollo wieder geöffnet."
         }
@@ -181,7 +183,7 @@
       "invalid_humidity_order": "Die Feuchtewerte müssen logisch aufeinander folgen: Zielwert ≤ Lüftungsstartwert ≤ hohe Luftfeuchte.",
       "invalid_delta_order": "Die Feuchtedifferenzen sind widersprüchlich: Schließ-Differenz ≤ Mindestdifferenz bei hoher Feuchte ≤ normale Mindestdifferenz.",
       "invalid_duration_order": "Die Mindestdauer darf nicht größer als die Maximaldauer sein.",
-      "invalid_mould_order": "Die Schimmelwarnschwelle muss niedriger als die kritische Schimmelschwelle sein.",
+      "invalid_mould_order": "Die vier Schimmelgrenzen müssen aufsteigen: leicht erhöht < erhöht < Warnung (hoch) < kritisch (sehr hoch).",
       "invalid_co2_order": "Die CO₂-Warnschwelle muss niedriger als die kritische CO₂-Schwelle sein.",
       "contact_reference_pair_required": "Für eine abweichende Fenster-/Tür-Referenz müssen Temperatur und Luftfeuchtigkeit gemeinsam aus demselben Luftbereich gewählt werden.",
       "outdoor_pair_required": "Außen-Temperatur und Außen-Luftfeuchtigkeit müssen gemeinsam ausgewählt oder beide leer gelassen werden.",
@@ -330,6 +332,13 @@
         "co2": "CO₂ / Luftqualität",
         "temperature": "Temperaturkomfort",
         "off": "Aus"
+      }
+    },
+    "contact_kind": {
+      "options": {
+        "unknown": "Nicht angegeben",
+        "window": "Fenster",
+        "door": "Tür"
       }
     },
     "cover_position_zero_means": {
@@ -694,14 +703,18 @@
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
               "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+              "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+              "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
               "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+              "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+              "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
             }
           }
         },
@@ -838,14 +851,18 @@
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
               "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+              "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+              "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
               "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+              "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+              "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
             }
           }
         }
@@ -1101,14 +1118,18 @@
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
               "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+              "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+              "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
               "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+              "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+              "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
             }
           }
         },
@@ -1245,14 +1266,18 @@
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
               "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+              "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+              "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
               "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+              "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+              "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
             }
           }
         }
@@ -1292,6 +1317,8 @@
           "max_temp_loss_next_5_min_c": "Maximaler Temperaturverlust in 5 Minuten",
           "min_efficiency_ml_per_01c": "Minimale Feuchte-/Temperatur-Effizienz",
           "surface_factor": "Oberflächenfaktor",
+          "mould_slight_surface_rh": "Schimmelrisiko „leicht erhöht“ ab Oberflächen-RH (%)",
+          "mould_elevated_surface_rh": "Schimmelrisiko „erhöht“ ab Oberflächen-RH (%)",
           "mould_warn_surface_rh": "Schimmelwarnung Oberflächen-RH",
           "mould_critical_surface_rh": "Schimmel kritisch Oberflächen-RH",
           "co2_warn": "CO₂-Warnschwelle",
@@ -1320,6 +1347,8 @@
           "max_temp_loss_next_5_min_c": "Begrenzt den zusätzlich tolerierten Temperaturverlust der nächsten fünf Minuten.",
           "min_efficiency_ml_per_01c": "Bewertet, wie viel Feuchte pro 0,1 °C Temperaturverlust entfernt wird.",
           "surface_factor": "Näherungsfaktor für kältere Innenoberflächen. Niedrigere Werte bedeuten stärkere angenommene Abkühlung Richtung Außentemperatur.",
+          "mould_slight_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte (nicht Raumluftfeuchte) gilt das Schimmelrisiko als leicht erhöht. Standard 60 %.",
+          "mould_elevated_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als erhöht. Standard 70 %. Die vier Grenzen müssen von „leicht erhöht“ bis „sehr hoch“ aufsteigen.",
           "mould_warn_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte meldet FreshAirIQ erhöhtes Schimmelrisiko.",
           "mould_critical_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als kritisch.",
           "co2_warn": "Ab diesem CO₂-Wert steigt die Lüftungspriorität, sofern ein CO₂-Sensor vorhanden ist.",
@@ -1396,6 +1425,8 @@
             "description": "Grenzen für geschätzte Oberflächenfeuchte und CO₂-Luftqualität.",
             "data": {
               "surface_factor": "Oberflächenfaktor",
+              "mould_slight_surface_rh": "Schimmelrisiko „leicht erhöht“ ab Oberflächen-RH (%)",
+              "mould_elevated_surface_rh": "Schimmelrisiko „erhöht“ ab Oberflächen-RH (%)",
               "mould_warn_surface_rh": "Schimmelwarnung Oberflächen-RH",
               "mould_critical_surface_rh": "Schimmel kritisch Oberflächen-RH",
               "co2_warn": "CO₂-Warnschwelle",
@@ -1403,6 +1434,8 @@
             },
             "data_description": {
               "surface_factor": "Näherungsfaktor für kältere Innenoberflächen. Niedrigere Werte bedeuten stärkere angenommene Abkühlung Richtung Außentemperatur.",
+              "mould_slight_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte (nicht Raumluftfeuchte) gilt das Schimmelrisiko als leicht erhöht. Standard 60 %.",
+              "mould_elevated_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als erhöht. Standard 70 %. Die vier Grenzen müssen von „leicht erhöht“ bis „sehr hoch“ aufsteigen.",
               "mould_warn_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte meldet FreshAirIQ erhöhtes Schimmelrisiko.",
               "mould_critical_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als kritisch.",
               "co2_warn": "Ab diesem CO₂-Wert steigt die Lüftungspriorität, sofern ein CO₂-Sensor vorhanden ist.",
@@ -1490,6 +1523,8 @@
             "description": "Grenzen für geschätzte Oberflächenfeuchte und CO₂-Luftqualität.",
             "data": {
               "surface_factor": "Oberflächenfaktor",
+              "mould_slight_surface_rh": "Schimmelrisiko „leicht erhöht“ ab Oberflächen-RH (%)",
+              "mould_elevated_surface_rh": "Schimmelrisiko „erhöht“ ab Oberflächen-RH (%)",
               "mould_warn_surface_rh": "Schimmelwarnung Oberflächen-RH",
               "mould_critical_surface_rh": "Schimmel kritisch Oberflächen-RH",
               "co2_warn": "CO₂-Warnschwelle",
@@ -1497,6 +1532,8 @@
             },
             "data_description": {
               "surface_factor": "Näherungsfaktor für kältere Innenoberflächen. Niedrigere Werte bedeuten stärkere angenommene Abkühlung Richtung Außentemperatur.",
+              "mould_slight_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte (nicht Raumluftfeuchte) gilt das Schimmelrisiko als leicht erhöht. Standard 60 %.",
+              "mould_elevated_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als erhöht. Standard 70 %. Die vier Grenzen müssen von „leicht erhöht“ bis „sehr hoch“ aufsteigen.",
               "mould_warn_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte meldet FreshAirIQ erhöhtes Schimmelrisiko.",
               "mould_critical_surface_rh": "Ab dieser geschätzten Oberflächenfeuchte gilt das Schimmelrisiko als kritisch.",
               "co2_warn": "Ab diesem CO₂-Wert steigt die Lüftungspriorität, sofern ein CO₂-Sensor vorhanden ist.",
@@ -2067,6 +2104,7 @@
           "delay_seconds": "Öffnungsverzögerung",
           "orientation": "Himmelsrichtung",
           "covers": "Rollo/Jalousie",
+          "contact_kind": "Art der Öffnung",
           "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
           "cover_position_zero_means": "Rollo-Positionslogik",
           "wizard_back": "← Zurück zur vorherigen Seite",
@@ -2078,6 +2116,7 @@
           "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
+          "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
           "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
           "cover_position_zero_means": "Lege fest, ob 0 % vollständig geschlossen oder vollständig geöffnet bedeutet. Diese Einstellung gilt für die diesem Raum zugeordneten Rollos/Jalousien.",
           "wizard_back": "Aktivieren und mit OK bestätigen, um ohne Änderung dieser Seite zurückzugehen.",
@@ -2642,14 +2681,18 @@
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
               "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+              "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+              "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
               "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+              "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+              "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
             }
           }
         },
@@ -2786,14 +2829,18 @@
               "exhaust_fan_control": "Ablüfter automatisch schalten",
               "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
               "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+              "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+              "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+              "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
             },
             "data_description": {
               "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
               "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
               "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
               "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+              "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+              "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+              "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
             }
           }
         }
@@ -2930,7 +2977,7 @@
       "invalid_humidity_order": "Die Feuchtewerte müssen logisch aufeinander folgen: Zielwert ≤ Lüftungsstartwert ≤ hohe Luftfeuchte.",
       "invalid_delta_order": "Die Feuchtedifferenzen sind widersprüchlich: Schließ-Differenz ≤ Mindestdifferenz bei hoher Feuchte ≤ normale Mindestdifferenz.",
       "invalid_duration_order": "Die Mindestdauer darf nicht größer als die Maximaldauer sein.",
-      "invalid_mould_order": "Die Schimmelwarnschwelle muss niedriger als die kritische Schimmelschwelle sein.",
+      "invalid_mould_order": "Die vier Schimmelgrenzen müssen aufsteigen: leicht erhöht < erhöht < Warnung (hoch) < kritisch (sehr hoch).",
       "invalid_co2_order": "Die CO₂-Warnschwelle muss niedriger als die kritische CO₂-Schwelle sein.",
       "contact_reference_pair_required": "Für eine abweichende Fenster-/Tür-Referenz müssen Temperatur und Luftfeuchtigkeit gemeinsam aus demselben Luftbereich gewählt werden.",
       "outdoor_pair_required": "Außen-Temperatur und Außen-Luftfeuchtigkeit müssen gemeinsam ausgewählt oder beide leer gelassen werden.",
@@ -3522,14 +3569,18 @@
                 "exhaust_fan_control": "Ablüfter automatisch schalten",
                 "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
                 "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+                "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+                "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
                 "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
                 "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
                 "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+                "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+                "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
               }
             }
           },
@@ -3591,6 +3642,7 @@
             "delay_seconds": "Öffnungsverzögerung",
             "orientation": "Himmelsrichtung",
             "covers": "Rollo/Jalousie",
+            "contact_kind": "Art der Öffnung",
             "passage_door": "Tür wird als Durchgang genutzt und von außen zugezogen",
             "wizard_back": "← Zurück zur vorherigen Seite",
             "cover_follow": "Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird"
@@ -3601,6 +3653,7 @@
             "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
             "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
             "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
+            "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
             "passage_door": "Nur aktivieren, wenn ein echter Drei-Zustands-Sensor am Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Diese Option ist für Türen gedacht, die als Durchgang genutzt und anschließend von außen nur zugezogen werden, während der Sensor weiterhin „offen“ meldet. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden. FreshAirIQ schützt dadurch das Lernmodell vor einer falschen Open-Lernprobe.",
             "wizard_back": "Anhaken und OK drücken, um zur vorherigen Seite zurückzukehren. Eingaben dieser Seite werden dabei nicht gespeichert.",
             "cover_follow": "FreshAirIQ steuert dann die oben gewählten Rollos: Wird das Fenster bzw. die Tür geöffnet (auch gekippt), fahren sie ganz hoch; wird es wieder geschlossen, fahren sie in die vorherige Position zurück – außer jemand hat sie zwischendurch bewegt. Bei einer Durchgangstür schließt das Rollo nie, solange die Tür offen ist; ein Schließen durch andere wird gestoppt und das Rollo wieder geöffnet."
@@ -3615,6 +3668,7 @@
             "delay_seconds": "Öffnungsverzögerung",
             "orientation": "Himmelsrichtung",
             "covers": "Rollo/Jalousie",
+            "contact_kind": "Art der Öffnung",
             "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
             "cover_follow": "Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird"
           },
@@ -3624,6 +3678,7 @@
             "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
             "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
             "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
+            "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
             "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
             "cover_follow": "FreshAirIQ steuert dann die oben gewählten Rollos: Wird das Fenster bzw. die Tür geöffnet (auch gekippt), fahren sie ganz hoch; wird es wieder geschlossen, fahren sie in die vorherige Position zurück – außer jemand hat sie zwischendurch bewegt. Bei einer Durchgangstür schließt das Rollo nie, solange die Tür offen ist; ein Schließen durch andere wird gestoppt und das Rollo wieder geöffnet."
           }
@@ -3852,14 +3907,18 @@
                 "exhaust_fan_control": "Ablüfter automatisch schalten",
                 "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
                 "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+                "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+                "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
                 "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
                 "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
                 "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+                "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+                "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
               }
             }
           },
@@ -4106,14 +4165,18 @@
                 "exhaust_fan_control": "Ablüfter automatisch schalten",
                 "exhaust_fan_follow_up_min": "Nachlaufzeit des Ablüfters",
                 "exhaust_fan_max_runtime_min": "Höchstlaufzeit des Ablüfters",
-                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)"
+                "exhaust_fan_external_lock": "Andere Automation steuert den Lüfter (optional)",
+                "exhaust_fan_block_start": "Sperrzeit des Ablüfters – Beginn (optional)",
+                "exhaust_fan_block_end": "Sperrzeit des Ablüfters – Ende (optional)"
               },
               "data_description": {
                 "auto_sun_protection": "Nur im Modus „Sommer kühlen“: Rollos der Fenster, auf die die Sonne gleich scheint, schließen vorab (Vorlauf in den Einstellungen), wenn ein warmer Tag zu erwarten und es nicht dicht bewölkt ist, und öffnen wieder, sobald die Sonne diese Fenster verlassen hat. Das Rollo einer Durchgangstür schließt nie, solange die Tür offen ist.",
                 "exhaust_fan_control": "Nach Feuchtequelle: an, solange Duschen, Kochen … erkannt wird, aus nach der Nachlaufzeit. Nach Lüftungsempfehlung: an, solange FreshAirIQ Lüften empfiehlt und kein Fenster offen ist. FreshAirIQ schaltet nur einen Lüfter aus, den es selbst eingeschaltet hat; schaltest du ihn aus, bleibt er aus, bis der Anlass vorbei ist.",
                 "exhaust_fan_follow_up_min": "So lange läuft der Lüfter nach dem Ende der Feuchtequelle weiter.",
                 "exhaust_fan_max_runtime_min": "Spätestens nach dieser Zeit wird der Lüfter ausgeschaltet.",
-                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus."
+                "exhaust_fan_external_lock": "Schalter, Helfer oder Timer einer anderen Automation (z. B. Alexa nach dem Trockner). Solange er an ist, überlässt FreshAirIQ ihr die Lüfter und schaltet sie nie aus.",
+                "exhaust_fan_block_start": "In dieser Zeit (z. B. 22:00–07:00) schaltet FreshAirIQ den Ablüfter nicht ein und schaltet einen von FreshAirIQ eingeschalteten Ablüfter aus. Beide Zeiten leer lassen = keine Sperrzeit.",
+                "exhaust_fan_block_end": "Ende der Sperrzeit; danach steuert FreshAirIQ wieder normal. Über Mitternacht möglich."
               }
             }
           },

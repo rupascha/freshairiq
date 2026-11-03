@@ -35,6 +35,28 @@ def _name(room: dict[str, Any]) -> str:
     return str(room.get("name") or room.get("key") or "")
 
 
+def opening_kind(room: Any) -> str | None:
+    """0.26.5.5: "window" or "door" when every contact of the room is stated as that kind, else None."""
+    contacts = list(room.get("contact_entities") or []) if isinstance(room, dict) else []
+    kinds = room.get("contact_kinds") if isinstance(room, dict) and isinstance(room.get("contact_kinds"), dict) else {}
+    found = {kinds.get(c) for c in contacts}
+    return next(iter(found)) if contacts and len(found) == 1 and found <= {"window", "door"} else None
+
+
+def _kind_parts(names_by_room: list[tuple[str, Any]], joiner: str) -> list[str]:
+    """"Fenster in Bad + Küche schließen" / "Tür in Flur schließen" when every room is stated as the same kind;
+    otherwise (kind not stated or mixed) the room names as before ("Bad + Flur schließen")."""
+    names = [name for name, _room in names_by_room]
+    if not names:
+        return []
+    kinds = {opening_kind(room) for _name, room in names_by_room}
+    if kinds == {"window"}:
+        return [f"Fenster in {joiner.join(names)} schließen"]
+    if kinds == {"door"}:
+        return [f"Tür in {joiner.join(names)} schließen" if len(names) == 1 else f"Türen in {joiner.join(names)} schließen"]
+    return [f"{joiner.join(names)} schließen"]
+
+
 def close_instruction(rooms: list[Any], fallback: str = "Geöffnete Fenster", *, joiner: str = " + ", all_rooms: bool = False) -> str:
     """German instruction, e.g. "Bad schließen · Lüfter in Garage ausschalten".
 
@@ -44,13 +66,11 @@ def close_instruction(rooms: list[Any], fallback: str = "Geöffnete Fenster", *,
     picked = [r for r in rooms if isinstance(r, dict)]
     if not all_rooms:
         picked = [r for r in picked if not fan_only(r) or r.get("close_recommended")] or picked
-    windows = [_name(r) for r in picked if not fan_only(r) and _name(r)]
+    windows = [(_name(r), r) for r in picked if not fan_only(r) and _name(r)]
     fans = [_name(r) for r in picked if fan_only(r) and not auto_stop(r) and _name(r)]
     # 0.26.5.4: a fan FreshAirIQ switched on is switched off by FreshAirIQ
     automatic = [_name(r) for r in picked if fan_only(r) and auto_stop(r) and _name(r)]
-    parts = []
-    if windows:
-        parts.append(f"{joiner.join(windows)} schließen")
+    parts = _kind_parts(windows, joiner)
     if fans:
         parts.append(f"Lüfter in {joiner.join(fans)} ausschalten")
     if automatic:

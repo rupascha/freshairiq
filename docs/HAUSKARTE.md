@@ -5,7 +5,7 @@ Handlung braucht, warum, welche Fenster und Türen wie offen sind, woher der Win
 Luftwege daraus **vermutlich** entstehen. Sie ist eine zusätzliche Karte – das bisherige Dashboard,
 alle Entities, Empfehlungen, Meldungen und Automationen bleiben unverändert.
 
-![Hauskarte – Aktion](images/house_map_action_de.png)
+![Hauskarte – Querlüftung durchs Haus (Demo-Render)](images/house_map_cross_ventilation_de.png)
 
 ## Einrichten in vier Schritten
 
@@ -41,7 +41,7 @@ Wetterwechsel oder Update nicht neu platziert. „Neu vorschlagen“ zeigt vorhe
 
 ## Editor
 
-![Editor im Präzisionsmodus](images/house_map_editor_de.png)
+![Editor: Wandlänge, Winkel, 90° und Sperren](images/house_map_editor_90_locks_de.png)
 
 - **Schnell:** Raum ziehen = verschieben, Griff oben rechts = Größe, „Drehen 90°“, Vorlagen
   Rechteck/L/U für neue Räume, Öffnungen entlang der Wand ziehen.
@@ -50,6 +50,60 @@ Wetterwechsel oder Update nicht neu platziert. „Neu vorschlagen“ zeigt vorhe
 - Rückgängig/Wiederholen (auch Strg+Z/Strg+Y), Zoom, Einpassen, Zwei-Finger-Zoom, Pfeiltasten verschieben.
 - Öffnungen: Art (Fenster, Tür, Dachfenster, Durchgang, Lüftungsöffnung), Mechanik (Dreh-Kipp, Drehflügel,
   nur Kipp, Schiebe …), Breite, zugeordnete Kontakte.
+- **Ansicht (0.26.6.0):** der Grundriss füllt die ganze Karte. Unten rechts auf dem Plan liegt **☰ Menü** mit Ebenen
+  (Aktion, Temperatur, Feuchte, CO₂, Luftwege, Qualität), Details (Empfehlung, Wetter, Wind und Kennzahlen), Etagen,
+  Gästen, Hinweisen zur Darstellung (Vorschlag, geschätzte Raumgrößen, Nordrichtung, Windströme schematisch, Luftweg-Modell)
+  sowie Support & Diagnose und Bearbeiten. Hinweise, die einen Tipp brauchen (andere Etage, Live-Verbindung gestört,
+  Auto-Fokus pausiert), liegen oben links auf dem Plan. Außenwände dick, gemeinsame Innenwände dünn; Fenster, Türen und
+  Durchgänge mit eigenem Symbol; Verbindungen ohne eingezeichnete Öffnung mit Markierung auf der Wand.
+- **Luftstrom (0.26.6.0):** Luft, die durch ein offenes Fenster hereinkommt, bewegt sich nur durch Verbindungen –
+  die eingezeichnete Tür bzw. den Durchgang zwischen zwei Räumen, sonst die Mitte der gemeinsamen Wand einer Verbindung –
+  und nie durch eine Wand; ohne solche Stelle endet der Strom. Am anderen Ende strömt sie aus dem offenen Fenster wieder
+  hinaus (auch aus einem zweiten offenen Fenster desselben Raums, wenn kein Luftweg bekannt ist).
+- **Etagen (UI-Hotfix 0.26.6.0):** die anderen Etagen als Buttons in einer Leiste am unteren Kartenrand, unter dem Plan (nie darüber); kein „Alle Etagen“ – für mehrere Etagen die Karte mehrfach einfügen, je Karte mit `floor: ground_floor` / `floor: upper_floor` (Etagen-ID, Ebene oder Name); jede Karte merkt sich ihre Wahl getrennt; eine Etage mit Handlungsbedarf (jetzt lüften, schließen, kritisch) pulsiert dezent, bei „Bewegung reduzieren“ mit festem Punkt.
+- **Menü und Support:** das Menü ist ein eigenes Fenster über dem Plan; „Support & Diagnose“ öffnet ein Fenster mit denselben Funktionen wie die FreshAirIQ-Karte (Diagnose mit Pflichtbeschreibung, Export, Feedback).
+- **Editor per Touch:** Raum, Wand, Tür oder Fenster antippen; Finger auf Ungewähltem verschiebt die Ansicht, zwei Finger zoomen, nur der gewählte Raum lässt sich ziehen. Wand antippen → Länge in m eingeben, festen Eckpunkt wählen, Übernehmen; „Maß sperren“ hält die Länge. Türen: Anschlag links/rechts und Öffnungsrichtung. Eine Verbindung „Tür“/„offener Durchgang“ lässt sich auf der gemeinsamen Wand als Tür/Durchgang einzeichnen.
+- **Wände einzeln, Winkel und Sperren (Editor):** Eine Wandlänge ändert nur diese Wand – die gewählte Ecke bleibt
+  stehen, die andere wandert entlang der Wand, die nächste Wand gleicht aus. Die gegenüberliegende Wand behält ihre Länge;
+  ein Raum muss kein Rechteck bleiben. Nachbarräume werden nie mitgezogen – würde die Wand in einen Nachbarraum wachsen,
+  lehnt der Editor ab und erklärt warum.
+  - **Sperren Wand für Wand:** „Maß sperren“ hält eine Länge, „Winkel an Ecke … sperren“ hält einen Winkel. Gesperrte
+    Wände und Winkel werden bei späteren Änderungen mitgetragen (der gesperrte Abschnitt verschiebt sich als Ganzes).
+    Geht das nicht, ändert sich **nichts**, und der Hinweis nennt die Wand bzw. Ecke und einen Ausweg („Sperre lösen
+    oder die andere Ecke stehen lassen“). Freie Geometrie bleibt frei.
+  - **90°:** Im Wandfenster stehen die Winkel an beiden Ecken (Innenecken von L- und U-Räumen als 270°) und je ein
+    Knopf „Ecke … auf 90°“ – nur diese Ecke wird rechtwinklig, nie alle Räume. „90° einrasten“ in der Werkzeugleiste
+    lässt eine gezogene Ecke nahe 90° (±6°) genau rechtwinklig einrasten; das Raster gilt weiter.
+- **Räume zusammenfügen (Editor):** Räume einzeln ausmessen, grob aneinanderschieben (bis etwa 35 cm) und
+  „Räume zusammenfügen“ tippen. Gegenüberliegende Wände werden erkannt (auch 3,92 m neben 3,98 m), jeder Raum wird nur
+  als Ganzes verschoben – nichts wird skaliert oder verbogen, gesperrte Maße haben Vorrang. Erst erscheint eine
+  **Vorschau** (gestrichelte Räume, erkannte Innenwände grün, Hinweise zu unterschiedlichen Längen, gesperrten Ecken
+  oder Überlappungen); gespeichert wird erst nach „Übernehmen“, Rückgängig/Wiederholen funktionieren. Danach sind die
+  gemeinsamen Wände Innenwände (einmal gezeichnet), Türen darauf verbinden beide Räume, Fenster bleiben an der Außenwand.
+
+  ![Räume zusammenfügen – Vorschau](images/house_map_join_preview_de.png)
+
+- **Türbögen nur im Editor:** Der Editor zeigt den Schwenkbereich einer Tür als feinen Bogen (zum Einzeichnen von
+  Anschlag und Richtung). Die Hauskarte zeigt das Türblatt mit seinem Zustand ohne Bogen; ein unsichtbarer Bogen
+  belegt keinen Platz für Beschriftungen.
+- **Sonnenstand:** Die Sonne steht auf der Karte dort, wo `sun.sun` sie gerade meldet (Azimut und Höhe, gedreht nach
+  der Nordrichtung des Grundrisses) und wandert im Tagesverlauf mit – neu gezeichnet in 2°-Schritten, nicht bei jeder
+  Zustandsänderung in Home Assistant. Ohne geprüfte Nordrichtung zeigt die Karte nur gleichmäßiges Tageslicht von
+  oben, keine Sonne und keine Strahlen auf einer Seite, die falsch sein könnte.
+- **Fenster mit Kontakt eines anderen Raums:** Ein Fenster wird dort gezeichnet, wo es ist – auch wenn sein Kontakt
+  in der Einrichtung einem anderen Raum zugeordnet ist (z. B. Gäste-WC-Fenster, das den Flur lüftet). Im Editor stehen
+  beim Fenster alle Kontakte zur Wahl, die anderer Räume mit „(lüftet …)“. Die Karte zeigt den echten Zustand des
+  Sensors; die Lüftungsentscheidung des Flurs bleibt, wie sie ist. Ein von zwei Räumen genutzter Kontakt wird im
+  Vorschlag nur dann zur Tür, wenn er als Tür eingerichtet oder in Home Assistant ein Türsensor ist.
+- **Etagennamen:** Editor und Karte zeigen lesbare Namen (Erdgeschoss, Obergeschoss, Kellergeschoss, Dachgeschoss …);
+  die internen Kennungen bleiben unverändert.
+- **Raumdarstellung (0.26.6.0, 6. Build):** Raumfläche zeigt den Zustand (ruhig/kühl = alles gut, gedämpftes Bernstein = warten, Grün/Cyan/Orange = handeln, Koralle mit Schraffur = kritisch, sanfter Innenrand bei Handlungsbedarf); Name direkt auf der Fläche, Zustand als dunkle Kapsel, Temperatur/Feuchte in großen Räumen. Fenster an einer Innenwand meldet der Editor und setzt sie per Tipp an die Außenwand.
+- **Beschriftung und Wetter (7. Build):** Beschriftungen bleiben immer im echten Raumumriss (auch L-/U-Form); zu kleine Räume zeigen einen Zustandspunkt. Oben rechts das Außenwetter oder eigene Sensoren (`weather_sensors: sensor.a, sensor.b`).
+- **Atmosphäre (8. Build):** kein Raster – ein Himmel nach dem echten Wetter (`sun.sun` für Tag/Dämmerung/Nacht – nachts tiefer Nachthimmel, Räume in gedämpftem kühlem Licht, Sterne je nach Bewölkung; Sonne, Wolkenschatten, Nebel, Regen und Schnee schräg mit dem Wind, Gewitterblitz – nur aus Home-Assistant-Daten, nie über dem Haus). Räume zeigen ihr Klima auch ohne Lüften: warm/kühl, Dunst bei hoher Feuchte („↑“ bei steigender Feuchte), trockene Struktur, Schimmelrisiko als Sprenkel an den Wänden, Dampf an einer Feuchtequelle, ein drehender Lüfter. Beim Lüften dringt Frischluft an offenen Fenstern ein (gekippt kürzer), feine Partikel ziehen mit den Strömen durchs Haus; nach dem Schließen klingt sie aus. Beschriftungen behalten Messwerte vor dem Zustandswort und meiden Türbögen; kleine Räume zeigen einen Kurznamen („WC“). Modellierte Darstellung, keine Strömungssimulation.
+- **Wind und Luft (9. Build):** ein modelliertes Windfeld auf einer Canvas-Ebene: feine leuchtende Fäden mit nachleuchtenden Spuren, breite durchsichtige Luftmassen, Umlenkung an den Außenwänden, gelegentliche Wirbel hinter den Gebäudeecken, Böen als Ereignis (gemessene Böe, wenn vorhanden). Durch geöffnete Fenster strömt die Luft ins Haus und über Türen zum anderen Fenster hinaus; nach dem Schließen klingt sie aus. Oben links: entfernbare Feuchte des ganzen Hauses und Lüftungsdauer (antippen für die Erklärung). Beschriftungen behalten Messwerte und vollständige Namen (notfalls zweizeilig). Modellierte Darstellung, keine Messung und keine Strömungssimulation.
+- **10. Build:** oben links steht genau FreshAirIQs „Jetzt entfernbar“ der FreshAirIQ-Karte mit der empfohlenen Lüftungszeit (während einer Lüftung: bisher entfernt und Restzeit). Der Wind hat je nach Wetter einen eigenen Charakter – leicht und warm bei Sonne, ruhig bei Bewölkung, dichter bei Regen, episch bei Sturm.
+- **Tastatur im Editor:** Raum antippen, dann Pfeiltasten (Shift = zehn Rasterschritte); Rückgängig mit Strg/⌘+Z.
+  Beim Ziehen rastet ein Raum an der Wandlinie des Nachbarn ein (Hilfslinie) und kann nicht auf einen anderen gelegt werden.
 - **Öffnungen setzen** (Leiste über der Zeichnung, auch ohne Grundriss-Vorlage): „Fenster antippen“, „Innentür
   antippen“, „Durchgang antippen“ und dann auf eine Wand tippen. Innentür und Durchgang gehören auf eine Wand
   zwischen zwei Räumen (sonst Hinweis „keine Innenwand“); die Luftwege lesen sie als Verbindung beider Räume.
@@ -117,7 +171,7 @@ verhindert „grün“, „sehr hoch“ färbt den Raum rot – das Aktionswort 
 
 ## Wind und Luftwege
 
-![Luftwege](images/house_map_airflow_de.png)
+![Aktives Lüften: Frischluft am offenen Fenster](images/house_map_airing_de.png)
 
 Wind kommt aus der Wetterentität (Grad oder Himmelsrichtung, Einheit km/h, m/s, mph, Knoten). Der Pfeil
 zeigt, **woher** der Wind kommt. Fehlt die Richtung, ist sie veraltet oder windstill, wird kein Pfeil
@@ -143,9 +197,11 @@ vermutete Ersatzluft; ein Referenzsensor im Nachbarraum ist **kein** Nachweis ei
 
 ## Etagen
 
-Etagenreiter mit Zähler der Räume mit Handlungsbedarf, „Alle Etagen“ als Übersicht.
+Die anderen Etagen stehen als Buttons in einer Leiste unter dem Plan; eine Etage mit Handlungsbedarf pulsiert
+dezent. Eine Gesamtansicht „Alle Etagen“ gibt es nicht mehr – für mehrere Etagen die Karte mehrfach einfügen
+(`floor: ground_floor`, `floor: upper_floor` …).
 
-![Alle Etagen](images/house_map_all_floors_de.png)
+![Etagen als Buttons unter dem Plan](images/house_map_sunny_de.png)
 
 Auto-Fokus (Karteneinstellung `auto_focus`):
 

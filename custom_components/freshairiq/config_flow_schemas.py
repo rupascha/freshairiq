@@ -74,6 +74,17 @@ def _outdoor_schema(data: dict[str, Any] | None = None) -> vol.Schema:
     })
 
 
+def _mould_lower_defaults(current: dict[str, Any]) -> tuple[float, float]:
+    """Shown values of the two lower mould limits, always below the stored "high" limit (older setups)."""
+    def num(key: str, default: float) -> float:
+        try:
+            return float(current.get(key, default))
+        except (TypeError, ValueError):
+            return default
+    elevated = min(num("mould_elevated_surface_rh", 70.0), num("mould_warn_surface_rh", 80.0) - 1.0)
+    return min(num("mould_slight_surface_rh", 60.0), elevated - 1.0), elevated
+
+
 def _model_schema(current: dict[str, Any]) -> vol.Schema:
     """Advanced ventilation model grouped into understandable sections."""
     return vol.Schema({
@@ -104,6 +115,9 @@ def _model_schema(current: dict[str, Any]) -> vol.Schema:
         }), {"collapsed": True}),
         vol.Required("health_limits"): section(vol.Schema({
             vol.Required(native_option_key("surface_factor"), default=_bounded(current.get("surface_factor"), .25, .05, .8)): _number(0.05, 0.8, 0.05),
+            # 0.26.6.0(7): all four mould limits; without a stored value the lower ones sit below the stored "high" limit
+            vol.Required(native_option_key("mould_slight_surface_rh"), default=_bounded(_mould_lower_defaults(current)[0], 60, 30, 90)): _number(30, 90, 1, "%"),
+            vol.Required(native_option_key("mould_elevated_surface_rh"), default=_bounded(_mould_lower_defaults(current)[1], 70, 35, 95)): _number(35, 95, 1, "%"),
             vol.Required(native_option_key("mould_warn_surface_rh"), default=_bounded(current.get("mould_warn_surface_rh"), 80, 60, 95)): _number(60, 95, 1, "%"),
             vol.Required(native_option_key("mould_critical_surface_rh"), default=_bounded(current.get("mould_critical_surface_rh"), 90, 70, 100)): _number(70, 100, 1, "%"),
             vol.Required(native_option_key("co2_warn"), default=_bounded(current.get("co2_warn"), 1000, 600, 2500)): _number(600, 2500, 50, "ppm"),

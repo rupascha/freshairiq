@@ -11,6 +11,23 @@ export const TONE_EMOJI = { act: "💨", run: "🌬️", close: "🪟", wait: "�
 const r3 = v => Math.round(v * 1000) / 1000;
 const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+// 0.26.6.0(6/7): room surfaces by state. 0.26.6.0(7): one calm, deep family of surfaces – a room at rest is a quiet
+// blue-slate, a waiting room only a shade warmer (no longer yellow); the state speaks through the soft inner rim, the
+// capsule and the climate layer on top (temperature, humidity, mould risk). Top-to-bottom gradient; ``text`` is the
+// readable label colour on that surface (contrast ≥ 4:1 to both stops).
+export const ROOM_TONES = {
+  ok: { top: "#2b6584", bottom: "#21516c", text: "light" },
+  sensor: { top: "#56637a", bottom: "#465166", text: "light" },
+  wait: { top: "#3d5f80", bottom: "#324f6c", text: "light" },
+  run: { top: "#21708f", bottom: "#1a5c78", text: "light", rim: "#bff1ff" },
+  act: { top: "#22705a", bottom: "#1b5a49", text: "light", rim: "#c4f7d8" },
+  close: { top: "#8a5232", bottom: "#734327", text: "light", rim: "#ffd9b8" },
+  critical: { top: "#93404a", bottom: "#7a333c", text: "light", rim: "#ffd0d0" },
+};
+export function roomDefs(px) {
+  return Object.entries(ROOM_TONES).map(([k, v]) => `<linearGradient id="rf-${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${v.top}"/><stop offset="1" stop-color="${v.bottom}"/></linearGradient>`).join("")
+    + `<pattern id="rf-hatch" width="${px(12)}" height="${px(12)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${px(12)}" stroke="#ffffff" stroke-opacity=".22" stroke-width="${px(4)}"/></pattern>`;
+}
 // Animation time of one stream dash cycle: stronger wind = faster streams (schematic, not a measured speed).
 export const streamSeconds = speedMs => Math.min(Math.max(7 / ((Number(speedMs) || 0) + 1), 0.45), 5);
 
@@ -61,7 +78,7 @@ export function wavePath(frame, { amp, wavelength, shift = 0 }, phase) {
 export const WAVE_STRANDS = [
   { cls: "mid", amp: 1, wave: 1, shift: 0, width: 1 },
   { cls: "hi", amp: 0.75, wave: 1.38, shift: 2.1, width: 0.6 },
-  { cls: "lo", amp: 0.9, wave: 0.82, shift: 4.2, width: 0.45 },
+  { cls: "lo", amp: 1.6, wave: 0.6, shift: 4.2, width: 6 },   // order 8: a broad, nearly transparent air mass
 ];
 
 const OPEN = new Set(["open", "tilted", "open_unspecified"]);
@@ -82,8 +99,9 @@ function rayHit(S, t, a, b) {
  * Schematic wind streams around the drawn floor.
  * rooms: [{id, polygon}], openings: [{id, room_id, edge, offset, width_m, state, pending}], G: geometry module.
  * Returns [{kind: "pass"|"deflect"|"inflow", points:[[x,y]...], curve:{from,ctrl,to}|null, opening, room}] in plan coordinates.
- * Closed walls: the stream runs to the wall and turns along it (downwind side). An open, confirmed outside
- * opening on that wall: the stream enters and runs to the room's centre (and on along a known air path).
+ * Walls turn every decorative stream along them (downwind side). Separately, every open, confirmed outside opening
+ * the wind presses on (published facade pressure ≥ INLET_PRESSURE) gets its own inflow: from the upwind edge to the
+ * window, into the room and – only along a published directed air path – on and out (Hotfix (9) F02/F03).
  */
 // Part of the line base + s·dir inside the frame {minX,minY,maxX,maxY} (slab method), or null.
 function clipLine(base, dir, f) {
@@ -96,7 +114,7 @@ function clipLine(base, dir, f) {
   return lo < hi ? [lo, hi] : null;
 }
 
-export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 9, paths = [], frame = null }) {
+export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 7, paths = [], frame = null }) {  // 0.26.6.0(7): 7 streams, no crowding
   if (fromDeg == null || !rooms.length) return [];
   const t = G.bearingVector((fromDeg + 180) % 360, northDeg); // direction the air moves to
   const p = [-t[1], t[0]];
@@ -124,29 +142,37 @@ export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 9, 
     const H = add(S, mul(t, best.s));
     const pts = best.room.polygon, a = pts[best.edge], b = pts[(best.edge + 1) % pts.length];
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    const window = openings.find(o => {
-      if (o.room_id !== best.room.id || o.edge !== best.edge || !OPEN.has(o.state) || o.pending || o.target !== "outside") return false;
-      const half = Math.min(o.width_m || Math.min(0.9, len * 0.4), len) / len / 2 + 0.25 / len;
-      return Math.abs(best.u - o.offset) <= half;
-    });
-    if (window) {
-      const inside = [G.labelPoint(best.room.polygon)];
-      const onward = paths.find(x => x.from === window.id && x.direction === "directed");
-      if (onward) for (const pt of onward.points.slice(2)) inside.push(pt);
-      streams.push({ kind: "inflow", points: [S, H, ...inside], curve: null, opening: window.id, room: best.room.id, tilted: window.state === "tilted" });
-      continue;
-    }
     const tau = mul(sub(b, a), 1 / len);
     // head-on the air splits at the middle of the wall; at a slant it slides off downwind
     const slide = Math.abs(dot(t, tau)) < 0.35 ? dot(sub(H, c), tau) : dot(t, tau);
     const along = slide >= 0 ? tau : mul(tau, -1);
     const n = G.outwardNormal(pts, best.edge);
     const before = sub(H, mul(t, R * 0.14));
-    const end = add(add(H, mul(along, R * 0.5)), mul(n, R * 0.2));  // bounces off and slides along the wall
+    const end = add(add(H, mul(along, R * 0.3)), mul(n, R * 0.16));  // bounces off and slides along the wall (short: no overlap)
     streams.push({ kind: "deflect", points: [S, before], curve: { from: before, ctrl: add(H, mul(n, R * 0.01)), to: end }, room: best.room.id });
+  }
+  // Hotfix (9) F02/F03: the air enters at every open, confirmed outside opening the wind presses on – taken from the
+  // published opening state and facade pressure (house_airflow: pressure ≥ INLET_PRESSURE), never from where a
+  // decorative streak happens to cross the wall. It leaves the house only along a directed air path FreshAirIQ
+  // published (cross ventilation); without one it stays in the room (no invented outlet).
+  for (const o of openings) {
+    const room = rooms.find(r => r.id === o.room_id);
+    if (!room || o.target !== "outside" || !OPEN.has(o.state) || o.pending || !(o.edge >= 0 && o.edge < room.polygon.length)) continue;
+    if (!(Number(o.pressure) >= INLET_PRESSURE)) continue;
+    const pts = room.polygon, W = G.edgePoint(pts, o.edge, o.offset), n = G.outwardNormal(pts, o.edge);
+    const back = clipLine(W, t, f), blocked = rooms.some(r => r.polygon.some((q, e) => { const h = rayHit(W, mul(t, -1), q, r.polygon[(e + 1) % r.polygon.length]); return h && h.s > 1e-3; }));
+    // from the upwind edge of the drawing straight to the window; a window in a sheltered corner is reached along its normal
+    const S = back && !blocked ? add(W, mul(t, back[0])) : add(W, mul(n, R * 0.45));
+    const inside = [G.labelPoint(pts)];
+    const onward = paths.find(x => x.from === o.id && x.direction === "directed" && Array.isArray(x.points) && x.points.length > 2);
+    let exits = false;
+    if (onward) { inside.length = 0; for (const pt of onward.points.slice(1)) inside.push(pt); exits = !!onward.exits; }   // the path starts at this window
+    streams.push({ kind: "inflow", points: [S, W, ...inside], curve: null, opening: o.id, room: room.id, tilted: o.state === "tilted", exits });
   }
   return streams;
 }
+// The facade pressure from which an open outside opening counts as an inlet (house_airflow.INLET_PRESSURE).
+export const INLET_PRESSURE = 0.3;
 
 export const STYLE = `
 :host{display:block}
@@ -181,23 +207,34 @@ button.small{min-height:34px;padding:4px 11px;font-size:13px}
 .notice{margin-top:8px;padding:7px 12px;border-radius:14px;font-size:13px;font-weight:700;background:rgba(0,216,240,.12);border:2px dashed rgba(0,216,240,.55)}
 .notice.warn{background:rgba(255,159,67,.14);border-color:${BRAND.orange}}
 .map{position:relative;margin-top:12px;border-radius:22px;border:3px solid ${BRAND.ink};box-shadow:5px 5px 0 ${BRAND.ink};overflow:hidden;
-  background:linear-gradient(180deg,#0b4580,#062a52);touch-action:pan-x pan-y pinch-zoom;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  background:linear-gradient(180deg,#0f4479,#072a4f);touch-action:pan-x pan-y pinch-zoom;overflow-x:auto;-webkit-overflow-scrolling:touch}
 svg.plan{display:block;width:100%;max-width:100%;height:auto;max-height:78vh;margin:0 auto}
-.room{cursor:pointer;stroke:${BRAND.ink};stroke-linejoin:round}
+.room{cursor:pointer;stroke:transparent;stroke-linejoin:round}
 .room:focus{outline:none;stroke:${BRAND.white}}
 .room.sel{stroke:${BRAND.white}}
-.t-act{fill:${TONE_COLOR.act}} .t-run{fill:${TONE_COLOR.run}} .t-close{fill:${TONE_COLOR.close}} .t-wait{fill:${TONE_COLOR.wait}}
-.t-sensor{fill:${TONE_COLOR.sensor}} .t-ok{fill:${TONE_COLOR.ok}} .t-critical{fill:${TONE_COLOR.critical}}
+.t-act:not(.room){fill:${TONE_COLOR.act}} .t-run:not(.room){fill:${TONE_COLOR.run}} .t-close:not(.room){fill:${TONE_COLOR.close}} .t-wait:not(.room){fill:${TONE_COLOR.wait}}
+.t-sensor:not(.room){fill:${TONE_COLOR.sensor}} .t-ok:not(.room){fill:${TONE_COLOR.ok}} .t-critical:not(.room){fill:${TONE_COLOR.critical}}
 text{pointer-events:none;font-family:inherit}
-.tag rect,.tag circle{fill:${BRAND.white};stroke:${BRAND.ink}}
-.tag .n{font-weight:900;fill:${BRAND.ink}} .tag .a{font-weight:800;fill:${BRAND.ink}} .tag .c{font-weight:700;fill:#24435f}
+.tag{pointer-events:none} .tag text{paint-order:stroke;stroke-linejoin:round}
+.tag .n{font-weight:900} .tag .a{font-weight:800} .tag .c{font-weight:700}
+.tag .pill{fill:rgba(2,16,36,.74);stroke:rgba(255,255,255,.22)} .tag .pill-t{fill:${BRAND.white};stroke:none;font-weight:800}
+.tag .dot{fill:rgba(2,16,36,.74);stroke:rgba(255,255,255,.55)}
+.rim{fill:none;pointer-events:none} .hatch{pointer-events:none}
+@keyframes rimglow{0%,100%{stroke-opacity:.35}50%{stroke-opacity:.8}}
+.rim.r-act,.rim.r-close,.rim.r-critical{animation:rimglow 3.2s ease-in-out infinite}
+:host([data-paused]) .rim.r-act,:host([data-paused]) .rim.r-close,:host([data-paused]) .rim.r-critical,:host([data-still]) .rim.r-act,:host([data-still]) .rim.r-close,:host([data-still]) .rim.r-critical{animation:none}
+@media (prefers-reduced-motion:reduce){.rim.r-act,.rim.r-close,.rim.r-critical{animation:none}}
 .op{stroke-linecap:round;cursor:pointer}
 .op.closed{stroke:${BRAND.white}} .op.tilted{stroke:${BRAND.sky}} .op.open{stroke:${BRAND.lime}} .op.open_unspecified{stroke:${BRAND.lime};stroke-dasharray:var(--dash)}
 .op.unknown,.op.no_sensor{stroke:${BRAND.slate};stroke-dasharray:var(--dot)} .op.pending{stroke:${BRAND.orange}}
 .wave{fill:none;stroke-linecap:round;stroke-linejoin:round}
-.wave.mid{opacity:.75}.wave.hi{opacity:.5}.wave.lo{opacity:.38}
-.wave.k-pass{opacity:.32}.wave.k-pass.hi,.wave.k-pass.lo{opacity:.2}
-.wave.k-inflow.mid{opacity:.95}.wave.k-inflow.tilted{opacity:.7}
+.wave.mid{opacity:.26}.wave.hi{opacity:.16}.wave.lo{opacity:.07}  /* order 8: soft veils – the canvas threads carry the detail; the third strand is a broad, nearly clear air mass */
+.wave.k-pass{opacity:.2}.wave.k-pass.hi{opacity:.12}.wave.k-pass.lo{opacity:.05}
+/* order 9: the air layers follow the weather – softer and warmer in the sun, fuller in a storm */
+svg[data-mood="sunny"] .wave.mid{opacity:.18}svg[data-mood="sunny"] .wave.hi{opacity:.12}svg[data-mood="sunny"] .wave{stroke:#fff6df}
+svg[data-mood="storm"] .wave.mid{opacity:.36}svg[data-mood="storm"] .wave.hi{opacity:.24}svg[data-mood="storm"] .wave.lo{opacity:.11}
+svg[data-mood="lively"] .wave.mid{opacity:.3}
+.wave.k-inflow.mid{opacity:.24}.wave.k-inflow.tilted{opacity:.18}.wave.k-inflow.lo{opacity:.09}
 .flow{animation:flow var(--dur,2s) linear infinite}
 @keyframes flow{to{stroke-dashoffset:calc(var(--dashlen) * -1)}}
 @media (prefers-reduced-motion:reduce){.flow{animation:none}}
@@ -228,6 +265,60 @@ dialog::backdrop{background:rgba(2,16,36,.55);backdrop-filter:blur(2px)}
 .dlg .foot{display:flex;justify-content:flex-end;padding:0 16px 14px}
 .dlg button{background:${BRAND.cyan};color:${BRAND.ink}}
 .hint{font-size:12px;color:#24435f}
+/* 0.26.5.5: plan first – bar with wind, layers and menu below the plan; walls, opening symbols, logical links */
+/* 0.26.6: the plan fills the card; the menu button lies on it at the bottom right, warnings at the top left */
+ha-card.plan-first{padding:0}
+.plan-first .stage{position:relative}
+.plan-first .map{margin:0;border:0;border-radius:0;box-shadow:none}
+.plan-first .floorhead{margin:0;padding:10px 14px 4px;background:#0b4580}
+/* 0.26.6.0(7): a slim bar above the plan – notes left, local weather right */
+.topbar{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 10px 4px;background:#0b4580}
+.topbar .warns{flex:1 1 auto;min-width:0;display:grid;justify-items:start;gap:6px} .topbar .notice{margin:0}
+.moist{display:inline-flex;max-width:100%;gap:10px;align-items:center;min-height:30px;padding:3px 12px;border-radius:999px;background:rgba(2,16,36,.55);border:2px solid rgba(201,243,255,.35);box-shadow:none;color:${BRAND.white};font-weight:800;font-size:13px;white-space:nowrap}
+.moist b{font-variant-numeric:tabular-nums}
+.moist .added{color:#ffb4ad}
+.weather{margin-left:auto;flex:none;display:flex;gap:10px;align-items:center;padding:4px 12px;border-radius:999px;background:rgba(2,16,36,.55);border:2px solid rgba(201,243,255,.35);font-weight:800;font-size:13px;white-space:nowrap}
+/* UI hotfix: floors (left) and menu (right) in a bar at the card's bottom edge, below the plan – never over it */
+.mapbar{display:flex;align-items:flex-end;gap:8px;padding:6px 10px 10px;background:#062a52}
+.floors{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:6px}
+.floorbtn{min-height:34px;padding:3px 11px;font-size:12.5px;background:${BRAND.white};color:${BRAND.ink}}
+.floorbtn.pulse{position:relative}
+.floorbtn.p-act{--pulse:${TONE_COLOR.act}} .floorbtn.p-close{--pulse:${TONE_COLOR.close}} .floorbtn.p-critical{--pulse:${TONE_COLOR.critical}}
+.floorbtn.pulse{animation:floorpulse 1.8s ease-in-out infinite;box-shadow:3px 3px 0 ${BRAND.ink},0 0 0 3px var(--pulse)}
+@keyframes floorpulse{0%,100%{box-shadow:3px 3px 0 ${BRAND.ink},0 0 0 3px var(--pulse)}50%{box-shadow:3px 3px 0 ${BRAND.ink},0 0 0 8px transparent}}
+.floorbtn.pulse:after{content:"";position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:var(--pulse);border:2px solid ${BRAND.ink}}
+:host([data-paused]) .floorbtn.pulse,:host([data-still]) .floorbtn.pulse{animation:none}
+@media (prefers-reduced-motion:reduce){.floorbtn.pulse{animation:none}}
+.dlg.dark{background:${BRAND.night};color:${BRAND.white}}
+.dlg.dark .body h4{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:${BRAND.ice}}
+.dlg.dark button{background:${BRAND.panel};color:${BRAND.white}} .dlg.dark button[aria-pressed="true"],.dlg.dark .foot button{background:${BRAND.cyan};color:${BRAND.ink}}
+.dlg.dark .hint2,.dlg.dark .legend{font-size:12px;opacity:.85}
+.diag-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.diag-actions button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;min-height:64px;padding:8px 6px;border-radius:16px;font-size:clamp(12px,3.4vw,14px);line-height:1.25;white-space:normal;overflow-wrap:anywhere;margin:0}
+.diag-actions button b,.diag-actions button span:not(.ico){display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.diag-actions button ha-icon,.diag-actions button .ico{flex:none;--mdc-icon-size:18px;font-size:16px;line-height:1.3}
+dialog .dlg{display:flex;flex-direction:column;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
+dialog .dlg header,dialog .dlg .foot{flex:none} dialog .dlg .body{flex:1 1 auto;min-height:0;overscroll-behavior:contain}
+.dlg .field{display:grid;gap:4px;margin-top:6px} .dlg textarea,.dlg select{font:inherit;width:100%;box-sizing:border-box;border-radius:12px;border:3px solid ${BRAND.ink};padding:8px;background:${BRAND.white};color:${BRAND.ink}}
+.dlg.dark button:disabled{opacity:.55;cursor:not-allowed}
+.fab{flex:none;margin-left:auto;min-height:34px;padding:3px 12px;font-size:13px;background:${BRAND.white};color:${BRAND.ink}}
+.fab[aria-expanded="true"]{background:${BRAND.cyan}}
+.menu{margin-top:10px;padding:12px;border-radius:20px;background:rgba(2,16,36,.35);border:3px solid ${BRAND.ink}}
+.plan-first .menu{margin:0;border-radius:0;border:0;border-top:3px solid ${BRAND.ink};padding:4px 14px 14px}
+.menu[hidden]{display:none}
+.menu h4{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:${BRAND.ice}}
+.guest{display:flex;align-items:center;gap:6px;font-weight:700}
+.wall{pointer-events:none}
+.symbol .sym{stroke:${BRAND.white}} .symbol .halo{stroke:${BRAND.ink}} .symbol .gap{stroke:${BRAND.night}}
+.conn.logical line{stroke:${BRAND.ice};stroke-dasharray:var(--dot);opacity:.75} .conn.logical text{pointer-events:none}
+.source circle{fill:${BRAND.white};stroke:${BRAND.ink}}
+.conn-mark circle{fill:${BRAND.white};stroke:${BRAND.ink}} .conn-mark{pointer-events:none} .op{stroke-opacity:.6}
+@keyframes breathe{0%,100%{fill-opacity:1}50%{fill-opacity:.72}}
+.room{animation:rest 11s ease-in-out infinite}
+@keyframes rest{0%,100%{fill-opacity:1}50%{fill-opacity:.94}}
+.room.t-run,.room.t-close,.room.t-critical{animation:breathe 4s ease-in-out infinite}
+:host([data-paused]) .room,:host([data-still]) .room{animation:none}
+@media (prefers-reduced-motion:reduce){.room,.room.t-run,.room.t-close,.room.t-critical{animation:none}}
 `;
 
 export const LOGO = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24 24 8l18 16" fill="none" stroke="${BRAND.ice}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -255,3 +346,57 @@ const CONDITIONS = {
     partlycloudy: "partly cloudy", pouring: "pouring rain", rainy: "rain", snowy: "snow", "snowy-rainy": "sleet", sunny: "sunny", windy: "windy", "windy-variant": "windy, cloudy" },
 };
 export const conditionText = (condition, language) => (CONDITIONS[language === "de" ? "de" : "en"][String(condition || "")] || String(condition || ""));
+
+// 0.26.5.5: walls and openings drawn where they really are (house map and editor).
+// Exterior wall parts are thick, interior ones thin; a symbol per opening kind, readable without colour:
+// window = double line (open: sashes swung out, tilted: a small wedge), door = gap + door leaf with its
+// swing arc, passage = a real gap with two jambs, vent = short dashes.
+const w3 = v => Math.round(v * 1000) / 1000;
+const WP = p => `${w3(p[0])},${w3(-p[1])}`;
+// The symbol of a connection kind (house map and editor, hotfix 0.26.6.0).
+export const CONNECTION_SYMBOL = { open_passage: "⇄", door: "🚪", stairs: "🪜", shaft: "⇵", duct: "〰" };
+export function wallsSvg(parts, px, color = "#0a1f38") {  // 0.26.6.0(7): slimmer, softer walls
+  return parts.map(w => `<line class="wall ${w.interior ? "inner" : "outer"}" x1="${w3(w.a[0])}" y1="${w3(-w.a[1])}" x2="${w3(w.b[0])}" y2="${w3(-w.b[1])}" stroke="${color}" stroke-width="${px(w.interior ? 1.8 : 4.5)}" stroke-linecap="round" stroke-opacity="${w.interior ? 0.7 : 0.9}"/>`).join("");
+}
+// a, b: ends of the opening on its wall; inward: unit normal into the room; state: open/tilted/closed/…
+// 0.26.6.0(2): the geometry is drawn light with a dark rim (``halo``), so it reads on dark and light rooms alike;
+// the state keeps its own colour band (the card's line.op). Doors and passages are real gaps in the wall
+// (G.wallSegments), so only a window still covers the wall line. ``door`` (G.doorGeometry): hinge, free end and the
+// side the leaf opens to; without it the hinge is at a and the leaf opens into the room (as before).
+export function openingSymbol(kind, a, b, inward, state, px, background = BRAND.night, door = null, { arc = true } = {}) {  // 0.26.6.0(10): arc only in the editor
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+  const at = (p, k, n) => [p[0] + u[0] * k + inward[0] * n, p[1] + u[1] * k + inward[1] * n];
+  const seg = (p, q, w, cls, extra = "") => `<line class="halo" x1="${w3(p[0])}" y1="${w3(-p[1])}" x2="${w3(q[0])}" y2="${w3(-q[1])}" stroke="${BRAND.ink}" stroke-width="${px(w + 2.4)}" stroke-linecap="round"${extra}/>`
+    + `<line class="${cls}" x1="${w3(p[0])}" y1="${w3(-p[1])}" x2="${w3(q[0])}" y2="${w3(-q[1])}" stroke="${BRAND.white}" stroke-width="${px(w)}" stroke-linecap="round"${extra}/>`;
+  const open = state === "open" || state === "open_unspecified";
+  if (kind === "passage") {
+    const j = len * 0.08;
+    return `${seg(at(a, 0, -j), at(a, 0, j), 2.6, "sym jamb")}${seg(at(b, 0, -j), at(b, 0, j), 2.6, "sym jamb")}`;
+  }
+  if (kind === "door") {
+    // the leaf turns on its hinge: open 90° to its side, closed lying in the opening; the swing as a dashed arc
+    const d = door || { hinge: a, free: b, swing: inward };
+    const H = d.hinge, E = d.free, s = d.swing, O = [H[0] + s[0] * len, H[1] + s[1] * len];
+    const e = [(E[0] - H[0]) / len, (E[1] - H[1]) / len], sweep = e[0] * s[1] - e[1] * s[0] > 0 ? 0 : 1;
+    // 0.26.6.0(6): the swing is a quiet hint – hairline, finely dashed, half transparent with a faint rim – the leaf
+    // carries the door
+    const path = `M ${WP(E)} A ${w3(len)} ${w3(len)} 0 0 ${sweep} ${WP(O)}`;
+    const arcs = `<path class="halo" d="${path}" fill="none" stroke="${BRAND.ink}" stroke-opacity=".15" stroke-width="${px(2)}"/>`
+      + `<path class="sym arc" d="${path}" fill="none" stroke="${BRAND.white}" stroke-opacity=".35" stroke-width="${px(1)}" stroke-dasharray="${px(2.5)} ${px(3)}"/>`;
+    return `${arc ? arcs : ""}${seg(H, open ? O : E, 2.6, "sym leaf")}`;
+  }
+  const gap = `<line class="sym gap" x1="${w3(a[0])}" y1="${w3(-a[1])}" x2="${w3(b[0])}" y2="${w3(-b[1])}" stroke="${background}" stroke-width="${px(8)}"/>`;
+  if (kind === "vent") return `${gap}${seg(a, b, 2.6, "sym vent", ` stroke-dasharray="${px(3)} ${px(3)}"`)}`;
+  // window / roof window: two parallel panes in the wall
+  const dd = px(2.6);
+  let out = `${gap}${seg(at(a, 0, -dd), at(b, 0, -dd), 1.4, "sym pane")}${seg(at(a, 0, dd), at(b, 0, dd), 1.4, "sym pane")}`;
+  if (open) out += seg(a, at(a, len * 0.25, len * 0.45), 2, "sym sash") + seg(b, at(b, -len * 0.25, len * 0.45), 2, "sym sash");
+  else if (state === "tilted") out += `<path class="halo" d="M ${WP(a)} L ${WP(at(a, len / 2, len * 0.22))} L ${WP(b)}" fill="none" stroke="${BRAND.ink}" stroke-width="${px(4)}"/><path class="sym tilt" d="M ${WP(a)} L ${WP(at(a, len / 2, len * 0.22))} L ${WP(b)}" fill="none" stroke="${BRAND.white}" stroke-width="${px(1.6)}"/>`;
+  return out;
+}
+// unit normal of edge ``index`` pointing into the room (rooms are drawn counter-clockwise or not – both work)
+export function inwardNormal(G, polygon, index) {
+  const n = G.outwardNormal(polygon, index), m = G.edgePoint(polygon, index, 0.5);
+  const probe = [m[0] - n[0] * 0.05, m[1] - n[1] * 0.05];
+  return G.pointInPolygon(probe, polygon) === "inside" ? [-n[0], -n[1]] : n;
+}

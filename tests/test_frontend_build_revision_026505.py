@@ -8,6 +8,7 @@ passes its own query on to the modules it imports. A failed download of the sect
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -60,7 +61,9 @@ def test_every_module_passes_its_own_query_on() -> None:
             assert spec.endswith(("${FAIQ_Q}", "${Q}", "${VERSION_QUERY}", "${new URL(import.meta.url).search}")), (path.name, spec)
     # the product version shown to the user stays the plain version
     card = (FRONTEND / "freshairiq-card.js").read_text(encoding="utf-8")
-    assert 'const FAIQ_VERSION = "0.26.5.5";' in card and "freshairiq_frontend_version: FAIQ_VERSION" in card
+    # 0.26.6.0: compared with the manifest version instead of a fixed number (a version bump is no build suffix)
+    version = json.loads((FRONTEND.parent / "manifest.json").read_text(encoding="utf-8"))["version"]
+    assert f'const FAIQ_VERSION = "{version}";' in card and "freshairiq_frontend_version: FAIQ_VERSION" in card
 
 
 def test_a_failed_section_download_is_visible() -> None:

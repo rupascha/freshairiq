@@ -2,10 +2,10 @@
   "schema": 1,
   "approved_from_version": "0.26.2.14",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
-  "config_flow_sha256": "15a880a304646f5f0a5f6db8586dc2ff2860b9651988c9557751b0000a856691",
-  "de_configuration_sha256": "a43e01116555b962f7b78bc940f7627d3cf0c2f41e248d7195997417d1ff756b",
-  "en_configuration_sha256": "a4058fb9fe5f6c3ab152e9be7024adc90f7f212bde04585c0b8acb707c03d6dc",
-  "strings_configuration_sha256": "a4058fb9fe5f6c3ab152e9be7024adc90f7f212bde04585c0b8acb707c03d6dc",
+  "config_flow_sha256": "1a263342ae96ea69f5857480223e61c1b0cca309b1222b9fe33c534bda171b8a",
+  "de_configuration_sha256": "52843653bbf9003728b0cf9bc3970eac89ea8dc6267800b80c258711dcce4db9",
+  "en_configuration_sha256": "ee17bd8cb8bf25f5be0eacd66ebf84d2a798538dca893f26c4c913c822be9bb9",
+  "strings_configuration_sha256": "ee17bd8cb8bf25f5be0eacd66ebf84d2a798538dca893f26c4c913c822be9bb9",
   "approved_changes": [
     "0.26.4.6: one-dropdown reordering for goals/rooms, overnight presence hold option, several pollen sensors (user feedback)",
     "0.26.4.7: outdoor fine dust protection – PM2.5 sensors under Outdoor air source, 'Consider outdoor fine dust' and limit under Air quality (user feedback; pending maintainer approval)",
@@ -29,6 +29,8 @@
     "0.26.5.3 (owner request 2026-10-23, approved): every saved setting takes effect at once – the options dialog continues from changes saved elsewhere instead of overwriting them, and skips its own end-of-wizard reload when the running integration already reloaded for the room change; no form or text change",
     "0.26.5.4 (owner request 2026-10-25, approved, GitHub #19): the 'Operating profile' details page is also shown for the comfort profile and offers only 'Cool from room temperature (lower limit)' (cooling_start_temp_c, 18-35 °C, default 24 °C); the field is renamed in both profiles (DE 'Kühlen frühestens ab Raumtemperatur', formerly 'Sommerkühlung ab Raumtemperatur') and its description explains the comfort target rule; page description extended; summer cooling page unchanged otherwise",
     "0.26.5.4 (owner request 2026-10-25, approved): 'Diagnostics sharing' page names the benefit of sharing (new rooms learn faster, more accurate forecasts, faults fixed sooner) and says plainly that nothing is sent without consent; the outdated statements 'on by default during the beta' and 'local staging hub only' are replaced by the actual behaviour (opt-in, HTTPS, nightly after consent); consent option 'Yes, share and improve FreshAirIQ (pseudonymised)'; no schema change",
-    "0.26.5.5 (owner request 2026-10-28, approved, community diagnosis): room section 'Automatic control' gains the optional field 'Other automation controls the fan' (exhaust_fan_external_lock: input_boolean/binary_sensor/switch/timer) – while it is on, FreshAirIQ leaves the room's fans to that automation and never switches them off; an emptied field is saved as empty"
+    "0.26.5.5 (owner request 2026-10-28, approved, community diagnosis): room section 'Automatic control' gains the optional field 'Other automation controls the fan' (exhaust_fan_external_lock: input_boolean/binary_sensor/switch/timer) – while it is on, FreshAirIQ leaves the room's fans to that automation and never switches them off; an emptied field is saved as empty",
+    "0.26.5.5 (owner request 2026-11-02, approved): room section 'Automatic control' gains the optional lock period 'Exhaust fan lock period – start/end' (exhaust_fan_block_start/_end, time selectors; both empty = off; may span midnight) – inside it FreshAirIQ does not switch the fan on and switches off a fan it switched on; every opening form gains 'Kind of opening' (contact_kind: not stated / window / door, default not stated) for more precise advice and the house map; older setups keep working without the fields",
+    "0.26.6.0 (owner request 2026-11-02, approved): 'Advanced model parameters' → 'Mould & CO₂' gains the two lower mould risk limits 'Slightly elevated' (mould_slight_surface_rh, default 60 %) and 'Elevated' (mould_elevated_surface_rh, default 70 %) next to 'High' (warn) and 'Very high' (critical); all four must rise strictly (invalid_mould_order); older setups keep their values and get the defaults"
   ]
 }

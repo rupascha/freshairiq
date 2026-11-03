@@ -100,6 +100,24 @@ def _facade(layout: dict[str, Any], room: dict[str, Any], opening: dict[str, Any
     return None, "none"
 
 
+def sensor_states(rooms_live: dict[str, Any], *prefer: Any, field: str = "contacts") -> dict[str, Any]:
+    """Live state of every contact by its entity – wherever the setup uses it.
+
+    Hotfix after review (F01): where a window is drawn (its room), which sensor it has and which room it airs are
+    independent: a guest WC window drawn in the WC whose contact is set up only for the hall still shows the hall's
+    live state of that sensor (``field="orientations"``: its configured facade). The rooms named in ``prefer`` (e.g.
+    the room the opening is drawn in) win, then the other rooms in key order – the decision of every room is not
+    touched."""
+    merged: dict[str, Any] = {}
+    order = [k for k in prefer if k in rooms_live] + sorted((k for k in rooms_live if k not in prefer), key=str)
+    for key in order:
+        room = rooms_live.get(key)
+        values = room.get(field) if isinstance(room, dict) and isinstance(room.get(field), dict) else {}
+        for contact, value in values.items():
+            merged.setdefault(contact, value)
+    return merged
+
+
 def _openings(layout: dict[str, Any], rooms_live: dict[str, Any], wind: dict[str, Any]) -> dict[str, dict[str, Any]]:
     rooms = {r["id"]: r for r in layout.get("rooms", [])}
     out: dict[str, dict[str, Any]] = {}
@@ -107,11 +125,10 @@ def _openings(layout: dict[str, Any], rooms_live: dict[str, Any], wind: dict[str
         room = rooms.get(opening.get("room_id"))
         if room is None:
             continue
-        live = rooms_live.get(room.get("room_key"), {}) if isinstance(rooms_live.get(room.get("room_key")), dict) else {}
-        state, pending = _opening_state(opening, live.get("contacts") or {})
+        state, pending = _opening_state(opening, sensor_states(rooms_live, room.get("room_key")))
         # the whole span must lie on the other room's wall (a shared corner is no shared wall)
         target = opening_neighbour(layout, room["id"], opening) or OUTSIDE
-        facade_deg, facade_basis = _facade(layout, room, opening, live.get("orientations") or {}) if target == OUTSIDE else (None, "interior")
+        facade_deg, facade_basis = _facade(layout, room, opening, sensor_states(rooms_live, room.get("room_key"), field="orientations")) if target == OUTSIDE else (None, "interior")
         out[str(opening["id"])] = {
             "room": room["id"], "target": target, "state": state, "pending": pending,
             "size": _size_class(opening, state), "facade_deg": facade_deg, "facade_basis": facade_basis,
@@ -131,10 +148,7 @@ def _edges(layout: dict[str, Any], openings: dict[str, dict[str, Any]], rooms_li
         kind = connection.get("kind")
         state = "open" if kind == "open_passage" else "unknown"
         if kind != "open_passage" and connection.get("contacts"):
-            live: dict[str, Any] = {}
-            for end in (connection.get("a"), connection.get("b")):
-                room_live = rooms_live.get(keys.get(end)) if isinstance(rooms_live.get(keys.get(end)), dict) else {}
-                live.update(room_live.get("contacts") or {})
+            live = sensor_states(rooms_live, keys.get(connection.get("a")), keys.get(connection.get("b")))
             combined, pending = contact_state(list(connection["contacts"]), live)
             state = "open" if combined in OPEN_STATES and not pending else combined
         edges.append({"id": str(connection.get("id")), "a": connection.get("a"), "b": connection.get("b"), "state": state,

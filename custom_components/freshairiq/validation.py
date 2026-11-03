@@ -32,7 +32,9 @@ def option_relationship_error(options: dict[str, Any]) -> str | None:
 
     mould_warn = _number(options, "mould_warn_surface_rh", 80.0)
     mould_critical = _number(options, "mould_critical_surface_rh", 90.0)
-    if mould_warn >= mould_critical:
+    mould_elevated = _number(options, "mould_elevated_surface_rh", min(70.0, mould_warn - 1.0))
+    mould_slight = _number(options, "mould_slight_surface_rh", min(60.0, mould_elevated - 1.0))
+    if not mould_slight < mould_elevated < mould_warn < mould_critical:  # 0.26.6.0(7): all four limits strictly rising
         return "invalid_mould_order"
 
     co2_warn = _number(options, "co2_warn", 1000.0)
@@ -47,7 +49,7 @@ RELATION_OPTION_KEYS = {
     "target_rh", "start_rh", "high_rh",
     "close_delta", "min_delta_high_rh", "min_delta",
     "min_duration_min", "max_duration_min",
-    "mould_warn_surface_rh", "mould_critical_surface_rh",
+    "mould_slight_surface_rh", "mould_elevated_surface_rh", "mould_warn_surface_rh", "mould_critical_surface_rh",
     "co2_warn", "co2_critical",
 }
 
@@ -90,6 +92,13 @@ def repair_option_relationships(options: dict[str, Any]) -> dict[str, Any]:
         out["mould_critical_surface_rh"] = min(100.0, mould_warn + 1.0)
         if _number(out, "mould_critical_surface_rh", 100.0) <= mould_warn:
             out["mould_warn_surface_rh"] = max(60.0, mould_critical - 1.0)
+    # 0.26.6.0(7): the two lower limits stay below the upper ones (an older "high" limit below 70 % keeps its value)
+    warn_now = _number(out, "mould_warn_surface_rh", 80.0)
+    if "mould_elevated_surface_rh" in out and _number(out, "mould_elevated_surface_rh", 70.0) >= warn_now:
+        out["mould_elevated_surface_rh"] = warn_now - 1.0
+    elevated_now = _number(out, "mould_elevated_surface_rh", min(70.0, warn_now - 1.0))
+    if "mould_slight_surface_rh" in out and _number(out, "mould_slight_surface_rh", 60.0) >= elevated_now:
+        out["mould_slight_surface_rh"] = elevated_now - 1.0
 
     co2_warn = _number(out, "co2_warn", 1000.0)
     co2_critical = _number(out, "co2_critical", 1400.0)

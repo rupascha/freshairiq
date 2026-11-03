@@ -140,6 +140,17 @@ def _room_list(entry: Any) -> list[dict[str, Any]]:
             for key, room in rooms.items() if isinstance(room, dict)]
 
 
+def _contact_classes(hass: HomeAssistant, rooms: list[dict[str, Any]]) -> dict[str, str]:
+    """Home Assistant's device class (door, window, …) of every contact the rooms use – what the sensor is."""
+    out: dict[str, str] = {}
+    for room in rooms:
+        for contact in room.get("contacts") if isinstance(room.get("contacts"), list) else []:
+            state = hass.states.get(str(contact))
+            if state is not None and state.attributes.get("device_class"):
+                out[str(contact)] = str(state.attributes["device_class"])
+    return out
+
+
 def _proposal_input(entry: Any) -> list[dict[str, Any]]:
     return [cfg for cfg in _room_configs(entry) if cfg.get("key")]
 
@@ -178,7 +189,7 @@ async def ws_propose(hass: HomeAssistant, connection: websocket_api.ActiveConnec
         layout, _code = store.layout()
         result = {"layout": add_missing(layout or normalise(None), rooms, _levels(entry)), "quality": None}
     else:
-        result = propose(rooms, _levels(entry), connection_map(dict(entry.runtime_data.options), keys))
+        result = propose(rooms, _levels(entry), connection_map(dict(entry.runtime_data.options), keys), _contact_classes(hass, rooms))
     result["layout"] = normalise(result["layout"])
     result["issues"] = validate(result["layout"], keys)
     connection.send_result(msg["id"], {"house_map_api": API, **result})

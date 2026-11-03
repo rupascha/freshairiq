@@ -31,6 +31,12 @@ PROVENANCE = ("ha", "config", "estimated", "schematic", "auto", "unplaced", "tra
 OUTSIDE = "outside"
 EPS = 1e-6
 WALL_TOLERANCE = 0.05  # 5 cm (or 0.05 schematic units): walls closer than this are shared
+# Hotfix 0.26.6.0: a wall two rooms really share is at least as long as the narrowest opening (as in the card)
+MIN_SHARED_WALL = 0.3
+PHYSICAL_CONNECTIONS = ("door", "open_passage")
+# 0.26.6.0(2): optional door attributes (absent in older plans = drawn as before: hinge at the wall's start, into the room)
+DOOR_HINGES = ("left", "right")   # seen from inside the room the door belongs to, facing the wall
+DOOR_SWINGS = ("in", "out")       # into that room, or to the other side of the wall  # a way through the shared wall; stairs, shafts and ducts are not
 
 
 # --------------------------------------------------------------------------- geometry
@@ -124,10 +130,12 @@ def edge_point(points: list[tuple[float, float]], index: int, offset: float) -> 
 
 
 def outward_normal(points: list[tuple[float, float]], index: int) -> tuple[float, float]:
-    """Unit outward normal of edge ``index`` of a counter-clockwise polygon."""
+    """Unit outward normal of edge ``index`` – for either orientation of the polygon (a clockwise room has its
+    outside on the other side of each wall; corner indices are never reordered)."""
     (x1, y1), (x2, y2) = edge(points, index)
     length = math.hypot(x2 - x1, y2 - y1) or 1.0
-    return ((y2 - y1) / length, -(x2 - x1) / length)
+    sign = -1.0 if signed_area(points) < 0 else 1.0
+    return (sign * (y2 - y1) / length, -sign * (x2 - x1) / length)
 
 
 def normal_bearing(normal: tuple[float, float], north_deg: float) -> float:
@@ -182,6 +190,43 @@ def opening_samples(points: list[tuple[float, float]], opening: dict[str, Any], 
     offset = 0.5 if offset is None else offset
     lo, hi = max(offset - half, 0.0), min(offset + half, 1.0)
     return [edge_point(points, int(opening["edge"]), lo + (hi - lo) * k / (count - 1)) for k in range(count)]
+
+
+def shared_wall_length(first: dict[str, Any], second: dict[str, Any]) -> float:
+    """Longest stretch along which two rooms of the same floor share a wall (0 for another floor)."""
+    if first.get("floor_id") != second.get("floor_id"):
+        return 0.0
+    a_pts, b_pts = [tuple(p) for p in first["polygon"]], [tuple(p) for p in second["polygon"]]
+    return max((shared_length(*edge(a_pts, i), *edge(b_pts, j)) for i in range(len(a_pts)) for j in range(len(b_pts))), default=0.0)
+
+
+def _geometry_issues(layout: dict[str, Any], rooms: dict[str, dict[str, Any]], valid_rooms: set[str]) -> list[dict[str, Any]]:
+    """Hotfix 0.26.6.0: ways through a wall that the geometry does not carry (also after a room was moved).
+
+    ``E_OPENING_INTERIOR`` (0.26.6.0 UI hotfix, blocks saving): an opening the editor placed as interior
+    (``interior: true``) that does not lie on a wall shared with another room.
+
+    ``W_OPENING_NOT_SHARED``: a passage whose span does not lie on a wall shared with another room (it counts
+    as an outside opening). ``W_CONNECTION_NO_WALL``: a door or open passage between two rooms that share no
+    wall of at least MIN_SHARED_WALL – the air paths keep it as a link, the house map never draws air through it.
+    """
+    issues: list[dict[str, Any]] = []
+    for opening in layout["openings"]:
+        room_id = _text(opening.get("room_id"))
+        # an opening placed as interior that no longer lies on a shared wall is an error – never silently an outside door
+        if opening.get("interior") is True and room_id in valid_rooms and isinstance(opening.get("edge"), int) \
+                and 0 <= opening["edge"] < len(rooms[room_id]["polygon"]) and opening_neighbour(layout, room_id, opening) is None:
+            issues.append(_issue("E_OPENING_INTERIOR", "opening", _text(opening.get("id"))))
+            continue
+        if opening.get("kind") == "passage" and room_id in valid_rooms and isinstance(opening.get("edge"), int) \
+                and 0 <= opening["edge"] < len(rooms[room_id]["polygon"]) and opening_neighbour(layout, room_id, opening) is None:
+            issues.append(_issue("W_OPENING_NOT_SHARED", "opening", _text(opening.get("id"))))
+    for connection in layout["connections"]:
+        a, b = rooms.get(_text(connection.get("a"))), rooms.get(_text(connection.get("b")))
+        if connection.get("kind") in PHYSICAL_CONNECTIONS and a and b and a["id"] in valid_rooms and b["id"] in valid_rooms \
+                and a["id"] != b["id"] and shared_wall_length(a, b) < MIN_SHARED_WALL:
+            issues.append(_issue("W_CONNECTION_NO_WALL", "connection", _text(connection.get("id"))))
+    return issues
 
 
 def opening_neighbour(layout: dict[str, Any], room_id: str, opening: dict[str, Any]) -> str | None:
@@ -245,12 +290,26 @@ def normalise(raw: Any) -> dict[str, Any]:
         room["id"], room["room_key"], room["floor_id"] = _text(room.get("id")), _text(room.get("room_key")), _text(room.get("floor_id"))
         if room.get("provenance") not in PROVENANCE:
             room["provenance"] = "user"
+        # 0.26.6.0(2): walls whose length the user locked (edge indices); 0.26.6.0(10): corners whose angle the user
+        # locked (corner indices) – only valid indices, each once; an empty list is dropped
+        for key in ("locked_walls", "locked_corners"):
+            if key in room:
+                locked = room.get(key) if isinstance(room.get(key), list) else []
+                room[key] = sorted({i for i in locked if isinstance(i, int) and not isinstance(i, bool) and 0 <= i < len(room["polygon"])})
+                if not room[key]:
+                    room.pop(key)
     for opening in out["openings"]:
         opening["contacts"] = [_text(c) for c in opening.get("contacts", []) if _text(c)][: LIMITS["contacts"]] if isinstance(opening.get("contacts"), list) else []
         if opening.get("kind") not in OPENING_KINDS:
             opening["kind"] = "window"
         if opening.get("mechanics") not in OPENING_MECHANICS:
             opening["mechanics"] = "unknown"
+        # 0.26.6.0 UI hotfix: an interior door or passage placed by the editor between two rooms (True only)
+        if "interior" in opening and opening.get("interior") is not True:
+            opening.pop("interior")
+        for key, allowed in (("door_hinge", DOOR_HINGES), ("door_swing", DOOR_SWINGS)):
+            if key in opening and opening.get(key) not in allowed:
+                opening.pop(key)  # an unknown value is dropped – the door is drawn as before
     for floor in out["floors"]:
         floor["id"], floor["name"], floor["level_key"] = _text(floor.get("id")), _text(floor.get("name")), _text(floor.get("level_key"))
     return out
@@ -369,6 +428,7 @@ def validate(layout: dict[str, Any], room_keys: Iterable[str] | None = None) -> 
         ends = (_text(connection.get("a")), _text(connection.get("b")))
         if any(end != OUTSIDE and end not in rooms for end in ends) or ends[0] == ends[1] or connection.get("kind") not in CONNECTION_KINDS:
             issues.append(_issue("E_CONNECTION", "connection", _text(connection.get("id"))))
+    issues.extend(_geometry_issues(layout, rooms, valid_rooms))
     return issues
 
 
