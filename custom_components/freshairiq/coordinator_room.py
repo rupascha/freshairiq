@@ -48,6 +48,7 @@ from .const import (
 )
 from .automation_events import action_code
 from .climate_sources import aggregate_states
+from .contact_sides import inside_contacts
 from .coordinator_contacts import _contact_ids, _contact_specific_reference, _cover_openings, _unit_checked_reference
 from .coordinator_sources import _aggregate_state_proxy, _float_state, _humidity_value
 from .goals import normalise_disabled_goals
@@ -471,6 +472,8 @@ class RoomEvaluationMixin:
             "contact_mode": cfg.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY),
             "contact_count": len(_contact_ids(cfg)),
             "contact_entities": _contact_ids(cfg),
+            # inside doors (contact_sides.py): shown and used for room connections, never an outside opening
+            "inside_contact_entities": inside_contacts(cfg),
             "contact_delays": dict(cfg.get(CONF_CONTACT_DELAYS, {})),
             "contact_orientations": dict(cfg.get(CONF_CONTACT_ORIENTATIONS, {})),
             # 0.26.5.5: window/door per contact – only when stated (older setups: no field, no assumption)

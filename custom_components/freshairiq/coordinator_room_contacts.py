@@ -37,6 +37,7 @@ from .opening_state import (
     specialist_opening_provenance,
     stabilise_explicit_mode,
 )
+from .contact_sides import inside_contacts
 from .robustness import finite_float
 
 
@@ -77,6 +78,37 @@ class RoomContactsMixin:
     """Per-room contact truth: three-state stabilisation, reference air and contact expiry."""
 
     hass: HomeAssistant  # provided by the coordinator
+
+    def _stabilise_inside_contacts(self, *, cfg: Any, mem: Any, now: Any) -> bool:
+        """Debounced modes of the room's inside doors (0.26.7.0 F07/F08) – the same rules as for outside openings.
+
+        Proven three-state contacts confirm a transition after the same short stable window and keep their last
+        confirmed mode while unknown/unavailable; binary contacts use their normalised state (no new delay).
+        Kept apart from the outside openings (``inside_opening_modes``), so the airing logic is not touched.
+        """
+        inside = inside_contacts(cfg)
+        if not inside and not mem.get("inside_opening_modes") and not mem.get("inside_three_state_contacts"):
+            return False
+        remembered = {str(c) for c in (mem.get("inside_three_state_contacts") or [])} & set(inside)
+        raw, proven = opening_contact_profile(self.hass, inside, remembered)
+        previous = mem.get("inside_opening_modes") if isinstance(mem.get("inside_opening_modes"), dict) else {}
+        modes: dict[str, str] = {}
+        for contact in inside:
+            current, prev = raw.get(contact, "unknown"), previous.get(contact)
+            if contact in proven:
+                if current == "unknown" and prev in {"closed", "open", "tilted"}:
+                    modes[contact] = str(prev)
+                    continue
+                state = self.hass.states.get(contact)
+                changed_at = getattr(state, "last_changed", None)
+                age = max((now - changed_at).total_seconds(), 0.0) if isinstance(changed_at, datetime) else None
+                current, _suppressed = stabilise_explicit_mode(current, prev, age, threshold_seconds=THREE_STATE_TRANSITION_STABLE_SECONDS)
+            modes[contact] = current
+        three_state = sorted(proven)
+        if modes == previous and three_state == list(mem.get("inside_three_state_contacts") or []):
+            return False
+        mem["inside_opening_modes"], mem["inside_three_state_contacts"] = modes, three_state
+        return True
 
     def _stabilise_room_contacts(
         self,
@@ -192,6 +224,7 @@ class RoomContactsMixin:
         passage_contacts = cfg.get(CONF_CONTACT_PASSAGE_DOORS) if isinstance(cfg.get(CONF_CONTACT_PASSAGE_DOORS), dict) else {}
         active_passage_contacts = sorted(c for c in proven_three_state if bool(passage_contacts.get(c)) and contact_modes.get(c) == "open")
         passage_door_active = bool(active_passage_contacts)
+        changed = self._stabilise_inside_contacts(cfg=cfg, mem=mem, now=now) or changed
         return (
             active_passage_contacts, changed, configured_contact_ids, contact_modes, contacts_known,
             explicit_three_state, explicit_tilted, opening_mode, passage_contacts, passage_door_active,

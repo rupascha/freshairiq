@@ -229,6 +229,22 @@ def external_lock_active(state: str | None) -> bool:
     return str(state or "").lower() in {"on", "active", "paused"}
 
 
+AUTOMATION_LOCK_REASON = "automation_lock"
+
+
+def automation_lock_state(entity_id: Any, state: str | None) -> dict[str, Any]:
+    """0.26.7.0: the global automation lock (an entity the user chose, e.g. ``input_boolean.urlaub``).
+
+    Active while that entity is on (also a running timer or schedule, like the device lock). An unknown,
+    unavailable or deleted entity does not lock – FreshAirIQ never stays locked because a helper is gone;
+    the status says so (``source_state``).
+    """
+    entity = str(entity_id or "").strip() or None
+    raw = str(state).lower() if entity and state is not None else None
+    return {"configured": entity is not None, "entity_id": entity, "active": bool(entity) and external_lock_active(raw),
+            "source_state": raw if raw is not None else ("missing" if entity else None)}
+
+
 def decide_fan(
     *,
     mode: str,
@@ -343,13 +359,15 @@ def decide_fan(
     return None
 
 
-def settle_removed_off(mem: dict[str, Any], fan_on: bool | None, now: datetime, *, all_off: bool | None = None) -> bool:
+def settle_removed_off(mem: dict[str, Any], fan_on: bool | None, now: datetime, *, all_off: bool | None = None,
+                       reason: str = "control_removed") -> bool:
     """Audit P2-08: the switch-off sent when a room's fan control was removed gets its result.
 
     True when it is settled now: confirmed once every fan reports off, failed after
-    ``FAN_COMMAND_TIMEOUT_S``. The room is not controlled again.
+    ``FAN_COMMAND_TIMEOUT_S``. The room is not controlled again. 0.26.7.0: the same for the
+    switch-off of FreshAirIQ's own fans when the automation lock starts (``reason="automation_lock"``).
     """
-    if mem.get("reason") != "control_removed" or mem.get("command_state") != "pending":
+    if mem.get("reason") != reason or mem.get("command_state") != "pending":
         return False
     if fan_on is False and all_off is not False:  # audit S02: every fan reports off
         mem["command_state"] = "confirmed"

@@ -1,0 +1,174 @@
+# FreshAirIQ Continuous Quality System (reusable).
+# Restored 2026-10-16 from the contracts in tests/ (the original file was missing
+# from the repository). Release only runs after this full workflow passes.
+#
+# 2026-10-23 (Actions minutes): the only automatic workflow. The real Home
+# Assistant runtime runs once, with the combined 100 % coverage gate (formerly
+# duplicated in validate.yml); Python 3.13 is covered by core-quality; pushes
+# to work branches test Chromium (desktop + Android WebView) only – main, pull
+# requests, the weekly run and releases test all browsers; documentation-only
+# pushes start nothing (pull requests still check everything); a newer push
+# cancels the still running check of the same branch.
+name: Quality
+
+on:
+  # Tests run locally (tools/quality_gate.py); here only on demand or from the release workflow.
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  core-quality:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Berlin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Install test dependencies
+        run: python -m pip install pytest pytest-asyncio pytest-cov coverage aiohttp
+      - name: Pure-logic correctness (hard 100 % line coverage)
+        run: python -m pytest -q -p no:cacheprovider tests --cov=custom_components/freshairiq --cov-config=.coveragerc-pure --cov-fail-under=100
+      - name: Continuous quality gate
+        run: python tools/quality_gate.py --profile local
+      - name: GitHub/HACS release gate (source)
+        run: python tools/github_release_gate.py --source .
+
+  python-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.13 is the interpreter of core-quality (same suite, with coverage)
+        python: ["3.14"]
+    env:
+      TZ: Europe/Berlin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+      - run: python -m pip install pytest pytest-asyncio coverage aiohttp
+      - run: python -m pytest -q -p no:cacheprovider tests
+
+  ha-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        homeassistant: [">=2026.8,<2026.9", ">=2026.9,<2026.10"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          # Home Assistant 2026.8+ requires Python 3.14.
+          python-version: "3.14"
+      - run: python -m pip install "homeassistant${{ matrix.homeassistant }}"
+      - run: PYTHONPATH=. python tools/ha_import_smoke.py
+
+  ha-runtime:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Berlin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - run: python -m pip install pytest-homeassistant-custom-component pytest-cov
+      # manifest.json depends on "frontend": install the frontend build Home Assistant pins.
+      - name: Install the Home Assistant frontend pinned by the installed core
+        run: python -m pip install "$(grep -E '^home-assistant-frontend==' "$(python -c 'import homeassistant, pathlib; print(pathlib.Path(homeassistant.__file__).parent / "package_constraints.txt")')")"
+      # Combined report (CHANGELOG 0.25.0.0): pure logic first, HA runtime appended.
+      - name: Pure logic into the combined coverage data
+        run: python -m pytest -q -p no:cacheprovider -p no:homeassistant tests --cov=custom_components/freshairiq --cov-report=
+      - name: Home Assistant lifecycle/config-flow with coverage
+        run: |
+          python -m pytest -c ha_tests/pytest.ini -q -p no:cacheprovider ha_tests \
+            --cov=custom_components/freshairiq --cov-append \
+            --cov-report=json:ha_tests/coverage-ha.json
+      - name: HA coverage gate
+        run: python tools/report_ha_coverage.py ha_tests/coverage-ha.json --min-total 100 --min-module 100 --config-flow 100
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: freshairiq-ha-runtime-coverage
+          path: ha_tests/coverage-ha.json
+
+  frontend-compatibility:
+    runs-on: ubuntu-latest
+    env:
+      # work-branch pushes: Chromium only; everything else: chromium webkit firefox
+      WORK_BRANCH_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/arbeitsauftrag-') }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: npm ci
+      - if: env.WORK_BRANCH_PUSH != 'true'
+        run: npx playwright install --with-deps chromium webkit firefox
+      - if: env.WORK_BRANCH_PUSH != 'true'
+        run: npx playwright test
+      - if: env.WORK_BRANCH_PUSH == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: env.WORK_BRANCH_PUSH == 'true'
+        run: npx playwright test --project=chromium --project=android-webview --project=frames-chromium --project=frames-android-webview
+
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # HACS validates the GitHub repository itself (description, topics, files via
+      # the API) and only serves public repositories; in the private development
+      # repository the store check cannot apply. The source release gate always runs.
+      - uses: hacs/action@main
+        if: ${{ !github.event.repository.private }}
+        with:
+          category: integration
+          comment: false
+      - run: python tools/github_release_gate.py --source .
+
+  release-dry-run:
+    runs-on: ubuntu-latest
+    needs: [core-quality]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Clean release build (quality already verified by core-quality)
+        run: python tools/build_release.py --skip-quality --output release-artifact/FreshAirIQ-release.zip
+      - run: python tools/github_release_gate.py --zip release-artifact/FreshAirIQ-release.zip
+      # the installation ZIP attached to every release (freshairiq.zip, manual install)
+      - run: python tools/build_install_zip.py --output release-artifact/freshairiq.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: freshairiq-clean-release
+          path: |
+            release-artifact/FreshAirIQ-release.zip
+            release-artifact/freshairiq.zip
+
+  ha-edge-watch:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - run: python -m pip install --pre homeassistant
+      - run: PYTHONPATH=. python tools/ha_import_smoke.py

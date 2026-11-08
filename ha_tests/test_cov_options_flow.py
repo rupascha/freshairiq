@@ -677,15 +677,21 @@ async def test_cross_ventilation_and_forecast(hass) -> None:
     entry = _entry(rooms=[_room()])
     entry.add_to_hass(hass)
     result = await _open(hass, entry, "ventilation_settings", "cross_ventilation")
-    assert result["description_placeholders"] == {"room_keys": "Wohnzimmer = wohnzimmer"}
+    assert result["description_placeholders"] == {"room_keys": "Wohnzimmer = wohnzimmer", "error_detail": ""}
+    # v0.26.6.1 (#25, requirement change): a malformed pair is no longer stored silently – it is rejected and named
+    # (before: "wohnzimmer:bad" was saved and then ignored at runtime)
     result = await _submit(hass, result, {"cross_ventilation_pairs": "wohnzimmer:bad"})
+    assert result["step_id"] == "cross_ventilation" and result["errors"] == {"base": "cross_pairs_invalid"}
+    assert result["description_placeholders"]["error_detail"] == '"wohnzimmer:bad" is not a room pair (form: room+room)'
+    assert "cross_ventilation_pairs" not in entry.options
+    result = await _submit(hass, result, {"cross_ventilation_pairs": "", "cross_zone_connections": ""})
     assert result["step_id"] == "ventilation_settings"
-    assert entry.options["cross_ventilation_pairs"] == "wohnzimmer:bad"
+    assert entry.options["cross_ventilation_pairs"] == ""
 
     empty = MockConfigEntry(domain=DOMAIN, data={"rooms": []})
     empty.add_to_hass(hass)
     result = await _open(hass, empty, "ventilation_settings", "cross_ventilation")
-    assert result["description_placeholders"] == {"room_keys": "No rooms set up yet"}
+    assert result["description_placeholders"] == {"room_keys": "No rooms set up yet", "error_detail": ""}
 
     result = await _open(hass, entry, "ventilation_settings", "forecast")
     result = await _submit(hass, result, {"forecast_horizon_min": 30})

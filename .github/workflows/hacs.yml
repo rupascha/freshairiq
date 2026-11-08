@@ -1,0 +1,28 @@
+# HACS validation – the same check the catalog review (hacs/default) and the Home Assistant
+# Marketplace rely on. It reads the repository through the GitHub API (description, topics,
+# issues, releases, brand images) and the catalog only serves public repositories, so the job
+# runs in the public repository only; in the private development repository it is skipped
+# (no runner minutes). No check is ignored: the catalog does not accept ignored checks.
+name: HACS validation
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate-hacs:
+    if: github.repository == 'rupascha/freshairiq'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+          comment: false

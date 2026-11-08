@@ -70,7 +70,8 @@ async def _open_options_path(hass, entry: MockConfigEntry, *steps: str):
     [
         ("home_setup", {"outdoor", "building", "residents", "levels", "rooms", "open_connections", "back_to_main"}),
         ("ventilation_settings", {"profile", "recommendation_priorities", "threshold", "forecast", "air_quality", "cross_ventilation", "model", "back_to_main"}),
-        ("notification_energy_settings", {"notifications", "energy", "back_to_main"}),
+        # Test note (0.26.7.0, owner request: optional global automation lock): the menu gains "automation_lock"
+        ("notification_energy_settings", {"notifications", "energy", "automation_lock", "back_to_main"}),
         ("data_learning_settings", {"statistics", "diagnostics_sharing", "back_to_main"}),
         ("maintenance", {"reset_learning", "reset_defaults", "back_to_main"}),
     ],

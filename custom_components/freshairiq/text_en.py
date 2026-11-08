@@ -349,6 +349,8 @@ EXACT: dict[str, str] = {
     'Jetzt querlüften': 'Cross-ventilate now',
     'Jetzt schließen': 'Close now',
     'Ablüfter wegen eingestellter Sperrzeit ausgeschaltet': 'Exhaust fan switched off because of the set lock period',
+    'Automationssperre aktiv – FreshAirIQ schaltet den Ablüfter nicht automatisch': 'Automation lock active – FreshAirIQ does not switch the exhaust fan automatically',
+    'Automationssperre aktiv – FreshAirIQ beendet nur noch die eigene Lüftung': 'Automation lock active – FreshAirIQ only ends its own airing',
     'Einzelne Räume schließen': 'Close single rooms',
     'Ein Raum hat sein eigenes Schließkriterium erreicht; die übrigen geöffneten Räume lüften weiter.': 'One room has reached its own close criterion; the other open rooms keep airing.',
     'Jetzt schließen – der Zusatznutzen wird klein': 'Close now – the extra benefit is getting small',

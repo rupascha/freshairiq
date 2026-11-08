@@ -317,8 +317,12 @@ test('every floor is shown on its own (no all-floors overview any more); removin
   await page.waitForTimeout(50);
   expect((await q(page, 'polygon.room')).length).toBe(1);
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('svg[role="group"]').length)).toBe(1);
+  // Test note (0.26.7.0, owner request: weather beside the plan on wide cards): this wide card also holds the shared
+  // hourly-forecast subscription of its weather column – removing the card ends all three, none is left behind
+  const opened = await impl(page).evaluate(el => [2 + (el._fcUnsubs || []).length, !!el.shadowRoot.querySelector('.wxside')]);
+  expect(opened[0]).toBe(opened[1] ? 3 : 2);   // the WebView project lays out narrower: no weather column there
   await page.evaluate(() => document.getElementById('card').remove());
-  expect(await page.evaluate(() => window.__unsubscribed)).toBe(2);
+  expect(await page.evaluate(() => window.__unsubscribed)).toBe(opened[0]);
 });
 
 test('a 40-room house with 160 openings renders within budget', async ({ page }) => {
@@ -347,7 +351,9 @@ const streamsOf = page => impl(page).evaluate(el => [...el.shadowRoot.querySelec
   kind: p.getAttribute('class').split(' ')[1], d: p.getAttribute('d') })));
 
 test('wind streams: bounce off closed walls, enter through a confirmed open window, none without wind', async ({ page }) => {
-  await mount(page);
+  // Test note 0.26.7.0(2): animation levels – on a phone or a narrow card "auto" is now "minimal" (owner order: less load on
+  // small devices); this test checks the motion of the normal level, so it asks for it
+  await mount(page, { config: { animation_level: 'normal' } });
   // o_bad (north wall of the bath) is open but its delay still runs: no air "comes in" yet
   let streams = await streamsOf(page);
   expect(streams.length).toBeGreaterThan(4);
@@ -479,10 +485,14 @@ const waveState = page => impl(page).evaluate(el => ({
 }));
 
 test('wind: soft wave strands per stream, driven by the card clock (no CSS animation that could restart)', async ({ page }) => {
-  await mount(page);
+  // Test note 0.26.7.0(2): animation levels – on a phone or a narrow card "auto" is now "minimal" (owner order: less load on
+  // small devices); this test checks the motion of the normal level, so it asks for it
+  await mount(page, { config: { animation_level: 'normal' } });
   const a = await waveState(page);
   expect(a.streams).toBeGreaterThan(4);
-  expect(a.waves).toBe(a.streams * 3);
+  // Test note 0.26.7.0(2) (owner order: calmer wind, less load): two layers per stream at the default level (the stream and
+  // its broad air mass) instead of three; the levels are checked in house_next.spec.mjs
+  expect(a.waves).toBe(a.streams * 2);
   expect(a.cssAnimations).toBe(0);
   await page.waitForTimeout(400);
   const b = await waveState(page);
@@ -890,22 +900,25 @@ test('house map: plan first – the menu holds details, floors, guests, support 
   // at the bottom right, the layers and the notes are in the menu
   expect(await sr('.windchip')).toBe(null);
   expect(await sr('.dock')).toBe(null);
-  expect(await sr('[data-layer]')).toEqual({ hidden: true });
+  // Test note 0.26.7.0 UI hotfix (owner order): no "view on the plan" in the menu any more – the card setting decides it
+  expect(await sr('[data-layer]')).toBe(null);
   expect(await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('.legend, .notice')].every(n => n.closest('dialog.menudlg')))).toBe(true);  // 0.26.6.0(2): the menu window
   const box = await impl(page).evaluate(el => {
     const r = s => el.shadowRoot.querySelector(s).getBoundingClientRect();
     const c = r('ha-card'), m = r('.map'), b = r('[data-menu]');
     const bar = r('.mapbar');
-    return { edges: [m.left - c.left, c.right - m.right, m.top - c.top].map(v => Math.round(v)), bar: [Math.round(bar.top - m.bottom), Math.round(c.bottom - bar.bottom)],
+    // NOTE: the bar lies over the drawing's bottom edge now (the drawing reaches under it) – measured from the map's bottom
+    return { edges: [m.left - c.left, c.right - m.right, m.top - c.top].map(v => Math.round(v)), bar: [Math.round(m.bottom - bar.bottom), Math.round(c.bottom - bar.bottom)],
       onBar: b.right <= c.right && b.top >= bar.top && b.bottom <= bar.bottom && b.left > c.left + c.width / 2 };
   });
   expect(box.edges.every(v => v >= 0 && v <= 3)).toBe(true);   // only the card's own border
-  // UI hotfix 0.26.6.0: the menu button sits at the bottom right in a bar below the plan – never over it
+  // UI hotfix 0.26.6.0: the menu button sits at the bottom right in a bar at the card's bottom edge – never over a room
+  // (Test note 0.26.7.0 UI hotfix (owner order: one continuous animated surface): the bar is no longer below the drawing but over its free bottom margin)
   expect(box.bar.every(v => v >= 0 && v <= 3)).toBe(true);
   expect(box.onBar).toBe(true);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
   expect(await sr('.hero')).toEqual({ hidden: false });
-  for (const s of ['[data-support]', '[data-edit]', '.guest', '[data-layer]', '.legend']) expect(await sr(s), s).toEqual({ hidden: false });
+  for (const s of ['[data-support]', '[data-edit]', '.guest', '.legend']) expect(await sr(s), s).toEqual({ hidden: false });
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('dialog.menudlg [data-floor]'))).toBe(false);  // 0.26.6.0(2): floors are on the plan
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-close-menu]').click());
   // guests: the integration's own number settings
@@ -929,7 +942,9 @@ test('house map: rooms breathe only while airing is shown and animation is allow
   await mount(page, { config: { animation: false } });
   const anim = () => impl(page).evaluate(el => getComputedStyle([...el.shadowRoot.querySelectorAll('polygon.room')].find(p => p.classList.contains('t-close'))).animationName);
   expect(await anim()).toBe('none');
-  await impl(page).evaluate(el => el.setConfig({ animation: true }));
+  // Test note 0.26.7.0(2): on a phone "auto" is "minimal" now (no breathing rooms there, owner order: less load) – the normal
+  // level is asked for explicitly
+  await impl(page).evaluate(el => el.setConfig({ animation: true, animation_level: 'normal' }));
   await page.waitForTimeout(50);
   expect(await anim()).toBe('breathe');
 });
@@ -1294,7 +1309,9 @@ test('0.26.6.0(2) D10b: a logical connection can become a drawn door once – ne
 });
 
 test('0.26.6.0(2) D6/D7: floors as buttons on the plan; a floor pulses only when it needs an action', async ({ page }) => {
-  await mount(page);
+  // Test note 0.26.7.0(2): animation levels – on a phone or a narrow card "auto" is now "minimal" (owner order: less load on
+  // small devices); this test checks the motion of the normal level, so it asks for it
+  await mount(page, { config: { animation_level: 'normal' } });
   await page.evaluate(() => localStorage.clear());
   const buttons = () => impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('.stage .floors [data-floor]')].map(b => [b.dataset.floor, b.dataset.action || null]));
   expect(await buttons()).toEqual([['f_og', null]]);   // the floor shown is not offered; UI hotfix: no "All floors"
@@ -1332,7 +1349,8 @@ test('0.26.6.0(2) D8/D9: the menu is a real window without a jump; support opens
   const y = await page.evaluate(() => window.scrollY);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
   const menu = () => impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.menudlg'); return { open: d.open, modal: d.matches(':modal'), layers: d.querySelectorAll('[data-layer]').length, floors: d.querySelectorAll('[data-floor]').length }; });
-  expect(await menu()).toEqual({ open: true, modal: true, layers: 6, floors: 0 });
+  // Test note 0.26.7.0 UI hotfix (owner order): the layers left the menu
+  expect(await menu()).toEqual({ open: true, modal: true, layers: 0, floors: 0 });
   expect(await page.evaluate(() => window.scrollY)).toBe(y);
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', status_text: 'neu' }));
   await page.waitForTimeout(60);
@@ -1674,7 +1692,9 @@ test('0.26.6.0(6) 3: the door swing is a quiet hint – thin, dashed, translucen
 
 test('0.26.6.0(6) 4–8: no white boxes; labels readable and inside the room; size-dependent; the surface follows the state', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await mount(page);
+  // Test note 0.26.7.0(2): animation levels – on a phone or a narrow card "auto" is now "minimal" (owner order: less load on
+  // small devices); this test checks the motion of the normal level, so it asks for it
+  await mount(page, { config: { animation_level: 'normal' } });
   const look = () => impl(page).evaluate(el => {
     const out = {};
     for (const p of el.shadowRoot.querySelectorAll('polygon.room')) {
@@ -1764,7 +1784,9 @@ test('0.26.6.0(7): local weather top right – FreshAirIQ outdoor values or own 
   await mount(page);
   const chip = () => impl(page).evaluate(el => { const w = el.shadowRoot.querySelector('.weather'); if (!w) return null;
     const r = w.getBoundingClientRect(), card = el.shadowRoot.querySelector('ha-card').getBoundingClientRect(), plan = el.shadowRoot.querySelector('svg.plan').getBoundingClientRect();
-    return { text: w.textContent, right: card.right - r.right < 20, top: r.top - card.top < 20, abovePlan: r.bottom <= plan.top + 1 }; });
+    // NOTE (0.26.7.0 UI hotfix): the drawing reaches under the chip now – "above the plan" means above its rooms and windows
+    const house = [...el.shadowRoot.querySelectorAll('svg.plan polygon.room, svg.plan line.op, svg.plan .tag')].map(n => n.getBoundingClientRect()).reduce((a, b) => Math.min(a, b.top), Infinity);
+    return { text: w.textContent, right: card.right - r.right < 20, top: r.top - card.top < 20, abovePlan: r.bottom <= Math.min(house, plan.bottom) + 1 }; });
   expect(await chip()).toBe(null);   // nothing known yet: nothing invented
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, outdoor_temperature: 7.43, outdoor_humidity: 86.4, weather_now: { outdoor_temperature: 7.4 } }));
   await page.waitForTimeout(60);
@@ -1793,13 +1815,15 @@ const windward = page => impl(page).evaluate(el => {
   el._house = { ...el._house, wind: { ...el._house.wind, from_deg: 0 }, airflow: { ...el._house.airflow, openings: ops } };
   el._windSmooth = 0; el._render();
 });
+// Test note 0.26.7.0 UI hotfix (owner order: smooth animation everywhere): the moving weather (clouds, rain, snow, fog, stars, flash, gusts, rings) and the sky lie in a composed layer under the plan (.wxu) – no longer in the drawing; a tilt is read from data-tilt there
 const atmos = page => impl(page).evaluate(el => {
-  const sr = el.shadowRoot, svg = sr.querySelector('svg.plan'), all = [...svg.querySelectorAll('*')];
+  const sr = el.shadowRoot, svg = sr.querySelector('svg.plan'), all = [...svg.querySelectorAll('*')], map = sr.querySelector('.map');
   const first = sel => all.findIndex(n => n.matches(sel));
-  return { grid: !!sr.querySelector('#grid') || !!svg.querySelector('[fill="url(#grid)"]'), sky: svg.querySelectorAll('g.sky rect').length,
-    weather: svg.querySelector('g.weather') ? [...svg.querySelectorAll('g.weather .wx')].map(n => n.getAttribute('class').replace('wx ', '')) : null,
-    mask: svg.querySelector('g.weather') ? svg.querySelector('g.weather').getAttribute('mask') : null,
-    weatherBeforeRooms: first('g.weather') < first('polygon.room'), shadowFilter: svg.querySelector('g.house-shadow').getAttribute('filter'),
+  const wx = [...map.querySelectorAll('.wxu .wx, svg.plan g.weather .wx')];
+  return { grid: !!sr.querySelector('#grid') || !!svg.querySelector('[fill="url(#grid)"]'), sky: map.querySelectorAll('g.sky rect').length,
+    weather: wx.length ? wx.map(n => n.getAttribute('class').replace('wx ', '')).sort() : null,
+    mask: svg.querySelector('g.weather') ? svg.querySelector('g.weather').getAttribute('mask') : 'url(#wx-out)',   // what stays in the drawing is masked
+    weatherBeforeRooms: (!svg.querySelector('g.weather') || first('g.weather') < first('polygon.room')) && (!map.querySelector('.wxu') || !!(map.querySelector('.wxu').compareDocumentPosition(svg) & Node.DOCUMENT_POSITION_FOLLOWING)), shadowFilter: svg.querySelector('g.house-shadow').getAttribute('filter'),
     skyTop: svg.querySelector('#sky stop').getAttribute('stop-color') };
 });
 
@@ -1830,14 +1854,14 @@ test('order 7 / 5: weather around the house only from Home Assistant data – ra
     await push(page, { weather_now: now });
     await page.waitForTimeout(60);
     const s = await atmos(page);
-    expect(s.weather, JSON.stringify(now)).toEqual(expected);
+    expect(s.weather, JSON.stringify(now)).toEqual(expected && [...expected].sort());
     if (expected) { expect(s.mask).toBe('url(#wx-out)'); expect(s.weatherBeforeRooms).toBe(true); }   // never over rooms and labels
     if (sun && sun.attributes.elevation < -6) expect(s.skyTop).toBe('#0a1630');   // night (owner request: night more visible – darker night sky, was #0c1a36)                      // night
   }
   // rain falls slanted with the wind (5 m/s → 25°); calm → straight
   await push(page, { weather_now: { condition: 'rainy', raining: true } });
   await page.waitForTimeout(60);
-  const tilt = () => impl(page).evaluate(el => el.shadowRoot.querySelector('g.wx.rain').getAttribute('transform').match(/rotate\(([-\d.]+)/)[1]);
+  const tilt = () => impl(page).evaluate(el => { const r = el.shadowRoot.querySelector('.wx.rain'); return r.dataset.tilt != null ? r.dataset.tilt : r.getAttribute('transform').match(/rotate\(([-\d.]+)/)[1]; });
   expect(Math.abs(Number(await tilt()))).toBeCloseTo(25, 0);
   await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, revision: 3, wind: { ...window.__HOUSE.wind, speed_ms: 0 } }));
   await page.waitForTimeout(60);
@@ -1935,7 +1959,9 @@ test('order 7 / 10: weather, climate and air pause with the card, stop with "red
   const anim = sel => impl(page).evaluate((el, sel) => { const n = el.shadowRoot.querySelector(sel); return n ? { name: getComputedStyle(n).animationName, state: getComputedStyle(n).animationPlayState } : null; }, sel);
   const busy = async () => { await windward(page); await push(page, { weather_now: { condition: 'snowy', snowing: true }, rooms: { ...await page.evaluate(() => window.__ROOMS), bad: { ...await page.evaluate(() => window.__ROOMS.bad), humidity: 80, moisture_source_active: true } } });
     await expect.poll(() => impl(page).evaluate(el => !!el.shadowRoot.querySelector('.wx .fall') && !!el.shadowRoot.querySelector('.steam path'))).toBe(true); };   // under load: wait for the drawing, not a fixed time
-  await mount(page);
+  // Test note 0.26.7.0(2): animation levels – on a phone or a narrow card "auto" is now "minimal" (owner order: less load on
+  // small devices); this test checks the motion of the normal level, so it asks for it
+  await mount(page, { config: { animation_level: 'normal' } });
   await busy();
   // order 8: 'path.particles' moved to the canvas air layer – its pause and stillness are checked in 'order 8 / 9'
   for (const sel of ['.wx .fall', '.cl.mist', '.steam path', 'g.plume']) expect((await anim(sel)).name, sel).not.toBe('none');
@@ -1979,7 +2005,7 @@ test('order 7 / night: night and twilight from sun.sun – dim veil over the roo
       const svg = el.shadowRoot.querySelector('svg.plan'), all = [...svg.querySelectorAll('*')], veil = svg.querySelector('g.night-veil');
       return { veil: veil ? veil.getAttribute('class') : null, polys: veil ? veil.querySelectorAll('polygon').length : 0, rooms: svg.querySelectorAll('polygon.room').length,
         underLabels: veil ? all.indexOf(veil) < all.findIndex(n => n.matches('.tag')) && all.indexOf(veil) < all.findIndex(n => n.matches('line.wall')) : null,
-        stars: svg.querySelectorAll('.wx.stars circle').length };
+        stars: el.shadowRoot.querySelectorAll('.map .wx.stars circle, .map .wx.stars > i').length };
     });
   };
   const night = { state: 'below_horizon', attributes: { elevation: -25, azimuth: 0 } };
@@ -2137,7 +2163,10 @@ test('order 8 / 2+3: the canvas air lies exactly over the plan, draws threads ou
   await page.waitForTimeout(1200);
   let s = await canvasState(page);
   expect(s.over).toBe(true);
-  expect(s.ink).toBeGreaterThan(50);                            // threads are drawn
+  // Test note 0.26.7.0(2) (owner order: "remove the small white strokes completely", calmer wind): no threads around the house
+  // any more – the wind there is drawn by the ribbons; the canvas carries only the air coming in through an open window
+  expect(s.ink).toBe(0);
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('path.stream').length)).toBeGreaterThan(2);
   expect(s.onLabels).toBe(0);                                   // never over a name, state or value
   expect(s.routes).toEqual([]);                                 // windows closed or unconfirmed: no air in the house
   await windward(page);
@@ -2157,8 +2186,10 @@ test('order 8 / 2+3: the canvas air lies exactly over the plan, draws threads ou
 
 test('order 8 / 2.4: wind strength changes the density; no wind data – no air layer; tilted lets less air in', async ({ page }) => {
   await mount(page);
+  // Test note 0.26.7.0(2): the threads around the house are gone (owner order); the wind's strength is now told by the ribbons –
+  // more and livelier ones in stronger wind
   const n = [];
-  for (const speed of [1.5, 5, 11]) { await setWind(page, { speed_ms: speed, from_deg: 307 }); n.push((await canvasState(page)).n); }
+  for (const speed of [1.5, 5, 11]) { await setWind(page, { speed_ms: speed, from_deg: 307 }); n.push(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('path.stream:not(.inflow)').length)); }
   expect(n[0]).toBeLessThan(n[1]); expect(n[1]).toBeLessThan(n[2]);
   await setWind(page, { available: false });
   expect(await canvasState(page)).toBe(null);
@@ -2174,13 +2205,18 @@ test('order 8 / 9: the air pauses with the card and stands still with reduced mo
   await mount(page);
   await page.waitForTimeout(300);
   await impl(page).evaluate(el => el.setAttribute('data-paused', ''));
+  // Test note (0.26.6.1): the frame right after pausing still draws the step gathered before it (≤ 33 ms); reading
+  // t0 in that same frame made this test fail under load (0.4 → 0.4167). The pause is measured from the next frames
+  // on – the expectation (no movement while paused) is unchanged.
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
   const t0 = (await canvasState(page)).t; await page.waitForTimeout(400);
   expect((await canvasState(page)).t).toBe(t0);                 // paused: the air does not move on
   await mount(page, { reducedMotion: 'reduce' });
   await page.waitForTimeout(300);
   const a = await canvasState(page); await page.waitForTimeout(500); const b = await canvasState(page);
-  expect(a.ink).toBeGreaterThan(0);                             // a calm, still picture of the streamlines …
-  expect([b.t, b.ink]).toEqual([a.t, a.ink]);                   // … that does not move
+  // Test note 0.26.7.0(2): no threads around the house any more (owner order) – the still picture is the ribbons, standing still
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('path.stream').length)).toBeGreaterThan(0);
+  expect([b.t, b.ink]).toEqual([a.t, a.ink]);                   // … nothing moves
   await mount(page, { config: { animation: false } });
   await page.waitForTimeout(300);
   const c = await canvasState(page); await page.waitForTimeout(400);
@@ -2272,7 +2308,9 @@ test('order 9 / 1b: several floors – the house value counts each room once (no
   await push(page, { ...payload, outdoor_temperature: 6.2, outdoor_humidity: 81 });
   await page.waitForTimeout(300);
   const bar = await impl(page).evaluate(el => { const m = el.shadowRoot.querySelector('.moist').getBoundingClientRect(), w = el.shadowRoot.querySelector('.weather').getBoundingClientRect(), p = el.shadowRoot.querySelector('svg.plan').getBoundingClientRect();
-    return { apart: m.right <= w.left + 1 || m.bottom <= w.top + 1, above: m.bottom <= p.top + 1, oneLine: m.height < 40, font: parseFloat(getComputedStyle(el.shadowRoot.querySelector('.moist')).fontSize) }; });
+    // NOTE (0.26.7.0 UI hotfix: one continuous surface): above the plan's rooms and windows – the drawing itself reaches under the bar
+    const house = [...el.shadowRoot.querySelectorAll('svg.plan polygon.room, svg.plan line.op, svg.plan .tag')].map(n => n.getBoundingClientRect()).reduce((a, b) => Math.min(a, b.top), Infinity);
+    return { apart: m.right <= w.left + 1 || m.bottom <= w.top + 1, above: m.bottom <= Math.min(house, p.bottom) + 1, oneLine: m.height < 40, font: parseFloat(getComputedStyle(el.shadowRoot.querySelector('.moist')).fontSize) }; });
   expect(bar, JSON.stringify(bar)).toMatchObject({ apart: true, above: true, oneLine: true });
   expect(bar.font).toBeGreaterThanOrEqual(12);
 });
@@ -2319,7 +2357,8 @@ test('order 9 / 4: the scene follows the weather together – mood on the map an
     await page.waitForTimeout(900);
     const c = await canvasState(page);
     return { mood: await impl(page).evaluate(el => el.shadowRoot.querySelector('svg.plan').dataset.mood), layer: await impl(page).evaluate(el => el._flowLayer.field && el._flowLayer.field.mood.name),
-      fills: await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].map(p => `${p.getAttribute('class')} ${p.getAttribute('fill')}`).join('|')), onLabels: c.onLabels, ink: c.ink };
+      fills: await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].map(p => `${p.getAttribute('class')} ${p.getAttribute('fill')}`).join('|')), onLabels: c.onLabels, ink: c.ink,
+      streams: await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('path.stream').length) };
   };
   const day = { state: 'above_horizon', attributes: { elevation: 35, azimuth: 180 } };
   const sunny = await look({ condition: 'sunny' }, { speed_ms: 3, from_deg: 250 }, day);
@@ -2328,7 +2367,8 @@ test('order 9 / 4: the scene follows the weather together – mood on the map an
   const storm = await look({ condition: 'lightning-rainy', raining: true, thunder: true }, { speed_ms: 14, gust_ms: 24, from_deg: 250 }, day);
   expect([sunny.mood, cloudy.mood, rain.mood, storm.mood]).toEqual(['sunny', 'neutral', 'rain', 'storm']);
   expect([sunny.layer, cloudy.layer, rain.layer, storm.layer]).toEqual(['sunny', 'neutral', 'rain', 'storm']);
-  for (const s of [sunny, cloudy, rain, storm]) { expect(s.onLabels).toBe(0); expect(s.ink).toBeGreaterThan(0); }   // readable in every weather
+  // Test note 0.26.7.0(2): the wind around the house is the ribbons now (no canvas threads, owner order) – present in every weather
+  for (const s of [sunny, cloudy, rain, storm]) { expect(s.onLabels).toBe(0); expect(s.streams).toBeGreaterThan(0); }   // readable in every weather
   expect(new Set([sunny.fills, cloudy.fills, rain.fills, storm.fills]).size).toBe(1);                              // the weather never changes a room's state
   // missing wind data: no wind and no mood-driven air, whatever the weather says
   await setWind(page, { available: false });
@@ -2765,7 +2805,9 @@ test('review F01: a window drawn in one room can carry the sensor another room a
   const offered = await editor.evaluate(el => { el._sel = { type: 'opening', id: 'o_bad' }; el._render();
     return [...el.shadowRoot.querySelectorAll('[data-contact]')].map(b => [b.dataset.contact, b.checked, b.parentElement.textContent.trim()]); });
   expect(offered).toContainEqual(['sensor.wohnen_lage', false, 'sensor.wohnen_lage (lüftet Wohnen)']);
-  expect(offered).toContainEqual(['binary_sensor.bad_fenster', true, 'binary_sensor.bad_fenster']);
+  // Test note (hotfix U02, owner order): in this fixture no room's contact list holds the bath sensor, so the editor now
+  // marks it as no longer set up (it stays assigned and checked – nothing is deleted); the cross-room offer is unchanged
+  expect(offered).toContainEqual(['binary_sensor.bad_fenster', true, 'binary_sensor.bad_fenster ⚠ nicht mehr eingerichtet']);
   await editor.evaluate(el => { const b = el.shadowRoot.querySelector('[data-contact="sensor.wohnen_lage"]'); b.checked = true; b.dispatchEvent(new Event('change')); });
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
   await page.waitForTimeout(80);
@@ -2781,4 +2823,1166 @@ test('review F01: a window drawn in one room can carry the sensor another room a
   }, saved.contacts);
   expect(rows).toContain('sensor.wohnen_lage: gekippt');
   expect(rows.some(r => r.startsWith('binary_sensor.bad_fenster: '))).toBe(true);
+});
+
+// ---- v0.26.6.1: floor plan editor workspace – size independent of the card, steady view, readable in every theme ----
+const workspaceOf = page => impl(page).evaluate(el => {
+  const ws = el.shadowRoot.querySelector('.faiq-editor-workspace'), ed = ws && ws.querySelector('freshairiq-house-layout-editor');
+  const svg = ed && ed.shadowRoot.querySelector('svg'), panel = ed && ed.shadowRoot.querySelector('.aside'), r = x => { const b = x.getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]; };
+  return ws && { top: ws.matches(':popover-open'), ws: r(ws), svg: r(svg), panel: r(panel), viewBox: svg.getAttribute('viewBox'), vw: innerWidth, vh: innerHeight };
+});
+const openWorkspace = async (page, cardWidth, wrap = '', themeVars = {}) => {
+  await mount(page);
+  await page.evaluate(([w, wrap, vars]) => {
+    const m = document.getElementById('m'); m.style.cssText = `width:${w}px;${wrap}`;
+    for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
+  }, [cardWidth, wrap, themeVars]);
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
+  await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
+  await page.waitForTimeout(150);
+  return page.locator('freshairiq-house-layout-editor');
+};
+
+for (const [label, vw, vh, card] of [['desktop, narrow card', 1440, 900, 320], ['desktop, wide card', 1440, 900, 1300], ['tablet', 1024, 768, 480], ['phone', 390, 844, 358]]) {
+  test(`v0.26.6.1 editor workspace ${label}: large drawing, inspector beside or below, selection never moves or shrinks the view`, async ({ page }) => {
+    await page.setViewportSize({ width: vw, height: vh });
+    const editor = await openWorkspace(page, card, label.includes('narrow') ? 'transform:translateZ(0);overflow:hidden' : '');
+    const first = await workspaceOf(page);
+    expect(first.top).toBe(true);                                                        // top layer, whatever the card's parents do
+    // the whole screen, not the card (the WebView project lays out without a viewport meta tag: its own size)
+    expect(first.ws.map((v, i) => Math.abs(v - [0, 0, first.vw, first.vh][i]) <= 1)).toEqual([true, true, true, true]);
+    const wide = first.vw >= 900;
+    expect(first.svg[2]).toBeGreaterThanOrEqual(wide ? first.vw - 360 - 40 : first.vw - 40);   // the drawing takes all but the inspector …
+    expect(first.svg[2] * first.svg[3]).toBeGreaterThan(first.panel[2] * Math.min(first.panel[3], first.vh));
+    expect(first.svg[3]).toBeGreaterThanOrEqual(wide ? first.vh * 0.55 : 300);
+    if (wide) expect(first.panel[0]).toBeGreaterThan(first.svg[0] + first.svg[2] - 2);  // … inspector beside it
+    else expect(first.panel[1]).toBeGreaterThan(first.svg[1] + first.svg[3] - 2);       // … or below it
+    // the whole plan is inside the drawing
+    const inside = await editor.evaluate(el => { const s = el.shadowRoot.querySelector('svg').getBoundingClientRect();
+      return [...el.shadowRoot.querySelectorAll('polygon.room')].every(p => { const b = p.getBoundingClientRect(); return b.left >= s.left - 1 && b.right <= s.right + 1 && b.top >= s.top - 1 && b.bottom <= s.bottom + 1; }); });
+    expect(inside).toBe(true);
+    // choosing a room, a wall and a window keeps scale, centre and drawing size
+    for (const sel of [{ type: 'room', id: 'r_bad' }, { type: 'wall', id: 'r_bad', index: 2 }, { type: 'opening', id: 'o_bad' }, null]) {
+      await editor.evaluate((el, sel) => { el._sel = sel; el._render(); }, sel);
+      await page.waitForTimeout(60);
+      const now = await workspaceOf(page);
+      expect([now.svg, now.viewBox], JSON.stringify(sel)).toEqual([first.svg, first.viewBox]);
+    }
+    // the inspector and the save bar are reachable
+    const reach = await editor.evaluate(el => ['[data-a="save"]', '[data-a="cancel"]'].map(s => { const b = el.shadowRoot.querySelector(s).getBoundingClientRect(); return b.bottom <= innerHeight && b.top >= 0 && b.width >= 44 && b.height >= 44; }));
+    expect(reach).toEqual([true, true]);
+    if (!wide) {   // narrow: the properties can be hidden to give the drawing the room
+      await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="panel_toggle"]').click());
+      await page.waitForTimeout(80);
+      const hidden = await workspaceOf(page);
+      expect(hidden.panel[3]).toBe(0);
+      expect(hidden.svg[3]).toBeGreaterThan(first.svg[3]);
+    }
+    // close: the workspace leaves the top layer and the map is back
+    await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="cancel"]').click());
+    await page.waitForTimeout(120);
+    expect(await impl(page).evaluate(el => [!!el.shadowRoot.querySelector('.faiq-editor-workspace'), !!el.shadowRoot.querySelector('svg.plan')])).toEqual([false, true]);
+  });
+}
+
+test('v0.26.6.1 editor: fit stays on until the user zooms; a zoom or a pan is kept while choosing objects', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const editor = await openWorkspace(page, 600);
+  const vb = () => editor.evaluate(el => el.shadowRoot.querySelector('svg').getAttribute('viewBox'));
+  const fitted = await vb();
+  await page.setViewportSize({ width: 900, height: 700 });            // resized: refitted, the plan stays whole
+  await page.waitForTimeout(200);
+  expect(await vb()).not.toBe(fitted);
+  await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="zoom-in"]').click());
+  const zoomed = await vb();
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="fit"]').getAttribute('aria-pressed'))).toBe('false');
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_flur' }; el._render(); });
+  await page.setViewportSize({ width: 920, height: 700 });            // the user's zoom is not undone by a resize
+  await page.waitForTimeout(200);
+  expect((await vb()).split(' ')[2]).toBe(zoomed.split(' ')[2]);
+  await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="fit"]').click());
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="fit"]').getAttribute('aria-pressed'))).toBe('true');
+});
+
+const THEMES = {
+  light: { '--card-background-color': '#ffffff', '--primary-text-color': '#212121', '--secondary-text-color': '#727272', '--primary-color': '#03a9f4', '--text-primary-color': '#ffffff', '--divider-color': 'rgba(0,0,0,.12)', '--secondary-background-color': '#e5e5e5' },
+  dark: { '--card-background-color': '#1c1c1c', '--primary-text-color': '#e1e1e1', '--secondary-text-color': '#9b9b9b', '--primary-color': '#03a9f4', '--text-primary-color': '#ffffff', '--divider-color': 'rgba(225,225,225,.12)', '--secondary-background-color': '#282828' },
+  // the reported case: a custom theme with black text on a dark blue card, and an accent without contrast
+  custom: { '--card-background-color': '#06305c', '--primary-text-color': '#000000', '--secondary-text-color': '#1b2b3b', '--primary-color': '#ffd400', '--text-primary-color': '#ffffff', '--divider-color': '#0a3d70', '--secondary-background-color': '#0a3d70' },
+};
+for (const [name, vars] of Object.entries(THEMES)) {
+  test(`v0.26.6.1 editor contrast, ${name} theme: every text 4.5:1, every control 3:1, states distinguishable`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const editor = await openWorkspace(page, 400, '', vars);
+    await editor.evaluate(el => { el._snap90 = true; el._sel = { type: 'wall', id: 'r_bad', index: 2 }; el._render(); });
+    const report = await editor.evaluate(async el => {
+      const E = await import('/freshairiq-house-editor.js?v=t');
+      const rgb = s => { const m = /rgba?\(([^)]+)\)/.exec(s); const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
+      const bgOf = n => { for (let x = n; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { const c = rgb(getComputedStyle(x).backgroundColor); if (c[3] > 0.5) return c; } return [255, 255, 255, 1]; };
+      const bad = [];
+      for (const n of el.shadowRoot.querySelectorAll('button,label,select,input,.help,.gl,h4,.panel b,.msg')) {
+        const b = n.getBoundingClientRect(); if (!b.width || !b.height || n.disabled) continue;
+        const ratio = E.contrast(rgb(getComputedStyle(n).color), bgOf(n));
+        if (ratio < 4.5) bad.push(`${n.tagName}.${n.className}:${(n.textContent || '').trim().slice(0, 20)}=${ratio.toFixed(2)}`);
+      }
+      // controls: borders/fills of buttons against the editor background ≥ 3:1 for the pressed (active) state
+      const pressed = el.shadowRoot.querySelector('button[aria-pressed="true"]'), host = rgb(getComputedStyle(el).backgroundColor);
+      const pressedBg = rgb(getComputedStyle(pressed).backgroundColor), normalBg = rgb(getComputedStyle(el.shadowRoot.querySelector('button[aria-pressed="false"]')).backgroundColor);
+      const sizes = [...el.shadowRoot.querySelectorAll('button,label,select,.help,.panel')].filter(n => n.getBoundingClientRect().width).map(n => parseFloat(getComputedStyle(n).fontSize));
+      return { bad, palette: el.getAttribute('data-palette'), accent: el.getAttribute('data-accent'), pressedVsBg: E.contrast(pressedBg, host), pressedVsNormal: E.contrast(pressedBg, normalBg), minFont: Math.min(...sizes) };
+    });
+    expect(report.bad).toEqual([]);
+    expect(report.pressedVsBg).toBeGreaterThanOrEqual(3);
+    expect(report.pressedVsNormal).toBeGreaterThanOrEqual(3);
+    expect(report.minFont).toBeGreaterThanOrEqual(14);
+    if (name === 'custom') expect([report.palette, report.accent]).toEqual(['dark', 'fallback']);
+    else expect(report.palette).toBe(null);           // a readable theme is used as it is
+  });
+}
+
+test('v0.26.6.1 editor workspace: open an existing plan, edit, save, reopen – geometry and assignments kept; the house map look is unchanged', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const editor = await openWorkspace(page, 500);
+  await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_bad').polygon[2] = [4, 8.5]; l.openings.find(o => o.id === 'o_bad').contacts.push('sensor.wohnen_lage'); }); });
+  await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+  await page.waitForTimeout(150);
+  const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+  expect(saved.rooms.find(r => r.id === 'r_bad').polygon[2]).toEqual([4, 8.5]);
+  expect(saved.openings.find(o => o.id === 'o_bad').contacts).toContain('sensor.wohnen_lage');
+  expect(saved.rooms.map(r => r.id)).toEqual(LAYOUT.rooms.map(r => r.id));
+  expect(await impl(page).evaluate(el => [!!el.shadowRoot.querySelector('.faiq-editor-workspace'), !!el.shadowRoot.querySelector('svg.plan'), el.shadowRoot.querySelector('ha-card').childElementCount > 0])).toEqual([false, true, true]);
+  // reopened with the saved plan: the same geometry and assignments
+  await impl(page).evaluate((el, saved) => { el._layoutInfo = { ...el._layoutInfo, layout: saved, revision: 4 }; el._render(); }, saved);
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
+  await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
+  const again = page.locator('freshairiq-house-layout-editor');
+  expect(await again.evaluate(el => [el._layout.rooms.find(r => r.id === 'r_bad').polygon[2], el._layout.openings.find(o => o.id === 'o_bad').contacts])).toEqual([[4, 8.5], ['binary_sensor.bad_fenster', 'sensor.wohnen_lage']]);
+});
+
+// ---- v0.26.6.1 editor hotfix: stable drawing on tablet and short landscape screens, context hints, plain workflow ----
+const layoutOf = editor => editor.evaluate(el => {
+  const r = n => { if (!n) return null; const b = n.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height), r: Math.round(b.right), b: Math.round(b.bottom) }; };
+  const q = s => el.shadowRoot.querySelector(s);
+  return { svg: r(q('svg')), viewBox: q('svg').getAttribute('viewBox'), tools: r(q('.tools')), aside: r(q('.aside')), final: r(q('.bar.final')), top: r(q('.ov-top')), bl: r(q('.ov-bl')), br: r(q('.ov-br')),
+    layout: el.getAttribute('data-layout'), vw: innerWidth, vh: innerHeight, asideScroll: [q('.aside').scrollHeight, q('.aside').clientHeight, q('.aside').scrollWidth, q('.aside').clientWidth] };
+});
+const plan2screen = (editor, p) => editor.evaluate((el, p) => { const svg = el.shadowRoot.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = p[0]; pt.y = -p[1]; const s = pt.matrixTransform(svg.getScreenCTM()); return [s.x, s.y]; }, p);
+const tapPlan = async (page, editor, p) => { const [x, y] = await plan2screen(editor, p); await page.mouse.click(x, y); await page.waitForTimeout(60); };
+const hintText = editor => editor.evaluate(el => el.shadowRoot.querySelector('.hint').textContent.trim());
+const TEXT = page => page.evaluate(async () => (await import('/freshairiq-house-editor.js?v=t')).EDITOR_TEXT);
+const STATES = [
+  ['nothing', el => { el._sel = null; }],
+  ['room', el => { el._sel = { type: 'room', id: 'r_bad' }; }],
+  ['wall', el => { el._sel = { type: 'wall', id: 'r_bad', index: 2 }; }],
+  ['window', el => { el._sel = { type: 'opening', id: 'o_bad' }; }],
+  ['door', el => { el._sel = { type: 'opening', id: 'd_bad' }; }],
+  ['corner (precision)', el => { el._mode = 'precise'; el._sel = { type: 'vertex', id: 'r_wohnen', index: 2 }; el._open.corners = true; el._open.connections = true; }],
+  ['room with all sections open', el => { el._mode = 'precise'; el._sel = { type: 'room', id: 'r_wohnen' }; el._open.corners = true; el._open.connections = true; }],
+  ['window tool', el => { el._sel = null; el._mode = 'quick'; el._setTool('window'); }],
+  ['add room', el => { el._setTool(null); el._adding = true; }],
+  ['menu', el => { el._adding = false; el._menu = true; }],
+  ['error message', el => { el._menu = false; el._msg = { err: true, text: el._t('corner_min') + ' ' + el._t('wall_conflict_overlap') }; }],
+];
+
+test('v0.26.6.1 editor hotfix (A) 768 × 1024: choosing objects, tools or panels never shrinks or moves the drawing; the properties scroll on their own', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  const editor = await openWorkspace(page, 400);
+  const first = await layoutOf(editor);
+  if (first.vw === 768) {   // the WebView project lays out at its own width (no viewport tag): there only the stability counts
+    expect(first.layout).toBe('stack');
+    expect(first.svg.h).toBeGreaterThanOrEqual(511);                     // before the fix: 511 px, 465 px with a room chosen
+    expect(first.aside.y).toBeGreaterThanOrEqual(first.svg.b);
+  }
+  for (const [name, set] of STATES) {
+    await editor.evaluate((el, f) => { (new Function('el', `(${f})(el)`))(el); el._render(); }, set.toString());
+    await page.waitForTimeout(60);
+    const now = await layoutOf(editor);
+    expect([now.svg, now.viewBox, now.aside.h], name).toEqual([first.svg, first.viewBox, first.aside.h]);
+    expect(now.final.b, name).toBeLessThanOrEqual(now.vh);
+  }
+  // a long inspector scrolls inside its column; the drawing stays as it is
+  await editor.evaluate(el => { el._mode = 'precise'; el._sel = { type: 'room', id: 'r_wohnen' }; el._open.corners = true; el._open.connections = true; el._render(); });
+  const long = await layoutOf(editor);
+  if (long.vw === 768) expect(long.asideScroll[0]).toBeGreaterThan(long.asideScroll[1]);
+  await editor.evaluate(el => { el.shadowRoot.querySelector('.aside').scrollTop = 1e6; });
+  const last = await editor.evaluate(el => { const a = el.shadowRoot.querySelector('.aside').getBoundingClientRect(), b = el.shadowRoot.querySelector('.aside [data-a="delete"]').getBoundingClientRect(); return b.bottom <= a.bottom + 1 && b.top >= a.top - 1; });
+  expect(last).toBe(true);
+  expect((await layoutOf(editor)).svg).toEqual(first.svg);
+});
+
+test('v0.26.6.1 editor hotfix (B) 844 × 390: drawing, properties, toolbar and save bar never overlap; every control is reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  const editor = await openWorkspace(page, 400);
+  const first = await layoutOf(editor);
+  if (first.vw === 844) expect(first.layout).toBe('side short');
+  for (const [name, set] of STATES) {
+    await editor.evaluate((el, f) => { (new Function('el', `(${f})(el)`))(el); el._render(); }, set.toString());
+    await page.waitForTimeout(60);
+    const l = await layoutOf(editor);
+    expect([l.svg, l.viewBox], name).toEqual([first.svg, first.viewBox]);
+    for (const box of [l.tools, l.svg, l.aside, l.final]) expect(box.x >= 0 && box.y >= 0 && box.r <= l.vw && box.b <= l.vh, `${name}: inside the screen`).toBe(true);
+    expect(l.tools.b, name).toBeLessThanOrEqual(l.svg.y);                // toolbar above the drawing
+    const beside = l.aside.x >= l.svg.r, below = l.aside.y >= l.svg.b;   // properties beside it (or, in a tall WebView, below it)
+    expect(beside || below, name).toBe(true);
+    expect(beside ? l.final.x >= l.svg.r : l.final.y >= l.svg.b, name).toBe(true);   // the save bar never lies over the drawing
+    expect(l.final.y, name).toBeGreaterThanOrEqual(l.aside.b - 1);
+    expect(l.svg.h, name).toBeGreaterThanOrEqual(220);
+    // the floating controls stay inside the drawing and apart from each other and from the hint
+    for (const box of [l.top, l.bl, l.br]) expect(box.x >= l.svg.x && box.r <= l.svg.r && box.y >= l.svg.y && box.b <= l.svg.b, `${name}: floating inside`).toBe(true);
+    expect(l.bl.r < l.br.x && l.top.b <= l.br.y, `${name}: floating apart`).toBe(true);
+    expect(l.asideScroll[2], name).toBeLessThanOrEqual(l.asideScroll[3]);   // nothing cut off at the side
+    // every button, select and field in the toolbar, the save bar and (scrolled to) the properties is on screen and big enough
+    const bad = await editor.evaluate(el => {
+      const out = [], aside = el.shadowRoot.querySelector('.aside');
+      for (const n of el.shadowRoot.querySelectorAll('.tools button, .tools select, .bar.final button, .aside button, .aside select, .aside input:not([type=checkbox]):not([type=file]), .ov-bl button, .ov-br button')) {
+        if (n.closest('details:not([open])') || n.closest('[hidden]') || getComputedStyle(n).display === 'none') continue;
+        if (aside.contains(n)) n.scrollIntoView({ block: 'nearest' });
+        const b = n.getBoundingClientRect(), hit = el.shadowRoot.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        if (b.height < 40 || b.left < -1 || b.right > innerWidth + 1 || !(hit === n || n.contains(hit) || (hit && hit.closest('label') && hit.closest('label').contains(n)))) out.push(`${n.tagName}[${n.dataset.a || n.dataset.f || n.dataset.tool || n.dataset.mode || ''}] ${Math.round(b.height)}`);
+      }
+      return out;
+    });
+    expect(bad, name).toEqual([]);
+  }
+});
+
+test('v0.26.6.1 editor hotfix 360 × 780: draw, edit the properties, switch to drawing only and back with the selection kept, save', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  const editor = await openWorkspace(page, 340);
+  const l = await layoutOf(editor);
+  if (l.vw === 360) expect(l.layout).toBe('stack phone');
+  expect(l.svg.h).toBeGreaterThanOrEqual(300);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(l.vw);
+  const overflow = await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('.tools *, .bar.final *, .aside *')].filter(n => { const b = n.getBoundingClientRect(); return b.width && (b.right > innerWidth + 1 || b.left < -1); }).map(n => n.tagName + (n.dataset.a || n.dataset.f || '')));
+  expect(overflow).toEqual([]);
+  // tap the bath and drag it 1 m to the left
+  const before = await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').polygon.map(p => p.slice()));
+  await tapPlan(page, editor, [2, 6]);
+  expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_bad' });
+  const [x, y] = await plan2screen(editor, [2, 6]), [x2] = await plan2screen(editor, [1, 6]);
+  await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move((x + x2) / 2, y, { steps: 3 }); await page.mouse.move(x2, y, { steps: 3 }); await page.mouse.up();
+  await page.waitForTimeout(60);
+  const moved = await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').polygon);
+  expect(moved[0][0]).toBeLessThan(before[0][0]);
+  // the window: tap it, make it wider in the properties
+  await tapPlan(page, editor, [moved[2][0] / 2 + moved[3][0] / 2, 8]);
+  expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'opening', id: 'o_bad' });
+  await editor.locator('[data-w="1"]').click();
+  const width = await editor.evaluate(el => el._layout.openings.find(o => o.id === 'o_bad').width_m);
+  expect(width).toBeGreaterThan(0);
+  // drawing only: the selection stays, one tap brings its properties back (a stacked layout; the WebView lays out wide)
+  if (l.layout.startsWith('stack')) {
+  await editor.locator('[data-a="panel_toggle"]').click();
+  const hidden = await layoutOf(editor);
+  expect(hidden.aside.h).toBe(0);
+  expect(hidden.svg.h).toBeGreaterThan(l.svg.h);
+  expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'opening', id: 'o_bad' });
+  expect(await hintText(editor)).toContain('Gewählt: Fenster · Bad');
+  await editor.locator('[data-a="panel_open"]').click();
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('.aside h4').textContent)).toBe('Fenster · Bad');
+  }
+  await editor.locator('[data-a="save"]').click();
+  await page.waitForTimeout(150);
+  const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+  expect(saved.rooms.find(r => r.id === 'r_bad').polygon).toEqual(moved);
+  expect(saved.openings.find(o => o.id === 'o_bad').width_m).toBe(width);
+});
+
+for (const [label, vw, vh, card, wrap] of [['phone, narrow card', 360, 780, 160, 'transform:translateZ(0);overflow:hidden'], ['desktop, wide card', 1600, 1000, 1500, ''], ['desktop, narrow card', 1280, 800, 260, 'overflow:hidden']]) {
+  test(`v0.26.6.1 editor hotfix ${label}: the editor uses the screen, not the card`, async ({ page }) => {
+    await page.setViewportSize({ width: vw, height: vh });
+    const editor = await openWorkspace(page, card, wrap);
+    const l = await layoutOf(editor);
+    expect(l.svg.w * l.svg.h / (l.vw * l.vh)).toBeGreaterThan(l.vw < 600 ? 0.4 : 0.55);
+    expect(l.final.b).toBeLessThanOrEqual(l.vh);
+  });
+}
+
+test('v0.26.6.1 editor hotfix: choose and edit a room, a window, a door, a wall and a corner on the drawing itself', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const editor = await openWorkspace(page, 500);
+  const sel = () => editor.evaluate(el => el._sel);
+  await tapPlan(page, editor, [2, 6]);
+  expect(await sel()).toEqual({ type: 'room', id: 'r_bad' });
+  expect(await editor.evaluate(el => [el.shadowRoot.querySelector('.aside h4').textContent, !!el.shadowRoot.querySelector('[data-a="rotate"]'), !!el.shadowRoot.querySelector('[data-f="wall_len"]')])).toEqual(['Bad', true, false]);
+  await tapPlan(page, editor, [2, 8]);                                   // the window on the bath's top wall
+  expect(await sel()).toEqual({ type: 'opening', id: 'o_bad' });
+  expect(await editor.evaluate(el => [!!el.shadowRoot.querySelector('[data-contact]'), !!el.shadowRoot.querySelector('[data-f="door_hinge"]')])).toEqual([true, false]);
+  await editor.locator('[data-contact="sensor.wohnen_lage"]').check();
+  expect(await editor.evaluate(el => el._layout.openings.find(o => o.id === 'o_bad').contacts)).toContain('sensor.wohnen_lage');
+  await tapPlan(page, editor, [2, 4]);                                   // the door between bath and hall
+  expect(await sel()).toEqual({ type: 'opening', id: 'd_bad' });
+  await editor.locator('[data-f="door_hinge"]').selectOption('left');
+  expect(await editor.evaluate(el => el._layout.openings.find(o => o.id === 'd_bad').door_hinge)).toBe('left');
+  await tapPlan(page, editor, [0, 6]);                                   // the bath's outside wall (west)
+  expect(await sel()).toEqual({ type: 'wall', id: 'r_bad', index: 3 });
+  expect(await editor.evaluate(el => [!!el.shadowRoot.querySelector('[data-f="wall_len"]'), !!el.shadowRoot.querySelector('[data-f="wall_lock"]'), el.shadowRoot.querySelector('details[data-sec="angles"]').open])).toEqual([true, true, true]);
+  await editor.locator('[data-f="wall_lock"]').check();
+  expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').locked_walls)).toEqual([3]);
+  await editor.locator('[data-f="wall_lock"]').uncheck();
+  // a corner: in precision mode, then moved with the arrow keys
+  await editor.locator('[data-mode="precise"]').click();
+  await tapPlan(page, editor, [2, 6]);
+  await tapPlan(page, editor, [0, 8]);
+  expect(await sel()).toEqual({ type: 'vertex', id: 'r_bad', index: 3 });
+  expect(await hintText(editor)).toContain('Ecke 4');
+  await page.keyboard.press('ArrowLeft');
+  expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').polygon[3])).toEqual([-0.1, 8]);
+});
+
+test('v0.26.6.1 editor hotfix: quick and precision mode are clearly told apart and switch from the toolbar or the room', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const editor = await openWorkspace(page, 500);
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_wohnen' }; el._render(); });
+  const state = () => editor.evaluate(el => ({ quick: el.shadowRoot.querySelector('[data-mode="quick"]').getAttribute('aria-pressed'), corners: el.shadowRoot.querySelectorAll('[data-k="v"]').length, scale: el.shadowRoot.querySelectorAll('[data-k="scale"]').length, title: el.shadowRoot.querySelector('[data-mode="precise"]').title }));
+  expect(await state()).toEqual({ quick: 'true', corners: 0, scale: 1, title: 'Präzision: einzelne Ecken, Wandlängen und Winkel bearbeiten' });
+  expect(await hintText(editor)).toContain('Ziehen verschiebt den Raum');
+  await editor.locator('[data-a="edit_corners"]').click();
+  expect(await state()).toEqual({ quick: 'false', corners: 6, scale: 0, title: 'Präzision: einzelne Ecken, Wandlängen und Winkel bearbeiten' });
+  expect(await hintText(editor)).toContain('Ecken ziehen');
+  expect(await editor.evaluate(el => !!el.shadowRoot.querySelector('details[data-sec="corners"] [data-vx="0"]'))).toBe(true);
+  await editor.locator('[data-a="corners_done"]').click();
+  expect((await state()).quick).toBe('true');
+  await editor.locator('[data-mode="precise"]').click();
+  expect((await state()).corners).toBe(6);
+  await editor.locator('[data-mode="quick"]').click();
+  expect((await state()).scale).toBe(1);
+});
+
+test('v0.26.6.1 editor hotfix, a new user: from an empty floor to a room with a window, guided by the hints only', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const editor = await openWorkspace(page, 500);
+  await editor.evaluate(el => { el._layout.rooms = []; el._layout.openings = []; el._layout.connections = []; el._render(); });
+  expect(await hintText(editor)).toBe('Noch kein Raum auf dieser Etage. Tippe auf „＋ Raum“, wähle den Raum und eine Form.');
+  expect(await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('.steps li')].map(li => li.className.trim()))).toEqual(['done', 'next', '', '', '', '']);
+  await editor.locator('.aside [data-a="add_open"]').click();
+  expect(await hintText(editor)).toContain('Raum und Form wählen');
+  await editor.locator('[data-f="add_key"]').selectOption('bad');
+  await editor.locator('[data-shape="l"]').click();
+  await editor.locator('[data-a="add"]').click();
+  const room = await editor.evaluate(el => el._layout.rooms.find(r => r.room_key === 'bad'));
+  expect(room.polygon.length).toBe(6);
+  expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_bad' });
+  expect(await hintText(editor)).toContain('Ziehen verschiebt den Raum');
+  await editor.locator('.tools [data-tool="window"]').click();
+  expect(await hintText(editor)).toBe('Tippe auf eine Außenwand, um ein Fenster zu platzieren.');
+  await tapPlan(page, editor, [0, 2]);                                   // the west wall of the new room
+  const opening = await editor.evaluate(el => el._layout.openings.find(o => o.room_id === 'r_bad'));
+  expect(opening && opening.kind).toBe('window');
+  expect(await editor.evaluate(el => [el._sel.type, el.shadowRoot.querySelector('.aside h4').textContent, !!el.shadowRoot.querySelector('.checks')])).toEqual(['opening', 'Fenster · Bad', true]);
+  await page.keyboard.press('Escape');
+  expect(await hintText(editor)).toBe('Nächster Schritt: Noch 3 Räume ohne Grundriss – über „＋ Raum“ ergänzen.');
+  // "own shape": a rectangle in precision mode, ready to drag its corners
+  await editor.locator('.tools [data-a="add_open"]').click();
+  await editor.locator('[data-shape="precise"]').click();
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('.aside').textContent)).toContain('Ecken an die richtige Stelle ziehen');
+  await editor.locator('[data-a="add"]').click();
+  expect(await editor.evaluate(el => [el._mode, el._sel.type, el.shadowRoot.querySelectorAll('[data-k="v"]').length])).toEqual(['precise', 'room', 4]);
+  // saved and opened again: nothing lost
+  await editor.locator('[data-a="save"]').click();
+  await page.waitForTimeout(150);
+  const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+  expect([saved.rooms.length, saved.rooms.find(r => r.room_key === 'bad').polygon, saved.openings.length]).toEqual([2, room.polygon, 1]);
+});
+
+test('v0.26.6.1 editor hotfix: hints and messages in German and English, with a way out; the two languages have the same texts', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const editor = await openWorkspace(page, 500);
+  const text = await TEXT(page);
+  const keys = o => Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? keys(v).map(x => `${k}.${x}`) : [k])).sort();
+  expect(keys(text.en)).toEqual(keys(text.de));
+  for (const [lang, expected] of [['de', ['Tippe auf eine Außenwand, um ein Fenster zu platzieren.', 'mindestens drei Ecken. Lösung:', 'Rot markierte Räume antippen', 'Nächster Schritt']],
+    ['en', ['Tap an outside wall to place a window.', 'at least three corners. Fix:', 'Tap the rooms marked red', 'Next step']]]) {
+    await editor.evaluate((el, lang) => { el._lang = lang; el._layout = JSON.parse(JSON.stringify(el._history.past[0] || el._layout)); el._sel = null; el._msg = null; el._setTool('window'); el._render(); }, lang);
+    expect(await hintText(editor), lang).toBe(expected[0]);
+    // a corner of a triangle cannot be removed – the message says why and what to do
+    await editor.evaluate(el => { el._setTool(null); el._floor = 'f_og'; el._commit(l => { l.rooms.find(r => r.id === 'r_schlaf').polygon = [[0, 0], [5, 0], [0, 3]]; }); el._sel = { type: 'vertex', id: 'r_schlaf', index: 1 }; el._deleteSelected(); });
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent), lang).toContain(expected[1]);
+    await editor.locator('[data-a="msg_close"]').click();
+    expect(await editor.evaluate(el => !!el.shadowRoot.querySelector('.ov-top .msg.err'))).toBe(false);
+    // saving an invalid plan names the problem and the fix
+    await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_schlaf').polygon = [[0, 0], [5, 0], [0, 3], [5, 3]]; }); el._save(); });
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent), lang).toContain(expected[2]);
+    // Test note (hotfix U02, owner order): the bath's sensors are set up here (the shared fixture lists them in no room, which
+    // the editor now reports first as "no longer set up"), so the hint reaches the unassigned living-room window as before
+    await editor.evaluate(el => { el._undo(); el._undo(); el._msg = null; el._sel = null; el._floor = 'f_eg'; el._layout.openings.find(o => o.id === 'o_wohnen').contacts = [];
+      el._live = { ...el._live, bad: { ...el._live.bad, contact_entities: ['binary_sensor.bad_fenster'], inside_contact_entities: ['binary_sensor.bad_tuer'] } }; el._render(); });
+    expect(await hintText(editor), lang).toContain(expected[3]);
+  }
+});
+
+for (const [name, vars] of Object.entries(THEMES)) {
+  test(`v0.26.6.1 editor hotfix, ${name} theme: hints, menu, new-room panel and sections readable (4.5:1), active tool and selection stand out`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const editor = await openWorkspace(page, 400, '', vars);
+    for (const state of [el => { el._menu = true; el._adding = true; el._open.help = true; el._setTool('window'); }, el => { el._menu = false; el._adding = false; el._setTool(null); el._sel = { type: 'opening', id: 'd_bad' }; el._open.place = true; el._open.details = true; el._msg = { err: true, text: el._t('corner_min') }; }]) {
+      await editor.evaluate((el, f) => { (new Function('el', `(${f})(el)`))(el); el._render(); }, state.toString());
+      const report = await editor.evaluate(async el => {
+        const E = await import('/freshairiq-house-editor.js?v=t');
+        const rgb = s => { const m = /rgba?\(([^)]+)\)/.exec(s); const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
+        const bgOf = n => { for (let x = n; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { const c = rgb(getComputedStyle(x).backgroundColor); if (c[3] > 0.5) return c; } return [255, 255, 255, 1]; };
+        const bad = [];
+        for (const n of el.shadowRoot.querySelectorAll('.hint, .menu h4, .menu button, .menu label, .sec>summary, .sub, .steps li, .shapes button, .panel h4, .checks label, .msg, .tools button, .tools label')) {
+          const b = n.getBoundingClientRect(); if (!b.width || !b.height || n.disabled || n.closest('[hidden]')) continue;
+          const ratio = E.contrast(rgb(getComputedStyle(n).color), bgOf(n));
+          if (ratio < 4.5) bad.push(`${n.tagName}.${n.className}:${(n.textContent || '').trim().slice(0, 20)}=${ratio.toFixed(2)}`);
+        }
+        const host = rgb(getComputedStyle(el).backgroundColor), pressed = el.shadowRoot.querySelector('.tools button[aria-pressed="true"]');
+        const room = el.shadowRoot.querySelector('.panel.selected');
+        return { bad, tool: pressed ? E.contrast(rgb(getComputedStyle(pressed).backgroundColor), host) : null, marker: room ? E.contrast(rgb(getComputedStyle(room).borderLeftColor), host) : null,
+          small: [...el.shadowRoot.querySelectorAll('.hint, .sub, .sec>summary, .menu button, .shapes button')].filter(n => n.getBoundingClientRect().width).map(n => parseFloat(getComputedStyle(n).fontSize)).filter(s => s < 14) };
+      });
+      expect(report.bad).toEqual([]);
+      expect(report.small).toEqual([]);
+      if (report.tool != null) expect(report.tool).toBeGreaterThanOrEqual(3);     // the active tool stands out
+      if (report.marker != null) expect(report.marker).toBeGreaterThanOrEqual(3);  // so does the panel of the chosen object
+    }
+  });
+}
+
+// ---- 0.26.7.0: the living house map – room information, rooms overview, floors, moisture by room, the weather world ----
+const WXMOD = () => '/freshairiq-house-weather.js?v=t';   // pure functions only (the card's own instance: weatherModule)
+const wxEntity = (state, extra = {}) => ({ entity_id: 'weather.home', state, last_updated: `${state}${JSON.stringify(extra)}`, attributes: { temperature: 14.2, temperature_unit: '°C', apparent_temperature: 12.1, humidity: 71, pressure: 1013, pressure_unit: 'hPa', wind_speed: 22, wind_speed_unit: 'km/h', wind_bearing: 250, cloud_coverage: 40, ...extra } });
+const sunAt = (elevation, azimuth) => ({ entity_id: 'sun.sun', state: elevation > 0 ? 'above_horizon' : 'below_horizon', attributes: { elevation, azimuth, next_rising: '2026-11-07T06:21:00Z', next_setting: '2026-11-06T15:44:00Z' } });
+// a scene: card options, Home Assistant states, the house wind and the FreshAirIQ weather summary
+const scene = (page, { config = {}, states = {}, wind = null, weatherNow = undefined, north = null, forecast = null } = {}) => impl(page).evaluate((el, [config, states, wind, weatherNow, north, forecast]) => {
+  el.setConfig({ ...el._config, ...config });
+  el._hass = { ...el._hass, states: { ...states } };
+  if (wind) el._house = { ...el._house, wind: { ...el._house.wind, ...wind } };
+  if (weatherNow !== undefined) el._payload = { ...el._payload, weather_now: weatherNow };
+  if (north != null) el._layoutInfo = { ...el._layoutInfo, layout: { ...el._layoutInfo.layout, building: { ...el._layoutInfo.layout.building, north_deg: north } } };
+  if (wind && wind.from_deg != null) el._windSmooth = wind.from_deg;
+  if (forecast) el._forecast = forecast;
+  el._render();
+  const q = s => el.shadowRoot.querySelector(s), svg = q('svg.plan');
+  const shadow = (q('.house-shadow').getAttribute('transform').match(/translate\(([-\d.]+) ([-\d.]+)\)/) || []).slice(1).map(Number);
+  const stops = [...(q('#sky') || { querySelectorAll: () => [] }).querySelectorAll('stop')].map(s => s.getAttribute('stop-color'));
+  const rain = q('.wx.rain'), sweep = q('.wx.sweep');
+  return { fx: svg.dataset.fx, mood: svg.dataset.mood, shadow, stops, has: Object.fromEntries(['sunlight', 'clouds', 'rain', 'snow', 'fog', 'stars', 'flash', 'ambient', 'gloom', 'haze', 'frost', 'splash', 'sweep', 'moon'].map(k => [k, !!q(`.wx.${k}`)])),
+    rays: [...el.shadowRoot.querySelectorAll('#wx-ray stop')].map(s => s.getAttribute('stop-color')), rainTurn: rain ? (rain.dataset.tilt != null ? `rotate(${rain.dataset.tilt})` : rain.getAttribute('transform')) : null, sweepTurn: sweep && sweep.dataset.tilt != null ? `rotate(${sweep.dataset.tilt})` : sweep ? sweep.getAttribute('transform') : null,
+    gloom: q('.wx.gloom') ? Number(q('.wx.gloom').getAttribute('fill-opacity')) : null, text: el.shadowRoot.textContent };
+}, [config, states, wind, weatherNow, north, forecast]);
+
+test('0.26.7.0 weather module: units, Beaufort, wind levels, precipitation and the model take only what is there', async ({ page }) => {
+  await mount(page);
+  const r = await page.evaluate(async src => {
+    const W = await import(src);
+    const m = W.weatherModel({ entityId: 'weather.x', entity: { state: 'unavailable', attributes: {} }, weatherNow: { condition: 'rainy', raining: true, outdoor_temperature: 7.4 } });
+    const empty = W.weatherModel({});
+    return { kmh: W.windToMs(36, 'km/h'), mph: W.windToMs(10, 'mph'), kn: W.windToMs(10, 'kn'), bad: W.windToMs(5, 'furlong'), neg: W.windToMs(-3, 'm/s'),
+      inhg: W.pressureToHpa(29.92, 'inHg'), kpa: W.pressureToHpa(101.3, 'kPa'), mmhg: W.pressureToHpa(760, 'mmHg'),
+      bft: [0.1, 1, 3, 5, 7, 10, 13, 16, 19, 23, 27, 31, 40].map(W.beaufort),
+      levels: [W.windLevel(0.2), W.windLevel(2), W.windLevel(5), W.windLevel(12), W.windLevel(18), W.windLevel(6, 21), W.windLevel(NaN)],
+      precip: [W.precipitation('rainy'), W.precipitation('pouring'), W.precipitation('rainy', 0.3), W.precipitation('rainy', 6), W.precipitation('sunny'), W.precipitation('snowy')],
+      cover: [W.cloudCover({ cloud_coverage: 20 }, 'cloudy'), W.cloudCover({}, 'partlycloudy'), W.cloudCover({}, null)],
+      points: [W.compassPoint(0, 'de'), W.compassPoint(90, 'de'), W.compassPoint(250, 'en'), W.compassPoint(null)],
+      m: { available: m.available, condition: m.condition, temperature: m.temperature, pressure: m.pressure, humidity: m.humidity, windMs: m.windMs, precip: m.precip.level },
+      empty: { available: empty.available, temperature: empty.temperature, level: empty.level, cover: empty.cover, hourly: empty.hourly.length } };
+  }, WXMOD(page));
+  expect(r.kmh).toBeCloseTo(10); expect(r.mph).toBeCloseTo(4.4704); expect(r.kn).toBeCloseTo(5.14444); expect(r.bad).toBe(null); expect(r.neg).toBe(null);
+  expect(r.inhg).toBeCloseTo(1013.2, 0); expect(r.kpa).toBeCloseTo(1013); expect(r.mmhg).toBeCloseTo(1013.25, 0);
+  expect(r.bft).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  expect(r.levels).toEqual(['calm', 'light', 'fresh', 'strong', 'storm', 'storm', null]);
+  expect(r.precip.map(p => [p.kind, p.level, p.graded])).toEqual([['rain', 2, false], ['rain', 3, false], ['rain', 1, true], ['rain', 3, true], [null, 0, false], ['snow', 2, false]]);
+  expect(r.cover).toEqual([0.2, 0.45, null]);
+  expect(r.points).toEqual(['N', 'O', 'WSW', null]);
+  expect(r.m).toEqual({ available: true, condition: 'rainy', temperature: 7.4, pressure: null, humidity: null, windMs: null, precip: 2 });   // an unavailable entity: FreshAirIQ's summary only
+  expect(r.empty).toEqual({ available: false, temperature: null, level: null, cover: null, hourly: 0 });
+});
+
+test('0.26.7.0 sun and wind directions from known values: shadow away from the sun, rain and gusts with the wind, the plan rotation respected', async ({ page }) => {
+  await mount(page);
+  const r = await page.evaluate(async src => {
+    const W = await import(src);
+    const at = (elevation, azimuth, northDeg = 0, cover = 0, directional = true) => W.sunLight({ elevation, azimuth, northDeg, cover, directional });
+    const pick = l => l && l.shadow ? [Math.round(l.shadow.dx * 100) / 100 + 0, Math.round(l.shadow.dy * 100) / 100 + 0, Math.round(l.shadow.length * 100) / 100] : null;
+    return { east: pick(at(30, 90)), south: pick(at(45, 180)), rotated: pick(at(30, 90, 90)), night: at(-10, 0), warm: [at(3, 100).warmth, at(60, 180).warmth], strength: [at(30, 180).strength, at(30, 180, 0, 1).strength],
+      undirected: at(30, 90, 0, 0, false).shadow, overcast: at(30, 90, 0, 0.9).shadow, wind: [W.planVector((270 + 180) % 360, 0), W.planVector((0 + 180) % 360, 0), W.planVector(90, 90)].map(v => v.map(x => x + 0)),
+      sky: [W.skyColors(-20), W.skyColors(35), W.skyColors(null)] };
+  }, WXMOD(page));
+  expect(r.east).toEqual([-1, 0, 1.73]);        // sun in the east (elevation 30°): shadow to the west, cot 30° long
+  expect(r.south).toEqual([0, 1, 1]);          // sun in the south: shadow to the north (plan up), 45° = as long as high
+  expect(r.rotated).toEqual([0, -1, 1.73]);    // plan north 90° (east is up): the east sun's shadow points down
+  expect(r.night).toMatchObject({ up: false, strength: 0, shadow: null });
+  expect(r.warm[0]).toBeGreaterThan(0.9); expect(r.warm[1]).toBe(0);          // gold at sunrise, white at noon
+  expect(r.strength[1]).toBeLessThan(r.strength[0] * 0.2);                     // an overcast sky dims the sun
+  expect(r.undirected).toBe(null); expect(r.overcast).toBe(null);             // no shadow from an unsure side or under a cloud deck
+  expect(r.wind).toEqual([[1, 0], [0, -1], [0, 1]]);                          // from the west → east; from the north → south
+  expect(r.sky[0]).toEqual(['#050d1f', '#01050c']); expect(r.sky[1]).toEqual(['#2c78a8', '#123f68']); expect(r.sky[2]).toBe(null);
+});
+
+test('0.26.7.0 the 18 weather situations: every effect follows the data, nothing is invented', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mount(page);
+  const full = { weather_effects: 'full', weather_entity: 'weather.home' };
+  // Test note (0.26.7.0 follow-up, owner request: the chosen weather entity is the wind source): the wind of each situation
+  // is given by the chosen entity (km/h); FreshAirIQ's wind is set the same so both sources agree
+  const kmh = ms => ({ wind_speed: ms * 3.6, wind_bearing: 270 });
+  // 1. clear sunny morning: low warm sun in the east, the shadow falls west, rays tinted gold
+  const morning = await scene(page, { config: full, states: { 'weather.home': wxEntity('sunny', { cloud_coverage: 5 }), 'sun.sun': sunAt(8, 100) }, weatherNow: { condition: 'sunny' } });
+  expect(morning.has).toMatchObject({ sunlight: true, ambient: true, rain: false, gloom: false });
+  expect(morning.shadow[0]).toBeLessThan(0);
+  expect(morning.rays[0]).not.toBe('#fff4c9');
+  // 2. sunny noon in the south: another position – the shadow points north (up), whiter light
+  const noon = await scene(page, { config: full, states: { 'weather.home': wxEntity('sunny', { cloud_coverage: 0 }), 'sun.sun': sunAt(40, 180) } });
+  expect(noon.shadow[1]).toBeLessThan(0);   // svg y up = negative
+  expect(Math.abs(noon.shadow[0])).toBeLessThan(Math.abs(morning.shadow[0]));
+  expect(noon.stops).not.toEqual(morning.stops);
+  // 3. sunset in the west: the sky warms and darkens, the shadow falls east
+  const sunset = await scene(page, { config: full, states: { 'weather.home': wxEntity('sunny', { cloud_coverage: 5 }), 'sun.sun': sunAt(1.5, 262) } });
+  expect(sunset.shadow[0]).toBeGreaterThan(0);
+  expect(sunset.stops).not.toEqual(noon.stops);
+  // 4. overcast day: no sun disc, no rays, no hard shadow – clouds instead
+  const overcast = await scene(page, { config: full, states: { 'weather.home': wxEntity('cloudy', { cloud_coverage: 95 }), 'sun.sun': sunAt(30, 180) } });
+  expect(overcast.has).toMatchObject({ sunlight: false, clouds: true, splash: false });
+  expect(overcast.shadow).toEqual([3 * (overcast.shadow[0] / 3), overcast.shadow[1]]);   // the plain soft shadow (no sun direction)
+  // 5. light rain with little wind: rain from the reported condition graded by the forecast amount (0.3 mm/h = light, no splashes)
+  const now = new Date().toISOString();
+  const light = await scene(page, { config: full, states: { 'weather.home': wxEntity('rainy', kmh(1.5)), 'sun.sun': sunAt(20, 200) }, wind: { speed_ms: 1.5, gust_ms: null, from_deg: 270 },
+    forecast: { hourly: [{ datetime: now, temperature: 11, condition: 'rainy', precipitation: 0.3, precipitation_probability: 90 }] } });
+  expect(light.has).toMatchObject({ rain: true, splash: false, gloom: false, sweep: false });
+  // 6. heavy rain, strong wind from the west: splashes, darker sky, the rain leans east (rotate with a negative angle = top to the left)
+  const heavy = await scene(page, { config: full, states: { 'weather.home': wxEntity('pouring', { ...kmh(12), wind_gust_speed: 16 * 3.6 }), 'sun.sun': sunAt(20, 200) }, wind: { speed_ms: 12, gust_ms: 16, from_deg: 270 }, forecast: { hourly: [] } });
+  expect(heavy.has).toMatchObject({ rain: true, splash: true, gloom: true, sweep: true });
+  expect(Number(heavy.rainTurn.match(/rotate\(([-\d.]+)/)[1])).toBeLessThan(0);
+  expect(Number(heavy.sweepTurn.match(/rotate\(([-\d.]+)/)[1])).toBeCloseTo(0, 0);   // gusts sweep west → east (0° on the plan)
+  // 7. storm with gusts: the storm sweep and the storm mood of the air
+  const storm = await scene(page, { config: full, states: { 'weather.home': wxEntity('windy', { ...kmh(18), wind_gust_speed: 27 * 3.6 }), 'sun.sun': sunAt(20, 200) }, wind: { speed_ms: 18, gust_ms: 27, from_deg: 270 } });
+  expect(storm.has.sweep).toBe(true); expect(storm.mood).toBe('storm');
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('.wx.sweep').classList.contains('storm'))).toBe(true);
+  // 8. thunderstorm: soft flash (never a claimed strike), darker
+  const thunder = await scene(page, { config: full, states: { 'weather.home': wxEntity('lightning-rainy', kmh(4)), 'sun.sun': sunAt(20, 200) }, wind: { speed_ms: 4, gust_ms: null, from_deg: 270 } });
+  expect(thunder.has).toMatchObject({ flash: true, gloom: true, rain: true }); expect(thunder.gloom).toBeCloseTo(0.32);
+  // 9. snow  10. fog
+  expect((await scene(page, { config: full, states: { 'weather.home': wxEntity('snowy'), 'sun.sun': sunAt(10, 200) } })).has).toMatchObject({ snow: true, rain: false });
+  expect((await scene(page, { config: full, states: { 'weather.home': wxEntity('fog'), 'sun.sun': sunAt(10, 200) } })).has).toMatchObject({ fog: true, haze: true });
+  // 11. clear night: stars, no sun, no rays; the moon only with a moon-phase entity
+  const night = await scene(page, { config: full, states: { 'weather.home': wxEntity('clear-night', { cloud_coverage: 0 }), 'sun.sun': sunAt(-30, 0) }, weatherNow: { condition: 'clear-night' } });
+  expect(night.has).toMatchObject({ stars: true, sunlight: false, ambient: false, moon: false });
+  const moon = await scene(page, { config: full, states: { 'weather.home': wxEntity('clear-night', { cloud_coverage: 0 }), 'sun.sun': sunAt(-30, 0), 'sensor.moon_phase': { state: 'full_moon', attributes: {} } } });
+  expect(moon.has.moon).toBe(true);
+  // 12. from day to night: the sky follows the elevation continuously – small steps, no jump
+  const W = await page.evaluate(async src => { const W = await import(src); const d = (a, b) => Math.max(...[1, 3, 5].map(i => Math.abs(parseInt(a.slice(i, i + 2), 16) - parseInt(b.slice(i, i + 2), 16))));
+    let worst = 0; for (let e = 20; e > -20; e -= 2) { const a = W.skyColors(e), b = W.skyColors(e - 2); worst = Math.max(worst, d(a[0], b[0]), d(a[1], b[1])); } return worst; }, WXMOD(page));
+  expect(W).toBeLessThan(40);
+  // 13. some data missing: an entity with only its condition – the overview shows "–" and no invented value
+  await scene(page, { config: full, states: { 'weather.home': { entity_id: 'weather.home', state: 'cloudy', attributes: {} }, 'sun.sun': sunAt(20, 200) }, weatherNow: {} });
+  await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); });
+  const partial = await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg').textContent);
+  expect(partial).toContain('Bewölkt'); expect(partial).not.toMatch(/NaN|undefined|null/); expect(partial).not.toContain('Luftdruck');
+  // 14. the entity unavailable: said so; the picture falls back to FreshAirIQ's own summary
+  const gone = await scene(page, { config: full, states: { 'weather.home': { entity_id: 'weather.home', state: 'unavailable', attributes: {} }, 'sun.sun': sunAt(20, 200) }, weatherNow: { condition: 'rainy', raining: true } });
+  expect(gone.has.rain).toBe(true);
+  await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); });
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg').textContent)).toContain('Regen');
+  await impl(page).evaluate(el => { el._selected = null; el._render(); });
+  // 16. another plan north: the shadow turns with the drawing (north 90° → the noon sun's shadow points left)
+  const turned = await scene(page, { config: full, states: { 'weather.home': wxEntity('sunny', { cloud_coverage: 0 }), 'sun.sun': sunAt(40, 180) }, north: 90 });
+  expect(turned.shadow[0]).toBeLessThan(0); expect(Math.abs(turned.shadow[1])).toBeLessThan(Math.abs(turned.shadow[0]));
+  // the classic look: "dynamic" (the default) draws no new layers; "off" draws no weather at all
+  const classic = await scene(page, { config: { weather_effects: 'dynamic' }, states: { 'weather.home': wxEntity('pouring'), 'sun.sun': sunAt(20, 200) }, north: 0 });
+  expect(classic.has).toMatchObject({ splash: false, gloom: false, ambient: false, sweep: false }); expect(classic.fx).toBe('dynamic');
+  const off = await scene(page, { config: { weather_effects: 'off' }, states: { 'sun.sun': sunAt(20, 200) }, weatherNow: { condition: 'pouring', raining: true } });
+  expect(Object.values(off.has).some(Boolean)).toBe(false);
+});
+
+test('0.26.7.0 weather: one shared forecast subscription per entity and type; a changed entity ends the old one; two cards keep their own settings', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mount(page);
+  const count = () => page.evaluate(() => customElements.get('freshairiq-house-card-impl').weatherModule.forecastSubscriptions());
+  await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); });
+  expect(await count()).toBe(2);                     // hourly + daily of weather.home (the overview is open)
+  const before = await page.evaluate(() => window.__unsubscribed);
+  await impl(page).evaluate(el => { el.setConfig({ ...el._config, weather_entity: 'weather.other' }); el._render(); });
+  expect(await page.evaluate(() => window.__unsubscribed)).toBe(before + 2);   // 15. the old entity's subscriptions end
+  expect(await count()).toBe(2);
+  // 17. a second card with other settings: its own effect level, the same forecast subscription
+  await page.evaluate(() => { const c = document.createElement('freshairiq-house-card'); c.id = 'card2'; c.setConfig({ weather_effects: 'off', weather_entity: 'weather.other', layout: 'info' }); document.getElementById('m').appendChild(c); c.hass = document.getElementById('card').hass; });
+  await page.waitForFunction(() => document.querySelectorAll('freshairiq-house-card-impl').length === 2);
+  await page.waitForTimeout(150);
+  const cards = await page.evaluate(() => [...document.querySelectorAll('freshairiq-house-card-impl')].map(c => c.getAttribute('data-fx')));
+  expect(cards).toEqual(['dynamic', 'off']);
+  expect(await count()).toBe(2);
+  await page.evaluate(() => { document.getElementById('card').remove(); document.getElementById('card2').remove(); });
+  expect(await count()).toBe(0);
+});
+
+test('0.26.7.0 reduced motion and animation off: the weather world stands still, every weather value stays available', async ({ page }) => {
+  await mount(page, { reducedMotion: 'reduce', config: { weather_effects: 'full', weather_entity: 'weather.home' } });
+  await scene(page, { config: { weather_effects: 'full' }, states: { 'weather.home': wxEntity('pouring'), 'sun.sun': sunAt(20, 200) }, wind: { speed_ms: 18, gust_ms: 26, from_deg: 270 } });
+  const still = await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('.wx.world *, .wx.flash, .wx .fall')].map(n => getComputedStyle(n).animationName).filter(n => n !== 'none'));
+  expect(still).toEqual([]);
+  await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); });
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg').textContent)).toContain('14,2 °C');
+  await mount(page, { config: { animation: false, weather_effects: 'full', weather_entity: 'weather.home' } });
+  await scene(page, { states: { 'weather.home': wxEntity('pouring'), 'sun.sun': sunAt(20, 200) }, wind: { speed_ms: 18, gust_ms: 26, from_deg: 270 } });
+  expect(await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('.wx.world *')].map(n => getComputedStyle(n).animationName).filter(n => n !== 'none'))).toEqual([]);
+});
+
+test('0.26.7.0 room information on the plan: any combination, per room, the classic label without a choice; hidden values stay in the details', async ({ page }) => {
+  await mount(page);
+  const tags = () => impl(page).evaluate(el => Object.fromEntries([...el.shadowRoot.querySelectorAll('polygon.room')].map((p, i) => {
+    const id = p.dataset.room, tag = [...el.shadowRoot.querySelectorAll('g.tag')][i];
+    return [id, { text: [...tag.querySelectorAll('text')].map(t => t.textContent), pill: !!tag.querySelector('.pill') }];
+  })));
+  const classic = await tags();
+  expect(classic.r_bad.pill).toBe(true); expect(classic.r_bad.text.join(' ')).toContain('Bad');
+  await impl(page).evaluate(el => { el.setConfig({ ...el._config, room_info: ['temperature'] }); el._render(); });
+  const temp = await tags();
+  expect(temp.r_bad).toEqual({ text: ['21.4 °C'], pill: false });
+  await impl(page).evaluate(el => { el.setConfig({ ...el._config, room_info: 'temperature, absolute_humidity, action', room_overrides: { flur: ['name', 'mould'] } }); el._render(); });
+  const mix = await tags();
+  expect(mix.r_bad.pill).toBe(true); expect(mix.r_bad.text.join(' ')).toMatch(/°C.*g\/m³/); expect(mix.r_bad.text.join(' ')).not.toContain('Bad');
+  expect(mix.r_flur.pill).toBe(false); expect(mix.r_flur.text.join(' ')).toContain('Flur'); expect(mix.r_flur.text.join(' ')).toMatch(/Schimmel/);
+  // the menu's layer still shows its reading
+  await impl(page).evaluate(el => { el._layer = 'humidity'; el._render(); });
+  expect((await tags()).r_bad.text.join(' ')).toMatch(/58 %/);
+  await impl(page).evaluate(el => { el._layer = 'action'; el._selected = { type: 'room', id: 'r_bad' }; el._render(); });
+  const detail = await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg').textContent);
+  expect(detail).toContain('Bad'); expect(detail).toMatch(/%/);   // name and humidity hidden on the plan, shown in the details
+  // labels stay inside their room
+  const inside = await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].every((p, i) => { const r = p.getBoundingClientRect(), t = [...el.shadowRoot.querySelectorAll('g.tag')][i].getBoundingClientRect(); return !t.width || (t.left >= r.left - 1 && t.right <= r.right + 1 && t.top >= r.top - 1 && t.bottom <= r.bottom + 1); }));
+  expect(inside).toBe(true);
+});
+
+test('0.26.7.0 rooms button: off by default; the overview in the map style; a room opens its details or is shown on the plan; live updates keep it open', async ({ page }) => {
+  await mount(page);
+  // Test note 0.26.7.0(2): the rooms are always in the menu now (owner order: menu with every view); the button on the plan
+  // stays off by default
+  expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('.mapbar [data-rooms]'))).toBe(false);
+  await impl(page).evaluate(el => { el.setConfig({ ...el._config, rooms_button: true }); el._render(); });
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('.mapbar [data-rooms]').click());
+  const dlg = () => impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.roomdlg'); return d && { open: d.open, key: d.dataset.key, floors: [...d.querySelectorAll('h4')].map(h => h.textContent), rooms: [...d.querySelectorAll('.rrow b')].map(b => b.textContent), dark: d.querySelector('.dlg').classList.contains('world') }; });
+  expect(await dlg()).toEqual({ open: true, key: 'rooms:', floors: ['Erdgeschoss', 'Obergeschoss'], rooms: ['Bad', 'Flur', 'Wohnen', 'Schlafzimmer'], dark: true });
+  const el1 = await impl(page).evaluate(el => { window.__dlg = el.shadowRoot.querySelector('dialog.roomdlg'); return true; });
+  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: 25.5 } } }));
+  await page.waitForTimeout(80);
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg') === window.__dlg && window.__dlg.textContent.includes('25,5'))).toBe(true);
+  // Test note 0.26.7.0(2) (owner order: no extra round buttons beside the room cards): "show on the plan" is in the room's window
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-room-open="r_schlaf"]').click());
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-room-jump="r_schlaf"]').click());
+  expect(await impl(page).evaluate(el => [el._floor, !!el.shadowRoot.querySelector('dialog.roomdlg'), !!el.shadowRoot.querySelector('polygon.room.spot[data-room="r_schlaf"]')])).toEqual(['f_og', false, true]);
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('.mapbar [data-rooms]').click());
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-room-open="r_bad"]').click());
+  expect(await impl(page).evaluate(el => [el._selected.type, el.shadowRoot.querySelector('dialog.roomdlg h3').textContent])).toEqual(['room', 'Bad']);
+});
+
+test('0.26.7.0 floors: hidden floors never come back by themselves, one floor always stays, the opening floor per card', async ({ page }) => {
+  await mount(page, { config: { floors_visible: ['f_eg'] } });
+  expect(await impl(page).evaluate(el => [el._floor, el.shadowRoot.querySelectorAll('[data-floor]').length])).toEqual(['f_eg', 0]);
+  // the hidden floor needs action and auto focus is on: it still is not shown
+  await impl(page).evaluate(el => { el.setConfig({ ...el._config, auto_focus: 'auto' }); });
+  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, schlaf: { ...window.__ROOMS.schlaf, action: 'Close', house_aligned_action: 'close', mould_level: 'Very high' } } }));
+  await page.waitForTimeout(80);
+  expect(await impl(page).evaluate(el => el._floor)).toBe('f_eg');
+  // a stored choice of the hidden floor is not taken
+  await impl(page).evaluate(el => { el._floor = 'f_og'; el._render(); });
+  expect(await impl(page).evaluate(el => el._floor)).toBe('f_eg');
+  // nothing that matches: every floor stays (never none); the plan data are untouched
+  await impl(page).evaluate(el => { el.setConfig({ ...el._config, floors_visible: ['dachboden'] }); el._render(); });
+  expect(await impl(page).evaluate(el => [el._floors(el._layoutInfo.layout).length, el._layoutInfo.layout.floors.length])).toEqual([2, 2]);
+  // default_floor: shown whenever the card is opened again
+  await mount(page, { config: { default_floor: 'f_og' } });
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-floor="f_eg"]').click());
+  await page.evaluate(() => { const c = document.getElementById('card'), p = c.parentNode; p.removeChild(c); p.appendChild(c); });
+  await page.waitForTimeout(150);
+  expect(await impl(page).evaluate(el => el._floor)).toBe('f_og');
+});
+
+test('0.26.7.0 moisture by room: the rooms\' own published values, the card\'s total, rounding said, a tap opens the room', async ({ page }) => {
+  await mount(page);
+  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS,
+    bad: { ...window.__ROOMS.bad, realistic_potential_ml: 41, potential_horizon_min: 15 }, flur: { ...window.__ROOMS.flur, realistic_potential_ml: 18, potential_horizon_min: 15 },
+    wohnen: { ...window.__ROOMS.wohnen, realistic_potential_ml: 75, potential_horizon_min: 15 }, schlaf: { ...window.__ROOMS.schlaf, realistic_potential_ml: -6, potential_horizon_min: 15 } },
+    potential_total_ml: 129, live_balance_ml: 0, recommended_duration_min: 15, output_language: 'de' }));
+  await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('[data-moisture]'));
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-moisture]').click());
+  const d = await impl(page).evaluate(el => { const dlg = el.shadowRoot.querySelector('dialog.roomdlg'); return { rows: [...dlg.querySelectorAll('.rrow')].map(r => r.querySelector('b').textContent + ' ' + r.querySelector('.rvals b').textContent), legend: dlg.querySelector('.legend').textContent }; });
+  expect(d.rows).toEqual(['Wohnen ≈ 75 ml', 'Bad ≈ 41 ml', 'Flur ≈ 18 ml', 'Schlafzimmer + 6 ml'.replace('+ ', '+')]);
+  expect(d.legend).toContain('≈ 129 ml');                       // the card's total
+  expect(d.legend).toContain('1 ml Unterschied');               // 75 + 41 + 18 − 6 = 128: said, not hidden
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg [data-room-open="r_bad"]').click());
+  expect(await impl(page).evaluate(el => el._selected)).toEqual({ type: 'room', id: 'r_bad' });
+  // during an airing: the airing rooms' result so far and their time left
+  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, active: true, result_ml: 22, session_target_min: 15, session_elapsed_min: 6 } },
+    live_balance_ml: 22, potential_total_ml: 129, remaining_duration_min: 9, output_language: 'de' }));
+  await impl(page).evaluate(el => { el._selected = { type: 'moisture', id: '' }; el._render(); });
+  const live = await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('dialog.roomdlg .rrow')].map(r => r.textContent.replace(/\s+/g, ' ').trim()));
+  // Test note (0.26.7.0 UI/theme order, UI07): the room rows of the moisture window write minutes like its tiles ("Min.")
+  expect(live).toEqual([expect.stringMatching(/Bad.*≈ 22 ml.*noch 9 Min\..*lüftet/)]);
+});
+
+test('0.26.7.0 a room aired only by its fan never reads "Close": the fan\'s real state decides the word and the tone', async ({ page }) => {
+  await mount(page);
+  const word = () => impl(page).evaluate(el => { const p = el.shadowRoot.querySelector('polygon.room[data-room="r_bad"]'); return [p.getAttribute('aria-label'), [...p.classList].find(c => c.startsWith('t-'))]; });
+  const fanRoom = extra => page.evaluate(x => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, action: 'Close', house_aligned_action: 'close',
+    configured_actuators: { ventilation_type: 'window', mechanical_exhaust_active: true, window_open: false, exhaust_fan: ['switch.fan'] }, ...x } } }), extra);
+  await fanRoom({});
+  await page.waitForTimeout(60);
+  expect(await word()).toEqual([expect.stringContaining('Lüfter ausschalten'), 't-close']);   // the user switches it off
+  await fanRoom({ fan_automation: { state: 'stopping', label_key: 'stopping' } });
+  await page.waitForTimeout(60);
+  expect(await word()).toEqual([expect.stringContaining('Lüfter stoppt automatisch'), 't-run']);
+  for (const [state, text] of [['external', 'Lüfter extern gesteuert'], ['shared', 'Gemeinsamer Lüfter läuft'], ['follow_up', 'Lüfter-Nachlauf'], ['blocked_time', 'Lüfter-Sperrzeit'], ['failed', 'Lüfter ausschalten'], ['locked', 'Lüfter ausschalten']]) {
+    await fanRoom({ fan_automation: { state } });
+    await page.waitForTimeout(40);
+    expect((await word())[0], state).toContain(text);
+  }
+  // a window open as well: a window to close
+  await fanRoom({ configured_actuators: { ventilation_type: 'window', mechanical_exhaust_active: true, window_open: true } });
+  await page.waitForTimeout(60);
+  expect((await word())[0]).toContain('Schließen');
+});
+
+for (const [label, vw, vh, cfg, expectSide] of [['phone 360 × 780', 360, 780, { rooms_button: true }, false], ['landscape 844 × 390', 844, 390, { rooms_button: true }, null],
+  ['tablet 768 × 1024', 768, 1024, { rooms_button: true, layout: 'info' }, true], ['desktop 1440 × 900', 1440, 900, { rooms_button: true }, true], ['desktop, plan in focus', 1440, 900, { layout: 'focus', rooms_button: true }, false]]) {
+  test(`0.26.7.0 layout ${label}: plan, weather column, floors, rooms and menu never overlap; the dialogs fit`, async ({ page }) => {
+    await page.setViewportSize({ width: vw, height: vh });
+    await mount(page, { config: cfg });
+    await scene(page, { states: { 'weather.home': wxEntity('partlycloudy'), 'sun.sun': sunAt(20, 200) } });
+    const l = await impl(page).evaluate(el => {
+      const r = n => { if (!n) return null; const b = n.getBoundingClientRect(); return { x: b.x, y: b.y, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
+      const q = s => el.shadowRoot.querySelector(s);
+      const house = [...el.shadowRoot.querySelectorAll('svg.plan polygon.room, svg.plan line.op, svg.plan .tag')].map(n => n.getBoundingClientRect()).reduce((a, b) => Math.max(a, b.bottom), -Infinity);
+      return { svg: r(q('svg.plan')), side: r(q('.wxside')), bar: r(q('.mapbar')), btns: [...el.shadowRoot.querySelectorAll('.mapbar button')].map(r), vw: innerWidth, sw: document.documentElement.scrollWidth, house };
+    });
+    if (expectSide !== null && l.vw === vw) expect(!!l.side).toBe(expectSide);
+    if (l.side) { expect(l.side.x).toBeGreaterThanOrEqual(l.svg.r - 1); expect(l.side.r).toBeLessThanOrEqual(l.vw + 1); }
+    // Test note 0.26.7.0 UI hotfix (owner order: one continuous animated surface): the bar lies over the drawing's free bottom margin – below every room, window and label
+    expect(l.bar.y).toBeGreaterThanOrEqual(l.house - 1);
+    for (let i = 1; i < l.btns.length; i++) expect(l.btns[i].x >= l.btns[i - 1].r - 1 || l.btns[i].y >= l.btns[i - 1].b - 1, `buttons ${i}`).toBe(true);
+    expect(l.sw).toBeLessThanOrEqual(l.vw);
+    for (const sel of ['rooms', 'weather', 'moisture']) {
+      await impl(page).evaluate((el, sel) => { el._selected = { type: sel, id: '' }; el._render(); }, sel);
+      const fit = await impl(page).evaluate(el => { const b = el.shadowRoot.querySelector('dialog.roomdlg .dlg').getBoundingClientRect(); return b.left >= -1 && b.right <= innerWidth + 1 && b.top >= -1 && b.bottom <= innerHeight + 1; });
+      expect(fit, sel).toBe(true);
+    }
+  });
+}
+
+test('0.26.7.0 performance: 40 rooms, 3000 Home Assistant entities and full weather stay fast; nothing keeps running after the card is gone', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mount(page, { config: { weather_effects: 'full', weather_entity: 'weather.home', rooms_button: true } });
+  const r = await impl(page).evaluate(async el => {
+    const states = { 'weather.home': { entity_id: 'weather.home', state: 'pouring', attributes: { temperature: 9, wind_speed: 60, wind_speed_unit: 'km/h', wind_bearing: 270 } }, 'sun.sun': { state: 'above_horizon', attributes: { elevation: 20, azimuth: 200 } } };
+    for (let i = 0; i < 3000; i++) states[`sensor.s${i}`] = { entity_id: `sensor.s${i}`, state: String(i), attributes: {} };
+    const lay = el._layoutInfo.layout;
+    for (let i = 0; i < 40; i++) lay.rooms.push({ id: `q${i}`, room_key: 'flur', floor_id: 'f_eg', polygon: [[12 + (i % 8) * 3, (i >> 3) * 3], [15 + (i % 8) * 3, (i >> 3) * 3], [15 + (i % 8) * 3, 3 + (i >> 3) * 3], [12 + (i % 8) * 3, 3 + (i >> 3) * 3]], provenance: 'user' });
+    el._hass = { ...el._hass, states };
+    el._render(); el._render();   // the first render after a change of the plan width fits the labels once more
+    const nodes0 = el.shadowRoot.querySelectorAll('*').length;
+    const t0 = performance.now(); for (let k = 0; k < 10; k++) { el._hass = { ...el._hass, states: { ...states } }; el._render(); } const ms = (performance.now() - t0) / 10;
+    return { ms, grow: el.shadowRoot.querySelectorAll('*').length - nodes0 };
+  });
+  expect(r.ms).toBeLessThan(250);       // per full render, generous for a shared test machine
+  expect(r.grow).toBe(0);               // re-rendering never piles up elements
+  await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); window.__impl = el; });
+  await page.evaluate(() => document.getElementById('card').remove());
+  await page.waitForTimeout(80);
+  const after = await page.evaluate(() => ({ subs: customElements.get('freshairiq-house-card-impl').weatherModule.forecastSubscriptions(), raf: window.__impl._windRaf, io: window.__impl._io, tween: window.__impl._tweenRaf }));
+  expect(after).toEqual({ subs: 0, raf: null, io: null, tween: after.tween });
+});
+
+test('0.26.7.0 card editor: room information, per-room choice, floors, weather and layout are set without YAML', async ({ page }) => {
+  await mount(page);
+  const out = await page.evaluate(async () => {
+    await customElements.whenDefined('freshairiq-house-card-editor-impl');
+    const ed = document.createElement('freshairiq-house-card-editor-impl'), seen = [];
+    ed.addEventListener('config-changed', e => seen.push(e.detail.config));
+    document.body.appendChild(ed);
+    ed.setConfig({});
+    ed.hass = { language: 'de', callWS: async () => ({ layout: window.__LAYOUT, rooms: [{ key: 'bad', name: 'Bad' }] }) };
+    await new Promise(r => setTimeout(r, 60));
+    const click = sel => { const x = ed.querySelector(sel); x.checked = !x.checked; x.dispatchEvent(new Event('change')); };
+    click('[data-list="room_info"][value="temperature"]');
+    click('[data-own="bad"]');
+    click('[data-list="ov:bad"][value="name"]');
+    click('[data-list="floors_visible"][value="f_og"]');
+    const set = (sel, v) => { const x = ed.querySelector(sel); x.value = v; x.dispatchEvent(new Event('change')); };
+    set('[data-k="weather_effects"]', 'full'); set('[data-k="layout"]', 'info'); set('[data-k="default_floor"]', 'f_og');
+    click('[data-k="rooms_button"]');
+    return seen.at(-1);
+  });
+  expect(out).toEqual({ room_info: ['temperature'], room_overrides: { bad: expect.any(Array) }, floors_visible: ['f_og'], weather_effects: 'full', layout: 'info', default_floor: 'f_og', rooms_button: true });
+  expect(out.room_overrides.bad.sort()).toEqual(['name', 'temperature']);
+});
+
+test('0.26.7.0 editor: "Rotate 90°" explains itself where it is found (after choosing a room)', async ({ page }) => {
+  const editor = await openEditor(page);
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_bad' }; el._render(); });
+  const r = await editor.evaluate(el => [el.shadowRoot.querySelector('[data-a="rotate"]').title, el.shadowRoot.querySelector('.aside').textContent]);
+  expect(r[0]).toContain('gegen den Uhrzeigersinn'); expect(r[1]).toContain('Fenster und Türen drehen mit');
+});
+
+// ---- 0.26.7.0 follow-up: one weather source, subscriptions per connection, compass texts, HA time zone, value options ----
+test('0.26.7.0 an own weather entity is the wind source; FreshAirIQ only fills what it lacks, named as such', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mount(page);
+  // FreshAirIQ's wind: NW 5 m/s (fixture). The chosen entity: 90 km/h from "W" with gusts – a storm
+  const states = { 'weather.own': { entity_id: 'weather.own', state: 'windy', last_updated: 'a', attributes: { wind_speed: 90, wind_speed_unit: 'km/h', wind_gust_speed: 120, wind_bearing: 'W' } }, 'sun.sun': sunAt(20, 200) };
+  const r = await impl(page).evaluate((el, states) => {
+    el.setConfig({ ...el._config, weather_entity: 'weather.own', weather_effects: 'full' });
+    el._hass = { ...el._hass, states }; el._render();
+    const m = el._weatherModel(), ow = el._outdoorWind();
+    return { speed: m.windMs, gust: m.gustMs, bearing: m.bearing, src: m.windSource, wind: [ow.wind.speed_ms, ow.wind.from_deg, ow.wind.available], smooth: ow.smooth, mood: el.shadowRoot.querySelector('svg.plan').dataset.mood };
+  }, states);
+  expect(r.speed).toBeCloseTo(25); expect(r.gust).toBeCloseTo(33.33, 1); expect(r.bearing).toBe(270);
+  expect(r.src).toEqual({ speed: 'entity', gust: 'entity', bearing: 'entity' });
+  expect(r.wind[0]).toBeCloseTo(25); expect(r.wind[1]).toBe(270); expect(r.wind[2]).toBe(true);
+  expect(r.smooth).toBeCloseTo(270, 0); expect(r.mood).toBe('storm');   // the picture follows the entity, not FreshAirIQ's 5 m/s
+  // the entity gives no gust and no direction: those two come from FreshAirIQ – and the overview says so
+  const part = await impl(page).evaluate(el => {
+    el._hass = { ...el._hass, states: { ...el._hass.states, 'weather.own': { entity_id: 'weather.own', state: 'cloudy', last_updated: 'b', attributes: { wind_speed: 10, wind_speed_unit: 'm/s' } } } };
+    el._selected = { type: 'weather', id: '' }; el._render();
+    const m = el._weatherModel();
+    return { speed: m.windMs, bearing: m.bearing, src: m.windSource, note: !!el.shadowRoot.querySelector('dialog.roomdlg [data-wind-fallback]') };
+  });
+  expect(part).toEqual({ speed: 10, bearing: 307, src: { speed: 'entity', gust: null, bearing: 'freshairiq' }, note: true });
+  // the entity unavailable: the defined fallback is FreshAirIQ's wind as a whole
+  const gone = await impl(page).evaluate(el => {
+    el._hass = { ...el._hass, states: { ...el._hass.states, 'weather.own': { entity_id: 'weather.own', state: 'unavailable', last_updated: 'c', attributes: { wind_speed: 99, wind_bearing: 0 } } } };
+    el._selected = null; el._render();
+    const m = el._weatherModel(), ow = el._outdoorWind();
+    return { src: m.windSource, from: ow.wind.from_deg, speed: ow.wind.speed_ms };
+  });
+  expect(gone).toEqual({ src: { speed: 'freshairiq', gust: null, bearing: 'freshairiq' }, from: 307, speed: 5 });
+  // without an own entity FreshAirIQ's wind comes first even when the entity differs
+  const plain = await impl(page).evaluate(el => {
+    el.setConfig({ ...el._config, weather_entity: '' });
+    el._hass = { ...el._hass, states: { ...el._hass.states, 'weather.home': { entity_id: 'weather.home', state: 'windy', attributes: { wind_speed: 90, wind_bearing: 90 } } } };
+    el._render(); const m = el._weatherModel(); return [m.windSource, m.bearing, m.windMs];
+  });
+  expect(plain).toEqual([{ speed: 'freshairiq', gust: null, bearing: 'freshairiq' }, 307, 5]);   // FreshAirIQ's own entity gives no gust here
+});
+
+test('0.26.7.0 forecast subscriptions are shared per Home Assistant connection only; a connection change moves them', async ({ page }) => {
+  await mount(page);
+  const r = await page.evaluate(async () => {
+    const W = customElements.get('freshairiq-house-card-impl').weatherModule, calls = [], base = W.forecastSubscriptions();   // the card's own
+    const conn = name => ({ name, subscribeMessage(cb, msg) { calls.push([name, msg.forecast_type, msg.entity_id]); return Promise.resolve(() => calls.push([name, 'unsub'])); } });
+    const a = conn('a'), b = conn('b');
+    const u1 = W.subscribeForecast(a, 'weather.x', 'hourly', () => {}), u2 = W.subscribeForecast(a, 'weather.x', 'hourly', () => {});
+    const u3 = W.subscribeForecast(b, 'weather.x', 'hourly', () => {});
+    await Promise.resolve();
+    const opened = calls.filter(c => c[1] === 'hourly').map(c => c[0]), count = W.forecastSubscriptions() - base;
+    u1(); const afterOne = calls.filter(c => c[1] === 'unsub').length;
+    u2(); u3(); await new Promise(r => setTimeout(r, 0));
+    return { opened, count, afterOne, unsubs: calls.filter(c => c[1] === 'unsub').map(c => c[0]).sort(), left: W.forecastSubscriptions() - base };
+  });
+  expect(r).toEqual({ opened: ['a', 'b'], count: 2, afterOne: 0, unsubs: ['a', 'b'], left: 0 });
+  // a card whose Home Assistant connection changes: the old connection's subscriptions end, the new one subscribes
+  await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); });
+  const moved = await page.evaluate(async () => {
+    const card = document.getElementById('card'), old = card.hass, log = [];
+    const fresh = { ...old.connection, subscribeMessage(cb, msg) { log.push(msg.type); return Promise.resolve(() => log.push(`unsub:${msg.type}`)); } };
+    const before = window.__unsubscribed;
+    card.hass = { ...old, connection: fresh };
+    await new Promise(r => setTimeout(r, 300));
+    return { endedOld: window.__unsubscribed - before, newSubs: log.filter(x => x === 'weather/subscribe_forecast').length, keys: customElements.get('freshairiq-house-card-impl').weatherModule.forecastSubscriptionKeys().length };
+  });
+  expect(moved.endedOld).toBeGreaterThanOrEqual(2 + 2);   // both house channels and both forecast subscriptions of the old connection
+  expect(moved.newSubs).toBe(2); expect(moved.keys).toBe(2);
+});
+
+test('0.26.7.0 wind directions as numbers or compass texts (EN/DE), turned into the plan with its north', async ({ page }) => {
+  await mount(page);
+  const r = await page.evaluate(async src => {
+    const W = await import(src);
+    const texts = ['N', 'NNE', 'NNO', 'NE', 'NO', 'E', 'O', 'SSW', 'SW', 'W', 'WNW', 'NW', 'nnw', ' sw ', '270', '270,5', 360, 0, 'xyz', '-10', 400, true, null, ''].map(v => W.parseBearing(v));
+    const plan = (text, north) => { const d = W.parseBearing(text); return W.planVector((d + 180) % 360, north).map(x => x + 0); };   // where the air goes on the plan
+    return { texts, west0: plan('W', 0), west90: plan('W', 90), nw0: plan('NW', 0), south180: plan('S', 180) };
+  }, WXMOD());
+  expect(r.texts).toEqual([0, 22.5, 22.5, 45, 45, 90, 90, 202.5, 225, 270, 292.5, 315, 337.5, 225, 270, 270.5, 0, 0, null, null, null, null, null, null]);
+  expect(r.west0).toEqual([1, 0]);                       // from the west → to the east (right)
+  expect(r.west90).toEqual([0, 1]);                      // plan north 90° (east is up): to the east = up
+  expect(r.nw0.map(v => Math.round(v * 1000) / 1000)).toEqual([0.707, -0.707]);   // from the north-west → to the south-east
+  expect(r.south180).toEqual([0, -1]);                   // plan upside down: from the south → to the north = down
+  // on the card: an entity with "SW" drives the streams from 225°; the plan's north turns them
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const card = await impl(page).evaluate(el => {
+    el.setConfig({ ...el._config, weather_entity: 'weather.own', weather_effects: 'full' });
+    el._hass = { ...el._hass, states: { 'weather.own': { entity_id: 'weather.own', state: 'rainy', last_updated: 'x', attributes: { wind_speed: 30, wind_bearing: 'SW' } }, 'sun.sun': { state: 'above_horizon', attributes: { elevation: 20, azimuth: 200 } } } };
+    el._windSmoothOwn = null; el._render();
+    const rain = el.shadowRoot.querySelector('.wx.rain');
+    return { from: el._outdoorWind().wind.from_deg, rainTurn: Number(rain.dataset.tilt != null ? rain.dataset.tilt : rain.getAttribute('transform').match(/rotate\(([-\d.]+)/)[1]) };
+  });
+  expect(card.from).toBe(225); expect(card.rainTurn).toBeLessThan(0);   // from the south-west the rain leans towards the north-east (right)
+});
+
+test('0.26.7.0 dates and times in Home Assistant\'s time zone (the user\'s profile can ask for the browser\'s)', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mount(page);
+  const at = '2026-11-06T22:30:00Z';
+  const r = await impl(page).evaluate((el, at) => {
+    const hourly = [{ datetime: at, temperature: 8, condition: 'cloudy' }, { datetime: '2026-11-06T23:30:00Z', temperature: 7, condition: 'cloudy' }];
+    const daily = [{ datetime: '2026-11-06T23:00:00Z', temperature: 9, templow: 3, condition: 'cloudy' }];
+    const show = (zone, pref) => {
+      el._hass = { ...el._hass, config: { time_zone: zone }, locale: { language: 'de', time_zone: pref }, states: { 'weather.home': { entity_id: 'weather.home', state: 'cloudy', attributes: { temperature: 8 } }, 'sun.sun': { state: 'below_horizon', attributes: { elevation: -20, azimuth: 300, next_rising: '2026-11-07T06:21:00Z', next_setting: '2026-11-07T15:44:00Z' } } } };
+      el._forecast = { hourly, daily }; el._selected = { type: 'weather', id: '' }; el._render(); el._forecast = { hourly, daily }; el._render();
+      const d = el.shadowRoot.querySelector('dialog.roomdlg');
+      return { axis: [...d.querySelectorAll('.t-axis')].map(t => t.textContent), day: d.querySelector('.day span').textContent, tz: el._tz() };
+    };
+    const fmt = (iso, tz, opts) => new Date(iso).toLocaleTimeString('de', { ...opts, timeZone: tz });
+    return { tokyo: show('Asia/Tokyo', 'server'), browser: show('Asia/Tokyo', 'local'), bad: show('Not/AZone', 'server'),
+      expect: { tokyoHour: fmt(at, 'Asia/Tokyo', { hour: '2-digit' }), tokyoRise: fmt('2026-11-07T06:21:00Z', 'Asia/Tokyo', { hour: '2-digit', minute: '2-digit' }), browserHour: fmt(at, undefined, { hour: '2-digit' }),
+        tokyoDay: new Date('2026-11-06T23:00:00Z').toLocaleDateString('de', { weekday: 'short', timeZone: 'Asia/Tokyo' }) } };
+  }, at);
+  expect(r.tokyo.tz).toBe('Asia/Tokyo');
+  expect(r.tokyo.axis).toContain(r.expect.tokyoHour);
+  expect(r.tokyo.axis.join(' ')).toContain(r.expect.tokyoRise);
+  expect(r.tokyo.day).toBe(r.expect.tokyoDay);
+  expect(r.browser.tz).toBe(undefined); expect(r.browser.axis).toContain(r.expect.browserHour);
+  expect(r.bad.tz).toBe(undefined);   // an unknown zone falls back to the browser's, never an error
+});
+
+test('0.26.7.0 weather values one by one; cards configured before keep every value', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mount(page);
+  const facts = info => impl(page).evaluate((el, info) => {
+    el.setConfig({ ...el._config, weather_info: info });
+    el._hass = { ...el._hass, states: { 'weather.home': { entity_id: 'weather.home', state: 'rainy', attributes: { temperature: 8.5, apparent_temperature: 6.1, humidity: 88, pressure: 1003, dew_point: 6.6, uv_index: 1 } }, 'sun.sun': { state: 'above_horizon', attributes: { elevation: 10, azimuth: 150 } } } };
+    el._selected = { type: 'weather', id: '' }; el._render();
+    const d = el.shadowRoot.querySelector('dialog.roomdlg');
+    return { facts: [...d.querySelectorAll('.fact')].map(f => f.textContent), big: !!d.querySelector('.now .big:not(.ico)'), cond: !!d.querySelector('.now .cond') };
+  }, info);
+  // Test note 0.26.7.0(2) (owner order: a finer weather window): every value is a labelled tile now ("Luftfeuchte 88 %" instead
+  // of "💧 88 %"); which values are shown is unchanged – plus the chance of rain, which the first format listed but this
+  // fixture's entity had no forecast for (it has none here either: still five values)
+  const old = await facts(['compact', 'overview', 'hourly']);   // a card from before the single values
+  // Test note 0.26.7.0 UI hotfix (owner order: absolute humidity in the weather window): "every value" includes the new one
+  expect(old.facts).toEqual(['Gefühlt 6,1 °C', 'Luftfeuchte 88 %', 'Absolute Feuchte 7,5 g/m³', 'Taupunkt 6,6 °C', 'Luftdruck 1003 hPa', 'UV-Index 1 niedrig']); expect(old.big && old.cond).toBe(true);
+  const some = await facts(['compact', 'overview', 'pressure', 'humidity']);
+  expect(some).toEqual({ facts: ['Luftfeuchte 88 %', 'Luftdruck 1003 hPa'], big: false, cond: false });
+  const temp = await facts(['overview', 'temperature', 'apparent', 'condition']);
+  expect(temp).toEqual({ facts: ['Gefühlt 6,1 °C'], big: true, cond: true });
+});
+
+// visual acceptance: every weather situation in a real browser – the labels look exactly the same with and without the weather
+// world (pixel by pixel), the world animates smoothly, and screenshots are kept for review
+const SITUATIONS = [
+  ['sunny morning', 'sunny', 8, 100, { cloud_coverage: 5 }, 2], ['noon', 'sunny', 45, 180, { cloud_coverage: 0 }, 2], ['sunset', 'sunny', 1.5, 262, { cloud_coverage: 5 }, 3],
+  ['rain', 'rainy', 20, 200, {}, 5], ['storm', 'pouring', 20, 220, { wind_speed: 95, wind_gust_speed: 125, wind_bearing: 'W' }, 25], ['snow', 'snowy', 12, 170, {}, 3],
+  ['thunderstorm', 'lightning-rainy', 18, 230, { wind_speed: 50, wind_bearing: 'SW' }, 9], ['twilight', 'partlycloudy', -3, 250, {}, 2], ['night', 'clear-night', -25, 330, { cloud_coverage: 0 }, 2],
+];
+test('0.26.7.0 visual acceptance: sun, rain, storm, snow, thunder, day and night – labels never covered (smoothness: house_frames.spec.mjs)', async ({ page }, testInfo) => {
+  test.setTimeout(120000);
+  // a large desktop screen; a phone project (Android WebView) keeps its own screen – a 1440 px wide phone at its pixel
+  // density (3780 × 2362 device pixels) exists nowhere and only measured the software rasteriser
+  if (!testInfo.project.use.isMobile) await page.setViewportSize({ width: 1440, height: 900 });
+  await mount(page);
+  const labels = async () => impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('g.tag text')].map(t => { const b = t.getBoundingClientRect(); return { x: Math.floor(b.x), y: Math.floor(b.y), width: Math.ceil(b.width), height: Math.ceil(b.height) }; }).filter(b => b.width > 4));
+  for (const [name, state, elev, az, attrs, wind] of SITUATIONS) {
+    const setup = fx => impl(page).evaluate((el, [fx, state, elev, az, attrs, wind]) => {
+      el.setConfig({ ...el._config, weather_entity: 'weather.own', weather_effects: fx });
+      el._hass = { ...el._hass, states: { 'weather.own': { entity_id: 'weather.own', state, last_updated: `${state}${fx}`, attributes: { temperature: 9, wind_speed: wind * 3.6, wind_bearing: 250, ...attrs } },
+        'sun.sun': { state: elev > 0 ? 'above_horizon' : 'below_horizon', attributes: { elevation: elev, azimuth: az } }, 'sensor.moon_phase': { state: 'waxing_gibbous', attributes: {} } } };
+      el._render();
+    }, [fx, state, elev, az, attrs, wind]);
+    // still pictures (no animation) to compare: the weather world off and fully on
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await setup('off'); await page.waitForTimeout(120);
+    const boxes = await labels();
+    expect(boxes.length, name).toBeGreaterThan(3);
+    // the card beside the drawing (outside the plan): no effect may reach there
+    const beside = await impl(page).evaluate(el => { const s = el.shadowRoot.querySelector('svg.plan').getBoundingClientRect(), c = el.getBoundingClientRect(); return s.left - c.left > 30 ? { x: Math.ceil(c.left) + 2, y: Math.ceil(s.top) + 2, width: Math.floor(s.left - c.left) - 6, height: Math.floor(s.height) - 4 } : null; });
+    const besidePlain = beside ? await page.screenshot({ clip: beside, fullPage: true }) : null;
+    const plain = await Promise.all(boxes.map(clip => page.screenshot({ clip, fullPage: true })));
+    await setup('full'); await page.waitForTimeout(120);
+    const world = await Promise.all(boxes.map(clip => page.screenshot({ clip, fullPage: true })));
+    if (beside) expect(Buffer.compare(besidePlain, await page.screenshot({ clip: beside, fullPage: true })), `${name}: nothing drawn beside the plan`).toBe(0);
+    // every weather layer is bounded by the drawing: the mask (keeps it off the rooms too) or the frame clip of the moving parts
+    const unbounded = await impl(page).evaluate(el => { const vb = el.shadowRoot.querySelector('svg.plan').viewBox.baseVal;
+      return [...el.shadowRoot.querySelectorAll('svg.plan > g.weather')].filter(g => { const m = g.getAttribute('mask'), c = g.getAttribute('clip-path');
+        // Test note 0.26.7.0 UI hotfix (owner order: one continuous surface): the drawing now reaches under the control bars, the moving
+        // weather stays in the plan's own area – its clip lies inside the drawing (was: exactly the drawing)
+        if (m) return false; const r = c && el.shadowRoot.querySelector(`${c.slice(4, -1)} rect`); if (!r) return true;
+        const x = r.x.baseVal.value, y = r.y.baseVal.value, w = r.width.baseVal.value, h = r.height.baseVal.value;
+        return x < vb.x - 0.01 || y < vb.y - 0.01 || x + w > vb.x + vb.width + 0.01 || y + h > vb.y + vb.height + 0.01 || w <= 0 || h <= 0; }).map(g => g.getAttribute('class')); });
+    expect(unbounded, name).toEqual([]);
+    const changed = boxes.filter((b, i) => Buffer.compare(plain[i], world[i]) !== 0);
+    // the light of the world may tint the room surface under a label only where no label pixel is (labels sit above it)
+    if (changed.length) {
+      const diff = await page.evaluate(async ([a, b]) => {
+        const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+        const [ia, ib] = await Promise.all([load(a), load(b)]), c = document.createElement('canvas'); c.width = ia.width; c.height = ia.height;
+        const x = c.getContext('2d'); x.drawImage(ia, 0, 0); const da = x.getImageData(0, 0, c.width, c.height).data; x.drawImage(ib, 0, 0); const db = x.getImageData(0, 0, c.width, c.height).data;
+        let worst = 0; for (let k = 0; k < da.length; k += 4) worst = Math.max(worst, Math.abs(da[k] - db[k]), Math.abs(da[k + 1] - db[k + 1]), Math.abs(da[k + 2] - db[k + 2])); return worst;
+      }, [`data:image/png;base64,${plain[boxes.indexOf(changed[0])].toString('base64')}`, `data:image/png;base64,${world[boxes.indexOf(changed[0])].toString('base64')}`]);
+      expect(diff, `${name}: label pixels changed`).toBeLessThanOrEqual(40);   // a shade of the shadow below, never an effect over the text
+    }
+    await testInfo.attach(`weather-${name}`, { body: await page.screenshot(), contentType: 'image/png' });
+    // Test note 0.26.7.0(2): the smoothness of the running animation (95th percentile frame time < 50 ms, same situations,
+    // same windows) is measured in house_frames.spec.mjs – in its own Playwright project that runs alone after every other
+    // browser test; next to busy parallel workers this machine-bound measurement failed without any change of the drawing
+  }
+});
+
+test('0.26.7.0: no air through a narrow joint between two drawn rooms; the air still runs along every outside wall', async ({ page }) => {
+  await mount(page);
+  await flowModule(page);
+  const r = await page.evaluate(() => {
+    const F = window.__F, G = window.G;
+    // two rooms drawn with a 0.2 m joint between them (not snapped together) – the joint lies across the wind
+    const rooms = [{ id: 'a', polygon: [[0, 0], [5, 0], [5, 6], [0, 6]] }, { id: 'b', polygon: [[5.2, 0], [10, 0], [10, 6], [5.2, 6]] }];
+    const field = F.buildField({ rooms, G, wind: { available: true, from_deg: 270, speed_ms: 5 }, northDeg: 0 });
+    const v = (x, y) => F.velocity(field, x, y, 0, [], 0);
+    const wide = [{ id: 'a', polygon: [[0, 0], [5, 0], [5, 6], [0, 6]] }, { id: 'b', polygon: [[7, 0], [12, 0], [12, 6], [7, 6]] }];
+    const yard = F.buildField({ rooms: wide, G, wind: { available: true, from_deg: 270, speed_ms: 5 }, northDeg: 0 });
+    return { joint: v(5.1, 3), outside: v(-0.2, 3), north: v(2.5, 6.25), yard: F.velocity(yard, 6, 3, 0, [], 0), tol: F.GAP_TOLERANCE };
+  });
+  expect(r.tol).toBeGreaterThan(0.2);
+  expect(r.joint).toBe(null);                    // a joint between two rooms is part of the house
+  expect(r.outside).not.toBe(null);              // right in front of an outside wall the air still moves …
+  expect(r.north).not.toBe(null);                // … and along it
+  expect(r.yard).not.toBe(null);                 // a real courtyard (2 m) between two wings stays open air
+});
+
+// 0.26.7.0: the same angle contract in Python (house_layout.normal_bearing) and here – see tests/test_north_contract_026700.py
+const NORTH_CONTRACT = [[0, [0, 1], 0], [0, [1, 0], 90], [90, [0, 1], 90], [90, [1, 0], 180], [180, [0, 1], 180], [270, [0, 1], 270], [270, [-1, 0], 180], [345, [0, 1], 345], [345, [0, -1], 165]];
+
+test('0.26.7.0 north: one angle contract for facades, wind and sun; the compass explains, drags and never rotates the rooms', async ({ page }) => {
+  const editor = await openEditor(page);
+  await geo(page);
+  const contract = await page.evaluate(table => table.map(([north, normal]) => [window.G.normalBearing(normal, north), window.G.bearingVector(window.G.normalBearing(normal, north), north).map(v => Math.round(v * 1000) / 1000 + 0)]), NORTH_CONTRACT);
+  contract.forEach(([bearing, back], i) => { expect(Math.round(bearing)).toBe(NORTH_CONTRACT[i][2]); expect(back).toEqual(NORTH_CONTRACT[i][1]); });
+  const panel = () => editor.evaluate(el => { const now = el.shadowRoot.querySelector('[data-north-now]'); return { text: now && now.textContent, title: el.shadowRoot.textContent.includes('In welche Himmelsrichtung zeigt dein Grundriss nach oben?'),
+    help: el.shadowRoot.textContent.includes('aus welcher Richtung Sonne und Wind'), examples: el.shadowRoot.textContent.includes('90° = oben Osten'), rose: !!el.shadowRoot.querySelector('[data-compass]'),
+    svgs: el.shadowRoot.querySelectorAll('svg').length }; });
+  await editor.evaluate(el => { el._sel = null; el._commit(l => { l.building.north_deg = 345; l.building.north_confirmed = false; }); el._render(); });
+  let p = await panel();
+  expect([p.title, p.help, p.examples, p.rose, p.svgs]).toEqual([true, true, true, true, 1]);
+  expect(p.text).toContain('Nord-Nordwest'); expect(p.text).toContain('345°');
+  for (const [deg, word] of [[0, 'Norden'], [90, 'Osten'], [180, 'Süden'], [270, 'Westen']]) {
+    await editor.evaluate((el, deg) => { el._commit(l => { l.building.north_deg = deg; }); el._render(); }, deg);
+    expect((await panel()).text).toContain(`nach ${word} (${deg}°)`);
+  }
+  // dragging the needle: east of the centre means north lies to the right on the plan, so "up" faces west (270°)
+  const rooms = await editor.evaluate(el => JSON.stringify(el._layout.rooms.map(r => r.polygon)));
+  const rose = await editor.evaluate(el => { const r = el.shadowRoot.querySelector('[data-compass]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width }; });
+  await page.mouse.move(rose.x + rose.w * 0.4, rose.y); await page.mouse.down(); await page.mouse.move(rose.x + rose.w * 0.4, rose.y + 1); await page.mouse.up();
+  expect(await editor.evaluate(el => el._layout.building.north_deg)).toBe(270);
+  expect(await editor.evaluate(el => JSON.stringify(el._layout.rooms.map(r => r.polygon)))).toBe(rooms);    // nothing rotated
+  expect(await editor.evaluate(el => el._layout.building.north_confirmed)).toBe(false);                      // confirming stays a decision
+  expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('verlässlichen Quelle');
+});
+
+test('0.26.7.0 floor plan editor: short start, honest progress, help per mode and shape, touch wording without keys', async ({ page }) => {
+  const editor = await openEditor(page);
+  const steps = () => editor.evaluate(el => { el._sel = null; el._adding = false; el._render(); return [...el.shadowRoot.querySelectorAll('ol.steps li')].map(li => [li.textContent.replace(/\s+/g, ' ').trim(), li.classList.contains('done')]); });
+  // Test note (hotfix U03, owner order): "Lage und Form" now comes from the stored layout (provenance "user"), not from an
+  // edit in this session – the shared fixture holds user-drawn rooms, so the plan is reset to proposed rooms first
+  await editor.evaluate(el => { el._layout.rooms.forEach(r => { r.provenance = 'config'; }); });
+  let s = await steps();
+  expect(s.find(([t]) => t.includes('Lage und Form'))[1]).toBe(false);          // rooms exist, but nothing was adjusted yet
+  expect(s.find(([t]) => t.includes('Lage und Form'))[0]).toContain('optional');
+  expect(s.find(([t]) => t.includes('Prüfen und speichern'))[1]).toBe(true);     // the stored plan is saved (revision > 0) …
+  expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('Tippe auf „＋ Raum“, wähle den Raum und eine Form.');
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_bad' }; el._commit(l => { const r = l.rooms.find(x => x.id === 'r_bad'); r.polygon = r.polygon.map(([x, y]) => [x + 0.1, y]); r.provenance = 'user'; }); });
+  s = await steps();
+  expect(s.find(([t]) => t.includes('Lage und Form'))[1]).toBe(true);           // shown by a real edit
+  expect(s.find(([t]) => t.includes('Prüfen und speichern'))[1]).toBe(false);   // … and an unsaved change opens the step again
+  // a contact step is never ticked while no opening has a contact at all
+  const contactsDone = await editor.evaluate(el => { el._live = {}; el._layout.openings.forEach(o => { o.contacts = []; }); el._sel = null; el._render(); return [...el.shadowRoot.querySelectorAll('ol.steps li')].find(li => li.textContent.includes('Kontakte')).classList.contains('done'); });
+  expect(contactsDone).toBe(false);
+  // modes and shapes explain themselves
+  await editor.evaluate(el => { el._sel = null; el.shadowRoot.querySelector('[data-mode="precise"]').click(); });
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('.hint').textContent)).toContain('Präzision: einzelne Ecken und Wände bearbeiten');
+  await editor.evaluate(el => { el._rooms = [...el._rooms, { key: 'gaeste', name: 'Gäste' }]; el._sel = null; el._adding = true; el._render(); });
+  const add = await editor.evaluate(el => el.shadowRoot.textContent);
+  expect(add).toContain('T-förmiger Raum'); expect(add).toContain('L- oder U-Form');
+  // on a touch screen the corner hint names no keys
+  await page.evaluate(() => { const real = window.matchMedia; window.matchMedia = q => (q === '(pointer: coarse)' ? { matches: true } : real(q)); });
+  const touch = await editor.evaluate(el => { el._adding = false; el._sel = { type: 'vertex', id: 'r_bad', index: 0 }; el._mode = 'precise'; return el._hint(); });
+  expect(touch).toContain('ziehen'); expect(touch).not.toContain('Pfeiltasten'); expect(touch).not.toContain('Entf');
+});
+
+// ---- hotfix 0.26.7.0 (owner order "Hotfix F05–F08 + zusätzliche UI-/Textfehler"): U01–U03 ----
+const stepDone = (editor, word) => editor.evaluate((el, word) => { el._sel = null; el._adding = false; el._render(); return [...el.shadowRoot.querySelectorAll('ol.steps li')].find(li => li.textContent.includes(word)).classList.contains('done'); }, word);
+
+test('hotfix U01: a changed north angle needs a new confirmation – number field, keyboard and compass; the same angle keeps it', async ({ page }) => {
+  const editor = await openEditor(page);
+  const state = () => editor.evaluate(el => ({ deg: el._layout.building.north_deg, ok: el._layout.building.north_confirmed }));
+  const rooms = await editor.evaluate(el => JSON.stringify(el._layout.rooms.map(r => r.polygon)));
+  const confirm = () => editor.evaluate(el => { el._sel = null; el._render(); const box = el.shadowRoot.querySelector('[data-f="north_confirmed"]'); box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); });
+  const typeNorth = v => editor.evaluate((el, v) => { el._sel = null; el._render(); const input = el.shadowRoot.querySelector('[data-f="north"]'); input.value = String(v); input.dispatchEvent(new Event('change', { bubbles: true })); }, v);
+  await typeNorth(30); await confirm();
+  expect(await state()).toEqual({ deg: 30, ok: true });
+  await typeNorth(30);                                                                   // the same angle: still confirmed
+  expect(await state()).toEqual({ deg: 30, ok: true });
+  await typeNorth(390);                                                                  // 390° is the same direction
+  expect(await state()).toEqual({ deg: 30, ok: true });
+  await typeNorth(45);                                                                   // before: still "checked" with a new angle
+  expect(await state()).toEqual({ deg: 45, ok: false });
+  await confirm();
+  await editor.evaluate(el => { el._sel = null; el._render(); el.shadowRoot.querySelector('[data-compass]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); });
+  expect(await state()).toEqual({ deg: 46, ok: false });                                  // keyboard
+  await confirm();
+  await editor.evaluate(el => { el._sel = null; el._render(); });
+  // the drag itself (pointer events on the rose, as the compass reads them; the aside may scroll it out of the viewport)
+  await editor.evaluate(el => { const rose = el.shadowRoot.querySelector('[data-compass]'), r = rose.getBoundingClientRect();
+    const at = type => rose.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, clientX: r.left + r.width * 0.9, clientY: r.top + r.height / 2 }));
+    at('pointerdown'); at('pointermove'); at('pointerup'); });
+  expect(await state()).toEqual({ deg: 270, ok: false });                                 // compass drag
+  expect(await editor.evaluate(el => JSON.stringify(el._layout.rooms.map(r => r.polygon)))).toBe(rooms);   // nothing rotated
+  await editor.evaluate(el => el._undo());
+  expect(await state()).toEqual({ deg: 46, ok: true });                                   // undo brings back angle and confirmation together
+  await editor.evaluate(el => el._redo());
+  await confirm();
+  await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+  await page.waitForTimeout(80);
+  const save = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').pop());
+  expect([save.layout.building.north_deg, save.layout.building.north_confirmed]).toEqual([270, true]);   // re-confirmed + saved: kept
+});
+
+test('hotfix U02: contacts are checked against FreshAirIQ – valid, cross-room, removed, renamed and unassigned openings; nothing is deleted', async ({ page }) => {
+  const editor = await openEditor(page);
+  const run = (contactsById, live) => editor.evaluate((el, [contactsById, live]) => {
+    el._live = live;
+    el._layout.openings.forEach(o => { if (o.id in contactsById) o.contacts = contactsById[o.id]; });
+    el._sel = null; el._adding = false; el._dirty = false; el._render();
+    const p = el._progress();
+    return { orphans: p.orphans, assigned: p.assigned, unassigned: p.unassigned, hint: el._hint(), marks: [...el.shadowRoot.querySelectorAll('circle.orphan')].map(c => c.dataset.orphan),
+      done: [...el.shadowRoot.querySelectorAll('ol.steps li')].find(li => li.textContent.includes('Kontakte')).classList.contains('done') };
+  }, [contactsById, live]);
+  const keys = await editor.evaluate(el => el._rooms.map(m => m.key));
+  const live = { ...Object.fromEntries(keys.map(k => [k, { contact_entities: [] }])), bad: { contact_entities: ['binary_sensor.bad_fenster'], inside_contact_entities: ['binary_sensor.bad_tuer'] }, wohnen: { contact_entities: ['sensor.wohnen_lage'] }, schlaf: { contact_entities: ['binary_sensor.schlaf_fenster'] } };
+  // valid everywhere, one window airs by the living room's contact (cross-room): all fine
+  let r = await run({ o_bad: ['binary_sensor.bad_fenster', 'sensor.wohnen_lage'] }, live);
+  expect([r.orphans, r.marks, r.done]).toEqual([[], [], true]);
+  // removed: the living-room window still names a contact FreshAirIQ no longer has
+  r = await run({ o_bad: ['binary_sensor.bad_fenster'] }, { ...live, wohnen: { contact_entities: [] } });
+  expect(r.orphans).toEqual(['o_wohnen']); expect(r.done).toBe(false);
+  expect(r.hint).toContain('nicht mehr eingerichtet');
+  // renamed: the bathroom window names the old entity id, FreshAirIQ knows the new one
+  r = await run({ o_bad: ['binary_sensor.bad_fenster', 'sensor.wohnen_lage'] }, { ...live, bad: { contact_entities: ['binary_sensor.bad_fenster_neu'], inside_contact_entities: ['binary_sensor.bad_tuer'] } });
+  expect(r.orphans).toEqual(['o_bad']); expect(r.marks).toEqual(['o_bad']);
+  const kept = await editor.evaluate(el => el._layout.openings.find(o => o.id === 'o_bad').contacts);
+  expect(kept).toEqual(['binary_sensor.bad_fenster', 'sensor.wohnen_lage']);                   // never deleted on its own
+  const row = await editor.evaluate(el => { el._sel = { type: 'opening', id: 'o_bad' }; el._render(); const g = el.shadowRoot.querySelector('label.gone'); return g && g.textContent; });
+  expect(row).toContain('binary_sensor.bad_fenster'); expect(row).toContain('nicht mehr eingerichtet');
+  // a room without live data (not loaded yet, unavailable): nothing is provably gone, nothing is marked
+  const partial = { ...live }; delete partial.flur;
+  r = await run({}, { ...partial, bad: { contact_entities: ['binary_sensor.bad_fenster_neu'], inside_contact_entities: ['binary_sensor.bad_tuer'] } });
+  expect([r.orphans, r.marks]).toEqual([[], []]);
+  // unassigned: an opening without any contact is named as before, after the orphan check
+  r = await run({ o_bad: ['binary_sensor.bad_fenster'], o_wohnen: [] }, live);
+  expect([r.orphans, r.unassigned, r.done]).toEqual([[], 1, false]);
+  expect(r.hint).toContain('1');
+});
+
+test('hotfix U03: "Lage und Form" follows the stored layout – reopening, undo and redo keep the true state', async ({ page }) => {
+  const editor = await openEditor(page);
+  expect(await stepDone(editor, 'Lage und Form')).toBe(true);                            // stored user-drawn rooms: done right after opening
+  await editor.evaluate(el => { el._layout.rooms.forEach(r => { r.provenance = 'config'; }); el._history = new el._history.constructor(); });
+  expect(await stepDone(editor, 'Lage und Form')).toBe(false);                           // proposed rooms only: open, never faked
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_bad' }; el._render(); el.shadowRoot.querySelector('[data-a="rotate"]').click(); });
+  expect(await stepDone(editor, 'Lage und Form')).toBe(true);                            // a real edit marks the room as the user's
+  await editor.evaluate(el => el._undo());
+  expect(await stepDone(editor, 'Lage und Form')).toBe(false);
+  await editor.evaluate(el => el._redo());
+  expect(await stepDone(editor, 'Lage und Form')).toBe(true);
+  await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+  await page.waitForTimeout(80);
+  const save = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').pop());
+  expect(save.layout.rooms.find(r => r.id === 'r_bad').provenance).toBe('user');         // what a reopen or a restart reads
 });

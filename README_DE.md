@@ -1,6 +1,6 @@
 # FreshAirIQ
 
-**Deutsch** · [English](README.md)
+🌐 Sprache / Language: **Deutsch** · [English](README.md)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
@@ -187,13 +187,17 @@ FreshAirIQ schaltet von sich aus keine Geräte – nur Rollos und Ablüfter, und
 ## Voraussetzungen
 
 - Home Assistant **2026.8.0 oder neuer**
-- HACS für die empfohlene Installation
+- Den Home-Assistant-Marketplace (ab Home Assistant 2026.11) oder HACS (ältere Versionen) für die empfohlene Installation
 - Für berechnete Räume: Temperatur, relative Luftfeuchtigkeit, Raumvolumen und mindestens ein Fenster-/Türkontakt
 - Außenreferenz: eine lokale `weather.*`-Entität **oder** Außen-Temperatur + Außen-Luftfeuchtigkeit
 
-## Installation über HACS
+## Installation über HACS und den Marketplace
 
-1. Öffne **HACS → Custom repositories**.
+[![Öffne deine Home-Assistant-Instanz und das FreshAirIQ-Repository im Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rupascha&repository=freshairiq&category=integration)
+
+Der Button öffnet FreshAirIQ in deinem eigenen Home Assistant – ab Home Assistant 2026.11 im **Marketplace**, davor in **HACS**. Solange FreshAirIQ nicht im Standardkatalog steht, bietet er an, das Repository zuerst als benutzerdefiniertes Repository hinzuzufügen. Ohne Button:
+
+1. Öffne **Einstellungen → Marketplace** (Home Assistant 2026.11+) bzw. **HACS** (ältere Versionen) → **Benutzerdefinierte Repositories**.
 2. Füge `https://github.com/rupascha/freshairiq` als Repository vom Typ **Integration** hinzu.
 3. Installiere **FreshAirIQ**.
 4. Starte Home Assistant neu.
@@ -204,7 +208,7 @@ FreshAirIQ schaltet von sich aus keine Geräte – nur Rollos und Ablüfter, und
 
 ## Manuelle Installation
 
-Kopiere `custom_components/freshairiq` vollständig nach `/config/custom_components/freshairiq`, starte Home Assistant neu und füge FreshAirIQ anschließend unter **Einstellungen → Geräte & Dienste** hinzu.
+Lade `freshairiq.zip` aus dem [neuesten Release](https://github.com/rupascha/freshairiq/releases/latest) und entpacke es nach `/config/custom_components/freshairiq` (das Archiv enthält die Dateien dieses Ordners), oder kopiere `custom_components/freshairiq` vollständig dorthin. Starte Home Assistant neu und füge FreshAirIQ anschließend unter **Einstellungen → Geräte & Dienste** hinzu.
 
 ## Fensterkontakte: 2 Zustände, 3 Zustände – oder zwei Kontakte an einem Fenster
 
@@ -287,7 +291,7 @@ python tools/build_release.py
 
 ### Update
 
-Bei HACS-Installationen werden veröffentlichte GitHub-Releases als Updatequelle verwendet. Release-Tag und `custom_components/freshairiq/manifest.json` müssen dieselbe Version tragen. Lern- und Verlaufsdaten liegen getrennt im Home-Assistant-Storage und bleiben bei normalen Updates erhalten.
+Bei Installationen über den Marketplace oder HACS sind veröffentlichte GitHub-Releases die Updatequelle: Marketplace und HACS installieren wie bisher aus dem Quellarchiv des Releases; zusätzlich enthält jedes Release das Installationsarchiv `freshairiq.zip` für die manuelle Installation. Release-Tag und `custom_components/freshairiq/manifest.json` tragen dieselbe Version. Ältere Releases lassen sich weiterhin über das Menü des Repositorys installieren. Lern- und Verlaufsdaten liegen getrennt im Home-Assistant-Storage und bleiben bei normalen Updates erhalten.
 
 ### Entfernen
 

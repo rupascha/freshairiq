@@ -1,9 +1,9 @@
 # FreshAirIQ
 
-[Deutsch](README_DE.md) · **English**
+🌐 Language / Sprache: [Deutsch](README_DE.md) · **English**
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official-en.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
 </p>
 
 <p align="center"><strong>Your home can tell you when ventilation is actually worthwhile.</strong></p>
@@ -187,13 +187,17 @@ FreshAirIQ does not switch devices on its own – only covers and exhaust fans, 
 ## Requirements
 
 - Home Assistant **2026.8.0 or newer**
-- HACS for the recommended installation method
+- The Home Assistant Marketplace (Home Assistant 2026.11 or newer) or HACS (older versions) for the recommended installation method
 - For calculated rooms: temperature, relative humidity, room volume, and at least one window/door contact
 - Outdoor reference: a local `weather.*` entity **or** outdoor temperature + outdoor relative humidity
 
-## Installation via HACS
+## Installation via HACS and the Marketplace
 
-1. Open **HACS → Custom repositories**.
+[![Open your Home Assistant instance and open the FreshAirIQ repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rupascha&repository=freshairiq&category=integration)
+
+The button opens FreshAirIQ in your own Home Assistant – in the **Marketplace** from Home Assistant 2026.11, in **HACS** before. As long as FreshAirIQ is not listed in the default catalog, it offers to add the repository as a custom repository first. Without the button:
+
+1. Open **Settings → Marketplace** (Home Assistant 2026.11+) or **HACS** (older versions) → **Custom repositories**.
 2. Add `https://github.com/rupascha/freshairiq` as an **Integration** repository.
 3. Install **FreshAirIQ**.
 4. Restart Home Assistant.
@@ -204,7 +208,7 @@ FreshAirIQ does not switch devices on its own – only covers and exhaust fans, 
 
 ## Manual installation
 
-Copy the complete `custom_components/freshairiq` folder to `/config/custom_components/freshairiq`, restart Home Assistant, then add FreshAirIQ under **Settings → Devices & services**.
+Download `freshairiq.zip` from the [latest release](https://github.com/rupascha/freshairiq/releases/latest) and extract it into `/config/custom_components/freshairiq` (the archive holds the files of that folder), or copy the complete `custom_components/freshairiq` folder there. Restart Home Assistant, then add FreshAirIQ under **Settings → Devices & services**.
 
 ## Window contacts: 2-state, 3-state – or two contacts on one window
 
@@ -287,7 +291,7 @@ python tools/build_release.py
 
 ### Updates
 
-For HACS installations, published GitHub releases are used as the update source. The release tag and `custom_components/freshairiq/manifest.json` must use the same version. Learning and history data are stored separately in Home Assistant storage and remain intact during normal updates.
+For Marketplace and HACS installations, published GitHub releases are the update source: the Marketplace and HACS install the release from its source archive, as before; every release additionally carries the installation archive `freshairiq.zip` for manual installs. The release tag and `custom_components/freshairiq/manifest.json` use the same version. Older releases can still be installed from the repository menu. Learning and history data are stored separately in Home Assistant storage and remain intact during normal updates.
 
 ### Removal
 

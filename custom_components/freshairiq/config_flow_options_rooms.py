@@ -20,6 +20,7 @@ from .const import (
     CONF_ROOMS,
     CONF_ROOM_CLIMATE,
     CONF_ROOM_CO2,
+    CONF_ROOM_MOLD_INDICATOR,
     CONF_ROOM_CONTACTS,
     CONF_ROOM_DISABLED_GOALS,
     CONF_ROOM_FLOOR,
@@ -45,6 +46,7 @@ from .config_flow_goals import (
 )
 from .config_flow_rooms import (
     _apply_single_contact_reference,
+    _contact_side_error,
     _contact_display_name,
     _normalise_room,
     _room_section_schema,
@@ -88,6 +90,7 @@ class OptionsRoomsMixin:
             CONF_ROOM_HUMIDITY: [],
             CONF_ROOM_CONTACTS: [],
             CONF_ROOM_CO2: [],
+            CONF_ROOM_MOLD_INDICATOR: [],
             CONF_ROOM_ILLUMINANCE: [],
             CONF_ROOM_CLIMATE: [],
         }
@@ -111,7 +114,10 @@ class OptionsRoomsMixin:
                 device_class = state.attributes.get("device_class") or device_class
             device_class = str(getattr(device_class, "value", device_class) or "")
 
-            if domain == "sensor":
+            if domain == "sensor" and entity_entry.platform == "mold_indicator":
+                # v0.26.6.1 (#21): a Mold Indicator reports surface humidity – never the room humidity
+                candidates[CONF_ROOM_MOLD_INDICATOR].append(entity_id)
+            elif domain == "sensor":
                 if device_class == "temperature":
                     candidates[CONF_ROOM_TEMPERATURE].append(entity_id)
                 elif device_class == "humidity":
@@ -138,7 +144,7 @@ class OptionsRoomsMixin:
             if entity_id and self.hass.states.get(entity_id) is not None:
                 defaults[key] = entity_id
 
-        for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
+        for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_MOLD_INDICATOR, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
             values = sorted(dict.fromkeys(candidates[key]))
             if key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
                 # Multi-sensor climate is explicit: show the complete detected
@@ -523,14 +529,18 @@ class OptionsRoomsMixin:
                     self._contact_reference_index = index - 1
                     return await self.async_step_contact_references()
                 return await self.async_step_room_goals()
-            if _apply_single_contact_reference(room, contact, user_input):
+            side_error = _contact_side_error(room, contact, user_input, self._rooms())
+            if side_error is not None:
+                errors["base"] = side_error
+            elif _apply_single_contact_reference(room, contact, user_input):
                 self._persist_working_state(reload_entry=False)
                 self._contact_reference_index = index + 1
                 return await self.async_step_contact_references()
-            errors["base"] = "contact_reference_pair_required"
+            else:
+                errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="contact_references",
-            data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact)),
+            data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact, self._rooms())),
             errors=errors,
             description_placeholders={
                 "room_name": room.get(CONF_ROOM_NAME, room.get("key", _txt(_flow_language(self.hass), "Raum", "Room"))),

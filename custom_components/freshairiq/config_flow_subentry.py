@@ -22,6 +22,7 @@ from .const import (
     CONF_ROOMS,
     CONF_ROOM_CLIMATE,
     CONF_ROOM_CO2,
+    CONF_ROOM_MOLD_INDICATOR,
     CONF_ROOM_CONTACTS,
     CONF_ROOM_DISABLED_GOALS,
     CONF_ROOM_FLOOR,
@@ -45,6 +46,7 @@ from .config_flow_goals import (
 )
 from .config_flow_rooms import (
     _apply_single_contact_reference,
+    _contact_side_error,
     _contact_display_name,
     _normalise_room,
     _room_section_schema,
@@ -130,7 +132,7 @@ class FreshAirIQRoomSubentryFlow(ClearableFormMixin, config_entries.ConfigSubent
             label = f"{floor_name} · {area.name}" if floor_name != unassigned else area.name
             candidates = {
                 CONF_ROOM_TEMPERATURE: [], CONF_ROOM_HUMIDITY: [], CONF_ROOM_CONTACTS: [],
-                CONF_ROOM_CO2: [], CONF_ROOM_ILLUMINANCE: [], CONF_ROOM_CLIMATE: [],
+                CONF_ROOM_CO2: [], CONF_ROOM_MOLD_INDICATOR: [], CONF_ROOM_ILLUMINANCE: [], CONF_ROOM_CLIMATE: [],
             }
             for entity_entry in entity_reg.entities.values():
                 if entity_entry.disabled_by is not None:
@@ -149,7 +151,9 @@ class FreshAirIQRoomSubentryFlow(ClearableFormMixin, config_entries.ConfigSubent
                 if state is not None:
                     device_class = state.attributes.get("device_class") or device_class
                 device_class = str(getattr(device_class, "value", device_class) or "")
-                if domain == "sensor":
+                if domain == "sensor" and entity_entry.platform == "mold_indicator":
+                    candidates[CONF_ROOM_MOLD_INDICATOR].append(entity_id)  # v0.26.6.1 (#21): surface, not room humidity
+                elif domain == "sensor":
                     if device_class == "temperature": candidates[CONF_ROOM_TEMPERATURE].append(entity_id)
                     elif device_class == "humidity": candidates[CONF_ROOM_HUMIDITY].append(entity_id)
                     elif device_class == "carbon_dioxide": candidates[CONF_ROOM_CO2].append(entity_id)
@@ -169,7 +173,7 @@ class FreshAirIQRoomSubentryFlow(ClearableFormMixin, config_entries.ConfigSubent
                 if preferred_id and self.hass.states.get(preferred_id) is not None and preferred_id not in values:
                     values.insert(0, preferred_id)
                 if values: suggested[key] = values
-            for key in (CONF_ROOM_CO2, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
+            for key in (CONF_ROOM_CO2, CONF_ROOM_MOLD_INDICATOR, CONF_ROOM_ILLUMINANCE, CONF_ROOM_CLIMATE):
                 values = sorted(dict.fromkeys(candidates[key]))
                 if len(values) == 1: suggested[key] = values[0]
             contacts = sorted(dict.fromkeys(candidates[CONF_ROOM_CONTACTS]))
@@ -270,13 +274,17 @@ class FreshAirIQRoomSubentryFlow(ClearableFormMixin, config_entries.ConfigSubent
                     if len(_available_room_goals(room)) > 1:
                         return await self.async_step_add_goals()
                     return await self._async_step_room_origin()
-                if _apply_single_contact_reference(room, contact, user_input):
+                side_error = _contact_side_error(room, contact, user_input, self._entry_rooms())
+                if side_error is not None:
+                    errors["base"] = side_error
+                elif _apply_single_contact_reference(room, contact, user_input):
                     self._add_reference_contact_index = index + 1
                     return await self.async_step_add_references()
-                errors["base"] = "contact_reference_pair_required"
+                else:
+                    errors["base"] = "contact_reference_pair_required"
             return self.async_show_form(
                 step_id="add_references",
-                data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact)),
+                data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact, self._entry_rooms())),
                 errors=errors,
                 description_placeholders={
                     "room_name": room.get(CONF_ROOM_NAME, self._room_key or _txt(_flow_language(self.hass), "Raum", "Room")),
@@ -513,14 +521,18 @@ class FreshAirIQRoomSubentryFlow(ClearableFormMixin, config_entries.ConfigSubent
         contact = str(contacts[index])
         errors = {}
         if user_input is not None:
-            if _apply_single_contact_reference(room, contact, user_input):
+            side_error = _contact_side_error(room, contact, user_input, self._entry_rooms())
+            if side_error is not None:
+                errors["base"] = side_error
+            elif _apply_single_contact_reference(room, contact, user_input):
                 self._persist_room_update()
                 self._room_reference_contact_index = index + 1
                 return await self.async_step_room_references()
-            errors["base"] = "contact_reference_pair_required"
+            else:
+                errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="room_references",
-            data_schema=_single_contact_reference_schema(room, contact),
+            data_schema=_single_contact_reference_schema(room, contact, self._entry_rooms()),
             errors=errors,
             description_placeholders={
                 "room_name": room.get(CONF_ROOM_NAME, self._room_key or _txt(_flow_language(self.hass), "Raum", "Room")),

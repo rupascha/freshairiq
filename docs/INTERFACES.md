@@ -58,3 +58,25 @@ Status: **verifiziert** = am Code beider Seiten bzw. per Test geprüft; **offen*
 - Live-Hub: Quellenstatus Reddit/GitHub, Bestand `external_reports` (F40-Altlasten) – kein Zugriff.
 - Echte HA 2026.8/2026.9 (lokal nur 2026.10.1 unter Python 3.14 geprüft).
 - iOS-App/WKWebView, Fully Kiosk, HACS-Client (nicht verfügbar; WebKit-Engine via Playwright in CI geprüft).
+
+## v0.26.6.1 – Querlüftungspaare, Mold Indicator, Editor-Arbeitsbereich
+
+| Contract | Inhalt | Prüfung |
+|---|---|---|
+| Optionen `cross_ventilation_pairs`, `cross_zone_connections` | gespeichert nur als Raum-Keys `a+b,c+d`; Eingabe Keys oder eindeutige Raumnamen (`cross_pairs.parse`, Trennzeichen `,` `;` Zeilenumbruch); Fehlercode `cross_pairs_invalid` mit `{error_detail}`; Laufzeit (Empfehlung, `_cross_ventilation_active`, Hausstrategie) über dieselbe Auflösung; Migration beim Laden | `tests/test_cross_pairs_026601.py`, `ha_tests/test_cross_pairs_names_026601.py`, `ha_tests/test_cov_options_flow.py` |
+| Raumfeld `mold_indicator` | optionale Entity (Selector `integration: mold_indicator`, Domain `sensor`); gültig nur registrierte Plattform `mold_indicator` (oder unregistriert), Zustand endlich 0–100, Einheit `%`; `RoomInput.surface_rh_helper` ersetzt die interne Oberflächen-RH in `evaluate_room` | `tests/test_mold_indicator_026601.py`, `ha_tests/test_mold_indicator_runtime_026601.py`, Seed in `ha_tests/test_clearable_fields_026503.py` |
+| Raum-Payload (nur mit Helfer) | `surface_rh_source` (`ha_mold_indicator`/`internal_estimate`), `surface_rh_source_entity`, bei Fallback `surface_rh_source_issue` (`missing`, `unavailable`, `wrong_unit`, `invalid`, `out_of_range`, `not_mold_indicator`); ohne Helfer unverändert (Golden Master identisch) | dito |
+| Diagnose | Raum-Records `surface_rh_source` (Standard `internal_estimate`) und ggf. `surface_rh_source_issue`; keine Helfer-Entity-ID | `ha_tests/test_mold_indicator_runtime_026601.py` |
+| Hauskarten-Editor | öffnet in `.faiq-editor-workspace` (Shadow Root der Hauskarte, `popover="manual"`, Vollbild); Editor-Element und `data-a`-Aktionen unverändert, zusätzlich `panel_toggle`; Grundriss-Schema unverändert | `frontend_tests/house.spec.mjs` (v0.26.6.1) |
+
+
+## v0.26.7.0 – Hauskarte (Wetterwelt, Räume, Etagen), Automationssperre
+
+| Schnittstelle | Richtung | Inhalt | Prüfung |
+|---|---|---|---|
+| Option `automation_lock_entity` | Nutzer → Integration | Entity-ID (input_boolean/switch/binary_sensor/timer/schedule) oder leer; in `NATIVE_OPTION_KEYS` | `ha_tests/test_automation_lock_026700.py` (Optionsseite setzen/leeren) |
+| `binary_sensor.*_automation_lock` (neu, additiv) | Integration → Nutzer-Automationen | an = Sperre aktiv; Attribute `configured`, `lock_entity`, `lock_entity_state`; standardmäßig nur mit Sperr-Entität aktiviert | HA-Test Statusentität |
+| `fan_automation.state` | Integration → Events/Karte | zusätzlicher Wert `locked` (Label-Key `automation_lock`), `stopping` mit `automation_lock_off` während des eigenen Ausschaltens; `user_action_needed` unverändert | `tests/test_automation_lock_026700.py` |
+| Hauskarte ↔ HA | Karte liest | `weather.*` (Zustand/Attribute), `weather/subscribe_forecast` (hourly/daily, geteilt, nur bei Anzeige), `sun.sun`, optional `sensor.moon_phase`; Wind weiter aus `house_map/subscribe` | Playwright `0.26.7.0 …` |
+| Hauskarte ↔ Integration | Karte liest | Raumfelder `realistic_potential_ml`, `potential_horizon_min`, `result_ml`, `session_*` (vorhanden, unverändert); Summe = `removableNow` der Classic-Karte | Playwright Feuchte nach Räumen |
+| Diagnostics HA / Hub | – | keine Änderung (neue Option und Entität sind nicht Teil des Upload-Vertrags) | Hub-/Diagnostics-HA-Suiten |

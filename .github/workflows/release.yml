@@ -1,0 +1,66 @@
+# Tag-driven release. Restored 2026-10-16 from contract tests.
+# Every release carries the installation ZIP freshairiq.zip (manual install; GitHub counts its
+# downloads). HACS and the Marketplace keep installing from the source archive (no zip_release, A-236).
+# The release is created as a draft, both assets are attached, and only then is it published. Assets are only built after all required checks (quality.yml, tag = manifest, source gate).
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
+
+  verify-release:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify tag matches project version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          MANIFEST_VERSION=$(python -c "import json;print(json.load(open('custom_components/freshairiq/manifest.json'))['version'])")
+          if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match manifest $MANIFEST_VERSION"; exit 1
+          fi
+      - run: python tools/github_release_gate.py --source .
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: verify-release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: freshairiq-clean-release
+          path: release-artifact
+      - name: Check both assets before anything is published
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SOURCE="release-artifact/FreshAirIQ-release.zip"
+          python tools/github_release_gate.py --zip "$SOURCE"
+          # rebuilt from the tagged source: reproducible, must equal the verified artifact byte for byte
+          python tools/build_install_zip.py --output rebuilt/freshairiq.zip --version "$VERSION"
+          cmp release-artifact/freshairiq.zip rebuilt/freshairiq.zip
+          python tools/build_install_zip.py --check release-artifact/freshairiq.zip --version "$VERSION"
+      - name: Draft release with both assets, verify, publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SOURCE="release-artifact/FreshAirIQ-release.zip"
+          python tools/github_release_gate.py --zip "$SOURCE"
+          ASSET="FreshAirIQ-v${VERSION}-CLEAN.zip"
+          cp "$SOURCE" "$ASSET"
+          cp release-artifact/freshairiq.zip freshairiq.zip
+          RELEASE_ASSET="$ASSET"
+          gh release create "$GITHUB_REF_NAME" "$RELEASE_ASSET" freshairiq.zip --draft --verify-tag --title "FreshAirIQ $VERSION" --notes-file "docs/releases/RELEASE_NOTES_${VERSION}.md"
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -qx freshairiq.zip
+          gh release edit "$GITHUB_REF_NAME" --draft=false

@@ -11,7 +11,7 @@ def test_room_goal_cards_are_forced_to_one_three_column_row():
 def test_options_room_wizard_has_back_contract_without_leaking_to_other_flows():
     src = module_source("config_flow")
     assert "_goal_priority_schema(room, include_back=True)" in src
-    assert "_schema_with_wizard_back(_single_contact_reference_schema(room, contact))" in src
+    assert "_schema_with_wizard_back(_single_contact_reference_schema(room, contact, self._rooms()))" in src  # changed expectation (0.26.7.0 inside doors): the call also passes the room list for the connected-room choice
     assert 'if bool(user_input.get("wizard_back")):' in src
     assert "return await self.async_step_edit_room()" in src
 

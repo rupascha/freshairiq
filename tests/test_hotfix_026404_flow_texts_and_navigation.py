@@ -65,7 +65,7 @@ def test_room_wizard_has_back_navigation_and_no_separate_orientation_or_delay_pa
     sub = FLOW_SRC[FLOW_SRC.index("class FreshAirIQRoomSubentryFlow"):FLOW_SRC.index("class FreshAirIQOptionsFlow")]
     assert "async def async_step_add_orientations" not in sub and "async def async_step_add_delays" not in sub
     assert 'data_schema=_goal_priority_schema(room, include_back=True)' in sub
-    assert "data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact))" in sub
+    assert "data_schema=_schema_with_wizard_back(_single_contact_reference_schema(room, contact, self._entry_rooms()))" in sub  # changed expectation (0.26.7.0 inside doors): the call also passes the room list for the connected-room choice
     assert "return await self._async_step_room_origin()" in sub
     de = json.loads((COMP / "translations/de.json").read_text(encoding="utf-8"))
     steps = de["config_subentries"]["room"]["step"]

@@ -6,9 +6,11 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from . import cross_pairs
 from .open_connections import connected_pairs
 from .const import (
     CONF_OUTDOOR_WEATHER,
+    CONF_ROOMS,
     CONF_ROOM_INCLUDE_CALCULATIONS,
     POST_VENTILATION_RESULT_MINUTES,
     VERSION,
@@ -345,10 +347,9 @@ class HouseStageMixin:
         active_keys = {str(r.get("key")) for r in active}
         active_floors = {str(r.get("floor", "")) for r in active}
         cross_zone_pairs: set[frozenset[str]] = set()
-        for _pair in str(options.get("cross_zone_connections", "") or "").split(","):
-            _keys = [x.strip() for x in _pair.split("+") if x.strip()]
-            if len(_keys) == 2:
-                cross_zone_pairs.add(frozenset(_keys))
+        # v0.26.6.1 (#25): room names resolve to keys like everywhere else
+        for _keys in cross_pairs.key_pairs(options.get("cross_zone_connections"), [r for r in self.entry.data.get(CONF_ROOMS, []) if isinstance(r, dict)]):
+            cross_zone_pairs.add(frozenset(_keys))
         # 0.26.5.3: an open connection without a door is an explicit link too
         cross_zone_pairs |= connected_pairs(options)
         passive_group_id = (

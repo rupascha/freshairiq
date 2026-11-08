@@ -118,21 +118,50 @@ def sensor_states(rooms_live: dict[str, Any], *prefer: Any, field: str = "contac
     return merged
 
 
+def inside_contacts(rooms_live: dict[str, Any]) -> set[str]:
+    """Contacts configured as inside doors in any room (contact_sides.py)."""
+    return {str(c) for room in rooms_live.values() if isinstance(room, dict) for c in (room.get("inside_contacts") or [])}
+
+
+def geometry_conflict(opening: dict[str, Any], target: str, inside: set[str]) -> str | None:
+    """An opening drawn on an outside wall that cannot exchange air with the outside (0.26.7.0).
+
+    A doorless passage is always open and only exists between rooms; a contact configured as an
+    inside door leads into another room. Drawn on an outside wall either would invent a permanent
+    or false outside air path, so the map shows the conflict instead of the path.
+    """
+    if target != OUTSIDE:
+        return None
+    if opening.get("kind") == "passage":
+        return "passage_on_outside_wall"
+    contacts = [str(c) for c in opening.get("contacts") or []]
+    if contacts and all(c in inside for c in contacts):
+        return "inside_door_on_outside_wall"
+    return None
+
+
 def _openings(layout: dict[str, Any], rooms_live: dict[str, Any], wind: dict[str, Any]) -> dict[str, dict[str, Any]]:
     rooms = {r["id"]: r for r in layout.get("rooms", [])}
+    inside = inside_contacts(rooms_live)
     out: dict[str, dict[str, Any]] = {}
     for opening in layout.get("openings", []):
         room = rooms.get(opening.get("room_id"))
         if room is None:
             continue
-        state, pending = _opening_state(opening, sensor_states(rooms_live, room.get("room_key")))
         # the whole span must lie on the other room's wall (a shared corner is no shared wall)
         target = opening_neighbour(layout, room["id"], opening) or OUTSIDE
+        # F06: on an outside wall only outside contacts confirm the opening – an inside door's contact never opens it
+        counted = {**opening, "contacts": [c for c in opening.get("contacts") or [] if str(c) not in inside]} if target == OUTSIDE else opening
+        state, pending = _opening_state(counted, sensor_states(rooms_live, room.get("room_key")))
+        conflict = geometry_conflict(opening, target, inside)
+        if conflict:
+            state, pending = "geometry_conflict", False
         facade_deg, facade_basis = _facade(layout, room, opening, sensor_states(rooms_live, room.get("room_key"), field="orientations")) if target == OUTSIDE else (None, "interior")
         out[str(opening["id"])] = {
             "room": room["id"], "target": target, "state": state, "pending": pending,
             "size": _size_class(opening, state), "facade_deg": facade_deg, "facade_basis": facade_basis,
             **(facade_exposure(facade_deg, wind) if target == OUTSIDE else {"exposure": "interior", "angle_deg": None, "pressure": None}),
+            **({"conflict": conflict} if conflict else {}),
         }
     return out
 

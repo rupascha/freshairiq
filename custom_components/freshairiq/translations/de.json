@@ -38,6 +38,7 @@
           "delay_seconds": "Öffnungsverzögerung",
           "orientation": "Himmelsrichtung",
           "co2": "CO₂-Sensor",
+          "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
           "floor": "Stockwerk/Bereich",
           "include_in_calculations": "In Berechnungen einbeziehen",
           "moisture_sources": "Feuchtequellen im Raum",
@@ -68,7 +69,7 @@
           "temperature": "Temperatursensor des Raums. Für berechnete Räume erforderlich;",
           "humidity": "Luftfeuchtesensor des Raums. Für berechnete Räume erforderlich;",
           "contacts": "Wähle alle Kontakte, über die FreshAirIQ eine Lüftung erkennen soll.",
-          "contact_mode": "„Mindestens einer offen“ reagiert auf jeden gewählten Kontakt; „Alle offen“ erst auf den gemeinsamen Lüftungspfad.",
+          "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
           "volume": "Entweder Volumen direkt in m³ oder vollständige Maße angeben.",
           "length": "Nur nötig, wenn kein direktes Volumen angegeben wird.",
           "width": "Nur nötig, wenn kein direktes Volumen angegeben wird.",
@@ -78,6 +79,7 @@
           "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+          "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
           "floor": "Stockwerk/Bereich für Gruppierung und Querlüftung.",
           "include_in_calculations": "Aus = Raum bleibt sichtbar, fließt aber nicht in Empfehlungen, Hausbilanz, Statistik oder Lernen ein.",
           "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -140,6 +142,8 @@
           "orientation": "Himmelsrichtung",
           "covers": "Rollo/Jalousie",
           "contact_kind": "Art der Öffnung",
+          "contact_side": "Öffnung führt nach",
+          "connected_room": "Verbundener Raum (nur Innentür, optional)",
           "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
           "cover_follow": "Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird"
         },
@@ -150,6 +154,8 @@
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
           "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
+          "contact_side": "Eine Innentür verbindet Räume miteinander. Ihr Öffnen startet keine Außenlüftung, kann aber die Luftverteilung beim Lüften über Fenster oder Außentüren beeinflussen. Außenbereich: Fenster, Terrassen-, Balkon- oder Außentür – darf eine Außenlüftung auslösen. Anderen Innenraum: Zimmertür oder Innenöffnung – löst allein keine Außenlüftung aus.",
+          "connected_room": "Wähle den Raum, den diese Innentür verbindet. Bei geöffneter Tür kann FreshAirIQ diesen Luftweg berücksichtigen. Bei geschlossener Tür wird dieser Weg nicht als offen behandelt. Andere tatsächlich vorhandene Verbindungen bleiben davon unabhängig. Gilt nur, wenn oben „Anderen Innenraum“ gewählt ist; bei „Außenbereich“ bleibt das Feld leer.",
           "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
           "cover_follow": "FreshAirIQ steuert dann die oben gewählten Rollos: Wird das Fenster bzw. die Tür geöffnet (auch gekippt), fahren sie ganz hoch; wird es wieder geschlossen, fahren sie in die vorherige Position zurück – außer jemand hat sie zwischendurch bewegt. Bei einer Durchgangstür schließt das Rollo nie, solange die Tür offen ist; ein Schließen durch andere wird gestoppt und das Rollo wieder geöffnet."
         }
@@ -186,6 +192,8 @@
       "invalid_mould_order": "Die vier Schimmelgrenzen müssen aufsteigen: leicht erhöht < erhöht < Warnung (hoch) < kritisch (sehr hoch).",
       "invalid_co2_order": "Die CO₂-Warnschwelle muss niedriger als die kritische CO₂-Schwelle sein.",
       "contact_reference_pair_required": "Für eine abweichende Fenster-/Tür-Referenz müssen Temperatur und Luftfeuchtigkeit gemeinsam aus demselben Luftbereich gewählt werden.",
+      "contact_side_conflict": "Dieser Kontaktsensor ist in einem anderen Raum unterschiedlich eingestellt. Bitte lege einheitlich fest, ob er eine Außenöffnung oder eine Verbindung zwischen Innenräumen überwacht.",
+      "connected_room_outside": "„Verbundener Raum“ gilt nur für Innentüren. Wähle oben „Anderen Innenraum“ oder lasse das Feld leer.",
       "outdoor_pair_required": "Außen-Temperatur und Außen-Luftfeuchtigkeit müssen gemeinsam ausgewählt oder beide leer gelassen werden.",
       "exhaust_reference_pair_required": "Für die Zuluft beim Ablüfter bitte Temperatur und Luftfeuchte des Nebenraums zusammen auswählen (oder beide leer lassen)."
     },
@@ -196,8 +204,8 @@
   "selector": {
     "contact_mode": {
       "options": {
-        "any": "Mindestens ein Kontakt offen",
-        "all": "Alle gewählten Kontakte offen"
+        "any": "Mindestens eine Außenöffnung offen",
+        "all": "Alle Außenöffnungen offen"
       }
     },
     "volume_mode": {
@@ -341,6 +349,12 @@
         "door": "Tür"
       }
     },
+    "contact_side": {
+      "options": {
+        "outside": "Außenbereich – Fenster, Terrassen-, Balkon- oder Außentür",
+        "inside": "Anderen Innenraum – Zimmertür oder Innenöffnung"
+      }
+    },
     "cover_position_zero_means": {
       "options": {
         "closed": "0 % = vollständig geschlossen / 100 % = vollständig geöffnet",
@@ -481,6 +495,7 @@
           "delay_seconds": "Öffnungsverzögerung",
           "orientation": "Himmelsrichtung",
           "co2": "CO₂-Sensor",
+          "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
           "floor": "Stockwerk/Bereich",
           "include_in_calculations": "In Berechnungen einbeziehen",
           "moisture_sources": "Feuchtequellen im Raum",
@@ -513,7 +528,7 @@
           "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
           "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
           "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-          "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+          "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
           "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
           "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
           "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -523,6 +538,7 @@
           "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+          "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
           "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
           "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
           "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -594,6 +610,7 @@
               "temperature_aggregation": "Temperatur-Auswertung",
               "humidity_aggregation": "Feuchte-Auswertung",
               "co2": "CO₂-Sensor (optional)",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "exhaust_fan": "Ablüfter / mechanische Lüftung (optional)",
               "exhaust_fan_reference_temperature": "Zuluft beim Ablüfter: Temperatur (Nebenraum)",
               "exhaust_fan_reference_humidity": "Zuluft beim Ablüfter: Luftfeuchte (Nebenraum)",
@@ -606,10 +623,11 @@
               "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+              "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
               "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
               "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
               "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung; schalten nur, wenn du es unter „Automatische Steuerung“ einschaltest.",
               "exhaust_fan_reference_temperature": "Optional. Ein Ablüfter bläst die Raumluft nach draußen; die Ersatzluft strömt aus dem Nebenraum (Türspalt, Überströmer) nach, nicht von draußen. Temperatursensor dieses Nebenraums. FreshAirIQ rechnet damit, solange der Ablüfter läuft und kein Fenster offen ist (ohne Fensterkontakt immer). Nur zusammen mit der Luftfeuchte.",
               "exhaust_fan_reference_humidity": "Optional. Luftfeuchtesensor des Nebenraums, aus dem beim Ablüfter die Luft nachströmt. Nur zusammen mit der Temperatur; ist einer der beiden nicht verfügbar, rechnet FreshAirIQ nicht ersatzweise mit der Außenluft.",
@@ -642,6 +660,7 @@
               "reference_temperature": "Referenztemperatur",
               "reference_humidity": "Referenzfeuchte",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "voc": "VOC-/TVOC-Sensor (optional)",
               "pm25": "PM2.5-Sensor (optional)",
               "illuminance": "Helligkeitssensor (optional)",
@@ -655,6 +674,7 @@
               "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
               "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -677,6 +697,7 @@
               "humidifier": "Luftbefeuchter (optional)",
               "air_purifier": "Luftreiniger (optional)",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "target_temperature_mode": "Komfort-Zieltemperatur",
               "target_temperature": "Manuelle Zieltemperatur",
               "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -690,6 +711,7 @@
               "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
               "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -764,7 +786,7 @@
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen."
             }
           },
           "geometry": {
@@ -790,6 +812,7 @@
               "reference_temperature": "Referenztemperatur",
               "reference_humidity": "Referenzfeuchte",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "voc": "VOC-/TVOC-Sensor (optional)",
               "pm25": "PM2.5-Sensor (optional)",
               "illuminance": "Helligkeitssensor (optional)",
@@ -803,6 +826,7 @@
               "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
               "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -825,6 +849,7 @@
               "humidifier": "Luftbefeuchter (optional)",
               "air_purifier": "Luftreiniger (optional)",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "target_temperature_mode": "Komfort-Zieltemperatur",
               "target_temperature": "Manuelle Zieltemperatur",
               "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -838,6 +863,7 @@
               "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
               "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -896,6 +922,7 @@
           "delay_seconds": "Öffnungsverzögerung",
           "orientation": "Himmelsrichtung",
           "co2": "CO₂-Sensor (optional)",
+          "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
           "floor": "Stockwerk/Bereich",
           "include_in_calculations": "In Berechnungen einbeziehen",
           "moisture_sources": "Feuchtequellen im Raum",
@@ -928,7 +955,7 @@
           "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
           "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
           "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-          "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+          "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
           "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
           "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
           "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -938,6 +965,7 @@
           "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+          "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
           "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
           "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
           "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -1009,6 +1037,7 @@
               "temperature_aggregation": "Temperatur-Auswertung",
               "humidity_aggregation": "Feuchte-Auswertung",
               "co2": "CO₂-Sensor (optional)",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "exhaust_fan": "Ablüfter / mechanische Lüftung (optional)",
               "exhaust_fan_reference_temperature": "Zuluft beim Ablüfter: Temperatur (Nebenraum)",
               "exhaust_fan_reference_humidity": "Zuluft beim Ablüfter: Luftfeuchte (Nebenraum)",
@@ -1021,10 +1050,11 @@
               "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+              "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
               "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
               "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
               "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung; schalten nur, wenn du es unter „Automatische Steuerung“ einschaltest.",
               "exhaust_fan_reference_temperature": "Optional. Ein Ablüfter bläst die Raumluft nach draußen; die Ersatzluft strömt aus dem Nebenraum (Türspalt, Überströmer) nach, nicht von draußen. Temperatursensor dieses Nebenraums. FreshAirIQ rechnet damit, solange der Ablüfter läuft und kein Fenster offen ist (ohne Fensterkontakt immer). Nur zusammen mit der Luftfeuchte.",
               "exhaust_fan_reference_humidity": "Optional. Luftfeuchtesensor des Nebenraums, aus dem beim Ablüfter die Luft nachströmt. Nur zusammen mit der Temperatur; ist einer der beiden nicht verfügbar, rechnet FreshAirIQ nicht ersatzweise mit der Außenluft.",
@@ -1057,6 +1087,7 @@
               "reference_temperature": "Referenztemperatur",
               "reference_humidity": "Referenzfeuchte",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "voc": "VOC-/TVOC-Sensor (optional)",
               "pm25": "PM2.5-Sensor (optional)",
               "illuminance": "Helligkeitssensor (optional)",
@@ -1070,6 +1101,7 @@
               "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
               "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -1092,6 +1124,7 @@
               "humidifier": "Luftbefeuchter (optional)",
               "air_purifier": "Luftreiniger (optional)",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "target_temperature_mode": "Komfort-Zieltemperatur",
               "target_temperature": "Manuelle Zieltemperatur",
               "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -1105,6 +1138,7 @@
               "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
               "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -1179,7 +1213,7 @@
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen."
             }
           },
           "geometry": {
@@ -1205,6 +1239,7 @@
               "reference_temperature": "Referenztemperatur",
               "reference_humidity": "Referenzfeuchte",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "voc": "VOC-/TVOC-Sensor (optional)",
               "pm25": "PM2.5-Sensor (optional)",
               "illuminance": "Helligkeitssensor (optional)",
@@ -1218,6 +1253,7 @@
               "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
               "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -1240,6 +1276,7 @@
               "humidifier": "Luftbefeuchter (optional)",
               "air_purifier": "Luftreiniger (optional)",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "target_temperature_mode": "Komfort-Zieltemperatur",
               "target_temperature": "Manuelle Zieltemperatur",
               "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -1253,6 +1290,7 @@
               "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
               "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -1355,7 +1393,7 @@
           "co2_critical": "Ab diesem CO₂-Wert wird die Luftqualität als kritisch behandelt.",
           "learning_enabled": "Aktiviert das persistente Lernen von Luftwechsel, Routinen und Prognosekorrekturen.",
           "learning_max_duration_min": "Längere Sessions werden nicht als saubere Lernprobe verwendet, weil Wetter-, Heizungs- und Nutzungseinflüsse zunehmend dominieren.",
-          "cross_ventilation_pairs": "Veraltetete Kompatibilitätsanzeige; Querlüftung wird vollständig auf der eigenen Seite „Querlüftung“ gepflegt. Beispiel: wohnzimmer+schlafzimmer."
+          "cross_ventilation_pairs": "Diese Einstellung dient nur der Kompatibilität mit älteren Versionen. Querlüftungspaare bearbeitest du unter ‚Querlüftung‘."
         },
         "sections": {
           "humidity_thresholds": {
@@ -2043,11 +2081,13 @@
         "menu_options": {
           "notifications": "Benachrichtigungen",
           "energy": "Heizung & Energiekosten",
+          "automation_lock": "Automationssperre (z. B. Urlaub)",
           "back_to_main": "← Zurück zu Einstellungen"
         },
         "menu_option_descriptions": {
           "notifications": "Empfänger, Meldungstypen und Mindestabstände",
           "energy": "Heizsystem und Kostenparameter für Wärmeverluste",
+          "automation_lock": "Optional: eine Entität, die alle automatischen Geräteaktionen pausiert",
           "back_to_main": "Zur Hauptübersicht der Einstellungen"
         },
         "data_description": {}
@@ -2105,6 +2145,8 @@
           "orientation": "Himmelsrichtung",
           "covers": "Rollo/Jalousie",
           "contact_kind": "Art der Öffnung",
+          "contact_side": "Öffnung führt nach",
+          "connected_room": "Verbundener Raum (nur Innentür, optional)",
           "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
           "cover_position_zero_means": "Rollo-Positionslogik",
           "wizard_back": "← Zurück zur vorherigen Seite",
@@ -2117,6 +2159,8 @@
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
           "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
+          "contact_side": "Eine Innentür verbindet Räume miteinander. Ihr Öffnen startet keine Außenlüftung, kann aber die Luftverteilung beim Lüften über Fenster oder Außentüren beeinflussen. Außenbereich: Fenster, Terrassen-, Balkon- oder Außentür – darf eine Außenlüftung auslösen. Anderen Innenraum: Zimmertür oder Innenöffnung – löst allein keine Außenlüftung aus.",
+          "connected_room": "Wähle den Raum, den diese Innentür verbindet. Bei geöffneter Tür kann FreshAirIQ diesen Luftweg berücksichtigen. Bei geschlossener Tür wird dieser Weg nicht als offen behandelt. Andere tatsächlich vorhandene Verbindungen bleiben davon unabhängig. Gilt nur, wenn oben „Anderen Innenraum“ gewählt ist; bei „Außenbereich“ bleibt das Feld leer.",
           "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
           "cover_position_zero_means": "Lege fest, ob 0 % vollständig geschlossen oder vollständig geöffnet bedeutet. Diese Einstellung gilt für die diesem Raum zugeordneten Rollos/Jalousien.",
           "wizard_back": "Aktivieren und mit OK bestätigen, um ohne Änderung dieser Seite zurückzugehen.",
@@ -2459,6 +2503,7 @@
           "delay_seconds": "Öffnungsverzögerung",
           "orientation": "Himmelsrichtung",
           "co2": "CO₂-Sensor",
+          "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
           "floor": "Stockwerk/Bereich",
           "include_in_calculations": "In Berechnungen einbeziehen",
           "moisture_sources": "Feuchtequellen im Raum",
@@ -2491,7 +2536,7 @@
           "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
           "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
           "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-          "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+          "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
           "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
           "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
           "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -2501,6 +2546,7 @@
           "delay_seconds": "Zeit, die dieser Kontakt ununterbrochen offen sein muss, bevor FreshAirIQ eine Lüftung erkennt. 0 s = sofort; 120 s = erst nach zwei Minuten.",
           "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
           "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+          "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
           "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
           "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
           "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -2572,6 +2618,7 @@
               "temperature_aggregation": "Temperatur-Auswertung",
               "humidity_aggregation": "Feuchte-Auswertung",
               "co2": "CO₂-Sensor (optional)",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "exhaust_fan": "Ablüfter / mechanische Lüftung (optional)",
               "exhaust_fan_reference_temperature": "Zuluft beim Ablüfter: Temperatur (Nebenraum)",
               "exhaust_fan_reference_humidity": "Zuluft beim Ablüfter: Luftfeuchte (Nebenraum)",
@@ -2584,10 +2631,11 @@
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+              "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
               "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
               "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
               "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung; schalten nur, wenn du es unter „Automatische Steuerung“ einschaltest.",
               "exhaust_fan_reference_temperature": "Optional. Ein Ablüfter bläst die Raumluft nach draußen; die Ersatzluft strömt aus dem Nebenraum (Türspalt, Überströmer) nach, nicht von draußen. Temperatursensor dieses Nebenraums. FreshAirIQ rechnet damit, solange der Ablüfter läuft und kein Fenster offen ist (ohne Fensterkontakt immer). Nur zusammen mit der Luftfeuchte.",
               "exhaust_fan_reference_humidity": "Optional. Luftfeuchtesensor des Nebenraums, aus dem beim Ablüfter die Luft nachströmt. Nur zusammen mit der Temperatur; ist einer der beiden nicht verfügbar, rechnet FreshAirIQ nicht ersatzweise mit der Außenluft.",
@@ -2620,6 +2668,7 @@
               "reference_temperature": "Referenztemperatur",
               "reference_humidity": "Referenzfeuchte",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "voc": "VOC-/TVOC-Sensor (optional)",
               "pm25": "PM2.5-Sensor (optional)",
               "illuminance": "Helligkeitssensor (optional)",
@@ -2633,6 +2682,7 @@
               "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
               "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -2655,6 +2705,7 @@
               "humidifier": "Luftbefeuchter (optional)",
               "air_purifier": "Luftreiniger (optional)",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "target_temperature_mode": "Komfort-Zieltemperatur",
               "target_temperature": "Manuelle Zieltemperatur",
               "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -2668,6 +2719,7 @@
               "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
               "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -2742,7 +2794,7 @@
               "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
               "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
               "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-              "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad."
+              "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen."
             }
           },
           "geometry": {
@@ -2768,6 +2820,7 @@
               "reference_temperature": "Referenztemperatur",
               "reference_humidity": "Referenzfeuchte",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "voc": "VOC-/TVOC-Sensor (optional)",
               "pm25": "PM2.5-Sensor (optional)",
               "illuminance": "Helligkeitssensor (optional)",
@@ -2781,6 +2834,7 @@
               "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
               "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
               "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
               "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -2803,6 +2857,7 @@
               "humidifier": "Luftbefeuchter (optional)",
               "air_purifier": "Luftreiniger (optional)",
               "co2": "CO₂-Sensor",
+              "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
               "target_temperature_mode": "Komfort-Zieltemperatur",
               "target_temperature": "Manuelle Zieltemperatur",
               "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -2816,6 +2871,7 @@
               "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
               "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
               "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+              "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
               "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
               "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
               "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -2965,6 +3021,16 @@
           "wizard_back": "Anhaken und OK drücken, um ohne Speichern zurückzukehren.",
           "connected_rooms": "Keinen Raum wählen entfernt alle offenen Verbindungen dieses Raums."
         }
+      },
+      "automation_lock": {
+        "title": "Automationssperre",
+        "description": "Solange die gewählte Entität eingeschaltet ist (z. B. input_boolean.urlaub), löst FreshAirIQ keine neuen automatischen Geräteaktionen aus: keine Rollos, kein Einschalten von Ablüftern. Einen Ablüfter, den FreshAirIQ selbst eingeschaltet hat, schaltet FreshAirIQ einmal aus; fremd oder von Hand geschaltete Geräte bleiben unberührt. Empfehlungen, Warnungen und Diagnose bleiben aktiv. Nach dem Aufheben bewertet FreshAirIQ die Lage neu – aufgestaute Befehle gibt es nicht. Andere Automationen (Node-RED, HA) pausiert FreshAirIQ nicht; sie können die Statusentität „Automationssperre“ abfragen. Leer lassen = keine Sperre.",
+        "data": {
+          "automation_lock_entity": "Sperr-Entität"
+        },
+        "data_description": {
+          "automation_lock_entity": "input_boolean, Schalter, Binärsensor, Timer oder Zeitplan. Ein: gesperrt. Nicht verfügbar oder gelöscht: nicht gesperrt (die Statusentität zeigt den Zustand)."
+        }
       }
     },
     "error": {
@@ -2980,6 +3046,8 @@
       "invalid_mould_order": "Die vier Schimmelgrenzen müssen aufsteigen: leicht erhöht < erhöht < Warnung (hoch) < kritisch (sehr hoch).",
       "invalid_co2_order": "Die CO₂-Warnschwelle muss niedriger als die kritische CO₂-Schwelle sein.",
       "contact_reference_pair_required": "Für eine abweichende Fenster-/Tür-Referenz müssen Temperatur und Luftfeuchtigkeit gemeinsam aus demselben Luftbereich gewählt werden.",
+      "contact_side_conflict": "Dieser Kontaktsensor ist in einem anderen Raum unterschiedlich eingestellt. Bitte lege einheitlich fest, ob er eine Außenöffnung oder eine Verbindung zwischen Innenräumen überwacht.",
+      "connected_room_outside": "„Verbundener Raum“ gilt nur für Innentüren. Wähle oben „Anderen Innenraum“ oder lasse das Feld leer.",
       "outdoor_pair_required": "Außen-Temperatur und Außen-Luftfeuchtigkeit müssen gemeinsam ausgewählt oder beide leer gelassen werden.",
       "resident_profiles_invalid": "Die persönlichen Bewohnerprofile enthalten ungültige Daten. Bitte die Zuordnung in der zentralen FreshAirIQ-Konfiguration prüfen.",
       "no_ha_areas_to_import": "Es sind keine weiteren Home-Assistant-Bereiche zum Importieren vorhanden.",
@@ -2990,7 +3058,8 @@
       "invalid_goal_order": "Bitte ordne jedes verfügbare Lüftungsziel genau einmal zu.",
       "duplicate_goal_order": "Ein Lüftungsziel wurde mehrfach gewählt. Wählst du für eine Position ein anderes Ziel, rückt es dorthin und die übrigen rutschen automatisch nach.",
       "humidity_goal_required": "Entfeuchtung kann nicht abgeschaltet werden – der Feuchte- und Schimmelschutz bleibt immer aktiv. Wähle „Aus“ nur für CO₂ oder Temperatur.",
-      "exhaust_reference_pair_required": "Für die Zuluft beim Ablüfter bitte Temperatur und Luftfeuchte des Nebenraums zusammen auswählen (oder beide leer lassen)."
+      "exhaust_reference_pair_required": "Für die Zuluft beim Ablüfter bitte Temperatur und Luftfeuchte des Nebenraums zusammen auswählen (oder beide leer lassen).",
+      "cross_pairs_invalid": "Querlüftung nicht gespeichert: {error_detail}. Erlaubt sind Raumschlüssel oder eindeutige Raumnamen, z. B. Schlafzimmer+Wohnzimmer."
     },
     "selector": {
       "operating_profile": {
@@ -3307,6 +3376,9 @@
             "name": "Sonnenstand berücksichtigt"
           }
         }
+      },
+      "automation_lock": {
+        "name": "Automationssperre"
       }
     },
     "button": {
@@ -3391,6 +3463,7 @@
             "reference_temperature": "Referenztemperatur",
             "reference_humidity": "Referenzfeuchte",
             "co2": "CO₂-Sensor",
+            "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
             "floor": "Stockwerk/Bereich",
             "include_in_calculations": "In Berechnungen einbeziehen",
             "moisture_sources": "Feuchtequellen im Raum",
@@ -3460,6 +3533,7 @@
                 "temperature_aggregation": "Temperatur-Auswertung",
                 "humidity_aggregation": "Feuchte-Auswertung",
                 "co2": "CO₂-Sensor (optional)",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "exhaust_fan": "Ablüfter / mechanische Lüftung (optional)",
                 "exhaust_fan_reference_temperature": "Zuluft beim Ablüfter: Temperatur (Nebenraum)",
                 "exhaust_fan_reference_humidity": "Zuluft beim Ablüfter: Luftfeuchte (Nebenraum)",
@@ -3472,10 +3546,11 @@
                 "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+                "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
                 "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
                 "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung; schalten nur, wenn du es unter „Automatische Steuerung“ einschaltest.",
                 "exhaust_fan_reference_temperature": "Optional. Ein Ablüfter bläst die Raumluft nach draußen; die Ersatzluft strömt aus dem Nebenraum (Türspalt, Überströmer) nach, nicht von draußen. Temperatursensor dieses Nebenraums. FreshAirIQ rechnet damit, solange der Ablüfter läuft und kein Fenster offen ist (ohne Fensterkontakt immer). Nur zusammen mit der Luftfeuchte.",
                 "exhaust_fan_reference_humidity": "Optional. Luftfeuchtesensor des Nebenraums, aus dem beim Ablüfter die Luft nachströmt. Nur zusammen mit der Temperatur; ist einer der beiden nicht verfügbar, rechnet FreshAirIQ nicht ersatzweise mit der Außenluft.",
@@ -3508,6 +3583,7 @@
                 "reference_temperature": "Referenztemperatur",
                 "reference_humidity": "Referenzfeuchte",
                 "co2": "CO₂-Sensor",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "voc": "VOC-/TVOC-Sensor (optional)",
                 "pm25": "PM2.5-Sensor (optional)",
                 "illuminance": "Helligkeitssensor (optional)",
@@ -3521,6 +3597,7 @@
                 "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
                 "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
                 "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
                 "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -3543,6 +3620,7 @@
                 "humidifier": "Luftbefeuchter (optional)",
                 "air_purifier": "Luftreiniger (optional)",
                 "co2": "CO₂-Sensor",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "target_temperature_mode": "Komfort-Zieltemperatur",
                 "target_temperature": "Manuelle Zieltemperatur",
                 "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -3556,6 +3634,7 @@
                 "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
                 "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
                 "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
                 "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -3589,7 +3668,7 @@
             "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
             "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
             "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-            "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+            "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
             "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
             "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
             "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -3597,6 +3676,7 @@
             "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
             "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
             "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+            "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
             "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
             "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
             "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -3643,6 +3723,8 @@
             "orientation": "Himmelsrichtung",
             "covers": "Rollo/Jalousie",
             "contact_kind": "Art der Öffnung",
+            "contact_side": "Öffnung führt nach",
+            "connected_room": "Verbundener Raum (nur Innentür, optional)",
             "passage_door": "Tür wird als Durchgang genutzt und von außen zugezogen",
             "wizard_back": "← Zurück zur vorherigen Seite",
             "cover_follow": "Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird"
@@ -3654,6 +3736,8 @@
             "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
             "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
             "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
+            "contact_side": "Eine Innentür verbindet Räume miteinander. Ihr Öffnen startet keine Außenlüftung, kann aber die Luftverteilung beim Lüften über Fenster oder Außentüren beeinflussen. Außenbereich: Fenster, Terrassen-, Balkon- oder Außentür – darf eine Außenlüftung auslösen. Anderen Innenraum: Zimmertür oder Innenöffnung – löst allein keine Außenlüftung aus.",
+            "connected_room": "Wähle den Raum, den diese Innentür verbindet. Bei geöffneter Tür kann FreshAirIQ diesen Luftweg berücksichtigen. Bei geschlossener Tür wird dieser Weg nicht als offen behandelt. Andere tatsächlich vorhandene Verbindungen bleiben davon unabhängig. Gilt nur, wenn oben „Anderen Innenraum“ gewählt ist; bei „Außenbereich“ bleibt das Feld leer.",
             "passage_door": "Nur aktivieren, wenn ein echter Drei-Zustands-Sensor am Türbeschlag verwendet wird, der die Griff- bzw. Beschlagstellung erkennt. Diese Option ist für Türen gedacht, die als Durchgang genutzt und anschließend von außen nur zugezogen werden, während der Sensor weiterhin „offen“ meldet. Nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden. FreshAirIQ schützt dadurch das Lernmodell vor einer falschen Open-Lernprobe.",
             "wizard_back": "Anhaken und OK drücken, um zur vorherigen Seite zurückzukehren. Eingaben dieser Seite werden dabei nicht gespeichert.",
             "cover_follow": "FreshAirIQ steuert dann die oben gewählten Rollos: Wird das Fenster bzw. die Tür geöffnet (auch gekippt), fahren sie ganz hoch; wird es wieder geschlossen, fahren sie in die vorherige Position zurück – außer jemand hat sie zwischendurch bewegt. Bei einer Durchgangstür schließt das Rollo nie, solange die Tür offen ist; ein Schließen durch andere wird gestoppt und das Rollo wieder geöffnet."
@@ -3669,6 +3753,8 @@
             "orientation": "Himmelsrichtung",
             "covers": "Rollo/Jalousie",
             "contact_kind": "Art der Öffnung",
+            "contact_side": "Öffnung führt nach",
+            "connected_room": "Verbundener Raum (nur Innentür, optional)",
             "passage_door": "Durchgangstür – nach dem Durchgehen wird sie von außen zugezogen",
             "cover_follow": "Rollo öffnen, wenn dieses Fenster/diese Tür geöffnet wird"
           },
@@ -3679,6 +3765,8 @@
             "orientation": "Tatsächliche Himmelsrichtung dieser Öffnung. Ein Fenster mit Morgensonne liegt beispielsweise im Osten. Verbessert Wind- und Querlüftungsbewertung.",
             "covers": "Optional. Rollo oder Jalousie, die direkt zu diesem Fenster bzw. dieser Tür gehört.",
             "contact_kind": "Fenster oder Tür – für genauere Hinweise („Fenster öffnen“, „Tür schließen“) und die Hauskarte. „Nicht angegeben“ ändert nichts an bestehenden Hinweisen.",
+            "contact_side": "Eine Innentür verbindet Räume miteinander. Ihr Öffnen startet keine Außenlüftung, kann aber die Luftverteilung beim Lüften über Fenster oder Außentüren beeinflussen. Außenbereich: Fenster, Terrassen-, Balkon- oder Außentür – darf eine Außenlüftung auslösen. Anderen Innenraum: Zimmertür oder Innenöffnung – löst allein keine Außenlüftung aus.",
+            "connected_room": "Wähle den Raum, den diese Innentür verbindet. Bei geöffneter Tür kann FreshAirIQ diesen Luftweg berücksichtigen. Bei geschlossener Tür wird dieser Weg nicht als offen behandelt. Andere tatsächlich vorhandene Verbindungen bleiben davon unabhängig. Gilt nur, wenn oben „Anderen Innenraum“ gewählt ist; bei „Außenbereich“ bleibt das Feld leer.",
             "passage_door": "Beispiel: Du gehst zum Rauchen auf die Terrasse oder den Balkon und ziehst die Tür von außen nur zu. **Nur aktivieren, wenn diese Tür einen echten Drei-Zustands-Kontaktsensor im Türbeschlag hat**, der die Griff- bzw. Beschlagstellung erkennt. Nicht für normale Zwei-Zustands-Kontakte und nicht für Drei-Zustands-Helfer aktivieren, die aus mehreren einfachen Kontaktsensoren erstellt wurden.",
             "cover_follow": "FreshAirIQ steuert dann die oben gewählten Rollos: Wird das Fenster bzw. die Tür geöffnet (auch gekippt), fahren sie ganz hoch; wird es wieder geschlossen, fahren sie in die vorherige Position zurück – außer jemand hat sie zwischendurch bewegt. Bei einer Durchgangstür schließt das Rollo nie, solange die Tür offen ist; ein Schließen durch andere wird gestoppt und das Rollo wieder geöffnet."
           }
@@ -3729,6 +3817,7 @@
             "reference_temperature": "Referenztemperatur",
             "reference_humidity": "Referenzfeuchte",
             "co2": "CO₂-Sensor",
+            "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
             "floor": "Stockwerk/Bereich",
             "include_in_calculations": "In Berechnungen einbeziehen",
             "moisture_sources": "Feuchtequellen im Raum",
@@ -3798,6 +3887,7 @@
                 "temperature_aggregation": "Temperatur-Auswertung",
                 "humidity_aggregation": "Feuchte-Auswertung",
                 "co2": "CO₂-Sensor (optional)",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "exhaust_fan": "Ablüfter / mechanische Lüftung (optional)",
                 "exhaust_fan_reference_temperature": "Zuluft beim Ablüfter: Temperatur (Nebenraum)",
                 "exhaust_fan_reference_humidity": "Zuluft beim Ablüfter: Luftfeuchte (Nebenraum)",
@@ -3810,10 +3900,11 @@
                 "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+                "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
                 "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
                 "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung; schalten nur, wenn du es unter „Automatische Steuerung“ einschaltest.",
                 "exhaust_fan_reference_temperature": "Optional. Ein Ablüfter bläst die Raumluft nach draußen; die Ersatzluft strömt aus dem Nebenraum (Türspalt, Überströmer) nach, nicht von draußen. Temperatursensor dieses Nebenraums. FreshAirIQ rechnet damit, solange der Ablüfter läuft und kein Fenster offen ist (ohne Fensterkontakt immer). Nur zusammen mit der Luftfeuchte.",
                 "exhaust_fan_reference_humidity": "Optional. Luftfeuchtesensor des Nebenraums, aus dem beim Ablüfter die Luft nachströmt. Nur zusammen mit der Temperatur; ist einer der beiden nicht verfügbar, rechnet FreshAirIQ nicht ersatzweise mit der Außenluft.",
@@ -3846,6 +3937,7 @@
                 "reference_temperature": "Referenztemperatur",
                 "reference_humidity": "Referenzfeuchte",
                 "co2": "CO₂-Sensor",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "voc": "VOC-/TVOC-Sensor (optional)",
                 "pm25": "PM2.5-Sensor (optional)",
                 "illuminance": "Helligkeitssensor (optional)",
@@ -3859,6 +3951,7 @@
                 "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
                 "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
                 "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
                 "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -3881,6 +3974,7 @@
                 "humidifier": "Luftbefeuchter (optional)",
                 "air_purifier": "Luftreiniger (optional)",
                 "co2": "CO₂-Sensor",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "target_temperature_mode": "Komfort-Zieltemperatur",
                 "target_temperature": "Manuelle Zieltemperatur",
                 "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -3894,6 +3988,7 @@
                 "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
                 "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
                 "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
                 "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -3927,7 +4022,7 @@
             "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
             "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
             "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-            "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+            "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
             "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
             "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
             "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -3935,6 +4030,7 @@
             "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
             "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
             "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+            "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
             "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
             "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
             "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -3987,6 +4083,7 @@
             "reference_temperature": "Referenztemperatur",
             "reference_humidity": "Referenzfeuchte",
             "co2": "CO₂-Sensor",
+            "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
             "floor": "Stockwerk/Bereich",
             "include_in_calculations": "In Berechnungen einbeziehen",
             "moisture_sources": "Feuchtequellen im Raum",
@@ -4056,6 +4153,7 @@
                 "temperature_aggregation": "Temperatur-Auswertung",
                 "humidity_aggregation": "Feuchte-Auswertung",
                 "co2": "CO₂-Sensor (optional)",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "exhaust_fan": "Ablüfter / mechanische Lüftung (optional)",
                 "exhaust_fan_reference_temperature": "Zuluft beim Ablüfter: Temperatur (Nebenraum)",
                 "exhaust_fan_reference_humidity": "Zuluft beim Ablüfter: Luftfeuchte (Nebenraum)",
@@ -4068,10 +4166,11 @@
                 "temperature": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "humidity": "Pflicht für berechnete Räume. Ein einzelner Sensor reicht vollständig aus. Bei mehreren Sensoren fasst FreshAirIQ die aktuell gültigen Werte nach der gewählten Auswertung zusammen. Fällt ein zusätzlicher Sensor aus, arbeitet der Raum mit den verbleibenden gültigen Sensoren weiter. Für die Auswertung einer Lüftung muss mindestens ein Klimasensor genügend neue Messwerte liefern; weitere Sensoren mit mindestens einem neuen Messwert können anschließend in die gemeinsame Auswertung einfließen.",
                 "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-                "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+                "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
                 "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
                 "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird die Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor gibt es für diesen Raum keine CO₂-Priorität, CO₂-Empfehlung oder CO₂-Zielanzeige.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "exhaust_fan": "Optional. Wähle für die mechanische Lüftung einen oder mehrere Ablüfter bzw. Entitäten für Lüfterstufen. Sobald mindestens eine ausgewählte Entität aktiv ist, erkennt FreshAirIQ den Betrieb der mechanischen Lüftung. Bei einem mehrstufigen Lüfter können die einzelnen Stufen-Entitäten gemeinsam ausgewählt werden. FreshAirIQ erkennt und lernt die Lüftung; schalten nur, wenn du es unter „Automatische Steuerung“ einschaltest.",
                 "exhaust_fan_reference_temperature": "Optional. Ein Ablüfter bläst die Raumluft nach draußen; die Ersatzluft strömt aus dem Nebenraum (Türspalt, Überströmer) nach, nicht von draußen. Temperatursensor dieses Nebenraums. FreshAirIQ rechnet damit, solange der Ablüfter läuft und kein Fenster offen ist (ohne Fensterkontakt immer). Nur zusammen mit der Luftfeuchte.",
                 "exhaust_fan_reference_humidity": "Optional. Luftfeuchtesensor des Nebenraums, aus dem beim Ablüfter die Luft nachströmt. Nur zusammen mit der Temperatur; ist einer der beiden nicht verfügbar, rechnet FreshAirIQ nicht ersatzweise mit der Außenluft.",
@@ -4104,6 +4203,7 @@
                 "reference_temperature": "Referenztemperatur",
                 "reference_humidity": "Referenzfeuchte",
                 "co2": "CO₂-Sensor",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "voc": "VOC-/TVOC-Sensor (optional)",
                 "pm25": "PM2.5-Sensor (optional)",
                 "illuminance": "Helligkeitssensor (optional)",
@@ -4117,6 +4217,7 @@
                 "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
                 "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
                 "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
                 "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -4139,6 +4240,7 @@
                 "humidifier": "Luftbefeuchter (optional)",
                 "air_purifier": "Luftreiniger (optional)",
                 "co2": "CO₂-Sensor",
+                "mold_indicator": "Schimmelindikator (HA-Helfer, optional)",
                 "target_temperature_mode": "Komfort-Zieltemperatur",
                 "target_temperature": "Manuelle Zieltemperatur",
                 "target_temperature_fallback": "Fallback-Zieltemperatur"
@@ -4152,6 +4254,7 @@
                 "humidifier": "Optional. Luftbefeuchter als alternative Maßnahme bei deutlich trockener Raumluft. Keine automatische Gerätesteuerung.",
                 "air_purifier": "Optional. Luftreiniger als ergänzende Maßnahme bei Feinstaub, VOC oder Pollen. Keine automatische Gerätesteuerung.",
                 "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel und kann in der Raum-Priorität eingeordnet werden.",
+                "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
                 "target_temperature_mode": "Automatisch nutzt den Thermostat-Sollwert. Manuell verwendet die unten eingestellte Zieltemperatur.",
                 "target_temperature": "Nur im manuellen Modus: gewünschte Komforttemperatur von 12–30 °C.",
                 "target_temperature_fallback": "Optionaler Ersatzwert, wenn der Thermostat keinen plausiblen Sollwert liefert."
@@ -4185,7 +4288,7 @@
             "temperature": "Pflicht für berechnete Räume. Möglichst einen Sensor verwenden, der die tatsächliche Raumluft misst.",
             "humidity": "Pflicht für berechnete Räume. Der Sensor sollte nicht direkt im Spritzwasser, über einem Heizkörper oder unmittelbar am Fenster sitzen.",
             "contacts": "Optional: Wähle Fenster/Türen, über die FreshAirIQ die Lüftung dieses Raums erkennen soll. Das darf auch eine Öffnung in einem anderen Raum sein. Ohne Kontakt bleibt der Innenraum vollständig klimatisch überwacht und kann indirekte Lüftungswirkung lernen.",
-            "contact_mode": "„Mindestens einer offen“ = ein beliebiger Kontakt startet die Lüftung. „Alle offen“ = erst alle gewählten Kontakte gemeinsam gelten als aktiver Lüftungspfad.",
+            "contact_mode": "Mindestens eine Außenöffnung offen: Die Lüftung beginnt, sobald ein dafür vorgesehener Außenkontakt geöffnet ist. Alle Außenöffnungen offen: Die Lüftung beginnt erst, wenn sämtliche dafür vorgesehenen Außenkontakte geöffnet sind. Innentüren zählen nicht als Lüftungsauslöser. Sie können jedoch die Luftverbindung zwischen Räumen beeinflussen.",
             "volume": "Entweder das Volumen direkt in m³ eintragen ODER Länge, Breite und Höhe verwenden.",
             "length": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
             "width": "Nur erforderlich, wenn kein direktes Raumvolumen angegeben wird.",
@@ -4193,6 +4296,7 @@
             "reference_temperature": "Optional. Referenztemperatur nur verwenden, wenn die Lüftungsöffnung in einen anderen Luftbereich als die normale Außenluft führt, z. B. Wintergarten. Immer mit passender Referenzfeuchte desselben Bereichs kombinieren.",
             "reference_humidity": "Optional. Referenzfeuchte desselben Luftbereichs wie die Referenztemperatur. FreshAirIQ berechnet daraus die absolute Feuchte der einströmenden Luft.",
             "co2": "Optional. Mit einem CO₂-Sensor wird Luftqualität zu einem regulären Lüftungsziel. Ohne CO₂-Sensor entstehen weder CO₂-Priorität noch CO₂-Empfehlung, ETA oder Zielanzeige.",
+            "mold_indicator": "Optional: der Home-Assistant-Helfer „Schimmelindikator“ dieses Raums (z. B. für ein kaltes Dachfenster oder eine Wärmebrücke). Sein Wert ersetzt die interne Schätzung der Oberflächenfeuchte – weiterhin eine Schätzung, keine Messung. Ungültig oder nicht verfügbar: interne Schätzung. Leer lassen: interne Schätzung.",
             "floor": "Hilft bei Raumgruppierung und Querlüftung. Eigene Bereiche kannst du unter „Stockwerke & Bereiche“ anlegen.",
             "include_in_calculations": "Aus = Raum bleibt sichtbar, beeinflusst aber Empfehlungen, Hausbilanz, Statistik und Lernen nicht.",
             "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
@@ -4226,6 +4330,8 @@
         "room_volume_too_small": "Das berechnete Raumvolumen ist zu klein.",
         "room_name_required": "Bitte gib einen Raumnamen an.",
         "contact_reference_pair_required": "Für eine abweichende Fenster-/Tür-Referenz müssen Temperatur und Luftfeuchtigkeit gemeinsam aus demselben Luftbereich gewählt werden.",
+        "contact_side_conflict": "Dieser Kontaktsensor ist in einem anderen Raum unterschiedlich eingestellt. Bitte lege einheitlich fest, ob er eine Außenöffnung oder eine Verbindung zwischen Innenräumen überwacht.",
+        "connected_room_outside": "„Verbundener Raum“ gilt nur für Innentüren. Wähle oben „Anderen Innenraum“ oder lasse das Feld leer.",
         "humidity_goal_required": "Entfeuchtung kann nicht abgeschaltet werden – der Feuchte- und Schimmelschutz bleibt immer aktiv. Wähle „Aus“ nur für CO₂ oder Temperatur.",
         "exhaust_reference_pair_required": "Für die Zuluft beim Ablüfter bitte Temperatur und Luftfeuchte des Nebenraums zusammen auswählen (oder beide leer lassen)."
       },

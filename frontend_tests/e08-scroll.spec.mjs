@@ -281,3 +281,41 @@ test('overlays Android WebView: a trusted touch swipe scrolls the room list insi
   expect(await coversScreen(page, '.submodal')).toBe(true);
   expect(errors).toEqual([]);
 });
+
+// v0.26.6.1 (#20): a live update patched the open overlay against freshly rendered HTML and removed the popover
+// attribute set at runtime – the dialog fell out of the top layer back into a clipped card. Each overlay must stay
+// open in the top layer across live updates, cover the viewport, scroll to its end, and close and reopen cleanly.
+const popoverOpen = (page, selector) => page.locator('#card').evaluate((card, s) => {
+  const el = card.shadowRoot.querySelector(s); return !!el && el.hasAttribute('popover') && el.matches(':popover-open');
+}, selector);
+const scrollsToEnd = (page, selector) => page.locator('#card').evaluate((card, s) => {
+  const el = card.shadowRoot.querySelector(s); el.scrollTop = el.scrollHeight;
+  const box = el.getBoundingClientRect();
+  return el.scrollHeight > el.clientHeight && Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1 && Math.round(box.bottom) <= innerHeight;
+}, selector);
+for (const [label, width, height] of [['iPhone', 390, 844], ['Desktop', 1440, 900]]) {
+  for (const theme of ['freshairiq', 'auto']) {
+    test(`#20 ${label}, ${theme} theme: details, rooms and support stay in the top layer across live updates`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      const errors = await mountRooms(page, 30, { wrap: 'transform:translateZ(0);overflow:hidden;height:360px' });
+      await page.locator('#card').evaluate((card, theme) => { card.setConfig({ freshairiq_design: theme }); card._render(); }, theme);
+      await page.waitForTimeout(80);
+      for (const [open, overlay, scroller, close] of [['#details', '.modal', '.dialog-scroll', '#close'], ['#rooms', '.submodal', '.subdialog', '#info-close'], ['#support', '.submodal', '.subdialog', '#info-close']]) {
+        for (let round = 0; round < 2; round++) {   // open, live updates, close – and once more after reopening
+          await page.locator(open).click();
+          await page.waitForTimeout(80);
+          expect(await popoverOpen(page, overlay), `${open} open`).toBe(true);
+          await pushLiveUpdate(page);
+          await pushLiveUpdate(page);
+          expect(await popoverOpen(page, overlay), `${open} after live updates`).toBe(true);
+          expect(await coversScreen(page, overlay), `${open} covers the viewport`).toBe(true);
+          expect(await scrollsToEnd(page, scroller), `${open} scrolls to its end`).toBe(true);
+          await page.locator(close).click();
+          await page.waitForTimeout(50);
+          expect(await openOverlays(page), `${open} closed`).toBe(0);
+        }
+      }
+      expect(errors).toEqual([]);
+    });
+  }
+}

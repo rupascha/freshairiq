@@ -1,0 +1,15 @@
+# Manual full validation (2026-10-23, Actions minutes). The real Home Assistant
+# runtime coverage moved into quality.yml (job ha-runtime) so it no longer runs
+# twice on every push. Start this from the Actions tab to run the complete
+# quality workflow – all browsers, all checks – for any branch.
+name: Validate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-quality:
+    uses: ./.github/workflows/quality.yml

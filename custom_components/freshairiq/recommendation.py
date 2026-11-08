@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any, Iterable
 
+from . import cross_pairs
 from .close_wording import airing_running, close_instruction, opening_kind
 from .outdoor_air import pm25_reason, veto_cause
 
@@ -135,13 +136,9 @@ def _candidate(room: dict[str, Any], options: dict[str, Any], threshold_ml: floa
     )
 
 
-def _parse_pairs(raw: Any) -> list[tuple[str, str]]:
-    pairs: list[tuple[str, str]] = []
-    for item in str(raw or "").split(","):
-        keys = [x.strip() for x in item.split("+") if x.strip()]
-        if len(keys) == 2 and keys[0] != keys[1]:
-            pairs.append((keys[0], keys[1]))
-    return pairs
+def _parse_pairs(raw: Any, rooms: Iterable[dict[str, Any]] = ()) -> list[tuple[str, str]]:
+    """v0.26.6.1 (#25): the shared resolution – exact room key first, then the unique room name."""
+    return cross_pairs.key_pairs(raw, rooms)
 
 
 def _clean_reasons(items: Iterable[str], limit: int = 4) -> list[str]:
@@ -567,14 +564,14 @@ def _chosen_room_recommendation(
     # the outside air and it improves the utility of the selected action.
     chosen: list[Candidate] = []
     best_pair: tuple[float, Candidate, Candidate] | None = None
-    for a, b in _parse_pairs(options.get("cross_ventilation_pairs")):
+    known_rooms = list(room_by_key.values())
+    for a, b in _parse_pairs(options.get("cross_ventilation_pairs"), known_rooms):
         ca, cb = candidate_by_key.get(a), candidate_by_key.get(b)
         same_zone = False
         if ca and cb:
             ra, rb = room_by_key.get(a, {}), room_by_key.get(b, {})
             same_zone = str(ra.get("floor", "")) == str(rb.get("floor", ""))
-            explicit_links = str(options.get("cross_zone_connections", ""))
-            same_zone = same_zone or f"{a}+{b}" in explicit_links or f"{b}+{a}" in explicit_links
+            same_zone = same_zone or cross_pairs.linked(options.get("cross_zone_connections"), known_rooms, a, b)
         pair_has_safe_override = bool(
             (ca and ca.urgent) or (cb and cb.urgent)
         )

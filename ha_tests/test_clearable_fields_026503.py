@@ -36,6 +36,7 @@ def _seed_entry():
         "contact_reference_humidities": {WINDOW: "sensor.ref_h"},
         "contact_covers": {WINDOW: ["cover.rollo"]},
         "voc": "sensor.voc", "pm25": "sensor.pm25", "illuminance": "sensor.lux", "climate": "climate.wz",
+        "mold_indicator": "sensor.dach_schimmel",  # v0.26.6.1 (#21): the optional Mold Indicator helper is clearable and kept too
         "exhaust_fan": "fan.bad",
         "exhaust_fan_reference_temperature": "sensor.flur_t", "exhaust_fan_reference_humidity": "sensor.flur_h",
         "supply_fan": "fan.zuluft", "dehumidifier": "humidifier.trockner", "moisture_sources": ["cooking"],

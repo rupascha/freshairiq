@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.6.0";
+const FAIQ_VERSION = "0.26.7.0";
 // FreshAirIQ house map – floor plan editor (opened from the house card by administrators).
 // Quick mode: move/scale/rotate rooms, slide openings along their wall, templates.
 // Precision mode: drag/add/delete corners, numeric coordinates, snap to grid and walls.
@@ -9,6 +9,26 @@ const FAIQ_VERSION = "0.26.6.0";
 
 // the query of this module's own URL (version + build revision b=) reaches every module it imports
 const Q = new URL(import.meta.url).search || `?v=${FAIQ_VERSION}`;
+// 0.26.7.0: every contact of a room – its outside openings and its inside doors (both can be drawn on the plan)
+const roomContacts = v => [...((v && v.contact_entities) || []), ...((v && v.inside_contact_entities) || [])];
+// 0.26.7.0: touch screens get tap/drag wording instead of keyboard hints
+const touchDevice = () => { try { return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); } catch (_) { return false; } };
+// 0.26.7.0: a small compass rose – the plan's "up" stays up, the "N" arrow shows where north lies on the plan
+// (north_deg = compass bearing of the plan's up, the same contract as the wind, sun and facade code)
+const compassRose = (deg, letters = ["N", "E", "S", "W"]) => {
+  // plain HTML (no second <svg> in the editor): a ring, the four directions where they lie on the plan, the "N" needle
+  const at = k => { const r = -(deg - k) * Math.PI / 180; return `left:${(50 + 42 * Math.sin(r)).toFixed(1)}%;top:${(50 - 42 * Math.cos(r)).toFixed(1)}%`; };
+  return `<div data-compass role="slider" aria-valuemin="0" aria-valuemax="359" aria-valuenow="${Math.round(deg)}" tabindex="0"
+    style="position:relative;width:132px;height:132px;border-radius:50%;border:2px solid var(--divider-color,#9aa);touch-action:none;cursor:grab;margin:6px 0">
+    ${[0, 90, 180, 270].map(k => `<span style="position:absolute;${at(k)};transform:translate(-50%,-50%);font-size:11px;opacity:.65">${letters[k / 90]}</span>`).join("")}
+    <span style="position:absolute;left:50%;top:6px;transform:translateX(-50%);font-size:10px;opacity:.5">↑</span>
+    <div data-compass-needle style="position:absolute;left:50%;top:50%;width:4px;height:52px;margin-left:-2px;transform-origin:50% 0;transform:rotate(${(180 - deg).toFixed(1)}deg);background:var(--primary-color,#03a9f4);border-radius:2px">
+      <span style="position:absolute;left:50%;bottom:-10px;transform:translateX(-50%) rotate(${(deg - 180).toFixed(1)}deg);width:20px;height:20px;line-height:20px;border-radius:50%;text-align:center;font-size:11px;font-weight:700;color:#fff;background:var(--primary-color,#03a9f4)">N</span></div></div>`;
+};
+// U01: a new angle was not checked yet – a real change of north_deg withdraws the confirmation; the same angle keeps it
+const setNorth = (layout, deg) => { const v = ((Number(deg) % 360) + 360) % 360; if (v !== Number(layout.building.north_deg)) layout.building.north_confirmed = false; layout.building.north_deg = v; };
+// The plan's north for a pointer on the rose: north lies at ``a`` clockwise from "up", so "up" faces 360 − a.
+export const northFromPointer = (dx, dy) => { const a = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360; return Math.round((360 - a) % 360); };
 // Hotfix F02: a re-render (selection, undo/redo, input, save) keeps the focused control, its caret and the page
 // position (focus without scrolling). Controls are found again by their data attribute and value.
 const FOCUS_ATTRS = ["data-a", "data-f", "data-k", "data-mode", "data-tool", "data-w", "data-i", "data-id", "data-assign", "data-contact"];
@@ -37,11 +57,40 @@ const clone = value => JSON.parse(JSON.stringify(value));
 
 const L = {
   de: {
+    // v0.26.6.1 editor hotfix: plain names, short context hints and the next sensible step
+    add_cancel: "Abbrechen", tb_room: "＋ Raum", tb_window: "Fenster", tb_door: "Tür", tb_passage: "Durchgang", more: "Mehr", more_title: "Weitere Werkzeuge", close: "Schließen", msg_close: "Hinweis schließen",
+    mode_label: "Bearbeitungsart", quick_title: "Schnell: ganze Räume verschieben und in der Größe ändern", precise_title: "Präzision: einzelne Ecken, Wandlängen und Winkel bearbeiten",
+    hint_empty: "Noch kein Raum auf dieser Etage. Tippe auf „＋ Raum“, wähle den Raum und eine Form.",
+    hint_quick: "Tippe einen Raum an, um ihn zu verschieben oder seine Größe zu ändern.",
+    hint_precise: "Präzision: Raum antippen – dann Ecken ziehen. Ein Punkt in der Wandmitte fügt eine Ecke ein, eine Wand antippen zeigt Länge und Winkel.",
+    hint_room_quick: "Ziehen verschiebt den Raum · das Quadrat an der Ecke ändert die Größe · für eine eigene Form „Ecken bearbeiten“.",
+    hint_room_precise: "Ecken ziehen · einen Punkt in der Wandmitte antippen fügt eine Ecke ein · eine Wand antippen für Länge und Winkel.",
+    hint_vertex: "Ecke {c}: ziehen oder mit den Pfeiltasten verschieben · Entf löscht die Ecke.",
+    hint_wall: "Wand {w}: Länge eingeben und „Übernehmen“ – die gewählte Ecke bleibt stehen. Winkel und Sperren findest du in den Eigenschaften.",
+    hint_opening: "Entlang der Wand ziehen verschiebt · die Enden ziehen ändert die Breite · in den Eigenschaften den Kontakt zuordnen.",
+    hint_adding: "Raum und Form wählen, dann „Raum hinzufügen“. Der neue Raum erscheint neben den anderen.",
+    hint_next_missing: "Nächster Schritt: Noch {n} Räume ohne Grundriss – über „＋ Raum“ ergänzen.",
+    hint_next_windows: "Nächster Schritt: Fenster setzen – „Fenster“ wählen und auf eine Außenwand tippen.",
+    hint_next_contacts: "Nächster Schritt: {n} Fenster/Türen ohne Kontakt – antippen und den Kontakt zuordnen.",
+    hint_next_orphans: "Bitte prüfen: {n} Fenster/Türen nennen einen Kontakt, der in FreshAirIQ nicht mehr eingerichtet ist – antippen und den richtigen Kontakt wählen.", contact_gone: "nicht mehr eingerichtet",
+    hint_next_save: "Alles eingezeichnet? Kurz prüfen und „Speichern“.", hint_done: "Grundriss vollständig. Zum Ändern einen Raum, eine Wand oder ein Fenster antippen.",
+    edit_sel: "Bearbeiten", selected: "Gewählt: {name}",
+    steps_title: "Dein Grundriss in sechs Schritten", start_intro: "Tippe auf „＋ Raum“, wähle den Raum und eine Form. Danach Fenster und Türen auf die Wände setzen und speichern.", step_optional: "optional", step_floor: "Etage wählen", step_rooms: "Räume einzeichnen", step_shape: "Lage und Form anpassen", step_openings: "Fenster, Türen, Durchgänge setzen", step_contacts: "Kontakte zuordnen", step_save: "Prüfen und speichern",
+    new_room: "Neuer Raum", which_room: "Welcher Raum?", shape: "Form", shape_precise: "Eigene Form", shape_precise_hint: "„Eigene Form“ legt ein Rechteck an und schaltet auf Präzision: dann die Ecken an die richtige Stelle ziehen.",
+    all_placed: "Alle Räume sind schon im Grundriss. Neue Räume legst du in der FreshAirIQ-Konfiguration an.",
+    edit_corners: "Ecken bearbeiten", corners_done: "Ecken fertig", sec_corners: "Ecken als Zahlen", corners_hint: "x nach rechts, y nach oben, in Metern. Ein Wert wird beim Verlassen des Feldes übernommen.",
+    sec_connections: "Verbindungen ohne gemeinsame Wand", conn_hint: "Für Treppen, Schächte oder Kanäle. Türen und Durchgänge zeichnest du direkt auf die Wand („Tür“, „Durchgang“).",
+    sec_place: "Lage auf der Wand", sec_details: "Weitere Angaben", sec_angles: "Winkel der Ecken", sec_scale: "Maßstab festlegen", sec_building: "Gebäude und Nordrichtung", sec_template: "Grundriss-Vorlage (Bild)",
+    contacts_hint: "Welcher Fenster- oder Türkontakt meldet diese Öffnung?", no_contacts: "In FreshAirIQ sind noch keine Kontakte eingerichtet.",
+    corner_min: "Ein Raum braucht mindestens drei Ecken. Lösung: eine andere Ecke verschieben oder den ganzen Raum entfernen.",
+    invalid_fix: "Rot markierte Räume antippen und korrigieren, dann erneut speichern.", failed_fix: "Dein Entwurf bleibt erhalten – Verbindung prüfen und erneut speichern.",
+    import_fix: "Bitte eine Datei wählen, die mit „Export“ aus diesem Editor gespeichert wurde (.json).",
+    room_info: "{a} m² · {p}",
     window_inside: "Dieses Fenster liegt an einer Innenwand.", window_out: "An die Außenwand setzen", windows_inside: "{n} Fenster liegen an einer Innenwand.", windows_out: "Alle an die Außenwand setzen",
     window_no_outside: "Dieser Raum hat keine freie Außenwand – bitte den Raum an den Hausrand verschieben.",
     unit_schematic: "Einh.", wall_length_units: "Länge (Plan-Einheiten, kein Maßstab)", scale_hint: "Dieser Grundriss ist schematisch – seine Längen sind keine Meter. Mit dem echten Maß dieser einen Wand bekommt der ganze Plan einen Maßstab.",
     scale_real: "Echte Länge dieser Wand (m)", scale_placeholder: "z. B. 3,85", scale_apply: "Maßstab festlegen",
-    wall_length: "Länge (m)", wall_fixed: "Bleibt stehen", wall_lock: "Maß sperren", wall_locked: "Diese Wand hat ein gesperrtes Maß – erst die Sperre lösen.", airs: "lüftet", angle_locked: "Das ändert einen gesperrten Winkel (auch beim Einfügen oder Entfernen einer Ecke daneben) – erst die Winkelsperre lösen.",
+    wall_length: "Länge (m)", wall_fixed: "Bleibt stehen", wall_lock: "Maß sperren", wall_locked: "Diese Wand hat ein gesperrtes Maß – erst die Sperre lösen.", airs: "lüftet", help_title: "Hilfe zur Bedienung", grp_view: "Ansicht", grp_edit: "Bearbeiten", grp_rooms: "Räume", grp_file: "Datei", panel_show: "Eigenschaften", panel_hide: "Nur Zeichnung", angle_locked: "Das ändert einen gesperrten Winkel (auch beim Einfügen oder Entfernen einer Ecke daneben) – erst die Winkelsperre lösen.",
     wall_help: "Nur diese Wand ändert ihre Länge: die gewählte Ecke bleibt stehen, die andere rückt entlang der Wand; die nächste Wand gleicht aus (die gegenüberliegende Wand behält ihr Maß). Gesperrte Maße und Winkel bleiben erhalten.",
     angle: "Winkel", corner_square: "Ecke {c} auf 90°", corner_lock: "Winkel an Ecke {c} sperren", snap90: "90° einrasten",
     blocked_wall: "Nicht möglich, ohne ein gesperrtes Maß zu ändern: Wand {w} ist gesperrt. Lösung: die Sperre von Wand {w} lösen oder die andere Ecke stehen lassen.",
@@ -61,10 +110,14 @@ const L = {
     propose: "Neu vorschlagen", missing: "Fehlende Räume ergänzen", export: "Export", import: "Import", save: "Speichern", cancel: "Verwerfen",
     saving: "Speichert …", saved: "Gespeichert", conflict: "Der Grundriss wurde inzwischen anderswo gespeichert. Bitte Entwurf exportieren und neu laden.",
     reload: "Neu laden", invalid: "Der Grundriss ist noch nicht gültig:", failed: "Speichern fehlgeschlagen", discard: "Ungespeicherte Änderungen verwerfen?",
-    delete_room: "Raum aus dem Grundriss entfernen? (Die FreshAirIQ-Raumkonfiguration bleibt unverändert.)", delete: "Entfernen", rotate: "Drehen 90°",
+    delete_room: "Raum aus dem Grundriss entfernen? (Die FreshAirIQ-Raumkonfiguration bleibt unverändert.)", delete: "Entfernen", rotate: "Drehen 90°", rotate_help: "„Drehen 90°“ dreht den Raum um seine Mitte gegen den Uhrzeigersinn – Fenster und Türen drehen mit. Viermal = wie vorher, ↶ macht es rückgängig.",
     add_window: "Fenster hinzufügen", add_corner: "Ecke einfügen", corner: "Ecke", x: "x (m)", y: "y (m)", area: "Fläche", room: "Raum", opening: "Öffnung",
     kind: "Art", mechanics: "Mechanik", width: "Breite (m)", contacts: "Kontakte", wall: "Wand", position: "Position", building: "Gebäude",
-    north: "Norden (Grad, Richtung „oben“)", north_confirmed: "Nordrichtung geprüft", connections: "Verbindungen", outside: "außen", add: "Hinzufügen",
+    north: "In welche Himmelsrichtung zeigt dein Grundriss nach oben?", north_confirmed: "Nordrichtung geprüft", north_help: "Damit weiß FreshAirIQ, aus welcher Richtung Sonne und Wind auf dein Haus treffen. Richte die Zeichnung anhand eines Lageplans oder einer Karte aus.", north_examples: "0° = oben Norden · 90° = oben Osten · 180° = oben Süden · 270° = oben Westen", north_now: "Oben zeigt ungefähr nach {dir} ({deg}°).", north_drag: "Pfeil „N“ ziehen oder den Winkel eingeben. Mit einer Grundriss-Vorlage: „Mehr“ → Nordpfeil aus der Vorlage.", north_confirmed_help: "Nur bestätigen, wenn die Richtung anhand einer verlässlichen Quelle (Lageplan, Karte, Kompass) kontrolliert wurde. Erst dann werden Fassaden, Sonne und Wind richtungsgenau berechnet.", north_keep: "Die Räume werden dabei nicht gedreht.",
+    dirs: ["Norden", "Nord-Nordost", "Nordost", "Ost-Nordost", "Osten", "Ost-Südost", "Südost", "Süd-Südost", "Süden", "Süd-Südwest", "Südwest", "West-Südwest", "Westen", "West-Nordwest", "Nordwest", "Nord-Nordwest"],
+    mode_help: { quick: "Schnell: ganze Räume verschieben und an der Ecke größer oder kleiner ziehen – ideal für den ersten Entwurf.", precise: "Präzision: einzelne Ecken und Wände bearbeiten – für genaue Maße, Schrägen und eigene Formen. Einen Punkt in der Wandmitte antippen fügt eine Ecke ein." },
+    shape_help: "Rechteck, L- oder U-Form wählen; danach wie jeden Raum verschieben und an der Ecke in der Größe ziehen. T-förmiger Raum: Rechteck anlegen, auf „Präzision“ wechseln und an den Wandmitten Ecken einfügen und ziehen, bis die T-Form steht.",
+    hint_vertex_touch: "Ecke {c}: ziehen, um sie zu verschieben · zum Löschen die Ecke in den Eigenschaften entfernen.", connections: "Verbindungen", outside: "außen", add: "Hinzufügen",
     preview: "Vorschau", apply: "Übernehmen", changed_rooms: "Räume ändern sich", provenance: "Herkunft", none: "Nichts ausgewählt – Raum, Ecke oder Öffnung antippen.",
     import_failed: "Datei konnte nicht gelesen werden", help: "Antippen: Raum, Wand, Tür oder Fenster wählen · gewählten Raum ziehen: verschieben · Ziehen auf freier Fläche: Ansicht · zwei Finger: Zoom · Öffnungen entlang der Wand ziehen · Pfeiltasten verschieben · Entf löscht",
     k: { window: "Fenster", door: "Tür", roof_window: "Dachfenster", passage: "Durchgang", vent: "Lüftungsöffnung" },
@@ -80,8 +133,8 @@ const L = {
     openings_bar: "Öffnungen setzen", no_interior: "Hier ist keine Innenwand – auf eine Wand zwischen zwei Räumen tippen.",
     not_interior: "Liegt nicht vollständig auf einer Wand zwischen zwei Räumen – zählt als Außenöffnung.", width_handle: "Breite ziehen", narrower: "schmaler", wider: "breiter",
     tool_help: { calibrate: "Tippe Anfang und Ende einer Strecke mit bekannter Länge.", north: "Tippe zwei Punkte entlang des Nordpfeils: erst das Ende, dann die Spitze.",
-      separator: "Tippe Anfang und Ende einer Trennlinie, z. B. quer über einen offenen Durchgang.", trace: "Tippe in einen Raum der Vorlage.", window: "Tippe auf eine Wand – dort entsteht ein Fenster.",
-      door: "Tippe auf eine Wand zwischen zwei Räumen – dort entsteht eine Innentür.", passage: "Tippe auf eine Wand zwischen zwei Räumen – dort entsteht ein offener Durchgang." },
+      separator: "Tippe Anfang und Ende einer Trennlinie, z. B. quer über einen offenen Durchgang.", trace: "Tippe in einen Raum der Vorlage.", window: "Tippe auf eine Außenwand, um ein Fenster zu platzieren.",
+      door: "Tippe auf eine Wand zwischen zwei Räumen, um eine Tür zu platzieren.", passage: "Tippe auf eine Wand zwischen zwei Räumen, um einen offenen Durchgang (ohne Tür) zu platzieren." },
     reason: { wall: "Das ist eine Wand – bitte in den Raum tippen.", open: "Der Bereich ist nicht geschlossen (offene Tür oder Durchgang). „Lücken schließen“ erhöhen oder eine Trennlinie ziehen.",
       small: "Der Bereich ist zu klein für einen Raum.", scale: "Bitte zuerst den Maßstab festlegen." },
     e: { E_OPENING_INTERIOR: "Innentür/Durchgang liegt nicht mehr auf einer gemeinsamen Wand", E_POLY_POINTS: "zu wenige Ecken", E_LIMIT_VERTICES: "zu viele Ecken", E_POLY_NONFINITE: "ungültige Koordinate", E_POLY_DEGENERATE: "Wand zu kurz",
@@ -89,11 +142,40 @@ const L = {
       E_OPENING_ROOM: "Öffnung ohne Raum", E_OPENING_EDGE: "Öffnung liegt auf keiner Wand", E_OPENING_OFFSET: "Öffnung außerhalb der Wand", E_OPENING_WIDTH: "Öffnung breiter als die Wand" },
   },
   en: {
+    // v0.26.6.1 editor hotfix: plain names, short context hints and the next sensible step
+    add_cancel: "Cancel", tb_room: "+ Room", tb_window: "Window", tb_door: "Door", tb_passage: "Passage", more: "More", more_title: "More tools", close: "Close", msg_close: "Close message",
+    mode_label: "Editing mode", quick_title: "Quick: move and resize whole rooms", precise_title: "Precision: edit single corners, wall lengths and angles",
+    hint_empty: "No room on this floor yet. Tap “+ Room”, choose the room and a shape.",
+    hint_quick: "Tap a room to move it or change its size.",
+    hint_precise: "Precision: tap a room – then drag its corners. A dot in the middle of a wall adds a corner, tapping a wall shows its length and angles.",
+    hint_room_quick: "Drag to move the room · drag the square at the corner to resize · for your own shape use “Edit corners”.",
+    hint_room_precise: "Drag the corners · tap a dot in the middle of a wall to add a corner · tap a wall for its length and angles.",
+    hint_vertex: "Corner {c}: drag it or move it with the arrow keys · Del removes the corner.",
+    hint_wall: "Wall {w}: enter a length and “Apply” – the chosen corner stays in place. Angles and locks are in the properties.",
+    hint_opening: "Drag along the wall to move · drag the ends to change the width · assign the contact in the properties.",
+    hint_adding: "Choose the room and a shape, then “Add room”. The new room appears next to the others.",
+    hint_next_missing: "Next step: {n} rooms are not drawn yet – add them with “+ Room”.",
+    hint_next_windows: "Next step: place windows – choose “Window” and tap an outside wall.",
+    hint_next_contacts: "Next step: {n} windows/doors have no contact – tap one and assign its contact.",
+    hint_next_orphans: "Please check: {n} windows/doors name a contact that is no longer set up in FreshAirIQ – tap one and choose the right contact.", contact_gone: "no longer set up",
+    hint_next_save: "Everything drawn? Check it and “Save”.", hint_done: "Floor plan complete. To change something, tap a room, a wall or a window.",
+    edit_sel: "Edit", selected: "Selected: {name}",
+    steps_title: "Your floor plan in six steps", start_intro: "Tap “+ Room”, choose the room and a shape. Then place windows and doors on the walls and save.", step_optional: "optional", step_floor: "Choose a floor", step_rooms: "Draw the rooms", step_shape: "Adjust position and shape", step_openings: "Place windows, doors, passages", step_contacts: "Assign contacts", step_save: "Check and save",
+    new_room: "New room", which_room: "Which room?", shape: "Shape", shape_precise: "Own shape", shape_precise_hint: "“Own shape” adds a rectangle and switches to Precision: then drag the corners to the right place.",
+    all_placed: "All rooms are already in the floor plan. New rooms are added in the FreshAirIQ setup.",
+    edit_corners: "Edit corners", corners_done: "Corners done", sec_corners: "Corners as numbers", corners_hint: "x to the right, y upwards, in metres. A value is taken when you leave the field.",
+    sec_connections: "Connections without a shared wall", conn_hint: "For stairs, shafts or ducts. Doors and passages are drawn right on the wall (“Door”, “Passage”).",
+    sec_place: "Position on the wall", sec_details: "More details", sec_angles: "Corner angles", sec_scale: "Set the scale", sec_building: "Building and north", sec_template: "Floor plan template (picture)",
+    contacts_hint: "Which window or door contact reports this opening?", no_contacts: "No contacts are set up in FreshAirIQ yet.",
+    corner_min: "A room needs at least three corners. Fix: move another corner or remove the whole room.",
+    invalid_fix: "Tap the rooms marked red and correct them, then save again.", failed_fix: "Your draft is kept – check the connection and save again.",
+    import_fix: "Please choose a file saved with “Export” from this editor (.json).",
+    room_info: "{a} m² · {p}",
     window_inside: "This window sits on an interior wall.", window_out: "Move to the outside wall", windows_inside: "{n} windows sit on an interior wall.", windows_out: "Move all to outside walls",
     window_no_outside: "This room has no free outside wall – please move the room to the edge of the house.",
     unit_schematic: "u", wall_length_units: "Length (plan units, no scale)", scale_hint: "This floor plan is schematic – its lengths are not metres. The real length of this one wall gives the whole plan a scale.",
     scale_real: "Real length of this wall (m)", scale_placeholder: "e.g. 3.85", scale_apply: "Set scale",
-    wall_length: "Length (m)", wall_fixed: "Stays in place", wall_lock: "Lock length", wall_locked: "This wall has a locked length – unlock it first.", airs: "airs", angle_locked: "This changes a locked angle (also when a corner next to it is added or removed) – unlock the angle first.",
+    wall_length: "Length (m)", wall_fixed: "Stays in place", wall_lock: "Lock length", wall_locked: "This wall has a locked length – unlock it first.", airs: "airs", help_title: "How to use", grp_view: "View", grp_edit: "Edit", grp_rooms: "Rooms", grp_file: "File", panel_show: "Properties", panel_hide: "Drawing only", angle_locked: "This changes a locked angle (also when a corner next to it is added or removed) – unlock the angle first.",
     wall_help: "Only this wall changes its length: the chosen corner stays, the other one moves along the wall; the next wall takes up the change (the opposite wall keeps its length). Locked lengths and angles stay.",
     angle: "Angle", corner_square: "Corner {c} to 90°", corner_lock: "Lock angle at corner {c}", snap90: "Snap to 90°",
     blocked_wall: "Not possible without changing a locked length: wall {w} is locked. Fix: unlock wall {w} or keep the other corner in place.",
@@ -113,10 +195,14 @@ const L = {
     propose: "Propose again", missing: "Add missing rooms", export: "Export", import: "Import", save: "Save", cancel: "Discard",
     saving: "Saving …", saved: "Saved", conflict: "The floor plan was saved elsewhere in the meantime. Please export your draft and reload.",
     reload: "Reload", invalid: "The floor plan is not valid yet:", failed: "Saving failed", discard: "Discard unsaved changes?",
-    delete_room: "Remove the room from the floor plan? (FreshAirIQ's room configuration stays unchanged.)", delete: "Remove", rotate: "Rotate 90°",
+    delete_room: "Remove the room from the floor plan? (FreshAirIQ's room configuration stays unchanged.)", delete: "Remove", rotate: "Rotate 90°", rotate_help: "“Rotate 90°” turns the room about its centre, anticlockwise – windows and doors turn with it. Four times = as before, ↶ undoes it.",
     add_window: "Add window", add_corner: "Insert corner", corner: "Corner", x: "x (m)", y: "y (m)", area: "Area", room: "Room", opening: "Opening",
     kind: "Kind", mechanics: "Mechanism", width: "Width (m)", contacts: "Contacts", wall: "Wall", position: "Position", building: "Building",
-    north: "North (degrees, direction of 'up')", north_confirmed: "North direction checked", connections: "Connections", outside: "outside", add: "Add",
+    north: "Which compass direction does the top of your plan face?", north_confirmed: "North direction checked", north_help: "This tells FreshAirIQ from which direction sun and wind reach your house. Align the drawing with a site plan or a map.", north_examples: "0° = top is north · 90° = top is east · 180° = top is south · 270° = top is west", north_now: "The top faces roughly {dir} ({deg}°).", north_drag: "Drag the “N” arrow or enter the angle. With a floor plan template: “More” → north arrow from the template.", north_confirmed_help: "Only confirm once the direction was checked against a reliable source (site plan, map, compass). Only then are facades, sun and wind calculated by direction.", north_keep: "The rooms are not rotated.",
+    dirs: ["north", "north-northeast", "northeast", "east-northeast", "east", "east-southeast", "southeast", "south-southeast", "south", "south-southwest", "southwest", "west-southwest", "west", "west-northwest", "northwest", "north-northwest"],
+    mode_help: { quick: "Quick: move whole rooms and drag a corner to make them bigger or smaller – ideal for a first draft.", precise: "Precision: edit single corners and walls – for exact sizes, slanted walls and your own shapes. Tapping a dot in the middle of a wall adds a corner." },
+    shape_help: "Choose a rectangle, L or U shape; then move it like any room and drag its corner to resize. A T-shaped room: add a rectangle, switch to “Precision” and add corners at the middle of the walls, then drag them until the T stands.",
+    hint_vertex_touch: "Corner {c}: drag it to move it · to delete it, remove the corner in the properties.", connections: "Connections", outside: "outside", add: "Add",
     preview: "Preview", apply: "Apply", changed_rooms: "rooms change", provenance: "Origin", none: "Nothing selected – tap a room, corner or opening.",
     import_failed: "The file could not be read", help: "Tap: choose a room, wall, door or window · drag the chosen room: move · drag empty space: view · two fingers: zoom · drag openings along the wall · arrow keys move · Del deletes",
     k: { window: "Window", door: "Door", roof_window: "Roof window", passage: "Passage", vent: "Vent" },
@@ -132,8 +218,8 @@ const L = {
     openings_bar: "Place openings", no_interior: "This is no interior wall – tap a wall between two rooms.",
     not_interior: "Not entirely on a wall between two rooms – counts as an outside opening.", width_handle: "Drag the width", narrower: "narrower", wider: "wider",
     tool_help: { calibrate: "Tap the start and end of a distance with a known length.", north: "Tap two points along the north arrow: first its tail, then its tip.",
-      separator: "Tap the start and end of a separator line, e.g. across an open passage.", trace: "Tap inside a room of the template.", window: "Tap on a wall – a window is placed there.",
-      door: "Tap on a wall between two rooms – an interior door is placed there.", passage: "Tap on a wall between two rooms – an open passage is placed there." },
+      separator: "Tap the start and end of a separator line, e.g. across an open passage.", trace: "Tap inside a room of the template.", window: "Tap an outside wall to place a window.",
+      door: "Tap a wall between two rooms to place a door.", passage: "Tap a wall between two rooms to place an open passage (no door)." },
     reason: { wall: "That is a wall – please tap inside the room.", open: "The area is not closed (open door or passage). Increase 'Close gaps' or draw a separator.",
       small: "The area is too small for a room.", scale: "Please set the scale first." },
     e: { E_OPENING_INTERIOR: "interior door/passage is no longer on a shared wall", E_POLY_POINTS: "too few corners", E_LIMIT_VERTICES: "too many corners", E_POLY_NONFINITE: "invalid coordinate", E_POLY_DEGENERATE: "wall too short",
@@ -142,6 +228,8 @@ const L = {
   },
 };
 
+// v0.26.6.1 editor hotfix: the texts, exported for the language checks of the tests
+export const EDITOR_TEXT = L;
 export const TEMPLATES = {
   rect: (w, d) => [[0, 0], [w, 0], [w, d], [0, d]],
   l: (w, d) => [[0, 0], [w, 0], [w, d / 2], [w / 2, d / 2], [w / 2, d], [0, d]],
@@ -178,12 +266,12 @@ export const openingWidthAt = (polygon, o, p, grid = 0) => {
   return G.round3(Math.min(Math.max(width, 0.3), Math.max(room, 0.3), len));
 };
 export const shiftOpenings = (openings, roomId, index, delta) => openings.map(o => (o.room_id === roomId && o.edge > index ? Object.assign({}, o, { edge: o.edge + delta }) : o));
-// 0.26.6.0(2): locked walls (room.locked_walls = edge indices) follow an inserted (+1) or removed (−1) corner
+// 0.26.6.1(2): locked walls (room.locked_walls = edge indices) follow an inserted (+1) or removed (−1) corner
 export const shiftLocks = (room, index, delta) => {
   if (!room || !Array.isArray(room.locked_walls)) return;
   room.locked_walls = room.locked_walls.map(i => (i > index ? i + delta : i));
 };
-// 0.26.6.0(10): locked angles (room.locked_corners = corner indices) follow an inserted (+1) or removed (−1) corner
+// 0.26.6.1(10): locked angles (room.locked_corners = corner indices) follow an inserted (+1) or removed (−1) corner
 export const shiftCornerLocks = (room, index, delta) => {
   if (!room || !Array.isArray(room.locked_corners)) return;
   room.locked_corners = room.locked_corners.map(i => (i > index ? i + delta : i));
@@ -218,7 +306,7 @@ export const angleBroken = (before, after) => (before.rooms || []).some(old => {
 export const lockBroken = (before, after) => wallBroken(before, after) || angleBroken(before, after);
 // The message for a refused change: a locked length or a locked angle
 export const lockMessage = (before, after) => (wallBroken(before, after) ? "wall_locked" : "angle_locked");
-// 0.26.6.0 UI hotfix (F01): the room an opening links to in a layout (null = none / outside)
+// 0.26.6.1 UI hotfix (F01): the room an opening links to in a layout (null = none / outside)
 export const linkOf = (layout, id) => {
   const o = (layout.openings || []).find(x => x.id === id), room = o && (layout.rooms || []).find(r => r.id === o.room_id);
   const other = room && G.openingLink(layout.rooms, room, o);
@@ -244,48 +332,133 @@ export class History {
   redo(current) { if (!this.future.length) return null; this.past.push(clone(current)); return this.future.pop(); }
 }
 
+// WCAG relative luminance and contrast of rgb()/rgba() colours
+const rgb = text => { const m = /rgba?\(([^)]+)\)/.exec(String(text || "")); if (!m) return null; const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
+export const luminance = c => { const f = x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+export const contrast = (a, b) => { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 const STYLE = `
-:host{display:block;color:var(--primary-text-color)}
+:host{--ed-bg:var(--card-background-color,var(--ha-card-background,#ffffff));--ed-fg:var(--primary-text-color,#1b1f23);--ed-muted:var(--secondary-text-color,#4a5560);--ed-line:var(--divider-color,#8c96a0);--ed-accent:var(--primary-color,#0b6ea8);--ed-on-accent:var(--text-primary-color,#ffffff);--ed-canvas:var(--secondary-background-color,#eef2f5);
+display:flex;flex-direction:column;container-type:inline-size;box-sizing:border-box;height:100%;min-height:560px;background:var(--ed-bg);color:var(--ed-fg);font-size:15px;line-height:1.4}
+/* v0.26.6.1: a theme whose text and background do not contrast enough gets a checked palette (see _checkContrast) */
+:host([data-palette="dark"]){--ed-bg:#13202b;--ed-fg:#f2f6f9;--ed-muted:#c3ced6;--ed-line:#6b8090;--ed-canvas:#0c1720}
+:host([data-palette="light"]){--ed-bg:#ffffff;--ed-fg:#1b1f23;--ed-muted:#454f59;--ed-line:#7d8892;--ed-canvas:#eef2f5}
+:host([data-accent="fallback"]){--ed-accent:#0b6ea8;--ed-on-accent:#ffffff}
 .bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.msg,.help{flex:none}
 button,select,input{font:inherit;color:inherit}
-button{cursor:pointer;border-radius:14px;border:1px solid var(--divider-color,#8884);background:transparent;padding:6px 10px;min-height:40px;min-width:40px}
-button[aria-pressed="true"]{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}
-button.primary{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff);border-color:transparent}
-select,input{background:var(--card-background-color,transparent);border:1px solid var(--divider-color,#8884);border-radius:8px;padding:6px;min-height:36px}
+button{cursor:pointer;border-radius:14px;border:1px solid var(--ed-line);background:var(--ed-bg);color:var(--ed-fg);padding:6px 12px;min-height:44px;min-width:44px;font-size:15px}
+button:hover:not(:disabled){border-color:var(--ed-accent)}
+button[aria-pressed="true"]{background:var(--ed-accent);color:var(--ed-on-accent);border-color:var(--ed-accent);font-weight:700;box-shadow:inset 0 0 0 2px var(--ed-on-accent)}
+button:disabled{cursor:not-allowed;opacity:.55;border-style:dashed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--ed-accent);outline-offset:2px}
+button.primary{background:var(--ed-accent);color:var(--ed-on-accent);border-color:transparent}
+select,input{background:var(--ed-bg);color:var(--ed-fg);border:1px solid var(--ed-line);border-radius:8px;padding:6px;min-height:40px;font-size:15px}
+label{color:var(--ed-fg)}
 .join-ghost{fill:rgba(64,200,255,.08);stroke:#40c8ff;pointer-events:none}.join-shared{stroke:#7dff9a;stroke-linecap:round;pointer-events:none}
 .angles{display:grid;gap:6px;margin-top:8px}.corner-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.canvas{border-radius:12px;background:var(--secondary-background-color,#8881);touch-action:none;user-select:none;-webkit-user-select:none}
-.canvas:focus{outline:none}.canvas:focus-visible{outline:2px solid var(--primary-color,#03a9f4)}
-.guide{stroke:var(--primary-color,#03a9f4);pointer-events:none} .wall{pointer-events:none;stroke:var(--primary-text-color,#222)} .symbol .sym{stroke:var(--primary-text-color,#222)} .symbol .halo,.symbol .gap{stroke:var(--card-background-color,#fff)}
-svg{display:block;width:100%;height:60vh;max-height:620px}
-.wbox{display:inline-flex;gap:4px;align-items:center}.wbox input{width:5.5em}
-.room{fill:var(--primary-color,#03a9f4);fill-opacity:.18;stroke:var(--primary-text-color);cursor:move}
-.room.sel{fill-opacity:.32;stroke:var(--primary-color,#03a9f4)}
+.canvas{border-radius:12px;background:var(--ed-canvas);touch-action:none;user-select:none;-webkit-user-select:none}
+.canvas:focus{outline:none}.canvas:focus-visible{outline:2px solid var(--ed-accent)}
+.guide{stroke:var(--ed-accent);pointer-events:none} .wall{pointer-events:none;stroke:var(--ed-fg)} .symbol .sym{stroke:var(--ed-fg)} .symbol .halo,.symbol .gap{stroke:var(--ed-bg)}
+svg{display:block;width:100%;height:100%}
+.wbox{display:flex;gap:4px;align-items:center}.wbox input{width:auto;flex:1 1 4em;min-width:3.5em}
+.room{fill:var(--ed-accent);fill-opacity:.18;stroke:var(--ed-fg);cursor:move}
+.room.sel{fill-opacity:.32;stroke:var(--ed-accent)}
 .room.err{stroke:var(--error-color,#db4437);fill:var(--error-color,#db4437);fill-opacity:.2}
-.other{fill:none;stroke:var(--secondary-text-color);opacity:.35;pointer-events:none}
-.handle{fill:var(--card-background-color,#fff);stroke:var(--primary-color,#03a9f4);cursor:grab}
-.handle.sel{fill:var(--primary-color,#03a9f4)} .handle.hit{fill:transparent;stroke:none} .dot{fill:var(--card-background-color,#fff);stroke:var(--primary-color,#03a9f4);pointer-events:none} .dot.sel{fill:var(--primary-color,#03a9f4)}
-.mid{fill:var(--primary-color,#03a9f4);opacity:.55;cursor:copy}
+.other{fill:none;stroke:var(--ed-muted);opacity:.35;pointer-events:none}
+.handle{fill:var(--ed-bg);stroke:var(--ed-accent);cursor:grab}
+.handle.sel{fill:var(--ed-accent)} .handle.hit{fill:transparent;stroke:none} .dot{fill:var(--ed-bg);stroke:var(--ed-accent);pointer-events:none} .dot.sel{fill:var(--ed-accent)}
+.mid{fill:var(--ed-accent);opacity:.55;cursor:copy}
 .op{stroke:var(--success-color,#43a047);stroke-linecap:round;cursor:ew-resize}
 .op.sel{stroke:var(--warning-color,#ffa600)} .op.err{stroke:var(--error-color,#db4437)}
-.conn.logical line{stroke:var(--secondary-text-color,#555)} .conn .conn-mark{fill:#fff;stroke:var(--primary-text-color,#222)} .conn.loose line,.conn.loose .conn-mark{stroke:var(--warning-color,#ffa600)}
+.conn.logical line{stroke:var(--ed-muted)} .conn .conn-mark{fill:#fff;stroke:var(--ed-fg)} .conn.loose line,.conn.loose .conn-mark{stroke:var(--warning-color,#ffa600)}
 .op.inner{stroke:var(--info-color,#039be5)} .op.inner.sel{stroke:var(--warning-color,#ffa600)} .wh{cursor:ew-resize}
-text{fill:var(--primary-text-color);pointer-events:none}
+text{fill:var(--ed-fg);pointer-events:none}
 .err-text{fill:var(--error-color,#db4437);font-weight:600}
-.grid line{stroke:var(--divider-color,#8884)}
-.panel{margin-top:8px;padding:10px;border:1px solid var(--divider-color,#8884);border-radius:12px;font-size:13px;display:grid;gap:8px}
+.grid line{stroke:var(--ed-line)}
+.panel{margin-top:8px;padding:12px;border:1px solid var(--ed-line);border-radius:12px;font-size:14px;display:grid;gap:10px;background:var(--ed-bg);color:var(--ed-fg)}
 .panel h4{margin:0}
-.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:6px}
 .vertex{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:4px;align-items:center}
-.msg{padding:8px;border-radius:10px;border:1px solid var(--divider-color,#8884)} .msg.err{border-color:var(--error-color,#db4437)}
-.help{font-size:12px;color:var(--secondary-text-color)}
+.msg{padding:8px;border-radius:10px;border:1px solid var(--ed-line)} .msg.err{border-color:var(--error-color,#db4437)}
+.help{font-size:14px;color:var(--ed-muted)}
 .ul{pointer-events:none}
-.hitwall,.hitop{cursor:pointer} .wallsel{stroke:var(--primary-color,#03a9f4);stroke-linecap:round;pointer-events:none}
-.measure{font-weight:600;paint-order:stroke;stroke:var(--card-background-color,#06305c)} .measure.big{font-weight:800}
-.corner{fill:var(--card-background-color,#fff);stroke:var(--primary-color,#03a9f4);pointer-events:none} .corner.fixed{fill:var(--primary-color,#03a9f4)} .cornerno{font-weight:700}
-.work{display:grid;gap:8px} .work .panel{margin-top:0}
-@media (max-width:899px){.work .panel{position:sticky;bottom:0;z-index:1;background:var(--card-background-color,#06305c);max-height:46vh;overflow:auto;box-shadow:0 -4px 12px rgba(0,0,0,.15)}}
-@media (min-width:900px){.work.side{grid-template-columns:minmax(0,1fr) 320px;align-items:start}}
+.hitwall,.hitop{cursor:pointer} .wallsel{stroke:var(--ed-accent);stroke-linecap:round;pointer-events:none}
+.measure{font-weight:600;paint-order:stroke;stroke:var(--ed-bg)} .measure.big{font-weight:800}
+.corner{fill:var(--ed-bg);stroke:var(--ed-accent);pointer-events:none} .corner.fixed{fill:var(--ed-accent)} .cornerno{font-weight:700}
+/* v0.26.6.1 editor hotfix: a fixed workspace. The drawing gets a size from the layout alone – never from the content
+   of the properties, a message or a hint: messages and hints float over the drawing, the properties scroll on their own.
+   data-layout (set from the editor's own size, _applyLayout): "side" = properties beside the drawing (wide editors and
+   short landscape screens), otherwise below it in a fixed share; "short" = little height; "phone" = a narrow screen. */
+.work{flex:1 1 auto;min-height:0;display:grid;gap:10px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,3fr) minmax(0,2fr)}
+.work.nopanel{grid-template-rows:minmax(0,1fr) auto}.work.nopanel .aside{display:none}
+.draw{position:relative;display:flex;flex-direction:column;min-height:0;min-width:0}
+.canvas{flex:1 1 auto;min-height:160px}
+.side{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+.aside{flex:1 1 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-content:start;min-height:0;overflow:auto;overscroll-behavior:contain}
+.work .panel{margin-top:0}
+.bar.final{flex:none;margin:0;padding:6px 0 0;background:var(--ed-bg);border-top:1px solid var(--ed-line);display:flex;gap:8px;align-items:center}
+.bar.final .grow{flex:1 1 auto}
+.ptoggle{display:inline-flex;align-items:center}
+:host([data-layout~="side"]) .work{grid-template-columns:minmax(0,1fr) clamp(280px,34%,360px);grid-template-rows:minmax(0,1fr)}
+:host([data-layout~="side"]) .work.nopanel .aside{display:grid}
+:host([data-layout~="side"]) .ptoggle{display:none}
+:host([data-layout~="short"]) .tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+:host([data-layout~="short"]) .tools>*{flex:none}
+:host([data-layout~="phone"]) .tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+:host([data-layout~="phone"]) .tg-add{grid-column:1/-1;display:flex;gap:4px}
+:host([data-layout~="phone"]) .tg-add>button{flex:1 1 auto;padding:6px 4px;font-size:14px;min-width:0}
+:host([data-layout~="phone"]) .bar.final{gap:6px}:host([data-layout~="phone"]) .bar.final>button{padding:6px 8px}
+/* toolbar: floor, mode, what can be added, more */
+.tools{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:8px;flex:none}
+.tg{display:flex;gap:4px;align-items:center;flex-wrap:nowrap}
+.tg-floor label{display:flex;gap:6px;align-items:center;min-width:0}.tg-floor select{min-width:0;max-width:220px}
+:host([data-layout~="phone"]) .tg-floor select{max-width:none;width:100%}
+.seg{display:inline-flex;border:1px solid var(--ed-line);border-radius:14px;overflow:hidden}
+.seg>button{border:0;border-radius:0;margin:0}
+.seg>button+button{border-left:1px solid var(--ed-line)}
+.tg-add>button{white-space:nowrap}
+.tools .more-btn{margin-left:auto}
+/* floating over the drawing: hint and messages (top), undo/redo (bottom left), zoom (bottom right), the "more" menu */
+.ov{position:absolute;z-index:2}
+.ov-top{top:8px;left:8px;right:8px;display:grid;gap:6px;justify-items:start;pointer-events:none;max-height:calc(100% - 76px);overflow:auto}
+.ov-top>*{pointer-events:auto;max-width:100%;box-sizing:border-box}
+.hint{background:var(--ed-bg);color:var(--ed-fg);border:1px solid var(--ed-line);border-left:4px solid var(--ed-accent);border-radius:10px;padding:6px 10px;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.hint button{margin-left:6px}
+.ov-top .msg{background:var(--ed-bg);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.msg .x{float:right;margin:-4px -4px 0 8px}
+.ov-bl{left:8px;bottom:8px;display:flex;gap:4px}.ov-br{right:8px;bottom:8px;display:flex;gap:4px}
+.ov-bl button,.ov-br button{box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.menu{top:8px;right:8px;width:min(320px,calc(100% - 16px));max-height:calc(100% - 72px);overflow:auto;box-sizing:border-box;background:var(--ed-bg);color:var(--ed-fg);border:1px solid var(--ed-line);border-radius:12px;padding:10px;display:grid;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.28)}
+.menu[hidden]{display:none}
+.menu h4{margin:0}.menu .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.menu .row>button{flex:1 1 auto}
+/* properties: what matters for the chosen object first, the rest in sections that open on demand */
+.panel.selected{border-left:4px solid var(--ed-accent)}
+.panel .sub{color:var(--ed-muted);font-size:14px}
+.sec{border-top:1px solid var(--ed-line);padding-top:4px}
+.sec>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;list-style:none}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary::before{content:"▸";display:inline-block;width:1.2em;color:var(--ed-muted)}
+.sec[open]>summary::before{content:"▾"}
+.sec>.body{display:grid;gap:8px;padding:2px 0 8px}
+.checks{display:grid;gap:2px}.checks label{display:flex;gap:8px;align-items:center;min-height:44px}
+.checks input{width:22px;height:22px;min-height:0;margin:0}
+.danger{border-color:var(--error-color,#db4437)}
+.shapes{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.shapes button{display:grid;justify-items:center;gap:2px;padding:6px}
+.shapes svg{width:40px;height:30px}.shapes svg path{fill:none;stroke:currentColor;stroke-width:2}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.steps li{display:flex;gap:8px;align-items:center;min-height:28px}
+.steps .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;border:1px solid var(--ed-line);font-size:14px;flex:none}
+.steps li.done .n{background:var(--ed-accent);color:var(--ed-on-accent);border-color:var(--ed-accent)}
+.steps li.next{font-weight:700}
+.panel>.sec:first-child{border-top:0;padding-top:0}
+.aside .panel,.sec>.body{grid-template-columns:minmax(0,1fr)}.aside .panel>*{min-width:0}
+.aside input:not([type=checkbox]),.aside select{max-width:100%;min-width:0;box-sizing:border-box}.vertex input{width:100%}
+.checks label>span,.panel h4,.sub,.msg,.hint{overflow-wrap:anywhere}
+input[type=checkbox]{min-height:0;width:22px;height:22px;padding:0;margin:0 6px 0 0;vertical-align:middle;accent-color:var(--ed-accent)}
+label:has(>input[type=checkbox]){display:inline-flex;align-items:center;min-height:44px}
+button[aria-expanded="true"].more-btn{border-color:var(--ed-accent);box-shadow:inset 0 0 0 2px var(--ed-accent)}
 .sep{stroke:#ff5d5d;stroke-linecap:round;pointer-events:none}
 .tp{fill:#ff9f43;stroke:#021024;pointer-events:none}
 .tracepoly{fill:#39e07a;fill-opacity:.35;stroke:#0a7a3b;pointer-events:none}
@@ -301,6 +474,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     this._history = new History(); this._mode = "quick"; this._sel = null; this._grid = 0.1; this._view = null; this._drag = null;
     this._pointers = new Map(); this._msg = null; this._preview = null; this._dirty = false; this._busy = false;
     this._ul = {}; this._ulUrl = {}; this._pix = {}; this._ulSummary = {}; this._showUl = true; this._tool = null; this._toolPts = []; this._calib = null; this._trace = null;
+    this._open = {}; this._shape = "rect"; this._menu = false; this._adding = false;  // v0.26.6.1 editor hotfix: sections, new-room shape, menu
   }
   set hass(hass) { this._hass = hass; } // never re-render on hass: keeps open pickers and the draft (iOS)
   setup({ entryId, layout, revision, rooms, liveRooms, language, floor, underlays }) {
@@ -318,12 +492,32 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     // a field or button the user moves to takes the keyboard; a tap on the drawing gives it back (_down)
     this._onFocusIn = ev => { this._kbd = !!(ev.target && ev.target.classList && ev.target.classList.contains("canvas")); };
     this.shadowRoot.addEventListener("focusin", this._onFocusIn);
+    // v0.26.6.1: the drawing follows the size of the editor (window, rotation, inspector) – the plan stays in view
+    if (typeof ResizeObserver === "function") { this._resizeObs = new ResizeObserver(() => this._onResize()); this._resizeObs.observe(this); }
+    this._checkContrast();
   }
   disconnectedCallback() {
     this.shadowRoot.removeEventListener("keydown", this._onKey);
     this.shadowRoot.removeEventListener("focusin", this._onFocusIn);
+    if (this._resizeObs) { this._resizeObs.disconnect(); this._resizeObs = null; }
     for (const url of Object.values(this._ulUrl)) URL.revokeObjectURL(url);
     this._ulUrl = {}; this._ul = {}; this._pix = {};
+  }
+  // v0.26.6.1: text must stay readable in every Home Assistant theme – a theme whose text, muted text or accent
+  // colours contrast too little with the editor background (WCAG AA: 4.5:1 for text) gets a checked palette
+  _checkContrast() {
+    if (typeof getComputedStyle !== "function") return;
+    this.removeAttribute("data-palette"); this.removeAttribute("data-accent");
+    const probe = document.createElement("span");
+    probe.style.cssText = "position:absolute;visibility:hidden;color:var(--ed-fg);background:var(--ed-bg);border-color:var(--ed-muted);outline-color:var(--ed-accent);caret-color:var(--ed-on-accent)";
+    this.shadowRoot.appendChild(probe);
+    const read = () => { const c = getComputedStyle(probe); return [c.color, c.backgroundColor, c.borderTopColor, c.outlineColor, c.caretColor].map(rgb); };
+    let [fg, bg, muted, accent, onAccent] = read();
+    if (!bg || bg[3] < 0.5) bg = luminance(fg || [0, 0, 0]) > 0.5 ? [16, 24, 32, 1] : [255, 255, 255, 1];   // no opaque background: assume the opposite of the text
+    if (!fg || !muted || contrast(fg, bg) < 4.5 || contrast(muted, bg) < 4.5) this.setAttribute("data-palette", luminance(bg) < 0.25 ? "dark" : "light");
+    [fg, bg, muted, accent, onAccent] = read();
+    if (!accent || !onAccent || contrast(onAccent, accent) < 4.5 || (bg && bg[3] >= 0.5 && contrast(accent, bg) < 3)) this.setAttribute("data-accent", "fallback");
+    probe.remove();
   }
   _t(k) { return L[this._lang][k] != null ? L[this._lang][k] : k; }
   _msgWs(type, extra = {}) { const m = Object.assign({ type }, extra); if (this._entryId) m.entry_id = this._entryId; return m; }
@@ -331,10 +525,11 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
   // ------------------------------------------------------------------ state changes
   _commit(mutator, { force = false } = {}) {
     const future = this._history.future;
+    this._modeHint = false;
     this._history.push(this._layout);
     mutator(this._layout);
     const before = this._history.past[this._history.past.length - 1];
-    // 0.26.6.0(2): a locked wall keeps its length; UI hotfix (F01): an interior door stays on its shared wall
+    // 0.26.6.1(2): a locked wall keeps its length; UI hotfix (F01): an interior door stays on its shared wall
     const refused = force ? null : lockBroken(before, this._layout) ? lockMessage(before, this._layout) : linksLost(before, this._layout) ? "interior_only" : null;
     if (refused) {
       this._layout = this._history.past.pop(); this._history.future = future;
@@ -355,15 +550,47 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     const rooms = this._floorRooms().filter(r => r.polygon.length);
     const u = this._showUl && this._ul[this._floor], s = T.displayScale(u);
     const box = G.bbox(rooms.map(r => r.polygon).concat(u ? [[[0, 0], [u.width * s, u.height * s]]] : []));
-    const span = Math.max(box.maxX - box.minX, box.maxY - box.minY, 4);
-    this._view = { cx: (box.minX + box.maxX) / 2, cy: (box.minY + box.maxY) / 2, size: span * 1.4 };
+    // v0.26.6.1: the plan fills the drawing area of the real shape (wide or tall), with a margin – fully visible
+    const a = this._aspect || 0.75, spanX = Math.max(box.maxX - box.minX, 4), spanY = Math.max(box.maxY - box.minY, 4);
+    // v0.26.6.1 editor hotfix: the plan sits between the hint on top and the buttons at the bottom (both float over it)
+    const svg = this.shadowRoot.querySelector("svg"), sb = svg && svg.getBoundingClientRect(), top = this.shadowRoot.querySelector(".ov-top");
+    const band = sb && sb.height > 160 && sb.width > 0 ? { top: Math.min(top ? top.getBoundingClientRect().height + 8 : 0, sb.height * 0.3), bottom: Math.min(60, sb.height * 0.2), h: sb.height, w: sb.width } : null;
+    const free = band ? (band.h - band.top - band.bottom) / band.w : a;
+    const size = Math.max(spanX * 1.15, (spanY * 1.15) / free, spanX, spanY / a);
+    const shift = band ? ((band.top - band.bottom) / 2) * (size / band.w) : 0;
+    this._view = { cx: (box.minX + box.maxX) / 2, cy: (box.minY + box.maxY) / 2 + shift, size };
   }
   _viewBox() {
     if (!this._view) this._fit();
-    const v = this._view, w = v.size, h = v.size * 0.75;
+    const v = this._view, w = v.size, h = v.size * (this._aspect || 0.75);
     return [v.cx - w / 2, -v.cy - h / 2, w, h];
   }
-  _zoom(factor) { if (!this._view) this._fit(); this._view.size = Math.min(Math.max(this._view.size * factor, 1), 2000); this._render(); }
+  // v0.26.6.1: "Fit" stays on (refits when the editor is resized) until the user zooms or moves the view
+  _zoom(factor) { if (!this._view) this._fit(); this._autoFit = false; this._view.size = Math.min(Math.max(this._view.size * factor, 1), 2000); this._render(); }
+  // v0.26.6.1 editor hotfix: the layout follows the editor's own size – properties beside the drawing on a wide editor
+  // and on a short landscape screen (844 × 390), below it in a fixed share otherwise. Nothing inside decides a size.
+  _applyLayout() {
+    const b = this.getBoundingClientRect();
+    if (!(b.width > 0)) return;
+    const short = b.height > 0 && b.height < 600, side = b.width >= 860 || (short && b.width >= 600 && b.width > b.height);
+    const value = [side ? "side" : "stack", short ? "short" : "", !side && b.width < 480 ? "phone" : ""].filter(Boolean).join(" ");
+    if (this.getAttribute("data-layout") !== value) this.setAttribute("data-layout", value);
+  }
+  _isNarrow() { const w = this.getBoundingClientRect().width; return w > 0 ? !(this.getAttribute("data-layout") || "").includes("side") : null; }
+  _onResize() {
+    this._applyLayout();
+    this._syncAspect(true);
+  }
+  // the drawing's shape (height / width) for the view box; refitted while "Fit" is on
+  _syncAspect(draw) {
+    const svg = this.shadowRoot.querySelector("svg"), box = svg && svg.getBoundingClientRect();
+    if (!box || box.width < 10 || box.height < 10) return;
+    const aspect = Math.min(Math.max(box.height / box.width, 0.3), 3);
+    if (Math.abs(aspect - (this._aspect || 0)) < 0.005 && (this._autoFit === false || !draw)) return;
+    this._aspect = aspect;
+    if (this._autoFit !== false) this._fit();
+    this._renderCanvas();
+  }
   _plan(ev) {
     const svg = this.shadowRoot.querySelector("svg");
     const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
@@ -385,7 +612,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     if (this._tool) { this._drag = { kind: "pan", start: [ev.clientX, ev.clientY], view: Object.assign({}, this._view), tap: start }; return; }
     if (!target) { this._drag = { kind: "pan", start: [ev.clientX, ev.clientY], view: Object.assign({}, this._view) }; return; }
     const k = target.dataset.k, id = target.dataset.id, index = Number(target.dataset.i);
-    // 0.26.6.0(2): a tap chooses a room, door, window or wall; a finger moving over one that is not chosen yet (or
+    // 0.26.6.1(2): a tap chooses a room, door, window or wall; a finger moving over one that is not chosen yet (or
     // over a wall) moves the view – the plan only changes for what was chosen first (no change while scrolling)
     const touch = ev.pointerType === "touch" || ev.pointerType === "pen";
     const chosen = this._sel && this._sel.id === id && (k === "room" ? this._sel.type === "room" : k === "op" ? this._sel.type === "opening" : true);
@@ -416,9 +643,10 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     if (!this._drag) return;
     if (this._pointers.has(ev.pointerId)) this._pointers.set(ev.pointerId, [ev.clientX, ev.clientY]);
     const d = this._drag;
-    if (d.kind === "pinch") { if (this._pointers.size === 2) { this._view.size = Math.min(Math.max(d.size * d.dist / this._pinchDist(), 1), 2000); this._renderCanvas(); } return; }
+    if (d.kind === "pinch") { if (this._pointers.size === 2) { this._autoFit = false; this._view.size = Math.min(Math.max(d.size * d.dist / this._pinchDist(), 1), 2000); this._renderCanvas(); } return; }
     if (d.kind === "pan") {
       const u = this._unit();
+      if (Math.hypot(ev.clientX - d.start[0], ev.clientY - d.start[1]) >= 8) this._autoFit = false;
       this._view = Object.assign({}, d.view, { cx: d.view.cx - (ev.clientX - d.start[0]) * u, cy: d.view.cy + (ev.clientY - d.start[1]) * u });
       this._renderCanvas(); return;
     }
@@ -440,7 +668,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       if (!others.some(r => G.polygonsOverlap(moved, r.polygon))) room.polygon = moved;
     } else if (d.kind === "v") {
       let pt = [G.round3(this._snap(base.polygon[d.index][0] + dx)), G.round3(this._snap(base.polygon[d.index][1] + dy))];
-      if (this._snap90) {  // 0.26.6.0(10): near 90° the corner snaps onto the exact right angle
+      if (this._snap90) {  // 0.26.6.1(10): near 90° the corner snaps onto the exact right angle
         const n = base.polygon.length, sn = G.snapRightAngle(base.polygon[(d.index - 1 + n) % n], pt, base.polygon[(d.index + 1) % n]);
         if (sn) pt = sn;
       }
@@ -451,7 +679,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       const nw = Math.max(this._snap(w + dx), 0.3), nh = Math.max(this._snap(h + dy), 0.3);
       room.polygon = scaleTo(base.polygon, anchor, nw / w, nh / h);
     } else if (d.kind === "op" || d.kind === "ow") {
-      // 0.26.6.0 UI hotfix (F01): an interior door or passage only moves or widens along the wall both rooms
+      // 0.26.6.1 UI hotfix (F01): an interior door or passage only moves or widens along the wall both rooms
       // share – a position off it is not taken (no silent change into an outside door)
       const o = this._layout.openings.find(x => x.id === d.id), was = linkOf(d.before, d.id);
       const next = Object.assign({}, o);
@@ -485,8 +713,8 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     if (mod && ev.key.toLowerCase() === "z") { ev.preventDefault(); if (ev.shiftKey) this._redo(); else this._undo(); return; }
     if (mod && ev.key.toLowerCase() === "y") { ev.preventDefault(); this._redo(); return; }
     if (ev.target && /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) return;
-    if (ev.key === "Escape") { this._sel = null; this._render(); return; }
-    // hotfix 0.26.6.0: geometry keys only act while the drawing has the keyboard – a button, a field or another
+    if (ev.key === "Escape") { this._sel = null; this._menu = false; this._adding = false; this._setTool(null); this._render(); return; }  // v0.26.6.1: also ends a tool
+    // hotfix 0.26.6.1: geometry keys only act while the drawing has the keyboard – a button, a field or another
     // control keeps its own keys (arrows in a select, Backspace on a button) and never moves or deletes a room
     const origin = (ev.composedPath && ev.composedPath()[0]) || ev.target;
     if (!(origin && origin.closest && origin.closest(".canvas"))) return;
@@ -509,7 +737,8 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     const sel = this._sel;
     if (sel.type === "vertex") {
       const room = this._room(sel.id);
-      if (!room || room.polygon.length <= 3) return;
+      if (!room) return;
+      if (room.polygon.length <= 3) { this._msg = { err: true, text: this._t("corner_min") }; this._render(); return; }  // v0.26.6.1: say why
       this._commit(l => { const r = l.rooms.find(x => x.id === sel.id); r.polygon.splice(sel.index, 1); shiftLocks(r, sel.index, -1); if (r.locked_corners) { r.locked_corners = r.locked_corners.filter(i => i !== sel.index); if (!r.locked_corners.length) delete r.locked_corners; } shiftCornerLocks(r, sel.index, -1); l.openings = shiftOpenings(l.openings, sel.id, sel.index - 1, -1).map(o => (o.room_id === sel.id ? Object.assign({}, o, { edge: Math.min(o.edge, r.polygon.length - 1) }) : o)); });
       this._sel = { type: "room", id: sel.id };
     } else if (sel.type === "opening") {
@@ -523,9 +752,13 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
   }
 
   // ------------------------------------------------------------------ actions
-  _addRoom(key, template) {
+  _addRoom(key, shape) {
     const meta = this._rooms.find(r => r.key === key);
     if (!meta) return;
+    // v0.26.6.1 editor hotfix: "own shape" starts as a rectangle in Precision mode – the corners are then dragged
+    const template = TEMPLATES[shape] ? shape : "rect";
+    if (shape === "precise") this._mode = "precise";
+    this._adding = false;
     const floorId = this._floor || `f_${meta.floor || "unassigned"}`;
     const others = this._floorRooms();
     const box = G.bbox(others.map(r => r.polygon));
@@ -562,7 +795,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       this.dispatchEvent(new CustomEvent("freshairiq-house-editor-done", { detail: { saved: true } }));
     } catch (err) {
       const code = err && err.code;
-      this._msg = { err: true, conflict: code === "revision_conflict", text: code === "revision_conflict" ? this._t("conflict") : `${this._t("failed")}: ${esc(err && (err.message || code))}` };
+      this._msg = { err: true, conflict: code === "revision_conflict", text: code === "revision_conflict" ? this._t("conflict") : `${this._t("failed")}: ${esc(err && (err.message || code))}. ${esc(this._t("failed_fix"))}` };
     }
     this._busy = false; this._render();
   }
@@ -588,7 +821,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
         const data = JSON.parse(String(reader.result));
         if (!data || data.schema_version !== 1 || !Array.isArray(data.rooms)) throw new Error("schema");
         this._commit(l => Object.assign(l, data, { revision: l.revision }));
-      } catch (_) { this._msg = { err: true, text: this._t("import_failed") }; this._render(); }
+      } catch (_) { this._msg = { err: true, text: `${this._t("import_failed")}. ${this._t("import_fix")}` }; this._render(); }
     };
     reader.readAsText(file);
   }
@@ -598,7 +831,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
   }
   _issueText(issues) {
     const names = id => { const r = this._room(id); const meta = r && this._rooms.find(m => m.key === r.room_key); return esc((meta && meta.name) || id); };
-    return `${this._t("invalid")}<br>${issues.slice(0, 8).map(i => `${names(i.id)}: ${esc(this._t("e")[i.code] || i.code)}`).join("<br>")}`;
+    return `${this._t("invalid")}<br>${issues.slice(0, 8).map(i => `${names(i.id)}: ${esc(this._t("e")[i.code] || i.code)}`).join("<br>")}<br>${esc(this._t("invalid_fix"))}`;
   }
 
   // ------------------------------------------------------------------ floor plan template
@@ -715,7 +948,9 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
   _underlayPanel() {
     const t = k => this._t(k), u = this._ul[this._floor], num = v => Number(v).toLocaleString(this._lang, { maximumFractionDigits: 1 });
     const upload = `<label><button data-a="ul-pick">${u ? t("ul_replace") : t("ul_upload")}</button><input type="file" accept="image/png,image/jpeg,image/webp" data-f="ul_file" hidden></label>`;
-    if (!u) return `<div class="panel"><h4>${t("ul_title")}</h4><div class="chips">${upload}</div><div class="help">${t("ul_hint")}</div></div>`;
+    // v0.26.6.1 editor hotfix: one section, open while one of its tools is in use
+    const wrap = body => `<div class="panel">${this._sec("template", t("sec_template"), body, !!(this._tool && !["window", "door", "passage"].includes(this._tool)) || !!this._calib || !!this._trace)}</div>`;
+    if (!u) return wrap(`<div class="chips">${upload}</div><div class="help">${t("ul_hint")}</div>`);
     const tools = ["calibrate", "north", "separator", "trace"].map(k => `<button data-tool="${k}" aria-pressed="${this._tool === k}">${esc(t("tool")[k])}</button>`).join("");
     const scale = u.scale_m_per_px ? t("ul_scale").replace("{px}", String(Math.round(1 / u.scale_m_per_px))) : t("ul_uncal");
     let detail = this._tool ? `<div class="help">${esc(t("tool_help")[this._tool])}</div>` : "";
@@ -726,17 +961,17 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       const chips = tr.matches.slice(0, 3).map(m => `<button data-assign="${esc(m.key)}">${esc(m.name)}${m.expected ? ` · ${t("ul_expected")} ${num(m.expected)} m²` : ""}</button>`).join("");
       detail += `<div class="msg" role="status">${t("ul_found").replace("{a}", num(tr.areaM2))} – ${t("ul_assign")}:<div class="chips">${chips}<select data-f="ul_assign"><option value="">${t("ul_other")}</option>${this._rooms.map(m => `<option value="${esc(m.key)}">${esc(m.name || m.key)}</option>`).join("")}</select></div></div>`;
     }
-    return `<div class="panel"><h4>${t("ul_title")}</h4><div class="chips">${tools}</div>${detail}<div class="help">${scale}</div>
+    return wrap(`<div class="chips">${tools}</div>${detail}<div class="help">${scale}</div>
       <div class="chips"><label><input type="checkbox" data-f="ul_show"${this._showUl ? " checked" : ""}> ${t("ul_show")}</label>
         <label>${t("ul_opacity")} <input type="range" min="0.1" max="1" step="0.05" data-f="ul_opacity" value="${u.opacity}"></label>
         <label>${t("ul_close")} <input type="range" min="0" max="8" step="1" data-f="ul_close" value="${u.close_px}"></label>
-        ${upload}<button data-a="ul-delete">${t("ul_delete")}</button></div></div>`;
+        ${upload}<button data-a="ul-delete">${t("ul_delete")}</button></div>`);
   }
   _bindUnderlay(root, on) {
     on('[data-a="ul-pick"]', () => root.querySelector('[data-f="ul_file"]').click());
     on('[data-f="ul_file"]', el => { if (el.files && el.files[0]) this._upload(el.files[0]); }, "change");
     on('[data-a="ul-delete"]', () => this._deleteUnderlay());
-    on("[data-tool]", el => { this._setTool(el.dataset.tool, true); this._render(); });
+    on("[data-tool]", el => { this._setTool(el.dataset.tool, true); this._adding = false; this._menu = false; this._render(); });
     on('[data-a="ul-calibrate"]', () => this._calibrate(Number(root.querySelector('[data-f="ul_meters"]').value)));
     on("[data-assign]", el => this._assign(el.dataset.assign));
     on('[data-f="ul_assign"]', el => this._assign(el.value), "change");
@@ -765,7 +1000,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       // UI hotfix (F03): handles only for a chosen room or corner – a chosen wall keeps its neighbours tappable
       const sel = this._sel && this._sel.id === room.id && (this._sel.type === "room" || this._sel.type === "vertex");
       const meta = this._rooms.find(m => m.key === room.room_key);
-      if (room.polygon.length >= 2) out += `<polygon class="room${sel ? " sel" : ""}${bad.has(room.id) ? " err" : ""}" data-k="room" data-id="${esc(room.id)}" tabindex="0" role="button" aria-label="${esc((meta && meta.name) || room.room_key)}" points="${room.polygon.map(S).join(" ")}" stroke-width="${G.round3(sw)}"/>`;
+      if (room.polygon.length >= 2) out += `<polygon class="room${sel ? " sel" : ""}${bad.has(room.id) ? " err" : ""}" data-k="room" data-id="${esc(room.id)}" tabindex="0" role="button" aria-label="${esc((meta && meta.name) || room.room_key)}" points="${room.polygon.map(S).join(" ")}" stroke-width="${G.round3(sel ? sw * 2.5 : sw)}"/>`;
       if (room.polygon.length >= 3) {
         const c = G.labelPoint(room.polygon);
         const err = issues.find(i => i.id === room.id);
@@ -787,13 +1022,13 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     // 0.26.5.5: exterior walls thick, walls shared with a neighbour thin; guides while a room snaps
     const floorRooms = this._floorRooms().filter(x => x.polygon.length >= 3);
     const floorOpenings = this._layout.openings.filter(o => floorRooms.some(r => r.id === o.room_id));
-    out += V.wallsSvg(G.wallSegments(floorRooms, floorOpenings), n => G.round3(n * u));  // 0.26.6.0(2): as on the house map
+    out += V.wallsSvg(G.wallSegments(floorRooms, floorOpenings), n => G.round3(n * u));  // 0.26.6.1(2): as on the house map
     if (this._guides) {
       const g = this._guides;
       if (g.gx != null) out += `<line class="guide" x1="${G.round3(g.gx)}" y1="${G.round3(vb[1])}" x2="${G.round3(g.gx)}" y2="${G.round3(vb[1] + vb[3])}" stroke-width="${G.round3(u)}" stroke-dasharray="${G.round3(5 * u)} ${G.round3(4 * u)}"/>`;
       if (g.gy != null) out += `<line class="guide" x1="${G.round3(vb[0])}" y1="${G.round3(-g.gy)}" x2="${G.round3(vb[0] + vb[2])}" y2="${G.round3(-g.gy)}" stroke-width="${G.round3(u)}" stroke-dasharray="${G.round3(5 * u)} ${G.round3(4 * u)}"/>`;
     }
-    // 0.26.6.0(2): every wall can be tapped (a wide invisible band); the chosen room or wall shows its lengths
+    // 0.26.6.1(2): every wall can be tapped (a wide invisible band); the chosen room or wall shows its lengths
     const fmtLen = n => `${n.toFixed(2)} ${this._unitLabel()}`;  // UI hotfix (F02): schematic units are no metres
     for (const room of floorRooms) room.polygon.forEach((p, i) => {
       const q = room.polygon[(i + 1) % room.polygon.length];
@@ -813,6 +1048,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
         });
       });
     }
+    const orphaned = new Set(this._progress().orphans);   // U02: openings naming a contact that is gone
     for (const o of this._layout.openings) {
       const room = this._room(o.room_id);
       if (!room || room.floor_id !== this._floor || !(o.edge >= 0 && o.edge < room.polygon.length)) continue;
@@ -822,10 +1058,13 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       out += `<line class="op${sel ? " sel" : ""}${o.kind === "door" || o.kind === "passage" ? " inner" : ""}${bad.has(o.id) ? " err" : ""}" data-k="op" data-id="${esc(o.id)}" tabindex="0" role="button" aria-label="${esc(this._t("k")[o.kind] || o.kind)}" x1="${G.round3(a[0])}" y1="${G.round3(-a[1])}" x2="${G.round3(b[0])}" y2="${G.round3(-b[1])}" stroke-width="${G.round3(14 * u)}"/><line class="hitop" data-k="op" data-id="${esc(o.id)}" x1="${G.round3(a[0])}" y1="${G.round3(-a[1])}" x2="${G.round3(b[0])}" y2="${G.round3(-b[1])}" stroke="transparent" stroke-width="${G.round3(44 * u)}" pointer-events="stroke"/>`;
       const inward = V.inwardNormal(G, room.polygon, o.edge);
       out += `<g class="symbol" pointer-events="none">${V.openingSymbol(o.kind, a, b, inward, o.kind === "passage" ? "open" : "closed", n => G.round3(n * u), "#fff", o.kind === "door" ? G.doorGeometry(a, b, inward, o) : null)}</g>`;
+      if (orphaned.has(o.id)) out += `<circle class="orphan" data-orphan="${esc(o.id)}" pointer-events="none" cx="${G.round3((a[0] + b[0]) / 2)}" cy="${G.round3(-(a[1] + b[1]) / 2)}" r="${G.round3(6 * u)}" fill="#ffb020" stroke="#0a1f38" stroke-width="${G.round3(1.5 * u)}"><title>${esc(this._t("contact_gone"))}</title></circle>`;
       // both ends of the selected opening: drag to change its width (it stays centred on its position)
-      if (sel) for (const [i, q] of [a, b].entries()) out += `<circle class="dot" cx="${G.round3(q[0])}" cy="${G.round3(-q[1])}" r="${G.round3(7 * u)}" stroke-width="${G.round3(sw)}"/><circle class="handle hit wh" data-k="ow" data-id="${esc(o.id)}" data-i="${i}" cx="${G.round3(q[0])}" cy="${G.round3(-q[1])}" r="${G.round3(r)}"><title>${esc(this._t("width_handle"))}</title></circle>`;
+      // v0.26.6.1: the width handles never cover the middle of a small opening – there it is moved, not widened
+      const wr = Math.min(r, Math.hypot(b[0] - a[0], b[1] - a[1]) * 0.3);
+      if (sel) for (const [i, q] of [a, b].entries()) out += `<circle class="dot" cx="${G.round3(q[0])}" cy="${G.round3(-q[1])}" r="${G.round3(7 * u)}" stroke-width="${G.round3(sw)}"/><circle class="handle hit wh" data-k="ow" data-id="${esc(o.id)}" data-i="${i}" cx="${G.round3(q[0])}" cy="${G.round3(-q[1])}" r="${G.round3(wr)}"><title>${esc(this._t("width_handle"))}</title></circle>`;
     }
-    // Hotfix 0.26.6.0: the plan's connections, also in the editor. A connection is a logical link (dashed, its kind
+    // Hotfix 0.26.6.1: the plan's connections, also in the editor. A connection is a logical link (dashed, its kind
     // as a symbol); where an opening already lies on the wall both rooms share it is drawn once – as that opening.
     // A door or open passage without a wall the two rooms really share is marked as not carried by the plan.
     const rooms = this._layout.rooms;
@@ -844,7 +1083,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
         + `<circle class="conn-mark" cx="${G.round3(at[0])}" cy="${G.round3(-at[1])}" r="${G.round3(12 * u)}" stroke-width="${G.round3(2 * u)}"/>`
         + `<text x="${G.round3(at[0])}" y="${G.round3(-at[1] + 4.5 * u)}" text-anchor="middle" font-size="${G.round3(12 * u)}">${V.CONNECTION_SYMBOL[c.kind] || "⇄"}</text><title>${esc(label)}</title></g>`;
     }
-    // 0.26.6.0(10): the fitted plan as a preview over the drawing – rooms dashed, the walls they now share bright
+    // 0.26.6.1(10): the fitted plan as a preview over the drawing – rooms dashed, the walls they now share bright
     if (this._preview && this._preview.join) {
       const pr = this._preview.layout.rooms.filter(x => x.floor_id === this._floor && x.polygon.length >= 3);
       for (const r of pr) out += `<polygon class="join-ghost" points="${r.polygon.map(S).join(" ")}" stroke-width="${G.round3(2 * u)}" stroke-dasharray="${G.round3(6 * u)} ${G.round3(4 * u)}"/>`;
@@ -863,53 +1102,97 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     svg.setAttribute("viewBox", this._viewBox().map(G.round3).join(" "));
     svg.innerHTML = this._svgInner();
   }
+  // v0.26.6.1 editor hotfix: a section that opens on demand; it remembers being opened or closed by the user
+  _sec(id, title, body, open = false) {
+    const isOpen = this._open[id] ?? open;
+    return `<details class="sec" data-sec="${esc(id)}"${isOpen ? " open" : ""}><summary>${esc(title)}</summary><div class="body">${body}</div></details>`;
+  }
+  _addPanel() {
+    const t = k => this._t(k), missing = this._rooms.filter(m => !this._layout.rooms.some(r => r.room_key === m.key));
+    const icon = d => `<svg viewBox="0 0 40 30" aria-hidden="true"><path d="${d}"/></svg>`;
+    const shapes = { rect: "M4 4H36V26H4Z", l: "M4 4H36V15H20V26H4Z", u: "M4 4H36V26H27V13H13V26H4Z", precise: "M4 8L24 4L36 14L30 26L6 22Z" };
+    const shapeButtons = Object.entries(shapes).map(([k, d]) => `<button data-shape="${k}" aria-pressed="${this._shape === k}">${icon(d)}${esc(k === "precise" ? t("shape_precise") : t(k))}</button>`).join("");
+    const body = missing.length
+      ? `<label>${t("which_room")}<br><select data-f="add_key">${missing.map(m => `<option value="${esc(m.key)}">${esc(m.name || m.key)}</option>`).join("")}</select></label>
+        <div><b>${t("shape")}</b><div class="shapes" role="group" aria-label="${esc(t("shape"))}">${shapeButtons}</div></div>
+        <div class="sub">${esc(t("shape_help"))}</div>
+        ${this._shape === "precise" ? `<div class="sub">${t("shape_precise_hint")}</div>` : ""}
+        <div class="bar"><button class="primary" data-a="add">${t("add_room")}</button><button data-a="add_close">${t("add_cancel")}</button></div>`
+      : `<div class="sub">${t("all_placed")}</div><div class="bar"><button data-a="propose">${t("propose")}</button><button data-a="add_close">${t("close")}</button></div>`;
+    return `<div class="panel selected"><h4>${t("new_room")}</h4>${body}</div>`;
+  }
+  _emptyPanel() {
+    const t = k => this._t(k), b = this._layout.building, p = this._progress();
+    // 0.26.7.0: a step is ticked only when its condition is shown – never because rooms merely exist
+    const steps = [["step_floor", !!this._floor], ["step_rooms", p.rooms > 0 && !p.missing], ["step_shape", p.rooms > 0 && p.shaped, true],
+      ["step_openings", p.windows > 0], ["step_contacts", p.assigned > 0 && !p.unassigned && !p.orphans.length], ["step_save", p.rooms > 0 && p.saved]];
+    const next = steps.findIndex(([, done, optional]) => !done && !optional);
+    const list = steps.map(([k, done, optional], i) => `<li class="${done ? "done" : ""}${i === next ? " next" : ""}"><span class="n">${done ? "✓" : i + 1}</span>${esc(t(k))}${optional && !done ? ` <span class="sub">(${esc(t("step_optional"))})</span>` : ""}</li>`).join("");
+    const deg = ((Number(b.north_deg) || 0) % 360 + 360) % 360, dir = t("dirs")[Math.round(deg / 22.5) % 16];
+    const building = `<div class="sub">${esc(t("north_help"))}</div>
+      <div class="north"><b>${esc(t("north"))}</b>${compassRose(deg, this._lang === "de" ? ["N", "O", "S", "W"] : ["N", "E", "S", "W"])}
+        <div class="fields"><label>°<br><input type="number" step="1" min="0" max="359.9" data-f="north" value="${esc(Math.round(deg * 10) / 10)}"></label></div>
+        <div class="sub" data-north-now>${esc(t("north_now").replace("{dir}", dir).replace("{deg}", String(Math.round(deg))))} ${esc(t("north_keep"))}</div>
+        <div class="sub">${esc(t("north_examples"))}</div><div class="sub">${esc(t("north_drag"))}</div></div>
+      <label><input type="checkbox" data-f="north_confirmed"${b.north_confirmed ? " checked" : ""}> ${t("north_confirmed")}</label><div class="sub">${esc(t("north_confirmed_help"))}</div>`;
+    return `<div class="panel"><h4>${t("steps_title")}</h4><div class="sub">${esc(t("start_intro"))}</div><ol class="steps">${list}</ol>
+      ${p.missing ? `<div class="bar"><button class="primary" data-a="add_open">${t("add_room")}</button></div>` : ""}
+      <div class="help">${t("none")}</div>${this._sec("building", t("sec_building"), building)}</div>`;
+  }
   _panel() {
     const t = k => this._t(k), sel = this._sel;
-    const b = this._layout.building;
-    const building = `<div class="fields"><label>${t("north")}<br><input type="number" step="0.1" min="0" max="359.9" data-f="north" value="${esc(b.north_deg)}"></label>
-      <label><input type="checkbox" data-f="north_confirmed"${b.north_confirmed ? " checked" : ""}> ${t("north_confirmed")}</label></div>`;
-    if (!sel) return `<div class="panel"><h4>${t("building")}</h4>${building}<div class="help">${t("none")}</div></div>`;
+    if (this._adding && !sel) return this._addPanel();
+    if (!sel) return this._emptyPanel();
     if (sel.type === "opening") {
       const o = this._layout.openings.find(x => x.id === sel.id);
       if (!o) return "";
       const room = this._room(o.room_id);
       // hotfix after review (F01): any contact of the setup can be the sensor of a drawn opening – the room's own first,
       // then the others with the room they air (a guest WC window set up for the hall is drawn in the WC)
-      const own = (this._live[room && room.room_key] || {}).contact_entities || [];
-      const airs = c => Object.keys(this._live).filter(k => k !== (room && room.room_key) && ((this._live[k] || {}).contact_entities || []).includes(c)).map(k => (this._rooms.find(m => m.key === k) || {}).name || k);
-      const others = [...new Set(Object.values(this._live).flatMap(v => (v && v.contact_entities) || []))].filter(c => !own.includes(c)).sort();
+      const own = roomContacts(this._live[room && room.room_key]);
+      const airs = c => Object.keys(this._live).filter(k => k !== (room && room.room_key) && roomContacts(this._live[k]).includes(c)).map(k => (this._rooms.find(m => m.key === k) || {}).name || k);
+      const others = [...new Set(Object.values(this._live).flatMap(v => roomContacts(v)))].filter(c => !own.includes(c)).sort();
       const contacts = [...new Set([...own, ...others, ...o.contacts])];
       const opts = (map, value) => Object.entries(map).map(([k, v]) => `<option value="${k}"${k === value ? " selected" : ""}>${esc(v)}</option>`).join("");
-      return `<div class="panel"><h4>${t("opening")}</h4><div class="fields">
+      const meta = room && this._rooms.find(m => m.key === room.room_key);
+      const known = new Set([...own, ...others]), provable = this._contactsComplete();
+      const checks = contacts.map(c => { const via = own.includes(c) ? [] : airs(c), gone = provable && !known.has(c); return `<label${gone ? ' class="gone"' : ""}><input type="checkbox" data-contact="${esc(c)}"${o.contacts.includes(c) ? " checked" : ""}> <span>${esc(c)}${gone ? ` <small class="warn">⚠ ${esc(t("contact_gone"))}</small>` : ""}${via.length ? ` <small>(${esc(t("airs"))} ${esc(via.join(", "))})</small>` : ""}</span></label>`; }).join("");
+      const place = `<div class="fields"><label>${t("wall")}<br><input type="number" min="1" max="${room ? room.polygon.length : 1}" data-f="edge" value="${o.edge + 1}"></label>
+        <label>${t("position")}<br><input type="number" step="0.01" min="0" max="1" data-f="offset" value="${esc(o.offset)}"></label></div>`;
+      const details = `<div class="fields"><label>${t("mechanics")}<br><select data-f="mechanics">${opts(t("m"), o.mechanics)}</select></label></div>`;
+      return `<div class="panel selected"><h4>${esc(t("k")[o.kind] || o.kind)} · ${esc((meta && meta.name) || (room && room.room_key) || "")}</h4><div class="fields">
         <label>${t("kind")}<br><select data-f="kind">${opts(t("k"), o.kind)}</select></label>
-        <label>${t("mechanics")}<br><select data-f="mechanics">${opts(t("m"), o.mechanics)}</select></label>
         <label>${t("width")}<br><span class="wbox"><button data-w="-1" aria-label="${t("narrower")}">−</button><input type="number" step="0.05" min="0.1" data-f="width" value="${esc(o.width_m == null ? "" : o.width_m)}" placeholder="${esc(shownWidth(room, o))}"><button data-w="1" aria-label="${t("wider")}">+</button></span></label>
-        <label>${t("wall")}<br><input type="number" min="1" max="${room ? room.polygon.length : 1}" data-f="edge" value="${o.edge + 1}"></label>
-        <label>${t("position")}<br><input type="number" step="0.01" min="0" max="1" data-f="offset" value="${esc(o.offset)}"></label>
         ${o.kind === "door" ? `<label>${t("door_hinge")}<br><select data-f="door_hinge">${opts(t("hinges"), o.door_hinge || "")}</select></label>
         <label>${t("door_swing")}<br><select data-f="door_swing">${opts(t("swings"), o.door_swing || "in")}</select></label>` : ""}</div>
         ${T.INTERIOR_KINDS.has(o.kind) && room && !T.openingTarget(this._layout, room, o) ? `<div class="msg" role="status">${t("not_interior")}</div>` : ""}
         ${G.windowOnInteriorWall(this._layout.rooms, o) ? `<div class="msg" role="status">${t("window_inside")} <button data-a="window_out">${t("window_out")}</button></div>` : ""}
-        <div>${t("contacts")}: ${contacts.map(c => { const via = own.includes(c) ? [] : airs(c); return `<label><input type="checkbox" data-contact="${esc(c)}"${o.contacts.includes(c) ? " checked" : ""}> ${esc(c)}${via.length ? ` <small>(${esc(t("airs"))} ${esc(via.join(", "))})</small>` : ""}</label>`; }).join(" ") || "–"}</div>
-        <div><button data-a="delete">${t("delete")}</button></div></div>`;
+        ${o.kind === "passage" ? "" : `<div><b>${t("contacts")}</b><div class="sub">${t("contacts_hint")}</div><div class="checks">${checks || `<span class="sub">${t("no_contacts")}</span>`}</div></div>`}
+        ${this._sec("place", t("sec_place"), place)}${this._sec("details", t("sec_details"), details)}
+        <div><button class="danger" data-a="delete">${t("delete")}</button></div></div>`;
     }
     if (sel.type === "wall") return this._wallPanel(sel);
     const room = this._room(sel.id);
     if (!room) return "";
     const meta = this._rooms.find(m => m.key === room.room_key);
     const area = room.polygon.length >= 3 ? Math.abs(G.signedArea(room.polygon)).toFixed(1) : "–";
-    const vertices = this._mode === "precise" ? room.polygon.map((p, i) => `<div class="vertex"><span>${i + 1}</span><input type="number" step="0.05" data-vx="${i}" value="${p[0]}" aria-label="${t("x")}"><input type="number" step="0.05" data-vy="${i}" value="${p[1]}" aria-label="${t("y")}"><button data-del-v="${i}" aria-label="${t("delete")}">✕</button></div>`).join("") : "";
+    const vertices = room.polygon.map((p, i) => `<div class="vertex"><span>${i + 1}</span><input type="number" step="0.05" data-vx="${i}" value="${p[0]}" aria-label="${t("corner")} ${i + 1} ${t("x")}"><input type="number" step="0.05" data-vy="${i}" value="${p[1]}" aria-label="${t("corner")} ${i + 1} ${t("y")}"><button data-del-v="${i}" aria-label="${t("delete")}">✕</button></div>`).join("");
     const others = this._layout.rooms.filter(r => r.id !== room.id);
     const conns = this._layout.connections.filter(c => c.a === room.id || c.b === room.id);
     const name = id => { if (id === "outside") return t("outside"); const r = this._room(id); const m = r && this._rooms.find(x => x.key === r.room_key); return esc((m && m.name) || id); };
-    return `<div class="panel"><h4>${esc((meta && meta.name) || room.room_key)}</h4>
-      <div>${t("area")}: ${area} m² · ${t("provenance")}: ${esc(t("p")[room.provenance] || room.provenance)}</div>
+    const connections = `<div class="sub">${t("conn_hint")}</div>
+      <div>${conns.map(c => `${name(c.a === room.id ? c.b : c.a)} (${esc(t("c")[c.kind] || c.kind)})${this._convertible(c) ? ` <button data-conv-c="${esc(c.id)}">${esc(t(c.kind === "door" ? "conv_door" : "conv_passage"))}</button>` : ""} <button data-del-c="${esc(c.id)}" aria-label="${t("delete")}">✕</button>`).join(" · ") || "–"}</div>
+      <div class="bar"><select data-f="conn_to" aria-label="${esc(t("connections"))}"><option value="outside">${t("outside")}</option>${others.map(r => `<option value="${esc(r.id)}">${name(r.id)}</option>`).join("")}</select>
+        <select data-f="conn_kind" aria-label="${esc(t("kind"))}">${Object.entries(t("c")).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</select><button data-a="connect">${t("add")}</button></div>`;
+    const precise = this._mode === "precise";
+    return `<div class="panel selected"><h4>${esc((meta && meta.name) || room.room_key)}</h4>
+      <div class="sub">${esc(t("room_info").replace("{a}", area).replace("{p}", `${t("provenance")}: ${t("p")[room.provenance] || room.provenance}`))}</div>
+      <div class="bar"><button data-a="window">${t("add_window")}</button><button data-a="rotate" title="${esc(t("rotate_help"))}">${t("rotate")}</button><button data-a="${precise ? "corners_done" : "edit_corners"}" aria-pressed="${precise}">${t(precise ? "corners_done" : "edit_corners")}</button></div>
+      <div class="sub">${esc(t("rotate_help"))}</div>
       <div class="fields"><label>${t("floor")}<br><select data-f="floor">${this._layout.floors.map(f => `<option value="${esc(f.id)}"${f.id === room.floor_id ? " selected" : ""}>${esc(this._floorName(f))}</option>`).join("")}</select></label></div>
-      ${vertices}
-      <div class="bar"><button data-a="rotate">${t("rotate")}</button><button data-a="window">${t("add_window")}</button><button data-a="delete">${t("delete")}</button></div>
-      <div><b>${t("connections")}</b>: ${conns.map(c => `${name(c.a === room.id ? c.b : c.a)} (${esc(t("c")[c.kind] || c.kind)})${this._convertible(c) ? ` <button data-conv-c="${esc(c.id)}">${esc(t(c.kind === "door" ? "conv_door" : "conv_passage"))}</button>` : ""} <button data-del-c="${esc(c.id)}" aria-label="${t("delete")}">✕</button>`).join(" · ") || "–"}</div>
-      <div class="bar"><select data-f="conn_to"><option value="outside">${t("outside")}</option>${others.map(r => `<option value="${esc(r.id)}">${name(r.id)}</option>`).join("")}</select>
-        <select data-f="conn_kind">${Object.entries(t("c")).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</select><button data-a="connect">${t("add")}</button></div></div>`;
+      ${precise ? this._sec("corners", t("sec_corners"), `<div class="sub">${t("corners_hint")}</div>${vertices}`) : ""}
+      ${this._sec("connections", `${t("sec_connections")}${conns.length ? ` (${conns.length})` : ""}`, connections)}
+      <div><button class="danger" data-a="delete">${t("delete")}</button></div></div>`;
   }
   // UI hotfix (F03): under a finger the wide touch bands of walls and openings overlap – the nearest one is meant.
   // An opening wins over the wall it lies on; of two walls on the same line the one of the room tapped into.
@@ -930,27 +1213,29 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     return opening && (!wall || opening.d <= wall.d + 2 * this._unit()) ? opening.sel : wall ? wall.sel : null;
   }
   _unitLabel() { return this._layout.building.units === "m" ? "m" : this._t("unit_schematic"); }
-  // 0.26.6.0(2): a tapped wall – its length in metres, which corner stays, and an optional lock of the length
+  // 0.26.6.1(2): a tapped wall – its length in metres, which corner stays, and an optional lock of the length
   _wallPanel(sel) {
     const t = k => this._t(k), room = this._room(sel.id);
     if (!room || !(sel.index >= 0 && sel.index < room.polygon.length)) return "";
     const meta = this._rooms.find(m => m.key === room.room_key), n = room.polygon.length, fixed = this._wallFixed || "start";
     const locked = (room.locked_walls || []).includes(sel.index), metric = this._layout.building.units === "m";
-    // 0.26.6.0(10): the angles at both corners of this wall, each with "to 90°" and its own angle lock
+    // 0.26.6.1(10): the angles at both corners of this wall, each with "to 90°" and its own angle lock
     const ends = [sel.index, (sel.index + 1) % n], cornerLocks = new Set(room.locked_corners || []);
     const angles = ends.map((c, j) => { const a = G.cornerAngle(room.polygon, c), lockedA = cornerLocks.has(c);
       return `<div class="corner-row"><b>${t("angle")} ${t("corner")} ${c + 1}: ${a.toFixed(1).replace(".", this._lang === "de" ? "," : ".")}°</b>
         <button data-a="square" data-corner="${c}" data-keep="${j === 0 ? "out" : "in"}"${lockedA || G.isRightCorner(room.polygon, c) ? " disabled" : ""}>${t("corner_square").replace("{c}", c + 1)}</button>
         <label><input type="checkbox" data-f="corner_lock" data-corner="${c}"${lockedA ? " checked" : ""}> ${t("corner_lock").replace("{c}", c + 1)}</label></div>`; }).join("");
-    return `<div class="panel"><h4>${esc(t("wall"))} ${sel.index + 1} · ${esc((meta && meta.name) || room.room_key)}</h4><div class="fields">
+    const scale = `<div class="sub">${t("scale_hint")}</div><div class="fields"><label>${t("scale_real")}<br><input type="number" step="0.01" min="0.1" data-f="scale_m" placeholder="${t("scale_placeholder")}"></label></div><div class="bar"><button data-a="calibrate">${t("scale_apply")}</button></div>`;
+    // v0.26.6.1 editor hotfix: length first (with the corner that stays and the lock), then angles, then the scale
+    return `<div class="panel selected"><h4>${esc(t("wall"))} ${sel.index + 1} · ${esc((meta && meta.name) || room.room_key)}</h4><div class="fields">
       <label>${metric ? t("wall_length") : t("wall_length_units")}<br><input type="number" step="0.01" min="0.1" data-f="wall_len" value="${G.edgeLength(room.polygon, sel.index).toFixed(2)}"${locked ? " disabled" : ""}></label>
       <label>${t("wall_fixed")}<br><select data-f="wall_fixed"><option value="start"${fixed === "start" ? " selected" : ""}>${t("corner")} ${sel.index + 1}</option><option value="end"${fixed === "end" ? " selected" : ""}>${t("corner")} ${(sel.index + 1) % n + 1}</option></select></label>
       <label><input type="checkbox" data-f="wall_lock"${locked ? " checked" : ""}> ${t("wall_lock")}</label></div>
-      <div class="help">${t("wall_help")}</div><div class="bar"><button class="primary" data-a="wall_apply"${locked ? " disabled" : ""}>${t("apply")}</button></div>
-      <div class="angles">${angles}</div>
-      ${metric ? "" : `<div class="msg">${t("scale_hint")}</div><div class="fields"><label>${t("scale_real")}<br><input type="number" step="0.01" min="0.1" data-f="scale_m" placeholder="${t("scale_placeholder")}"></label></div><div class="bar"><button data-a="calibrate">${t("scale_apply")}</button></div>`}</div>`;
+      <div class="bar"><button class="primary" data-a="wall_apply"${locked ? " disabled" : ""}>${t("apply")}</button></div><div class="sub">${t("wall_help")}</div>
+      ${this._sec("angles", t("sec_angles"), `<div class="angles">${angles}</div>`, true)}
+      ${metric ? "" : this._sec("scale", t("sec_scale"), scale)}</div>`;
   }
-  // 0.26.6.0(10): a refused edit names what stands in the way (a locked wall or a locked angle) and how to solve it
+  // 0.26.6.1(10): a refused edit names what stands in the way (a locked wall or a locked angle) and how to solve it
   _blocked(res) {
     if (res.edge != null) return this._t("blocked_wall").replaceAll("{w}", res.edge + 1);
     if (res.corner != null) return this._t("blocked_corner").replaceAll("{c}", res.corner + 1);
@@ -984,7 +1269,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     if ((room.locked_corners || []).includes(corner)) { this._msg = { err: true, text: this._t("corner_locked").replace("{c}", corner + 1) }; this._render(); return; }
     this._takePolygons(G.squareCorner(this._layout, room.id, corner, keep));
   }
-  // 0.26.6.0(10): fit the rooms of this floor together – shown as a preview first, saved only when applied
+  // 0.26.6.1(10): fit the rooms of this floor together – shown as a preview first, saved only when applied
   _joinRooms() {
     const t = k => this._t(k), rooms = this._floorRooms(), res = G.joinRooms(rooms);
     if (!res.matches.length) { this._msg = { err: true, text: t("join_none") }; this._render(); return; }
@@ -1022,7 +1307,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     }, { force: true });  // the scale changes every length on purpose – also a locked one, in proportion
     this._fit(); this._render();
   }
-  // 0.26.6.0(6): windows on a wall shared with another room are offered a move to the nearest outside wall
+  // 0.26.6.1(6): windows on a wall shared with another room are offered a move to the nearest outside wall
   _insideWindows() { return this._layout.openings.filter(o => G.windowOnInteriorWall(this._layout.rooms, o)); }
   _windowsOut(ids) {
     const moves = ids.map(id => { const o = this._layout.openings.find(x => x.id === id); return [id, o && G.exteriorSpot(this._layout.rooms, this._room(o.room_id), o)]; }).filter(([, spot]) => spot);
@@ -1052,30 +1337,114 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     this._commit(l => { l.openings.push(o); l.connections = l.connections.filter(x => x.id !== id); });
     this._sel = { type: "opening", id: o.id }; this._render();
   }
+  _bindCompass(root) {
+    const rose = root.querySelector("[data-compass]");
+    if (!rose) return;
+    const at = ev => { const r = rose.getBoundingClientRect(); return northFromPointer(ev.clientX - (r.left + r.width / 2), ev.clientY - (r.top + r.height / 2)); };
+    let dragging = false, value = null;
+    const show = deg => {   // live feedback while dragging; the layout changes once, on release (one undo step)
+      const input = root.querySelector('[data-f="north"]'); if (input) input.value = String(deg);
+      const needle = rose.querySelector("[data-compass-needle]"); if (needle) needle.style.transform = `rotate(${180 - deg}deg)`;
+      const now = root.querySelector("[data-north-now]");
+      if (now) now.textContent = `${this._t("north_now").replace("{dir}", this._t("dirs")[Math.round(deg / 22.5) % 16]).replace("{deg}", String(deg))} ${this._t("north_keep")}`;
+    };
+    rose.addEventListener("pointerdown", ev => { dragging = true; value = at(ev); show(value); try { rose.setPointerCapture(ev.pointerId); } catch (_) { /* no capture */ } ev.preventDefault(); });
+    rose.addEventListener("pointermove", ev => { if (dragging) { value = at(ev); show(value); } });
+    const end = () => { if (!dragging) return; dragging = false; if (value != null) this._commit(l => { setNorth(l, value); }); value = null; };
+    rose.addEventListener("pointerup", end); rose.addEventListener("pointercancel", end);
+    rose.addEventListener("keydown", ev => {
+      const step = ev.key === "ArrowRight" || ev.key === "ArrowUp" ? 1 : ev.key === "ArrowLeft" || ev.key === "ArrowDown" ? -1 : 0;
+      if (!step) return;
+      ev.preventDefault();
+      this._commit(l => { setNorth(l, (Number(l.building.north_deg) || 0) + step * (ev.shiftKey ? 15 : 1)); });
+    });
+  }
+  // v0.26.6.1 editor hotfix: the hint for what is selected or active – else the next sensible step of the workflow
+  // (floor → rooms → windows/doors → contacts → save). Shown quietly over the drawing, never a forced wizard.
+  _contactsComplete() { return this._rooms.length > 0 && this._rooms.every(m => this._live && this._live[m.key] && Array.isArray(this._live[m.key].contact_entities)); }
+  _progress() {
+    const rooms = this._floorRooms().filter(r => r.polygon.length >= 3), ids = new Set(rooms.map(r => r.id));
+    const openings = this._layout.openings.filter(o => ids.has(o.room_id));
+    const contacts = new Set(Object.values(this._live || {}).flatMap(v => roomContacts(v)));
+    const missing = this._rooms.filter(m => !this._layout.rooms.some(r => r.room_key === m.key)).length;
+    const unassigned = contacts.size ? openings.filter(o => o.kind !== "passage" && !(o.contacts || []).length).length : 0;
+    // U02: an assignment counts only with contacts FreshAirIQ really has (any room's – a window may air another room);
+    // an opening naming a removed or renamed contact needs a check (nothing is deleted on its own)
+    // "gone" is only provable while every configured room reports its contact list – missing live data is no evidence
+    const orphans = this._contactsComplete() ? openings.filter(o => (o.contacts || []).some(c => !contacts.has(c))).map(o => o.id) : [];
+    const assigned = openings.filter(o => (o.contacts || []).length && (o.contacts || []).every(c => contacts.has(c))).length;
+    // U03: "position and shape adjusted" from the saved layout itself – a room the user drew or edited carries
+    // provenance "user" (stored, part of undo/redo); proposed, traced or calculated rooms do not
+    const shaped = rooms.some(r => r.provenance === "user");
+    return { rooms: rooms.length, missing, windows: openings.filter(o => o.kind === "window" || o.kind === "roof_window").length, unassigned, assigned, orphans, contacts: contacts.size,
+      shaped, dirty: this._dirty, saved: Number(this._revision || 0) > 0 && !this._dirty };
+  }
+  _hint() {
+    const t = k => this._t(k), sel = this._sel;
+    if (this._tool) return (t("tool_help") || {})[this._tool] || "";
+    if (this._adding) return t("hint_adding");
+    if (sel && sel.type === "vertex") return t(touchDevice() ? "hint_vertex_touch" : "hint_vertex").replace("{c}", sel.index + 1);
+    if (sel && sel.type === "wall") return t("hint_wall").replace("{w}", sel.index + 1);
+    if (sel && sel.type === "opening") return t("hint_opening");
+    if (sel && sel.type === "room") return t(this._mode === "precise" ? "hint_room_precise" : "hint_room_quick");
+    if (this._modeHint) return t("mode_help")[this._mode] || "";
+    const p = this._progress();
+    if (!p.rooms) return t("hint_empty");
+    if (p.missing) return t("hint_next_missing").replace("{n}", p.missing);
+    if (!p.windows) return t("hint_next_windows");
+    if (p.orphans.length) return t("hint_next_orphans").replace("{n}", p.orphans.length);
+    if (p.unassigned) return t("hint_next_contacts").replace("{n}", p.unassigned);
+    if (p.dirty) return t("hint_next_save");
+    return t(this._mode === "precise" ? "hint_precise" : "hint_done");
+  }
+  _selName() {
+    const sel = this._sel;
+    if (!sel) return "";
+    const o = sel.type === "opening" && this._layout.openings.find(x => x.id === sel.id), room = this._room(o ? o.room_id : sel.id);
+    const meta = room && this._rooms.find(m => m.key === room.room_key), name = (meta && meta.name) || (room && room.room_key) || "";
+    if (o) return `${this._t("k")[o.kind] || o.kind} · ${name}`;
+    if (sel.type === "wall") return `${this._t("wall")} ${sel.index + 1} · ${name}`;
+    if (sel.type === "vertex") return `${this._t("corner")} ${sel.index + 1} · ${name}`;
+    return name;
+  }
   _render() {
     const keep = editorFocus(this.shadowRoot.activeElement);  // hotfix F02: keep the focused control and caret
+    this._applyLayout();
     const t = k => this._t(k);
     const missing = this._rooms.filter(m => !this._layout.rooms.some(r => r.room_key === m.key));
-    const msg = this._msg ? `<div class="msg${this._msg.err ? " err" : ""}" role="alert">${this._msg.text}${this._msg.conflict ? ` <button data-a="export">${t("export")}</button> <button data-a="reload">${t("reload")}</button>` : ""}</div>` : "";
+    const close = `<button class="x" data-a="msg_close" aria-label="${esc(t("msg_close"))}">✕</button>`;
+    const msg = this._msg ? `<div class="msg${this._msg.err ? " err" : ""}" role="alert">${this._msg.busy || this._busy ? "" : close}${this._msg.text}${this._msg.conflict ? ` <button data-a="export">${t("export")}</button> <button data-a="reload">${t("reload")}</button>` : ""}</div>` : "";
     const preview = this._preview ? `<div class="msg" role="status">${this._preview.join ? this._preview.join.notes.map(x => `<div>${esc(x)}</div>`).join("") : `${t("preview")}: ${this._preview.changed} ${t("changed_rooms")}`} <button class="primary" data-a="apply">${t("apply")}</button> <button data-a="no-apply">${t("cancel")}</button></div>` : "";
+    const inside = this._insideWindows().length ? `<div class="msg" role="status">${t("windows_inside").replace("{n}", this._insideWindows().length)} <button data-a="windows_out">${t("windows_out")}</button></div>` : "";
+    // with the properties folded away (phone), the selection stays and one tap brings its properties back
+    const reopen = this._panelHidden && this._sel && this._isNarrow() ? ` <button data-a="panel_open">${t("edit_sel")}</button>` : "";
+    const hint = `<div class="hint help" role="status" aria-live="polite">${this._panelHidden && this._sel ? `<b>${esc(t("selected").replace("{name}", this._selName()))}</b> · ` : ""}${esc(this._hint())}${reopen}</div>`;
+    const tool = k => `<button data-tool="${k}" aria-pressed="${this._tool === k}" title="${esc(t("tool_help")[k])}">${esc(t(`tb_${k}`))}</button>`;
+    const menu = `<div class="ov menu" role="dialog" aria-label="${esc(t("more_title"))}"${this._menu ? "" : " hidden"}><h4>${t("more_title")}</h4>
+      <div class="row"><label>${t("grid")} <select data-f="grid">${GRIDS.map(g => `<option value="${g}"${g === this._grid ? " selected" : ""}>${g ? `${g} m` : t("off")}</option>`).join("")}</select></label><button data-a="snap90" aria-pressed="${!!this._snap90}">${t("snap90")}</button></div>
+      <div class="row"><button data-a="join">${t("join")}</button></div>
+      <div class="row">${missing.length ? `<button data-a="missing">${t("missing")}</button>` : ""}<button data-a="propose">${t("propose")}</button></div>
+      <div class="row"><button data-a="export">${t("export")}</button><label><button data-a="import-btn">${t("import")}</button><input type="file" accept="application/json" data-f="import" hidden></label></div>
+      <details class="sec hdet" data-sec="help"${this._open.help ? " open" : ""}><summary>${t("help_title")}</summary><div class="body help">${t("help")}</div></details>
+      <div class="row"><button data-a="menu">${t("close")}</button></div></div>`;
     this.shadowRoot.innerHTML = `<style>${STYLE}</style>
-      <div class="bar" role="toolbar">
-        <button data-mode="quick" aria-pressed="${this._mode === "quick"}">${t("quick")}</button><button data-mode="precise" aria-pressed="${this._mode === "precise"}">${t("precise")}</button>
-        <button data-a="undo" aria-label="${t("undo")}"${this._history.past.length ? "" : " disabled"}>↶</button><button data-a="redo" aria-label="${t("redo")}"${this._history.future.length ? "" : " disabled"}>↷</button>
-        <button data-a="zoom-out" aria-label="${t("zoom_out")}">−</button><button data-a="zoom-in" aria-label="${t("zoom_in")}">+</button><button data-a="fit">${t("fit")}</button>
-        <label>${t("grid")} <select data-f="grid">${GRIDS.map(g => `<option value="${g}"${g === this._grid ? " selected" : ""}>${g ? `${g} m` : t("off")}</option>`).join("")}</select></label>
-        <label>${t("floor")} <select data-f="view_floor">${this._layout.floors.map(f => `<option value="${esc(f.id)}"${f.id === this._floor ? " selected" : ""}>${esc(this._floorName(f))}</option>`).join("")}</select></label>
-        <button data-a="snap90" aria-pressed="${!!this._snap90}">${t("snap90")}</button><button data-a="join">${t("join")}</button>
+      <div class="tools" role="toolbar" aria-label="${esc(t("grp_edit"))}">
+        <div class="tg tg-floor"><label>${t("floor")} <select data-f="view_floor">${this._layout.floors.map(f => `<option value="${esc(f.id)}"${f.id === this._floor ? " selected" : ""}>${esc(this._floorName(f))}</option>`).join("")}</select></label></div>
+        <div class="tg tg-mode seg" role="group" aria-label="${esc(t("mode_label"))}"><button data-mode="quick" aria-pressed="${this._mode === "quick"}" title="${esc(t("quick_title"))}">${t("quick")}</button><button data-mode="precise" aria-pressed="${this._mode === "precise"}" title="${esc(t("precise_title"))}">${t("precise")}</button></div>
+        <div class="tg tg-add" role="group" aria-label="${esc(t("openings_bar"))}"><button data-a="add_open" aria-pressed="${!!this._adding}">${t("tb_room")}</button>${["window", "door", "passage"].map(tool).join("")}<button class="more-btn" data-a="menu" aria-expanded="${!!this._menu}" aria-label="${esc(t("more_title"))}">⋯ ${t("more")}</button></div>
       </div>
-      <div class="bar">${missing.length ? `<select data-f="add_key">${missing.map(m => `<option value="${esc(m.key)}">${esc(m.name || m.key)}</option>`).join("")}</select><select data-f="add_template">${["rect", "l", "u"].map(k => `<option value="${k}">${t(k)}</option>`).join("")}</select><button data-a="add">${t("add_room")}</button><button data-a="missing">${t("missing")}</button>` : ""}
-        <button data-a="propose">${t("propose")}</button><button data-a="export">${t("export")}</button><label><button data-a="import-btn">${t("import")}</button><input type="file" accept="application/json" data-f="import" hidden></label></div>
-      <div class="bar" role="toolbar" aria-label="${t("openings_bar")}">${["window", "door", "passage"].map(k => `<button data-tool="${k}" aria-pressed="${this._tool === k}">${esc(t("tool")[k])}</button>`).join("")}</div>
-      ${["window", "door", "passage"].includes(this._tool) ? `<div class="help">${esc(t("tool_help")[this._tool])}</div>` : ""}
-      ${preview}${msg}${this._insideWindows().length ? `<div class="msg" role="status">${t("windows_inside").replace("{n}", this._insideWindows().length)} <button data-a="windows_out">${t("windows_out")}</button></div>` : ""}
-      <div class="work${this._sel ? " side" : ""}"><div><div class="canvas" tabindex="0">${this._svg()}</div><div class="help">${t("help")}</div></div>${this._panel()}</div>${this._underlayPanel()}
-      <div class="bar"><button class="primary" data-a="save"${this._busy ? " disabled" : ""}>${t("save")}</button><button data-a="cancel">${t("cancel")}</button></div>`;
+      <div class="work${this._panelHidden ? " nopanel" : ""}">
+        <div class="draw"><div class="canvas" tabindex="0">${this._svg()}</div>
+          <div class="ov ov-top">${hint}${preview}${msg}${inside}</div>
+          <div class="ov ov-bl" role="group" aria-label="${esc(t("grp_edit"))}"><button data-a="undo" aria-label="${t("undo")}" title="${t("undo")}"${this._history.past.length ? "" : " disabled"}>↶</button><button data-a="redo" aria-label="${t("redo")}" title="${t("redo")}"${this._history.future.length ? "" : " disabled"}>↷</button></div>
+          <div class="ov ov-br" role="group" aria-label="${esc(t("grp_view"))}"><button data-a="zoom-out" aria-label="${t("zoom_out")}" title="${t("zoom_out")}">−</button><button data-a="zoom-in" aria-label="${t("zoom_in")}" title="${t("zoom_in")}">+</button><button data-a="fit" aria-pressed="${this._autoFit !== false}">${t("fit")}</button></div>
+          ${menu}</div>
+        <div class="side"><div class="aside">${this._panel()}${this._underlayPanel()}</div>
+          <div class="bar final"><button class="ptoggle" data-a="panel_toggle" aria-expanded="${!this._panelHidden}">${t(this._panelHidden ? "panel_show" : "panel_hide")}</button><span class="grow"></span><button data-a="cancel">${t("cancel")}</button><button class="primary" data-a="save"${this._busy ? " disabled" : ""}>${t("save")}</button></div></div>
+      </div>`;
     this._bind();
     restoreFocus(this.shadowRoot, keep);
+    this._syncAspect(false);
     // 0.26.5.5: after picking a room on the drawing the arrow keys keep working – also in Safari, which does not
     // focus clicked SVG shapes: the drawing area itself holds the focus (no scrolling)
     const canvas = this.shadowRoot.querySelector(".canvas");
@@ -1088,17 +1457,25 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     svg.addEventListener("pointerup", ev => this._up(ev));
     svg.addEventListener("pointercancel", ev => this._up(ev));
     svg.addEventListener("wheel", ev => { ev.preventDefault(); this._zoom(ev.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false });
-    root.querySelectorAll("[data-mode]").forEach(el => el.addEventListener("click", () => { this._mode = el.dataset.mode; this._render(); }));
+    root.querySelectorAll("[data-mode]").forEach(el => el.addEventListener("click", () => { this._mode = el.dataset.mode; this._modeHint = !this._sel; this._render(); }));
+    // v0.26.6.1 editor hotfix: a section the user opened or closed stays so across re-renders
+    root.querySelectorAll(".sec>summary").forEach(el => el.addEventListener("click", () => { this._open[el.parentElement.dataset.sec] = !el.parentElement.open; }));
     const on = (sel, fn, type = "click") => root.querySelectorAll(sel).forEach(el => el.addEventListener(type, () => fn(el)));
     const actions = {
-      undo: () => this._undo(), redo: () => this._redo(), "zoom-in": () => this._zoom(1 / 1.25), "zoom-out": () => this._zoom(1.25), fit: () => { this._fit(); this._render(); },
-      add: () => this._addRoom(root.querySelector('[data-f="add_key"]').value, root.querySelector('[data-f="add_template"]').value),
+      undo: () => this._undo(), redo: () => this._redo(), "zoom-in": () => this._zoom(1 / 1.25), "zoom-out": () => this._zoom(1.25), fit: () => { this._autoFit = true; this._fit(); this._render(); },
+      add: () => this._addRoom(root.querySelector('[data-f="add_key"]').value, this._shape),
+      add_open: () => { this._adding = !this._adding; this._menu = false; if (this._adding) { this._sel = null; this._panelHidden = false; this._setTool(null); } this._render(); },
+      add_close: () => { this._adding = false; this._render(); },
+      menu: () => { this._menu = !this._menu; this._render(); }, msg_close: () => { this._msg = null; this._render(); },
+      panel_open: () => { this._panelHidden = false; this._render(); },
+      edit_corners: () => { this._mode = "precise"; this._render(); }, corners_done: () => { this._mode = "quick"; this._render(); },
       missing: () => this._propose(true), propose: () => this._propose(false), export: () => this._export(), reload: () => this._reload(),
       "import-btn": () => root.querySelector('[data-f="import"]').click(), save: () => this._save(), cancel: () => this._cancel(),
       apply: () => { const p = this._preview; this._preview = null; this._commit(l => Object.assign(l, clone(p.layout), { revision: l.revision })); },
       "no-apply": () => { this._preview = null; this._render(); },
       wall_apply: () => this._applyWallLength(root.querySelector('[data-f="wall_len"]').value),
       snap90: () => { this._snap90 = !this._snap90; this._render(); }, join: () => this._joinRooms(),
+      panel_toggle: () => { this._panelHidden = !this._panelHidden; this._render(); },
       calibrate: () => this._setPlanScale(root.querySelector('[data-f="scale_m"]').value),
       window_out: () => this._windowsOut([this._sel.id]), windows_out: () => this._windowsOut(this._insideWindows().map(o => o.id)),
       rotate: () => this._commit(l => { const r = l.rooms.find(x => x.id === this._sel.id); r.polygon = rotate90(r.polygon); r.provenance = "user"; }),
@@ -1108,13 +1485,17 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
         this._commit(l => l.connections.push({ id: `c_${from}_${to}_${Date.now().toString(36)}`, a: from, b: to, kind, confirmed: true, provenance: "user" }));
       },
     };
+    // the "more" menu closes after an action in it (a toggle such as "Snap to 90°" keeps it open)
+    on(".menu [data-a]", el => { if (!["snap90", "menu", "import-btn"].includes(el.dataset.a)) { this._menu = false; el.closest(".menu").hidden = true; } });
     on("[data-a]", el => (el.dataset.a === "square" ? this._squareCorner(Number(el.dataset.corner), el.dataset.keep) : actions[el.dataset.a] && actions[el.dataset.a]()));
+    on("[data-shape]", el => { this._shape = el.dataset.shape; this._render(); });
     on('[data-f="grid"]', el => { this._grid = Number(el.value); this._render(); }, "change");
     on('[data-f="view_floor"]', el => { this._floor = el.value; this._sel = null; this._setTool(null); this._fit(); this._render(); this._loadUnderlay(el.value); }, "change");
     this._bindUnderlay(root, on);
     on('[data-f="import"]', el => { if (el.files && el.files[0]) this._import(el.files[0]); }, "change");
-    on('[data-f="north"]', el => this._commit(l => { const v = Number(el.value); l.building.north_deg = Number.isFinite(v) ? ((v % 360) + 360) % 360 : 0; }), "change");
+    on('[data-f="north"]', el => this._commit(l => { const v = Number(el.value); setNorth(l, Number.isFinite(v) ? v : 0); }), "change");
     on('[data-f="north_confirmed"]', el => this._commit(l => { l.building.north_confirmed = el.checked; }), "change");
+    this._bindCompass(root);
     on('[data-f="floor"]', el => this._commit(l => { l.rooms.find(x => x.id === this._sel.id).floor_id = el.value; }), "change");
     const openingField = (field, conv) => on(`[data-f="${field}"]`, el => this._commit(l => { const o = l.openings.find(x => x.id === this._sel.id); conv(o, el.value); o.provenance = "user"; }), "change");
     openingField("kind", (o, v) => { o.kind = v; }); openingField("mechanics", (o, v) => { o.mechanics = v; });

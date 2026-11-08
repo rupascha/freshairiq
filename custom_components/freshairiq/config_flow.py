@@ -35,7 +35,7 @@ from .config_flow_schemas import _outdoor_configuration_error, _outdoor_schema  
 from .config_flow_fields import _CLIMATE_SENSOR_UNITS, _climate_sensor_selector  # noqa: F401 - re-exported
 from .config_flow_fields import ClearableFormMixin
 from .config_flow_rooms import _room_schema, _flatten_sections, _room_section_schema, _contact_reference_field, _contact_display_name, _single_contact_reference_schema, _schema_with_wizard_back  # noqa: F401 - re-exported
-from .config_flow_rooms import _apply_single_contact_reference, _normalise_room, _normalise_room_control, _normalise_legacy_entry_data  # noqa: F401 - re-exported
+from .config_flow_rooms import _apply_single_contact_reference, _contact_side_error, _normalise_room, _normalise_room_control, _normalise_legacy_entry_data  # noqa: F401 - re-exported
 from .config_flow_schemas import _model_schema, _cross_ventilation_schema, _profile_schema, _profile_details_schema, _building_schema, _resident_name_list, _resident_slot_overview, _resident_slot_placeholders, _resident_profiles_dict, _residents_schema, _forecast_schema, _air_quality_schema, _diagnostics_sharing_schema, _energy_system_schema, _energy_details_schema, _notification_schema  # noqa: F401 - re-exported
 from .config_flow_subentry import FreshAirIQRoomSubentryFlow  # noqa: F401 - re-exported
 from .config_flow_options import FreshAirIQOptionsFlow  # noqa: F401 - re-exported
@@ -159,13 +159,17 @@ class FreshAirIQConfigFlow(ClearableFormMixin, config_entries.ConfigFlow, domain
         contact = str(contacts[index])
         errors = {}
         if user_input is not None:
-            if _apply_single_contact_reference(room, contact, user_input):
+            side_error = _contact_side_error(room, contact, user_input, self._rooms)
+            if side_error is not None:
+                errors["base"] = side_error
+            elif _apply_single_contact_reference(room, contact, user_input):
                 self._room_reference_contact_index = index + 1
                 return await self.async_step_room_references()
-            errors["base"] = "contact_reference_pair_required"
+            else:
+                errors["base"] = "contact_reference_pair_required"
         return self.async_show_form(
             step_id="room_references",
-            data_schema=_single_contact_reference_schema(room, contact),
+            data_schema=_single_contact_reference_schema(room, contact, self._rooms),
             errors=errors,
             description_placeholders={
                 "room_name": room.get(CONF_ROOM_NAME, room.get("key", _txt(_flow_language(self.hass), "Raum", "Room"))),

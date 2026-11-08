@@ -114,7 +114,9 @@ function clipLine(base, dir, f) {
   return lo < hi ? [lo, hi] : null;
 }
 
-export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 7, paths = [], frame = null }) {  // 0.26.6.0(7): 7 streams, no crowding
+// 0.26.7.0(2): ``variety`` (freshairiq-house-motion.js streamVariety) gives each decorative stream its own lane across the house
+// and its own length – no even grid of identical streaks; without it the streams are spread evenly as before.
+export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 7, paths = [], frame = null, variety = null }) {  // 0.26.6.0(7): 7 streams, no crowding
   if (fromDeg == null || !rooms.length) return [];
   const t = G.bearingVector((fromDeg + 180) % 360, northDeg); // direction the air moves to
   const p = [-t[1], t[0]];
@@ -123,13 +125,16 @@ export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 7, 
   const R = Math.hypot(box.maxX - box.minX, box.maxY - box.minY) / 2 || 1;
   const f = frame || { minX: box.minX - R * 0.3, minY: box.minY - R * 0.3, maxX: box.maxX + R * 0.3, maxY: box.maxY + R * 0.3 };
   const streams = [];
-  for (let i = 0; i < count; i++) {
-    const k = (-1 + (2 * i) / (count - 1)) * R * 0.98;
+  const total = variety ? variety.length : count;
+  for (let i = 0; i < total; i++) {
+    const v = variety ? variety[i] : null;
+    const k = (v ? v.lane : -1 + (2 * i) / (count - 1)) * R * 0.98;
     const base = add(c, mul(p, k));
     const span = clipLine(base, t, f);  // each streak starts at the edge of the drawing
     if (!span) continue;
-    const S = add(base, mul(t, span[0]));
-    const exit = add(base, mul(t, span[1]));
+    const spanLen = span[1] - span[0];
+    const S = add(base, mul(t, span[0] + (v ? v.start * spanLen * 0.35 : 0)));      // its own start: never all at the same edge
+    const exit = add(base, mul(t, span[0] + (v ? Math.max(v.end, v.start + 0.3) * spanLen : spanLen)));
     let best = null;
     for (const room of rooms) {
       const pts = room.polygon;
@@ -138,7 +143,7 @@ export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 7, 
         if (hit && (!best || hit.s < best.s)) best = { ...hit, room, edge: e };
       }
     }
-    if (!best) { streams.push({ kind: "pass", points: [S, exit], curve: null }); continue; }
+    if (!best) { streams.push({ kind: "pass", points: [S, exit], curve: null, variety: i }); continue; }
     const H = add(S, mul(t, best.s));
     const pts = best.room.polygon, a = pts[best.edge], b = pts[(best.edge + 1) % pts.length];
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -149,7 +154,7 @@ export function windStreams({ rooms, openings, fromDeg, northDeg, G, count = 7, 
     const n = G.outwardNormal(pts, best.edge);
     const before = sub(H, mul(t, R * 0.14));
     const end = add(add(H, mul(along, R * 0.3)), mul(n, R * 0.16));  // bounces off and slides along the wall (short: no overlap)
-    streams.push({ kind: "deflect", points: [S, before], curve: { from: before, ctrl: add(H, mul(n, R * 0.01)), to: end }, room: best.room.id });
+    streams.push({ kind: "deflect", points: [S, before], curve: { from: before, ctrl: add(H, mul(n, R * 0.01)), to: end }, room: best.room.id, variety: i });
   }
   // Hotfix (9) F02/F03: the air enters at every open, confirmed outside opening the wind presses on – taken from the
   // published opening state and facade pressure (house_airflow: pressure ≥ INLET_PRESSURE), never from where a
@@ -273,6 +278,16 @@ ha-card.plan-first{padding:0}
 .plan-first .floorhead{margin:0;padding:10px 14px 4px;background:#0b4580}
 /* 0.26.6.0(7): a slim bar above the plan – notes left, local weather right */
 .topbar{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 10px 4px;background:#0b4580}
+/* 0.26.7.0 UI hotfix: one continuous animated surface – no solid bars. The drawing (sky, weather, wind) reaches under the bars,
+   which lie over it; only their controls take clicks and carry their own semi-transparent, high-contrast backgrounds */
+.plan-first .stage{background:linear-gradient(180deg,var(--sky-top,#0f4479),var(--sky-bottom,#072a4f))}
+.plan-first .stage.over>.topbar,.plan-first .stage.over>.mapbar{position:absolute;left:0;right:0;z-index:2;background:transparent;pointer-events:none}
+.plan-first .stage.over>.topbar{top:0} .plan-first .stage.over>.mapbar{bottom:0}
+.plan-first .stage.over svg.plan{max-height:calc(78vh + var(--bar-top,0px) + var(--bar-bottom,0px))}
+.plan-first .stage.over>.topbar>*,.plan-first .stage.over>.mapbar>*{pointer-events:auto}
+.plan-first .stage.over>.mapbar .floors{pointer-events:none} .plan-first .stage.over>.mapbar .floors>*{pointer-events:auto}
+.plan-first .stage.over>.topbar .warns{pointer-events:none} .plan-first .stage.over>.topbar .warns>*{pointer-events:auto}
+.plan-first .stage.over>.topbar .notice{background:rgba(2,16,36,.72);border-color:rgba(0,216,240,.7)} .plan-first .stage.over .weather,.plan-first .stage.over .moist{background:rgba(2,16,36,.66)}
 .topbar .warns{flex:1 1 auto;min-width:0;display:grid;justify-items:start;gap:6px} .topbar .notice{margin:0}
 .moist{display:inline-flex;max-width:100%;gap:10px;align-items:center;min-height:30px;padding:3px 12px;border-radius:999px;background:rgba(2,16,36,.55);border:2px solid rgba(201,243,255,.35);box-shadow:none;color:${BRAND.white};font-weight:800;font-size:13px;white-space:nowrap}
 .moist b{font-variant-numeric:tabular-nums}
@@ -289,9 +304,17 @@ ha-card.plan-first{padding:0}
 .floorbtn.pulse:after{content:"";position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:var(--pulse);border:2px solid ${BRAND.ink}}
 :host([data-paused]) .floorbtn.pulse,:host([data-still]) .floorbtn.pulse{animation:none}
 @media (prefers-reduced-motion:reduce){.floorbtn.pulse{animation:none}}
-.dlg.dark{background:${BRAND.night};color:${BRAND.white}}
-.dlg.dark .body h4{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:${BRAND.ice}}
-.dlg.dark button{background:${BRAND.panel};color:${BRAND.white}} .dlg.dark button[aria-pressed="true"],.dlg.dark .foot button{background:${BRAND.cyan};color:${BRAND.ink}}
+.dlg.dark{background:${BRAND.night};color:var(--fq-fg,${BRAND.white})}
+.dlg.dark .body h4{margin:10px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--fq-muted,${BRAND.ice})}
+.dlg.dark button{background:var(--fq-btn,${BRAND.panel});color:var(--fq-btn-fg,${BRAND.white})} .dlg.dark button[aria-pressed="true"],.dlg.dark .foot button{background:var(--fq-accent,${BRAND.cyan});color:var(--fq-on-accent,${BRAND.ink})}
+/* UI order (0.26.7.0): the tiles, hints and lists of every window in the house map's dark style – readable on its sky */
+.dlg.dark .tile{background:var(--fq-surface,rgba(2,16,36,.36));border:1px solid var(--fq-line2,rgba(201,243,255,.18));color:inherit;min-width:0;overflow-wrap:anywhere}
+.dlg.dark .tile .l{color:var(--fq-muted,#cfe6ff)} .dlg.dark .tile .s,.dlg.dark .hint{color:var(--fq-muted2,#a9cbe6)}
+.dlg.dark .why{background:var(--fq-surface,rgba(2,16,36,.38));color:inherit;border:1px solid var(--fq-line2,rgba(201,243,255,.2));box-shadow:none}
+.dlg.dark .body p{margin:0}.dlg.dark .lead{font-size:14px;font-weight:700;line-height:1.45}.dlg.dark .body li{overflow-wrap:anywhere}
+.dlg.dark details.more{border-radius:14px;background:var(--fq-surface,rgba(2,16,36,.3));border:1px solid var(--fq-line2,rgba(201,243,255,.14));padding:8px 12px}
+.dlg.dark details.more summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:800}
+.dlg.dark details.more summary:focus-visible{outline:3px solid var(--fq-focus,#ffd27a);outline-offset:2px}
 .dlg.dark .hint2,.dlg.dark .legend{font-size:12px;opacity:.85}
 .diag-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .diag-actions button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;min-height:64px;padding:8px 6px;border-radius:16px;font-size:clamp(12px,3.4vw,14px);line-height:1.25;white-space:normal;overflow-wrap:anywhere;margin:0}

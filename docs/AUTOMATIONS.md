@@ -116,6 +116,8 @@ Only for rooms with the fan's "Automatic control". Fires when the state, the com
 
 From 0.26.5.5 the room result's `fan_automation` also carries `follow_up_until` (end of the follow-up time while it runs) and `runtime_limit_at` (latest automatic stop by the maximum runtime) – fixed points in time that do not change every minute. With the room setting "Other automation controls the fan" (switch, helper or timer, e.g. for Alexa after the dryer) FreshAirIQ leaves the fans to that automation while it is on and never switches them off.
 
+**From 0.26.7.0: global automation lock.** Under Notifications & energy → "Automation lock" an entity can be chosen (e.g. `input_boolean.holidays`; a switch, binary sensor, timer or schedule works too). While it is on FreshAirIQ starts no automatic device action: no covers, no exhaust fan switched on. A fan FreshAirIQ switched on itself is switched off once (its result is followed); devices switched by hand or by other automations are left alone. Recommendations, warnings, messages and diagnostics keep running – `fan_automation.state` is then `locked` (or `stopping` while its own switch-off runs), so the fan is your task again. When the lock ends FreshAirIQ decides the situation anew; no commands are queued. An unavailable or deleted lock entity does not lock. Your own automations can read the status entity "Automation lock" (attributes `lock_entity`, `lock_entity_state`, `configured`) – FreshAirIQ cannot pause other automations by itself.
+
 ### Which signal for what?
 
 | Signal | Meaning | Firing / restart / cooldown | Typical use |

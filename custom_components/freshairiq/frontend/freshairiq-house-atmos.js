@@ -104,8 +104,10 @@ export function skyState(weatherNow, sun) {
 const SKY = {
   day: ["#2c78a8", "#123f68"], twilight: ["#3b3f74", "#16294d"], night: ["#0a1630", "#02070f"], unknown: ["#0f4479", "#072a4f"],
 };
-export function skyDefs(sky, px) {
-  const [top, bottom] = SKY[(sky && sky.phase) || "unknown"];
+export const skyPalette = phase => SKY[phase || "unknown"] || SKY.unknown;   // 0.26.7.0: the same sky beside the plan
+export function skyDefs(sky, px, colors = null) {
+  // 0.26.7.0: a weather world may pass the sky's colours from the sun's real elevation (freshairiq-house-weather.js)
+  const [top, bottom] = colors || SKY[(sky && sky.phase) || "unknown"];
   const muted = sky && sky.clouds >= 0.8 ? 0.55 : 1;
   return `<linearGradient id="sky" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="${top}" stop-opacity="${muted}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>`
     + `<radialGradient id="sky-depth" cx=".5" cy=".5" r=".7"><stop offset=".35" stop-color="#ffffff" stop-opacity=".07"/><stop offset="1" stop-color="#000814" stop-opacity=".35"/></radialGradient>`
@@ -120,7 +122,16 @@ export function skyBackground(vb) {
 const bearing = (deg, northDeg) => { const a = (deg - northDeg) * Math.PI / 180; return [Math.sin(a), Math.cos(a)]; };
 // Weather effects in the free space around the house (``mask`` hides them over the house), behind the rooms.
 // frame: {minX, minY, maxX, maxY} in plan coordinates; wind: {from_deg, speed_ms, available}.
-export function weatherSvg(sky, frame, wind, northDeg, px, mask) {
+// ``under`` (0.26.7.0 UI hotfix, optional): {html, vb, ppu} – the large moving layers (clouds, rain and snow, fog, stars, the
+// flash) are written as HTML into ``under.html`` instead of the drawing. They lie in a layer under the plan (its rooms are opaque and
+// cover them, no mask needed) and move by transform and opacity only, which the browser composes without painting the drawing anew
+// (measured at 1440 px, software rendering: rain 50–67 → 33 ms per frame at the 95th percentile). ``vb``: the drawing's viewBox,
+// ``ppu``: screen pixels per plan unit.
+const pctX = (u, x) => r3(((x - u.vb[0]) / u.vb[2]) * 100), pctY = (u, y) => r3(((y - u.vb[1]) / u.vb[3]) * 100);
+const pctW = (u, w) => r3((w / u.vb[2]) * 100), pctH = (u, h) => r3((h / u.vb[3]) * 100);
+// a box in percent of the drawing for an svg-space rectangle (x, y top-left, w, h)
+export const underBox = (u, x, y, w, h) => `left:${pctX(u, x)}%;top:${pctY(u, y)}%;width:${pctW(u, w)}%;height:${pctH(u, h)}%`;
+export function weatherSvg(sky, frame, wind, northDeg, px, mask, under = null) {
   if (!sky) return "";
   const W = frame.maxX - frame.minX, H = frame.maxY - frame.minY, c = [(frame.minX + frame.maxX) / 2, (frame.minY + frame.maxY) / 2], R = Math.hypot(W, H) / 2;
   const rnd = seq(Math.round(W * 1000 + H * 7));
@@ -155,19 +166,27 @@ export function weatherSvg(sky, frame, wind, northDeg, px, mask) {
   // stars at night: many when clear, a few between the clouds of a partly cloudy night, none when overcast
   const starCount = sky.phase !== "night" ? 0 : sky.clouds === 0 && sky.clear ? 34 : sky.clouds > 0 && sky.clouds < 0.6 ? 12 : 0;
   if (starCount) {
-    out += `<g class="wx stars">${Array.from({ length: starCount }, (_, i) => `<circle cx="${r3(frame.minX + rnd() * W)}" cy="${r3(-(frame.minY + rnd() * H))}" r="${px(0.8 + rnd() * 1.1)}" style="animation-delay:-${r3(rnd() * 5)}s"/>`).join("")}</g>`;
+    if (under) {
+      under.html += `<div class="wx stars">${Array.from({ length: starCount }, () => { const x = frame.minX + rnd() * W, y = -(frame.minY + rnd() * H), d = r3(2 * (0.8 + rnd() * 1.1) * px(1) * under.ppu);
+        return `<i style="left:${pctX(under, x)}%;top:${pctY(under, y)}%;width:${d}px;height:${d}px;margin:-${r3(d / 2)}px 0 0 -${r3(d / 2)}px;animation-delay:-${r3(rnd() * 5)}s"></i>`; }).join("")}</div>`;
+    } else out += `<g class="wx stars">${Array.from({ length: starCount }, (_, i) => `<circle cx="${r3(frame.minX + rnd() * W)}" cy="${r3(-(frame.minY + rnd() * H))}" r="${px(0.8 + rnd() * 1.1)}" style="animation-delay:-${r3(rnd() * 5)}s"/>`).join("")}</g>`;
   }
   // cloud shadows drifting with the wind
   if (sky.clouds > 0) {
     const n = sky.clouds > 0.6 ? 4 : 2, drift = [to[0] * W * 0.25, -to[1] * W * 0.25];
-    out += `<g class="wx clouds" style="--dx:${r3(drift[0])}px;--dy:${r3(drift[1])}px">`;
+    const k = under ? under.ppu : 1;
+    let g = under ? `<div class="wx clouds" style="--dx:${r3(drift[0] * k)}px;--dy:${r3(drift[1] * k)}px">` : `<g class="wx clouds" style="--dx:${r3(drift[0])}px;--dy:${r3(drift[1])}px">`;
     for (let i = 0; i < n; i++) {
-      const x = frame.minX + (0.15 + 0.7 * rnd()) * W, y = frame.minY + (0.1 + 0.8 * rnd()) * H;
-      out += `<ellipse cx="${r3(x)}" cy="${r3(-y)}" rx="${r3(W * (0.16 + 0.1 * rnd()))}" ry="${r3(H * (0.08 + 0.05 * rnd()))}" filter="url(#soft)" style="animation-delay:-${r3(i * 11)}s"/>`;
+      const x = frame.minX + (0.15 + 0.7 * rnd()) * W, y = frame.minY + (0.1 + 0.8 * rnd()) * H, rx = W * (0.16 + 0.1 * rnd()), ry = H * (0.08 + 0.05 * rnd());
+      // HTML: a soft ellipse (its fading edge stands for the blur of the drawing's version)
+      g += under ? `<i style="${underBox(under, x - rx * 1.15, -y - ry * 1.15, rx * 2.3, ry * 2.3)};animation-delay:-${r3(i * 11)}s"></i>`
+        : `<ellipse cx="${r3(x)}" cy="${r3(-y)}" rx="${r3(rx)}" ry="${r3(ry)}" filter="url(#soft)" style="animation-delay:-${r3(i * 11)}s"/>`;
     }
-    out += "</g>";
+    if (under) under.html += `${g}</div>`; else out += `${g}</g>`;
   }
-  if (sky.fog) {
+  if (sky.fog && under) {
+    under.html += `<div class="wx fog">${[0.25, 0.5, 0.78].map((k, i) => `<i style="${underBox(under, frame.minX - W * 0.2, -(frame.minY + k * H) - H * 0.09, W * 1.4, H * 0.18)};animation-delay:-${i * 9}s"></i>`).join("")}</div>`;
+  } else if (sky.fog) {
     out += `<g class="wx fog">${[0.25, 0.5, 0.78].map((k, i) => `<rect x="${r3(frame.minX - W * 0.2)}" y="${r3(-(frame.minY + k * H) - H * 0.06)}" width="${r3(W * 1.4)}" height="${r3(H * 0.12)}" rx="${r3(H * 0.06)}" filter="url(#soft)" style="animation-delay:-${i * 9}s"/>`).join("")}</g>`;
   }
   // rain and snow fall slanted by the wind (schematic, about 5° per m/s, at most 40°)
@@ -177,10 +196,25 @@ export function weatherSvg(sky, frame, wind, northDeg, px, mask) {
     const marks = sky.rain
       ? Array.from({ length: 5 }, () => { const x = rnd() * tile, y = rnd() * tile; return `<line x1="${r3(x)}" y1="${r3(y)}" x2="${r3(x)}" y2="${r3(y + px(7))}" stroke="#cfeaff" stroke-opacity=".55" stroke-width="${px(1.1)}" stroke-linecap="round"/>`; }).join("")
       : Array.from({ length: 4 }, () => `<circle cx="${r3(rnd() * tile)}" cy="${r3(rnd() * tile)}" r="${px(1.3 + rnd())}" fill="#ffffff" fill-opacity=".8"/>`).join("");
-    out += `<pattern id="wx-fall" width="${r3(tile)}" height="${r3(tile)}" patternUnits="userSpaceOnUse">${marks}</pattern>`
+    if (under) {
+      // One tile drawn once (screen pixels) with the slant inside it; the sheet only moves – along the slant by exactly one step of
+      // the tile grid, so the loop is seamless – and is never rotated (a rotated layer is resampled in every frame).
+      const T = Math.max(8, Math.round(tile * under.ppu)), sl = Math.tan(Math.abs(slant) * Math.PI / 180), dir = Math.sign(slant) || 1;
+      const k = sl < 0.05 ? 1 : Math.min(20, Math.ceil(1 / sl)), Tw = sl < 0.05 ? T : Math.round(k * T * sl), tx = sl < 0.05 ? 0 : dir * Tw, ty = k * T;
+      const L = 7 * T / 34, mark = (x, y) => sky.rain
+        ? `<line x1="${r3(x)}" y1="${r3(y)}" x2="${r3(x + (sl < 0.05 ? 0 : dir * L * sl))}" y2="${r3(y + L)}" stroke="#cfeaff" stroke-opacity=".55" stroke-width="${r3(1.1 * T / 34)}" stroke-linecap="round"/>`
+        : `<circle cx="${r3(x)}" cy="${r3(y)}" r="${r3((1.3 + rnd()) * T / 44)}" fill="#ffffff" fill-opacity=".8"/>`;
+      const n = Math.max(1, Math.round((sky.rain ? 5 : 4) * Tw / T));
+      let m = "";
+      for (let i = 0; i < n; i++) { const x = rnd() * Tw, y = rnd() * T; for (const [ox, oy] of [[0, 0], [-Tw, 0], [Tw, 0], [0, -T], [-Tw, -T], [Tw, -T]]) m += mark(x + ox, y + oy); }
+      const tileSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Tw}" height="${T}">${m}</svg>`;
+      under.html += `<div class="wxarea" style="${underBox(under, frame.minX, -frame.maxY, W, H)}"><div class="wx ${sky.rain ? "rain" : "snow"}" data-tilt="${r3(-slant)}">`
+        + `<div class="fall" style="--tile:${ty}px;--tx:${tx}px;--k:${k};left:-${Tw}px;right:-${Tw}px;top:-${ty}px;background-size:${Tw}px ${T}px;background-image:url('data:image/svg+xml,${encodeURIComponent(tileSvg)}')"></div></div></div>`;
+    } else out += `<pattern id="wx-fall" width="${r3(tile)}" height="${r3(tile)}" patternUnits="userSpaceOnUse">${marks}</pattern>`
       + `<g class="wx ${sky.rain ? "rain" : "snow"}" transform="rotate(${r3(-slant)} ${r3(c[0])} ${r3(-c[1])})"><rect class="fall" x="${r3(big.x)}" y="${r3(big.y)}" width="${r3(big.w)}" height="${r3(big.h)}" fill="url(#wx-fall)" style="--tile:${r3(tile)}px"/></g>`;
   }
-  if (sky.thunder) out += `<rect class="wx flash" x="${r3(frame.minX)}" y="${r3(-frame.maxY)}" width="${r3(W)}" height="${r3(H)}"/>`;
+  if (sky.thunder && under) under.html += `<div class="wx flash" style="${underBox(under, frame.minX, -frame.maxY, W, H)}"></div>`;
+  else if (sky.thunder) out += `<rect class="wx flash" x="${r3(frame.minX)}" y="${r3(-frame.maxY)}" width="${r3(W)}" height="${r3(H)}"/>`;
   return out ? `<g class="weather" data-weather="${sky.condition || ""}" mask="url(#${mask})" pointer-events="none">${out}</g>` : "";
 }
 // The mask that keeps weather off the house (rooms widened by a margin).
@@ -201,19 +235,20 @@ export function weatherMask(id, frame, rooms, px) {
 // CSS of the atmosphere layer. All loops are slow; paused when the card is hidden or the animation is off, and none
 // with "reduce motion".
 export const ATMOS_STYLE = `
-.sky,.weather,.climate,.plume,.fan,.steam{pointer-events:none}
-.map canvas.flow{position:absolute;pointer-events:none;display:block}
+/* 0.26.7.0 UI hotfix: only the drawing's decorative layers – the weather button at the top right (button.weather) stays clickable */
+svg .sky,svg .weather,svg .climate,svg .plume,svg .fan,svg .steam{pointer-events:none}
+.map canvas.flow{position:absolute;pointer-events:none;display:block;z-index:2}
 .wx.sunlight .ray{fill:url(#wx-ray);fill-opacity:.07;animation:rays 14s ease-in-out infinite}
 @keyframes rays{0%,100%{fill-opacity:.04}50%{fill-opacity:.11}}
-.wx.stars circle{fill:#fff;animation:twinkle 5s ease-in-out infinite}
+.wx.stars > *{fill:#fff;animation:twinkle 5s ease-in-out infinite}
 @keyframes twinkle{0%,100%{opacity:.35}50%{opacity:.95}}
-.wx.clouds ellipse{fill:#021024;fill-opacity:.22;animation:drift 60s ease-in-out infinite alternate}
+.wx.clouds > *{fill:#021024;fill-opacity:.22;animation:drift 60s ease-in-out infinite alternate}
 @keyframes drift{from{transform:translate(calc(var(--dx) * -1),calc(var(--dy) * -1))}to{transform:translate(var(--dx),var(--dy))}}
-.wx.fog rect{fill:#e8f2fa;fill-opacity:.16;animation:fogdrift 40s ease-in-out infinite alternate}
+.wx.fog > *{fill:#e8f2fa;fill-opacity:.16;animation:fogdrift 40s ease-in-out infinite alternate}
 @keyframes fogdrift{from{transform:translateX(-4%)}to{transform:translateX(4%)}}
-.wx .fall{animation:fall .55s linear infinite}
-.wx.snow .fall{animation-duration:5s}
-@keyframes fall{from{transform:translateY(0)}to{transform:translateY(var(--tile))}}
+.wx .fall{animation:fall calc(.55s * var(--k,1)) linear infinite}
+.wx.snow .fall{animation-duration:calc(5s * var(--k,1))}
+@keyframes fall{from{transform:translate(0,0)}to{transform:translate(var(--tx,0px),var(--tile))}}
 .wx.flash{fill:#eef6ff;opacity:0;animation:flash 9s linear infinite}
 @keyframes flash{0%,90%,93%,95%,100%{opacity:0}91%{opacity:.35}94%{opacity:.22}}
 .cl.mist{animation:mist 9s ease-in-out infinite}
@@ -232,8 +267,20 @@ export const ATMOS_STYLE = `
 .particles{fill:none;stroke:#f2fdff;stroke-linecap:round;opacity:.8;animation:flow var(--dur,2s) linear infinite}
 .fan circle{fill:rgba(2,16,36,.6);stroke:rgba(234,246,255,.6)} .fan .blades{fill:#eaf6ff;animation:spin 2.4s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* 0.26.7.0 UI hotfix: the moving weather in its own layer under the plan (see weatherSvg, under) – composed, never repainted */
+.map .wxu{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:0}
+.map .wxu>svg.wxsky{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.map .wxu .wx,.map .wxu .wxarea{position:absolute;left:0;top:0;width:100%;height:100%}
+.map .wxu .wxarea{overflow:hidden}
+.map .wxu .fall{position:absolute;bottom:0;background-repeat:repeat;will-change:transform}
+.map .wxu .wx>i{position:absolute;display:block}
+.map .wxu .wx.clouds>i{border-radius:50%;background:radial-gradient(closest-side,rgba(2,16,36,.22),rgba(2,16,36,.2) 70%,rgba(2,16,36,0));will-change:transform}
+.map .wxu .wx.fog>i{border-radius:50%;background:radial-gradient(closest-side,rgba(232,242,250,.16),rgba(232,242,250,.12) 60%,rgba(232,242,250,0));will-change:transform}
+.map .wxu .wx.stars>i{border-radius:50%;background:#fff}
+.map .wxu .wx.flash{background:#eef6ff}
+.map svg.plan{position:relative;z-index:1}
 :host([data-paused]) .wx,:host([data-paused]) .wx *,:host([data-paused]) .cl,:host([data-paused]) .steam path,:host([data-paused]) .plume,:host([data-paused]) .particles,:host([data-paused]) .fan .blades{animation-play-state:paused}
 :host([data-still]) .wx,:host([data-still]) .wx *,:host([data-still]) .cl,:host([data-still]) .steam path,:host([data-still]) .plume:not(.fade),:host([data-still]) .particles,:host([data-still]) .fan .blades{animation:none}
 :host([data-still]) .steam path{opacity:.6} :host([data-still]) .wx.flash{opacity:.1}
-@media (prefers-reduced-motion:reduce){.wx,.wx *,.wx .fall,.wx.sunlight .ray,.wx.stars circle,.wx.clouds ellipse,.wx.fog rect,.cl,.cl.mist,.cl.mist.falling,.cl.mist.rising,.steam path,.plume:not(.fade),.particles,.fan .blades{animation:none}.steam path{opacity:.6}.wx.flash{opacity:.1}}
+@media (prefers-reduced-motion:reduce){.wx,.wx *,.wx .fall,.wx.sunlight .ray,.wx.stars > *,.wx.clouds > *,.wx.fog > *,.cl,.cl.mist,.cl.mist.falling,.cl.mist.rising,.steam path,.plume:not(.fade),.particles,.fan .blades{animation:none}.steam path{opacity:.6}.wx.flash{opacity:.1}}
 `;

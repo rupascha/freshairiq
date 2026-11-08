@@ -578,7 +578,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: Any) ->
             "co2", "co2_available", "surface_rh", "mould_level", "action", "active",
             "ventilation_type", "mechanical_exhaust_active", "goal_state", "comfort_target_c",
             "comfort_target_source", "learning_status", "learning_samples",
-        )})
+        )} | {"surface_rh_source": room.get("surface_rh_source") or "internal_estimate"})
     return {
         "freshairiq_version": getattr(coordinator, "version", None) or getattr(coordinator, "integration_version", None),
         "diagnostics_schema_version": DIAGNOSTICS_SCHEMA_VERSION,

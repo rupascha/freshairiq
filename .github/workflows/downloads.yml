@@ -1,0 +1,31 @@
+# Release download statistics from GitHub's own release data (download_count of each release
+# asset). Read-only: no telemetry, nothing is sent anywhere, nothing is committed. GitHub does not
+# count downloads of the automatic source archives, so releases without assets show none, and a
+# download is not an installation (updates, reinstalls and other machines count again).
+name: Download statistics
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 4 * * 1"
+
+permissions: {}
+
+jobs:
+  downloads:
+    if: github.repository == 'rupascha/freshairiq'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Downloads per release and in total
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python tools/release_downloads.py --repository "${{ github.repository }}" --markdown >> "$GITHUB_STEP_SUMMARY"
+          python tools/release_downloads.py --repository "${{ github.repository }}" --json > release-downloads.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-downloads
+          path: release-downloads.json

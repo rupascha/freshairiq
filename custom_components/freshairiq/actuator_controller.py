@@ -17,6 +17,8 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .actuator_control import (
+    AUTOMATION_LOCK_REASON,
+    automation_lock_state,
     clock_minutes,
     fan_block_active,
     COVER_CLOSE,
@@ -42,7 +44,7 @@ from .actuator_control import (
     settle_removed_off,
     still_holding,
 )
-from .const import DOMAIN
+from .const import CONF_AUTOMATION_LOCK_ENTITY, DOMAIN
 from .fan_automation import fan_restart_lock_min, fan_trace_row
 from .opening_state import normalize_opening_state
 
@@ -100,6 +102,10 @@ class ActuatorController:
                     watched.update(setup.contacts)
         if watched:
             self._unsubs.append(async_track_state_change_event(self.hass, sorted(watched), self._on_state_change))
+        # 0.26.7.0: the automation lock takes effect when it is switched, not only with the next update
+        lock = self._lock_entity()
+        if lock:
+            self._unsubs.append(async_track_state_change_event(self.hass, [lock], self._on_lock_change))
         # 0.26.5.5: the fan lock period starts and ends on time, not only with the next coordinator update
         edges = {clock_minutes(room.get(key)) for room in self._rooms if _room_controls_fan(room) and self._block_times(room)
                  for key in ("exhaust_fan_block_start", "exhaust_fan_block_end")}
@@ -185,6 +191,19 @@ class ActuatorController:
         self.hass.async_create_task(self._async_evaluate(fans=False), eager_start=True)
 
     @callback
+    def _on_lock_change(self, event: Event) -> None:
+        self.hass.async_create_task(self._async_evaluate(fans=True), eager_start=True)
+
+    def _lock_entity(self) -> str | None:
+        return str((self.entry.options or {}).get(CONF_AUTOMATION_LOCK_ENTITY) or "").strip() or None
+
+    def automation_lock(self) -> dict[str, Any]:
+        """0.26.7.0: the global automation lock (configured, entity, active, source state)."""
+        entity = self._lock_entity()
+        state = self.hass.states.get(entity) if entity else None
+        return automation_lock_state(entity, state.state if state is not None else None)
+
+    @callback
     def _on_update(self) -> None:
         self.hass.async_create_task(self._async_update(), eager_start=True)
 
@@ -237,6 +256,13 @@ class ActuatorController:
             await self._async_evaluate_locked(fans=fans)
 
     async def _async_evaluate_locked(self, *, fans: bool) -> None:
+        if self.automation_lock()["active"]:
+            # 0.26.7.0: no new automatic action – covers stay as they are, no fan is switched on; FreshAirIQ only
+            # ends the airing it started itself. Nothing is queued: after the lock the situation is decided anew.
+            changed = await self._async_hold_for_lock() if fans else False
+            if changed and self._store is not None:
+                self._store.async_delay_save(lambda: self._memory, 5)
+            return
         changed = await self._async_settle_removed() if fans else False
         if fans:
             changed |= self._block_after_manual_off()  # hotfix A2: before any room may switch the fan on again
@@ -273,6 +299,37 @@ class ActuatorController:
                 if command == COVER_POSITION:
                     service_data["position"] = position
                 await self._async_call("cover", _COVER_SERVICES[command], service_data)
+        return changed
+
+    async def _async_hold_for_lock(self) -> bool:
+        """0.26.7.0: while the automation lock is on.
+
+        A fan FreshAirIQ switched on itself (``owned``) is switched off once and released – it would otherwise run
+        unattended for as long as the lock lasts; the switch-off is followed to its result. A fan FreshAirIQ does
+        not own (switched on by hand, by another automation, for another room's lock) is never touched.
+        """
+        changed = False
+        now = dt_util.now()
+        locked = self._locked_fans()
+        for room in self._rooms:
+            if not _room_controls_fan(room):
+                continue
+            key = str(room["key"])
+            mem = self._memory["fans"].setdefault(key, {})
+            before = dict(mem)
+            if mem.get("owned"):
+                running = [fan for fan in _fan_entities(room) if fan not in locked and getattr(self.hass.states.get(fan), "state", None) == "on"]
+                sent = await self._async_switch_fans("turn_off", running) if running else True
+                mem.update(owned=False, command="off", command_at=now.isoformat(), reason=AUTOMATION_LOCK_REASON,
+                           command_state=("pending" if running else "confirmed") if sent else "failed", off_entities=running if running and sent else None)
+                mem.pop("off_pending_since", None)
+                self._trace(key, FAN_CONTROL_OFF, mem, now)
+            elif mem.get("reason") == AUTOMATION_LOCK_REASON and mem.get("command_state") == "pending":
+                sent_to = list(mem.get("off_entities") or [])
+                fan_on, _all_on, _count, all_off = self._fan_states(sent_to)
+                if settle_removed_off(mem, fan_on, now, all_off=all_off, reason=AUTOMATION_LOCK_REASON):
+                    self._trace(key, FAN_CONTROL_OFF, mem, now)
+            changed |= mem != before
         return changed
 
     def _removed_pending(self) -> bool:
@@ -349,6 +406,7 @@ class ActuatorController:
             "restart_locked": self._restart_locked(key, mem),
             **self._sharing(key, mem),
             "own_off": (mem.get("own_off") or {}).get("state"),
+            "automation_lock": self.automation_lock()["active"],
             "block_time": bool(set(_fan_entities(next((r for r in self._rooms if str(r.get("key")) == str(key)), {}))) & self._block_fans()),
             "fans_unknown": self._fans_unknown(_fan_entities(next((r for r in self._rooms if str(r.get("key")) == str(key)), {}))),
             **self._fan_group(key),

@@ -86,7 +86,7 @@ export function buildField({ rooms, G, wind, northDeg = 0, mood = null }) {
   const md = mood || windMood({ speed, gust: wind.gust_ms });
   return {
     dir, perp, c, L, segs, corners, speed, cls, box, halfWidth: Math.max((latMax - latMin) / 2, L * 0.2), lee: lonMax,
-    rooms: rooms.map(r => r.polygon), G,
+    rooms: rooms.map(r => r.polygon), roomBoxes: rooms.map(r => G.bbox([r.polygon])), G,
     // gust size: the measured gust relative to the mean wind, else a small decorative variation (flagged)
     // a measured gust sets the size; without one only a small decorative variation that suits the mood
     gust: { measured: gustMeasured, amp: gustMeasured ? clamp(Number(wind.gust_ms) / Math.max(speed, 0.5) - 1, 0.1, 1.2) : (cls === "calm" ? 0 : md.gust), every: CLASS[cls].gustEvery },
@@ -125,7 +125,23 @@ export function eddiesAt(field, t) {
   });
   return out;
 }
-export const insideHouse = (field, x, y) => field.rooms.some(p => field.G.pointInPolygon([x, y], p) === "inside");
+// 0.26.7.0: a narrow gap between two drawn rooms (a wall drawn twice, rooms not snapped together) is part of the house as
+// well – the air never runs through such a joint. Only points close to two different rooms count, so the air still passes
+// right along every outside wall.
+export const GAP_TOLERANCE = 0.35;   // plan units (metres)
+const nearRoom = (G, p, pts, tol) => pts.some((a, i) => { const q = G.projectOnSegment(p, a, pts[(i + 1) % pts.length]); return Math.hypot(p[0] - q.point[0], p[1] - q.point[1]) < tol; });
+export const insideHouse = (field, x, y) => {
+  if (field.rooms.some(p => field.G.pointInPolygon([x, y], p) === "inside")) return true;
+  const tol = field.gap == null ? GAP_TOLERANCE : field.gap, boxes = field.roomBoxes;
+  if (!(tol > 0) || !boxes) return false;
+  let near = 0;
+  for (let i = 0; i < field.rooms.length; i++) {
+    const b = boxes[i];
+    if (x < b.minX - tol || x > b.maxX + tol || y < b.minY - tol || y > b.maxY + tol) continue;
+    if (nearRoom(field.G, [x, y], field.rooms[i], tol) && ++near >= 2) return true;
+  }
+  return false;
+};
 
 // Velocity (plan units per second) at (x, y) and time t; null inside the house. ``eddies`` may be passed in when it
 // was computed once for a whole frame.

@@ -37,6 +37,7 @@ from .config_flow_goals import (
     _ranked_goal_priorities,
     _switched_off_goals,
 )
+from . import cross_pairs
 from .config_flow_rooms import _flatten_sections
 from .config_flow_schemas import (
     _air_quality_schema,
@@ -59,6 +60,27 @@ from .config_flow_schemas import (
 from .notifications import _all_notification_targets, _send_targets
 from .settings_contract import native_option_key
 from .validation import option_relationship_error
+
+# v0.26.6.1 (#25): what is wrong with a cross-ventilation pair, in the user's language
+_CROSS_PAIR_TEXT = {
+    "de": {"malformed": "„{item}“ ist kein Raumpaar (Form: Raum+Raum)",
+           "unknown": "„{room}“ in „{item}“ ist kein bekannter Raum",
+           "ambiguous": "„{room}“ in „{item}“ passt auf mehrere Räume – bitte den Raumschlüssel verwenden",
+           "same": "„{item}“ nennt zweimal denselben Raum",
+           "duplicate": "„{item}“ ist doppelt angegeben"},
+    "en": {"malformed": "\"{item}\" is not a room pair (form: room+room)",
+           "unknown": "\"{room}\" in \"{item}\" is not a known room",
+           "ambiguous": "\"{room}\" in \"{item}\" matches several rooms – please use the room key",
+           "same": "\"{item}\" names the same room twice",
+           "duplicate": "\"{item}\" is listed twice"},
+}
+
+
+
+def _cross_pair_problems(problems, language: str) -> str:
+    texts = _CROSS_PAIR_TEXT["de" if str(language).lower().startswith("de") else "en"]
+    return "; ".join(texts[p["code"]].format(item=p.get("item", ""), room=p.get("room", "")) for p in problems)
+
 
 
 class OptionsSettingsMixin:
@@ -283,18 +305,34 @@ class OptionsSettingsMixin:
 
     async def async_step_cross_ventilation(self, user_input=None):
         self._ensure_working_copy()
+        errors: dict[str, str] = {}
+        detail = ""
+        shown = self._working_options
         if user_input is not None:
-            self._working_options.update(dict(user_input))
-            self._persist_working_state()
-            return await self.async_step_ventilation_settings()
+            # v0.26.6.1 (#25): room names or keys are resolved to keys; only keys are stored, problems are named
+            values, problems = {}, []
+            for option in cross_pairs.PAIR_OPTIONS:
+                key = native_option_key(option)
+                pairs, found = cross_pairs.parse(user_input.get(key, ""), self._rooms())
+                values[key], problems = cross_pairs.canonical(pairs), problems + found
+            if problems:
+                errors["base"] = "cross_pairs_invalid"
+                detail = _cross_pair_problems(problems, _flow_language(self.hass))
+                shown = {**self._working_options, **dict(user_input)}
+            else:
+                self._working_options.update(dict(user_input))
+                self._working_options.update(values)
+                self._persist_working_state()
+                return await self.async_step_ventilation_settings()
         room_keys = ", ".join(
             f"{room.get(CONF_ROOM_NAME, room['key'])} = {room['key']}"
             for room in self._rooms()
         ) or _txt(_flow_language(self.hass), "Noch keine Räume eingerichtet", "No rooms set up yet")
         return self.async_show_form(
             step_id="cross_ventilation",
-            data_schema=_cross_ventilation_schema(self._working_options),
-            description_placeholders={"room_keys": room_keys},
+            data_schema=_cross_ventilation_schema(shown),
+            errors=errors,
+            description_placeholders={"room_keys": room_keys, "error_detail": detail},
         )
 
     async def async_step_profile(self, user_input=None):
@@ -502,6 +540,24 @@ class OptionsSettingsMixin:
         return self.async_show_form(
             step_id="notifications",
             data_schema=_notification_schema(self.hass, self._working_options, self._rooms()),
+        )
+
+    async def async_step_automation_lock(self, user_input=None):
+        """0.26.7.0: an optional entity that pauses every automatic device action (e.g. holidays)."""
+        self._ensure_working_copy()
+        key = native_option_key("automation_lock_entity")
+        if user_input is not None:
+            # a cleared selector sends no key at all: the lock is removed, never kept from before
+            self._working_options[key] = str(user_input.get(key) or "").strip() or None
+            self._persist_working_state()
+            return await self.async_step_notification_energy_settings()
+        current = self._working_options.get(key)
+        return self.async_show_form(
+            step_id="automation_lock",
+            data_schema=vol.Schema({
+                vol.Optional(key, description={"suggested_value": current} if current else None): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain=["input_boolean", "switch", "binary_sensor", "timer", "schedule"])),
+            }),
         )
 
     async def async_step_statistics(self, user_input=None):

@@ -174,9 +174,13 @@ async def test_start_heartbeat_and_nightly_slot_timer_upload(hass, berlin, hass_
     assert hub.paths() == ["/v1/activity"]
     assert client._slot_armed_for == slot.isoformat()
 
-    freezer.move_to(slot)
-    async_fire_time_changed(hass, slot)
-    freezer.tick(2)  # the check task runs a moment after the slot callback
+    # Test note (0.26.6.1): the check task starts eagerly in the slot callback; moving the clock by 2 s right after
+    # firing (while the upload could still be running) made the recorded upload time depend on scheduling (slot or
+    # slot + 2 s, ~40 % red under CPU load). The clock now stands 2 s after the slot before the timer fires – as in a
+    # real run, where the callback comes just after its point in time. The expectations are unchanged.
+    fired = slot + timedelta(seconds=2)
+    freezer.move_to(fired)
+    async_fire_time_changed(hass, fired)
     await hass.async_block_till_done()
 
     assert "/v1/diagnostics/chunks" in hub.paths()

@@ -76,6 +76,9 @@ class RoomInput:
     # room's default reference (outdoor air), never the supply air of an exhaust fan
     # or of a single window. ``None``: the reference air (previous behaviour).
     surface_reference_temperature: float | None = None
+    # v0.26.6.1 (#21): surface RH from the room's Home Assistant Mold Indicator helper (checked: finite, 0–100 %);
+    # None = the internal estimate below (unchanged formula, global surface_factor and limits)
+    surface_rh_helper: float | None = None
     co2_lead_latched: bool = False  # 0.26.5.4 (review A07): CO2 airing started, ends 50 ppm below the warning threshold
     session_co2_only: bool = False  # the running airing was asked for CO2 alone (a short, thorough airing)
     co2_sensor_missing: bool = False  # audit P1-04: CO2 goal on, sensor configured, but no readable value
@@ -382,7 +385,7 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     delta = ah - ref_ah
     potential = delta * room.volume_m3
     wall_reference = room.surface_reference_temperature if room.surface_reference_temperature is not None else room.reference_temperature
-    surf_rh = surface_relative_humidity(room.temperature, room.humidity, wall_reference, float(options["surface_factor"]))
+    surf_rh = room.surface_rh_helper if room.surface_rh_helper is not None else surface_relative_humidity(room.temperature, room.humidity, wall_reference, float(options["surface_factor"]))
     warn = float(options["mould_warn_surface_rh"])
     critical = float(options["mould_critical_surface_rh"])
 

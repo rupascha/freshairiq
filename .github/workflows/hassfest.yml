@@ -1,0 +1,22 @@
+# hassfest – the validation Home Assistant runs on its own integrations (manifest, translations,
+# services, icons). Required for the catalog. Public repository only (see hacs.yml).
+name: Validate with hassfest
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate:
+    if: github.repository == 'rupascha/freshairiq'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: home-assistant/actions/hassfest@master

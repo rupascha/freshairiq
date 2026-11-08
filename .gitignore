@@ -1,0 +1,17 @@
+# Generated artifacts (restored 2026-10-16; contract: tests/test_release_version_artifact_hardening_025115.py)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+ha_tests/coverage-ha.json
+quality_reports/
+node_modules/
+test-results/
+playwright-report/
+*.zip
+.DS_Store
+Thumbs.db

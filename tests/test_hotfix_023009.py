@@ -26,7 +26,7 @@ def test_reference_sensor_selectors_do_not_require_device_class():
     # Reference-air sensors must accept legitimate °C/% sensors without HA device_class metadata.
     assert 'async def async_step_room_references' in FLOW
     assert 'async def async_step_contact_references' in FLOW
-    assert '_single_contact_reference_schema(room, contact)' in FLOW
+    assert '_single_contact_reference_schema(room, contact, self._rooms)' in FLOW  # changed expectation (0.26.7.0 inside doors): the call also passes the room list for the connected-room choice
 
 
 # test_dashboard_accepts_unit_based_temperature_and_humidity_sensors: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_unit_based_climate_sensors_are_accepted_by_room_flow_and_runtime

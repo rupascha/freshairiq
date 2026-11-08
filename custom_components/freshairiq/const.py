@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.6.0"
+VERSION = "0.26.7.0"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -58,6 +58,7 @@ VOLUME_MODE_DIMENSIONS = "dimensions"
 CONF_ROOM_REFERENCE_TEMPERATURE = "reference_temperature"
 CONF_ROOM_REFERENCE_HUMIDITY = "reference_humidity"
 CONF_ROOM_CO2 = "co2"
+CONF_ROOM_MOLD_INDICATOR = "mold_indicator"  # v0.26.6.1 (#21): optional HA Mold Indicator helper for the surface RH
 CONF_ROOM_GOAL_PRIORITIES = "goal_priorities"
 CONF_ROOM_DISABLED_GOALS = "disabled_goals"
 CONF_ROOM_TARGET_TEMPERATURE = "target_temperature"
@@ -81,6 +82,12 @@ CONF_CONTACT_PASSAGE_DOORS = "contact_passage_doors"
 # 0.26.5.5: what each contact is on – "window" or "door"; missing = not stated (old setups: no assumption)
 CONF_CONTACT_KINDS = "contact_kinds"
 CONTACT_KINDS = ["unknown", "window", "door"]
+# Where an opening leads (contact_sides.py): only "inside" is stored; no entry = outside (legacy behaviour)
+CONF_CONTACT_SIDES = "contact_sides"
+CONTACT_SIDE_OUTSIDE = "outside"
+CONTACT_SIDE_INSIDE = "inside"
+CONTACT_SIDES = [CONTACT_SIDE_OUTSIDE, CONTACT_SIDE_INSIDE]
+CONF_CONTACT_CONNECTED_ROOMS = "contact_connected_rooms"
 # 0.26.5.3: optional automatic control (off unless the user enables it)
 CONF_CONTACT_COVER_FOLLOW = "contact_cover_follow"
 CONF_ROOM_AUTO_SUN_PROTECTION = "auto_sun_protection"
@@ -90,6 +97,8 @@ CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME = "exhaust_fan_max_runtime_min"
 # 0.26.5.5: optional switch/timer of another automation (Alexa, washing machine …) – while it is on,
 # FreshAirIQ leaves the room's fans to it and never switches them off.
 CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK = "exhaust_fan_external_lock"
+# 0.26.7.0: an optional Home Assistant entity (e.g. input_boolean.urlaub) that pauses every automatic device action
+CONF_AUTOMATION_LOCK_ENTITY = "automation_lock_entity"
 # 0.26.5.5: optional lock period of the automatic fan control (e.g. 22:00–07:00); off without both times
 CONF_ROOM_EXHAUST_FAN_BLOCK_START = "exhaust_fan_block_start"
 CONF_ROOM_EXHAUST_FAN_BLOCK_END = "exhaust_fan_block_end"
@@ -206,7 +215,7 @@ DEFAULT_OPTIONS = {
     "max_temp_loss_next_5_min_c": 0.6,
     "min_efficiency_ml_per_01c": 8.0,
     "surface_factor": 0.25,
-    "mould_slight_surface_rh": 60.0,  # 0.26.6.0(7): all four mould risk limits are settings
+    "mould_slight_surface_rh": 60.0,  # 0.26.6.1(7): all four mould risk limits are settings
     "mould_elevated_surface_rh": 70.0,
     "mould_warn_surface_rh": 80.0,
     "mould_critical_surface_rh": 90.0,

@@ -1,0 +1,67 @@
+# Pure-logic coverage scope (canonical 100 % LINE coverage gate).
+# Restored 2026-10-16: the file is required by tools/pure_logic_scope_gate.py,
+# tools/pure_logic_coverage_gate.py, tools/github_release_gate.py and several
+# contract tests, but was missing from the repository. The omit list is the
+# mechanical classification used by tools/pure_logic_scope_gate.py: modules
+# importing homeassistant/aiohttp are measured by the real-HA runtime suite.
+[run]
+branch = False
+source = custom_components/freshairiq
+omit =
+    custom_components/freshairiq/__init__.py
+    custom_components/freshairiq/actuator_controller.py
+    custom_components/freshairiq/binary_sensor.py
+    custom_components/freshairiq/button.py
+    custom_components/freshairiq/config_flow.py
+    custom_components/freshairiq/config_flow_fields.py
+    custom_components/freshairiq/config_flow_goals.py
+    custom_components/freshairiq/config_flow_options.py
+    custom_components/freshairiq/config_flow_options_connections.py
+    custom_components/freshairiq/config_flow_options_rooms.py
+    custom_components/freshairiq/config_flow_options_settings.py
+    custom_components/freshairiq/config_flow_rooms.py
+    custom_components/freshairiq/config_flow_schemas.py
+    custom_components/freshairiq/config_flow_subentry.py
+    custom_components/freshairiq/coordinator.py
+    custom_components/freshairiq/coordinator_contacts.py
+    custom_components/freshairiq/coordinator_decision.py
+    custom_components/freshairiq/coordinator_house.py
+    custom_components/freshairiq/coordinator_listeners.py
+    custom_components/freshairiq/coordinator_night.py
+    custom_components/freshairiq/coordinator_room.py
+    custom_components/freshairiq/coordinator_room_contacts.py
+    custom_components/freshairiq/coordinator_room_model.py
+    custom_components/freshairiq/coordinator_room_result.py
+    custom_components/freshairiq/coordinator_room_session.py
+    custom_components/freshairiq/coordinator_session_events.py
+    custom_components/freshairiq/coordinator_session_validation.py
+    custom_components/freshairiq/coordinator_sessions.py
+    custom_components/freshairiq/coordinator_sources.py
+    custom_components/freshairiq/diagnostics.py
+    custom_components/freshairiq/diagnostics_export.py
+    custom_components/freshairiq/diagnostics_privacy.py
+    custom_components/freshairiq/diagnostics_records.py
+    custom_components/freshairiq/entity.py
+    custom_components/freshairiq/feedback_api.py
+    custom_components/freshairiq/house_map.py
+    custom_components/freshairiq/notifications.py
+    custom_components/freshairiq/number.py
+    custom_components/freshairiq/repairs.py
+    custom_components/freshairiq/room_creation_trace.py
+    custom_components/freshairiq/room_history_api.py
+    custom_components/freshairiq/runtime.py
+    custom_components/freshairiq/select.py
+    custom_components/freshairiq/sensor.py
+    custom_components/freshairiq/dashboard_live.py
+    custom_components/freshairiq/storage.py
+    custom_components/freshairiq/telemetry.py
+    custom_components/freshairiq/telemetry_reports.py
+    custom_components/freshairiq/typing.py
+    custom_components/freshairiq/ventilation_log_api.py
+    custom_components/freshairiq/weather_future.py
+
+[report]
+fail_under = 100
+show_missing = True
+skip_empty = False
+precision = 2

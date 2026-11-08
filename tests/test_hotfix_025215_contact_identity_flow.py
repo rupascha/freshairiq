@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 import json
 from tests._source import module_source
@@ -10,7 +11,7 @@ def test_no_failed_multi_opening_schema_is_used_anymore():
 
 def test_all_four_native_flows_show_one_contact_at_a_time_with_real_identity():
     # Initial config + subentry reconfigure use room_references; Options uses contact_references.
-    assert FLOW.count("_single_contact_reference_schema(room, contact)") == 4
+    assert len(re.findall(r"_single_contact_reference_schema\(room, contact, self\._(?:rooms\(\)|rooms|entry_rooms\(\))\)", FLOW)) == 4  # changed expectation (0.26.7.0 inside doors): the call also passes the room list for the connected-room choice
     assert FLOW.count('"contact_name": _contact_display_name(self.hass, contact)') == 4
     assert FLOW.count('"contact_entity": contact') == 4
     assert FLOW.count('"contact_position": str(index + 1)') == 4

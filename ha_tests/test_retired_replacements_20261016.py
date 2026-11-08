@@ -144,7 +144,8 @@ async def _all_native_forms(hass) -> dict[str, list]:
     # The ranking page is reached by choosing the room on the priorities page.
     result = await _open(hass, entry, "ventilation_settings", "recommendation_priorities")
     forms["recommendation_priority_order"] = await _submit(hass, result, {"room": "wohnzimmer"})
-    for leaf in ("notifications", "energy"):
+    # Test note (0.26.7.0, owner request: optional global automation lock): its own page in this menu
+    for leaf in ("notifications", "energy", "automation_lock"):
         await render(leaf, "notification_energy_settings", leaf)
     for system in ("heat_pump", "gas", "oil", "district_heating", "electric"):
         await render(f"energy_details:{system}", "notification_energy_settings", "energy", submit={"heating_system": system})

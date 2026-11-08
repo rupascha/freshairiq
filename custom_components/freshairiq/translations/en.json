@@ -38,6 +38,7 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "co2": "CO₂ sensor",
+          "mold_indicator": "Mold indicator (HA helper, optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
@@ -68,7 +69,7 @@
           "temperature": "Temperature sensor for the room. Required for calculated rooms; default: no preselection.",
           "humidity": "Humidity sensor for the room. Required for calculated rooms; default: no preselection.",
           "contacts": "Select all contacts through which FreshAirIQ should detect ventilation.",
-          "contact_mode": "“At least one open” reacts to any selected contact; “All open” only to the shared ventilation path.",
+          "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
           "volume": "Enter either the volume directly in m³ or complete dimensions.",
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
@@ -78,6 +79,7 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+          "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
           "floor": "Floor/area used for grouping and cross ventilation. Example: “Ground floor”. Default: not assigned.",
           "include_in_calculations": "Off = the room remains visible but is excluded from recommendations, house balance, statistics and learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -140,6 +142,8 @@
           "orientation": "Compass orientation",
           "covers": "Blind/shutter",
           "contact_kind": "Kind of opening",
+          "contact_side": "Opening leads to",
+          "connected_room": "Connected room (inside door only, optional)",
           "passage_door": "Passage door – pulled shut from outside after passing through",
           "cover_follow": "Open the cover when this window/door opens"
         },
@@ -150,6 +154,8 @@
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
           "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
+          "contact_side": "An inside door connects rooms with each other. Opening it starts no outside airing, but it can change how air spreads while airing through windows or outside doors. Outside: window, terrace, balcony or front door – may start an outside airing. Another room: room door or inside opening – never starts an outside airing on its own.",
+          "connected_room": "Choose the room this inside door connects. While the door is open, FreshAirIQ can take this air path into account. While it is closed, this path is not treated as open. Other connections that actually exist stay unaffected. Only applies when “Another room” is selected above; leave it empty for “Outside”.",
           "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
           "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
         }
@@ -186,6 +192,8 @@
       "invalid_mould_order": "The four mould limits must rise: slightly elevated < elevated < warning (high) < critical (very high).",
       "invalid_co2_order": "The CO₂ warning threshold must be lower than the critical CO₂ threshold.",
       "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
+      "contact_side_conflict": "This contact sensor is set up differently in another room. Please decide consistently whether it monitors an outside opening or a connection between inside rooms.",
+      "connected_room_outside": "“Connected room” only applies to inside doors. Select “Another room” above or leave the field empty.",
       "outdoor_pair_required": "Outdoor temperature and outdoor humidity must be selected together or both left empty.",
       "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty)."
     },
@@ -196,8 +204,8 @@
   "selector": {
     "contact_mode": {
       "options": {
-        "any": "Any selected contact open",
-        "all": "All selected contacts open"
+        "any": "At least one outside opening open",
+        "all": "All outside openings open"
       }
     },
     "volume_mode": {
@@ -341,6 +349,12 @@
         "door": "Door"
       }
     },
+    "contact_side": {
+      "options": {
+        "outside": "Outside – window, terrace, balcony or front door",
+        "inside": "Another room – room door or inside opening"
+      }
+    },
     "cover_position_zero_means": {
       "options": {
         "closed": "0 % = fully closed / 100 % = fully open",
@@ -481,6 +495,7 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "co2": "CO₂ sensor",
+          "mold_indicator": "Mold indicator (HA helper, optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
@@ -552,6 +567,7 @@
               "temperature_aggregation": "Temperature aggregation",
               "humidity_aggregation": "Humidity aggregation",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "exhaust_fan_reference_temperature": "Exhaust fan supply air: temperature (neighbouring room)",
               "exhaust_fan_reference_humidity": "Exhaust fan supply air: humidity (neighbouring room)",
@@ -564,10 +580,11 @@
               "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+              "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "exhaust_fan_reference_temperature": "Optional. An exhaust fan blows room air outside; the replacement air flows in from the neighbouring room (door gap, transfer grille), not from outside. Temperature sensor of that room. FreshAirIQ uses it while the fan runs and no window is open (always for rooms without a window contact). Only together with the humidity.",
               "exhaust_fan_reference_humidity": "Optional. Humidity sensor of the neighbouring room the fan draws its air from. Only together with the temperature; if one of them is unavailable, FreshAirIQ does not fall back to outdoor air.",
@@ -600,6 +617,7 @@
               "reference_temperature": "Reference temperature",
               "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)",
@@ -613,6 +631,7 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -635,6 +654,7 @@
               "humidifier": "Humidifier (optional)",
               "air_purifier": "Air purifier (optional)",
               "co2": "CO₂ sensor",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "target_temperature_mode": "Comfort target temperature",
               "target_temperature": "Manual target temperature",
               "target_temperature_fallback": "Fallback target temperature"
@@ -648,6 +668,7 @@
               "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
               "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -681,7 +702,7 @@
           "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
           "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
           "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-          "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+          "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
           "volume": "Enter the volume directly in m³ OR use length, width and height.",
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
@@ -691,6 +712,7 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+          "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -764,7 +786,7 @@
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms."
             }
           },
           "geometry": {
@@ -790,6 +812,7 @@
               "reference_temperature": "Reference temperature",
               "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)",
@@ -803,6 +826,7 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -825,6 +849,7 @@
               "humidifier": "Humidifier (optional)",
               "air_purifier": "Air purifier (optional)",
               "co2": "CO₂ sensor",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "target_temperature_mode": "Comfort target temperature",
               "target_temperature": "Manual target temperature",
               "target_temperature_fallback": "Fallback target temperature"
@@ -838,6 +863,7 @@
               "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
               "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -896,6 +922,7 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "co2": "CO₂ sensor",
+          "mold_indicator": "Mold indicator (HA helper, optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
@@ -967,6 +994,7 @@
               "temperature_aggregation": "Temperature aggregation",
               "humidity_aggregation": "Humidity aggregation",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "exhaust_fan_reference_temperature": "Exhaust fan supply air: temperature (neighbouring room)",
               "exhaust_fan_reference_humidity": "Exhaust fan supply air: humidity (neighbouring room)",
@@ -979,10 +1007,11 @@
               "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+              "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "exhaust_fan_reference_temperature": "Optional. An exhaust fan blows room air outside; the replacement air flows in from the neighbouring room (door gap, transfer grille), not from outside. Temperature sensor of that room. FreshAirIQ uses it while the fan runs and no window is open (always for rooms without a window contact). Only together with the humidity.",
               "exhaust_fan_reference_humidity": "Optional. Humidity sensor of the neighbouring room the fan draws its air from. Only together with the temperature; if one of them is unavailable, FreshAirIQ does not fall back to outdoor air.",
@@ -1015,6 +1044,7 @@
               "reference_temperature": "Reference temperature",
               "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)",
@@ -1028,6 +1058,7 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -1050,6 +1081,7 @@
               "humidifier": "Humidifier (optional)",
               "air_purifier": "Air purifier (optional)",
               "co2": "CO₂ sensor",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "target_temperature_mode": "Comfort target temperature",
               "target_temperature": "Manual target temperature",
               "target_temperature_fallback": "Fallback target temperature"
@@ -1063,6 +1095,7 @@
               "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
               "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -1096,7 +1129,7 @@
           "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
           "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
           "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-          "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+          "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
           "volume": "Enter the volume directly in m³ OR use length, width and height.",
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
@@ -1106,6 +1139,7 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+          "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -1179,7 +1213,7 @@
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms."
             }
           },
           "geometry": {
@@ -1205,6 +1239,7 @@
               "reference_temperature": "Reference temperature",
               "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)",
@@ -1218,6 +1253,7 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -1240,6 +1276,7 @@
               "humidifier": "Humidifier (optional)",
               "air_purifier": "Air purifier (optional)",
               "co2": "CO₂ sensor",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "target_temperature_mode": "Comfort target temperature",
               "target_temperature": "Manual target temperature",
               "target_temperature_fallback": "Fallback target temperature"
@@ -1253,6 +1290,7 @@
               "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
               "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -1355,7 +1393,7 @@
           "co2_critical": "Above this CO₂ value, air quality is treated as critical.",
           "learning_enabled": "Enables persistent learning of air exchange, routines and forecast corrections. Default: on.",
           "learning_max_duration_min": "Longer sessions are not used as clean learning samples because weather, heating and occupancy effects increasingly dominate.",
-          "cross_ventilation_pairs": "Legacy compatibility display; cross ventilation is fully managed on the dedicated “Cross ventilation” page. Example: living_room+bedroom."
+          "cross_ventilation_pairs": "This setting only exists for compatibility with older versions. You edit cross-ventilation pairs under ‘Cross ventilation’."
         },
         "sections": {
           "humidity_thresholds": {
@@ -2043,11 +2081,13 @@
         "menu_options": {
           "notifications": "Notifications",
           "energy": "Heating & energy costs",
+          "automation_lock": "Automation lock (e.g. holidays)",
           "back_to_main": "← Back to settings"
         },
         "menu_option_descriptions": {
           "notifications": "Recipients, notification types and minimum intervals",
           "energy": "Heating system and cost parameters for heat losses",
+          "automation_lock": "Optional: an entity that pauses every automatic device action",
           "back_to_main": "Back to the main settings overview"
         },
         "data_description": {}
@@ -2105,6 +2145,8 @@
           "orientation": "Compass orientation",
           "covers": "Blind/shutter",
           "contact_kind": "Kind of opening",
+          "contact_side": "Opening leads to",
+          "connected_room": "Connected room (inside door only, optional)",
           "passage_door": "Passage door – pulled shut from outside after passing through",
           "cover_position_zero_means": "Blind/shutter position logic",
           "wizard_back": "← Back to previous page",
@@ -2117,6 +2159,8 @@
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
           "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
+          "contact_side": "An inside door connects rooms with each other. Opening it starts no outside airing, but it can change how air spreads while airing through windows or outside doors. Outside: window, terrace, balcony or front door – may start an outside airing. Another room: room door or inside opening – never starts an outside airing on its own.",
+          "connected_room": "Choose the room this inside door connects. While the door is open, FreshAirIQ can take this air path into account. While it is closed, this path is not treated as open. Other connections that actually exist stay unaffected. Only applies when “Another room” is selected above; leave it empty for “Outside”.",
           "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
           "cover_position_zero_means": "Choose whether 0% means fully closed or fully open. This setting applies to blinds/shutters assigned to this room.",
           "wizard_back": "Enable and confirm with OK to go back without changing this page.",
@@ -2459,6 +2503,7 @@
           "delay_seconds": "Opening delay",
           "orientation": "Compass orientation",
           "co2": "CO₂ sensor",
+          "mold_indicator": "Mold indicator (HA helper, optional)",
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
@@ -2530,6 +2575,7 @@
               "temperature_aggregation": "Temperature aggregation",
               "humidity_aggregation": "Humidity aggregation",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
               "exhaust_fan_reference_temperature": "Exhaust fan supply air: temperature (neighbouring room)",
               "exhaust_fan_reference_humidity": "Exhaust fan supply air: humidity (neighbouring room)",
@@ -2542,10 +2588,11 @@
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+              "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
               "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
               "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
               "exhaust_fan_reference_temperature": "Optional. An exhaust fan blows room air outside; the replacement air flows in from the neighbouring room (door gap, transfer grille), not from outside. Temperature sensor of that room. FreshAirIQ uses it while the fan runs and no window is open (always for rooms without a window contact). Only together with the humidity.",
               "exhaust_fan_reference_humidity": "Optional. Humidity sensor of the neighbouring room the fan draws its air from. Only together with the temperature; if one of them is unavailable, FreshAirIQ does not fall back to outdoor air.",
@@ -2578,6 +2625,7 @@
               "reference_temperature": "Reference temperature",
               "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)",
@@ -2591,6 +2639,7 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -2613,6 +2662,7 @@
               "humidifier": "Humidifier (optional)",
               "air_purifier": "Air purifier (optional)",
               "co2": "CO₂ sensor",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "target_temperature_mode": "Comfort target temperature",
               "target_temperature": "Manual target temperature",
               "target_temperature_fallback": "Fallback target temperature"
@@ -2626,6 +2676,7 @@
               "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
               "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -2659,7 +2710,7 @@
           "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
           "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
           "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-          "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+          "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
           "volume": "Enter the volume directly in m³ OR use length, width and height.",
           "length": "Only required when no direct room volume is entered.",
           "width": "Only required when no direct room volume is entered.",
@@ -2669,6 +2720,7 @@
           "delay_seconds": "Time this contact must remain continuously open before FreshAirIQ detects ventilation. 0 s = immediately; 120 s = after two minutes.",
           "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
           "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+          "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -2742,7 +2794,7 @@
               "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
               "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
               "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-              "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path."
+              "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms."
             }
           },
           "geometry": {
@@ -2768,6 +2820,7 @@
               "reference_temperature": "Reference temperature",
               "reference_humidity": "Reference humidity",
               "co2": "CO₂ sensor (optional)",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "voc": "VOC/TVOC sensor (optional)",
               "pm25": "PM2.5 sensor (optional)",
               "illuminance": "Illuminance sensor (optional)",
@@ -2781,6 +2834,7 @@
               "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
               "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
               "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
               "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -2803,6 +2857,7 @@
               "humidifier": "Humidifier (optional)",
               "air_purifier": "Air purifier (optional)",
               "co2": "CO₂ sensor",
+              "mold_indicator": "Mold indicator (HA helper, optional)",
               "target_temperature_mode": "Comfort target temperature",
               "target_temperature": "Manual target temperature",
               "target_temperature_fallback": "Fallback target temperature"
@@ -2816,6 +2871,7 @@
               "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
               "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
               "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+              "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
               "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
               "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
               "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -2965,6 +3021,16 @@
           "wizard_back": "Tick and press OK to go back without saving.",
           "connected_rooms": "Choosing no room removes all open connections of this room."
         }
+      },
+      "automation_lock": {
+        "title": "Automation lock",
+        "description": "While the chosen entity is on (e.g. input_boolean.holidays), FreshAirIQ starts no new automatic device action: no covers, no exhaust fan switched on. A fan FreshAirIQ switched on itself is switched off once; devices switched by hand or by other automations are left alone. Recommendations, warnings and diagnostics stay active. When the lock ends, FreshAirIQ decides the situation anew – no commands are queued. FreshAirIQ does not pause other automations (Node-RED, HA); they can read the status entity “Automation lock”. Leave empty = no lock.",
+        "data": {
+          "automation_lock_entity": "Lock entity"
+        },
+        "data_description": {
+          "automation_lock_entity": "input_boolean, switch, binary sensor, timer or schedule. On: locked. Unavailable or deleted: not locked (the status entity shows its state)."
+        }
       }
     },
     "error": {
@@ -2980,6 +3046,8 @@
       "invalid_mould_order": "The four mould limits must rise: slightly elevated < elevated < warning (high) < critical (very high).",
       "invalid_co2_order": "The CO₂ warning threshold must be lower than the critical CO₂ threshold.",
       "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
+      "contact_side_conflict": "This contact sensor is set up differently in another room. Please decide consistently whether it monitors an outside opening or a connection between inside rooms.",
+      "connected_room_outside": "“Connected room” only applies to inside doors. Select “Another room” above or leave the field empty.",
       "outdoor_pair_required": "Outdoor temperature and outdoor humidity must be selected together or both left empty.",
       "resident_profiles_invalid": "The resident profile assignments are invalid. Use a valid JSON object and correct the assignment in the central FreshAirIQ configuration.",
       "no_ha_areas_to_import": "No additional Home Assistant areas are available to import.",
@@ -2990,7 +3058,8 @@
       "invalid_goal_order": "Assign each available ventilation goal exactly once.",
       "duplicate_goal_order": "A ventilation goal was selected more than once. Each goal may appear only once.",
       "humidity_goal_required": "Dehumidification cannot be switched off – moisture and mould protection always stays active. Choose “Off” only for CO₂ or temperature.",
-      "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty)."
+      "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty).",
+      "cross_pairs_invalid": "Cross ventilation not saved: {error_detail}. Use room keys or unique room names, e.g. Bedroom+Living room."
     },
     "selector": {
       "operating_profile": {
@@ -3307,6 +3376,9 @@
             "name": "Sun position used"
           }
         }
+      },
+      "automation_lock": {
+        "name": "Automation lock"
       }
     },
     "button": {
@@ -3391,6 +3463,7 @@
             "reference_temperature": "Reference temperature",
             "reference_humidity": "Reference humidity",
             "co2": "CO₂ sensor",
+            "mold_indicator": "Mold indicator (HA helper, optional)",
             "floor": "Floor",
             "include_in_calculations": "Include in FreshAirIQ calculations",
             "moisture_sources": "Moisture sources in the room",
@@ -3444,6 +3517,7 @@
                 "temperature_aggregation": "Temperature aggregation",
                 "humidity_aggregation": "Humidity aggregation",
                 "co2": "CO₂ sensor (optional)",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
                 "exhaust_fan_reference_temperature": "Exhaust fan supply air: temperature (neighbouring room)",
                 "exhaust_fan_reference_humidity": "Exhaust fan supply air: humidity (neighbouring room)",
@@ -3456,10 +3530,11 @@
                 "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+                "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "exhaust_fan_reference_temperature": "Optional. An exhaust fan blows room air outside; the replacement air flows in from the neighbouring room (door gap, transfer grille), not from outside. Temperature sensor of that room. FreshAirIQ uses it while the fan runs and no window is open (always for rooms without a window contact). Only together with the humidity.",
                 "exhaust_fan_reference_humidity": "Optional. Humidity sensor of the neighbouring room the fan draws its air from. Only together with the temperature; if one of them is unavailable, FreshAirIQ does not fall back to outdoor air.",
@@ -3492,6 +3567,7 @@
                 "reference_temperature": "Reference temperature",
                 "reference_humidity": "Reference humidity",
                 "co2": "CO₂ sensor (optional)",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "voc": "VOC/TVOC sensor (optional)",
                 "pm25": "PM2.5 sensor (optional)",
                 "illuminance": "Illuminance sensor (optional)",
@@ -3505,6 +3581,7 @@
                 "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
                 "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -3543,6 +3620,7 @@
                 "humidifier": "Humidifier (optional)",
                 "air_purifier": "Air purifier (optional)",
                 "co2": "CO₂ sensor",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "target_temperature_mode": "Comfort target temperature",
                 "target_temperature": "Manual target temperature",
                 "target_temperature_fallback": "Fallback target temperature"
@@ -3556,6 +3634,7 @@
                 "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
                 "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3589,7 +3668,7 @@
             "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
             "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
             "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-            "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+            "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
             "volume": "Enter the volume directly in m³ OR use length, width and height.",
             "length": "Only required when no direct room volume is entered.",
             "width": "Only required when no direct room volume is entered.",
@@ -3597,6 +3676,7 @@
             "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
             "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
             "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+            "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -3643,6 +3723,8 @@
             "orientation": "Compass orientation",
             "covers": "Blind/shutter",
             "contact_kind": "Kind of opening",
+            "contact_side": "Opening leads to",
+            "connected_room": "Connected room (inside door only, optional)",
             "passage_door": "Door is used as a passage and pulled shut from outside",
             "wizard_back": "← Back to previous page",
             "cover_follow": "Open the cover when this window/door opens"
@@ -3654,6 +3736,8 @@
             "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
             "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
             "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
+            "contact_side": "An inside door connects rooms with each other. Opening it starts no outside airing, but it can change how air spreads while airing through windows or outside doors. Outside: window, terrace, balcony or front door – may start an outside airing. Another room: room door or inside opening – never starts an outside airing on its own.",
+            "connected_room": "Choose the room this inside door connects. While the door is open, FreshAirIQ can take this air path into account. While it is closed, this path is not treated as open. Other connections that actually exist stay unaffected. Only applies when “Another room” is selected above; leave it empty for “Outside”.",
             "passage_door": "Enable only when using a genuine three-state sensor on the door hardware that detects the handle or hardware position. This option is intended for doors that are used as a passage and then only pulled shut from outside while the sensor continues to report “open”. Do not enable this option for three-state helpers created from multiple standard contact sensors. FreshAirIQ then protects the learning model from a false open-learning sample.",
             "wizard_back": "Tick and press OK to return to the previous page. Entries on this page are not saved.",
             "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
@@ -3669,6 +3753,8 @@
             "orientation": "Compass orientation",
             "covers": "Blind/shutter",
             "contact_kind": "Kind of opening",
+            "contact_side": "Opening leads to",
+            "connected_room": "Connected room (inside door only, optional)",
             "passage_door": "Passage door – pulled shut from outside after passing through",
             "cover_follow": "Open the cover when this window/door opens"
           },
@@ -3679,6 +3765,8 @@
             "orientation": "Actual compass orientation of this opening. A window with morning sun is typically East. Improves wind and cross-ventilation assessment.",
             "covers": "Optional. Blind or shutter directly assigned to this specific window or door.",
             "contact_kind": "Window or door – for more precise advice (\"Open the window\", \"Close the door\") and the house map. \"Not stated\" changes nothing in existing advice.",
+            "contact_side": "An inside door connects rooms with each other. Opening it starts no outside airing, but it can change how air spreads while airing through windows or outside doors. Outside: window, terrace, balcony or front door – may start an outside airing. Another room: room door or inside opening – never starts an outside airing on its own.",
+            "connected_room": "Choose the room this inside door connects. While the door is open, FreshAirIQ can take this air path into account. While it is closed, this path is not treated as open. Other connections that actually exist stay unaffected. Only applies when “Another room” is selected above; leave it empty for “Outside”.",
             "passage_door": "Example: You step outside to smoke on the terrace or balcony and only pull the door shut from outside. **Enable only if this door has a genuine three-state contact sensor installed in the door hardware** that detects the handle or hardware position. Do not enable for normal two-state contacts or three-state helpers built from multiple simple contact sensors.",
             "cover_follow": "Requires FreshAirIQ to control the covers selected above: when the window/door is opened (also tilted) they go fully up, when it is closed they return to their previous position – unless someone moved them in between. For a passage door the cover never closes while the door is open; a close started by anyone else is stopped and the cover opens again."
           }
@@ -3729,6 +3817,7 @@
             "reference_temperature": "Reference temperature",
             "reference_humidity": "Reference humidity",
             "co2": "CO₂ sensor",
+            "mold_indicator": "Mold indicator (HA helper, optional)",
             "floor": "Floor / zone",
             "include_in_calculations": "Include in calculations",
             "moisture_sources": "Moisture sources in the room",
@@ -3782,6 +3871,7 @@
                 "temperature_aggregation": "Temperature aggregation",
                 "humidity_aggregation": "Humidity aggregation",
                 "co2": "CO₂ sensor (optional)",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
                 "exhaust_fan_reference_temperature": "Exhaust fan supply air: temperature (neighbouring room)",
                 "exhaust_fan_reference_humidity": "Exhaust fan supply air: humidity (neighbouring room)",
@@ -3794,10 +3884,11 @@
                 "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+                "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "exhaust_fan_reference_temperature": "Optional. An exhaust fan blows room air outside; the replacement air flows in from the neighbouring room (door gap, transfer grille), not from outside. Temperature sensor of that room. FreshAirIQ uses it while the fan runs and no window is open (always for rooms without a window contact). Only together with the humidity.",
                 "exhaust_fan_reference_humidity": "Optional. Humidity sensor of the neighbouring room the fan draws its air from. Only together with the temperature; if one of them is unavailable, FreshAirIQ does not fall back to outdoor air.",
@@ -3830,6 +3921,7 @@
                 "reference_temperature": "Reference temperature",
                 "reference_humidity": "Reference humidity",
                 "co2": "CO₂ sensor (optional)",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "voc": "VOC/TVOC sensor (optional)",
                 "pm25": "PM2.5 sensor (optional)",
                 "illuminance": "Illuminance sensor (optional)",
@@ -3843,6 +3935,7 @@
                 "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
                 "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -3881,6 +3974,7 @@
                 "humidifier": "Humidifier (optional)",
                 "air_purifier": "Air purifier (optional)",
                 "co2": "CO₂ sensor",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "target_temperature_mode": "Comfort target temperature",
                 "target_temperature": "Manual target temperature",
                 "target_temperature_fallback": "Fallback target temperature"
@@ -3894,6 +3988,7 @@
                 "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
                 "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -3927,7 +4022,7 @@
             "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
             "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
             "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-            "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+            "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
             "volume": "Enter the volume directly in m³ OR use length, width and height.",
             "length": "Only required when no direct room volume is entered.",
             "width": "Only required when no direct room volume is entered.",
@@ -3935,6 +4030,7 @@
             "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
             "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
             "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+            "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -3987,6 +4083,7 @@
             "reference_temperature": "Reference temperature",
             "reference_humidity": "Reference humidity",
             "co2": "CO₂ sensor",
+            "mold_indicator": "Mold indicator (HA helper, optional)",
             "floor": "Floor / zone",
             "include_in_calculations": "Include in calculations",
             "moisture_sources": "Moisture sources in the room",
@@ -4040,6 +4137,7 @@
                 "temperature_aggregation": "Temperature aggregation",
                 "humidity_aggregation": "Humidity aggregation",
                 "co2": "CO₂ sensor (optional)",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "exhaust_fan": "Exhaust fan / mechanical ventilation (optional)",
                 "exhaust_fan_reference_temperature": "Exhaust fan supply air: temperature (neighbouring room)",
                 "exhaust_fan_reference_humidity": "Exhaust fan supply air: humidity (neighbouring room)",
@@ -4052,10 +4150,11 @@
                 "temperature": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "humidity": "Required for calculated rooms. One sensor is fully sufficient. With multiple sensors, FreshAirIQ combines the currently valid values using the selected aggregation. If an additional sensor becomes unavailable, the room continues with the remaining valid sensors. For ventilation-session evaluation, at least one climate sensor must provide enough new measurements; additional sensors with at least one new measurement may then participate in the combined evaluation.",
                 "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-                "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+                "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
                 "temperature_aggregation": "Defines how multiple valid temperature sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = lowest measured temperature; Maximum = highest measured temperature.",
                 "humidity_aggregation": "Defines how multiple valid humidity sensors are combined: Mean (recommended) = average of all valid values; Median = middle value and more robust against individual outliers, especially with three or more sensors; Minimum = driest measurement point; Maximum = most humid measurement point.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "exhaust_fan": "Optional. Select one or more exhaust fans or fan-stage entities. FreshAirIQ detects mechanical ventilation while any selected entity is active and learns it separately from window ventilation. It is only switched if you enable it under \"Automatic control\"; FreshAirIQ never selects a fan stage.",
                 "exhaust_fan_reference_temperature": "Optional. An exhaust fan blows room air outside; the replacement air flows in from the neighbouring room (door gap, transfer grille), not from outside. Temperature sensor of that room. FreshAirIQ uses it while the fan runs and no window is open (always for rooms without a window contact). Only together with the humidity.",
                 "exhaust_fan_reference_humidity": "Optional. Humidity sensor of the neighbouring room the fan draws its air from. Only together with the temperature; if one of them is unavailable, FreshAirIQ does not fall back to outdoor air.",
@@ -4088,6 +4187,7 @@
                 "reference_temperature": "Reference temperature",
                 "reference_humidity": "Reference humidity",
                 "co2": "CO₂ sensor (optional)",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "voc": "VOC/TVOC sensor (optional)",
                 "pm25": "PM2.5 sensor (optional)",
                 "illuminance": "Illuminance sensor (optional)",
@@ -4101,6 +4201,7 @@
                 "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
                 "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
                 "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
                 "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -4139,6 +4240,7 @@
                 "humidifier": "Humidifier (optional)",
                 "air_purifier": "Air purifier (optional)",
                 "co2": "CO₂ sensor",
+                "mold_indicator": "Mold indicator (HA helper, optional)",
                 "target_temperature_mode": "Comfort target temperature",
                 "target_temperature": "Manual target temperature",
                 "target_temperature_fallback": "Fallback target temperature"
@@ -4152,6 +4254,7 @@
                 "humidifier": "Optional. Humidifier as an alternative when room air is clearly too dry. No automatic device control.",
                 "air_purifier": "Optional. Air purifier as an additional measure for particulate matter, VOC or pollen. No automatic device control.",
                 "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+                "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
                 "target_temperature_mode": "Automatic uses the plausible thermostat/climate setpoint. Manual uses the comfort temperature configured below.",
                 "target_temperature": "Only for manual target temperature: desired comfort temperature from 12–30 °C.",
                 "target_temperature_fallback": "Optional fallback when the thermostat/climate device provides no plausible setpoint, for example while it is switched off."
@@ -4185,7 +4288,7 @@
             "temperature": "Required for calculated rooms. Prefer a sensor that measures the actual room air.",
             "humidity": "Required for calculated rooms. Do not place the sensor directly in splash water, above a radiator or immediately next to a window.",
             "contacts": "Optional: Select windows/doors through which FreshAirIQ should detect ventilation for this room. The opening may also be located in another room. Without a contact, the indoor room remains fully climate-monitored and can learn indirect ventilation effects.",
-            "contact_mode": "“At least one open” = any selected contact starts ventilation. “All open” = only all selected contacts together count as an active ventilation path.",
+            "contact_mode": "At least one outside opening open: ventilation starts as soon as one designated outside contact is opened. All outside openings open: ventilation starts only once every designated outside contact is open. Inside doors do not trigger ventilation. They can, however, affect the air connection between rooms.",
             "volume": "Enter the volume directly in m³ OR use length, width and height.",
             "length": "Only required when no direct room volume is entered.",
             "width": "Only required when no direct room volume is entered.",
@@ -4193,6 +4296,7 @@
             "reference_temperature": "Optional. Use a reference temperature only when the opening leads to an air zone other than normal outdoor air, e.g. a conservatory. Pair it with reference humidity from the same zone.",
             "reference_humidity": "Optional. Reference humidity from the same air zone as the reference temperature. FreshAirIQ uses both to calculate absolute humidity of incoming air.",
             "co2": "Optional. With a CO₂ sensor, air quality becomes a regular ventilation goal. Without one, this room has no CO₂ priority, recommendation or CO₂ target display.",
+            "mold_indicator": "Optional: this room's Home Assistant “Mold indicator” helper (e.g. for a cold roof window or a thermal bridge). Its value replaces the internal surface humidity estimate – still an estimate, not a measurement. Invalid or unavailable: internal estimate. Leave empty: internal estimate.",
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
@@ -4226,6 +4330,8 @@
         "room_volume_too_small": "The calculated room volume is too small.",
         "room_name_required": "Please enter a room name.",
         "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
+        "contact_side_conflict": "This contact sensor is set up differently in another room. Please decide consistently whether it monitors an outside opening or a connection between inside rooms.",
+        "connected_room_outside": "“Connected room” only applies to inside doors. Select “Another room” above or leave the field empty.",
         "humidity_goal_required": "Dehumidification cannot be switched off – moisture and mould protection always stays active. Choose “Off” only for CO₂ or temperature.",
         "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty)."
       },

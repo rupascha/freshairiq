@@ -89,7 +89,13 @@ test('F02: switching layers and floors, the room window, banners and longer text
   const y = await setY(page, false, 1300);
   const click = selector => impl(page).evaluate((el, s) => el.shadowRoot.querySelector(s).click(), selector);
   // UI hotfix 0.26.6.0: no "All floors" button any more – the floors are switched one by one
-  for (const step of ['[data-layer="temperature"]', '[data-layer="airflow"]', '[data-floor="f_og"]', '[data-floor="f_eg"]']) {
+  // Test note 0.26.7.0 UI hotfix (owner order: "view on the plan" left the menu): the view changes through the card setting now
+  for (const layer of ['temperature', 'airflow']) {
+    await impl(page).evaluate((el, layer) => el.setConfig({ ...el._config, layer }), layer); await page.waitForTimeout(30);
+    expect(await impl(page).evaluate(el => el._layer), layer).toBe(layer);
+    expect(await getY(page, false), layer).toBe(y);
+  }
+  for (const step of ['[data-floor="f_og"]', '[data-floor="f_eg"]']) {
     await click(step); await page.waitForTimeout(30);
     expect(await getY(page, false), step).toBe(y);
   }
@@ -118,9 +124,10 @@ test('F02: a live push keeps the focused button, the open room window (no second
   await page.evaluate(() => { window.__modal = 0; const show = HTMLDialogElement.prototype.showModal; HTMLDialogElement.prototype.showModal = function () { window.__modal += 1; return show.call(this); }; });
   // 0.26.6: the layer buttons are in the menu – open it first
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
-  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-layer="humidity"]').focus({ preventScroll: true }));
+  // Test note 0.26.7.0 UI hotfix: the layer buttons left the menu – a button of the Animation area keeps the focus instead
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-motion-level="normal"]').focus({ preventScroll: true }));
   await push(page, 1); await page.waitForTimeout(40);
-  expect(await impl(page).evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.dataset.layer)).toBe('humidity');
+  expect(await impl(page).evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.dataset.motionLevel)).toBe('normal');
   // 0.26.6.0(2): the menu is its own window – closed again before the room window is counted
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-close-menu]').click());
   await page.evaluate(() => { window.__modal = 0; });

@@ -11,6 +11,7 @@ from datetime import datetime
 from math import isfinite
 from typing import Any
 
+from .contact_sides import door_link_conflicts, runtime_view, side_conflicts
 from .const import (
     CONF_ROOM_NAME,
     CONF_ROOM_SORT_ORDER,
@@ -104,7 +105,14 @@ def prepare_runtime_rooms(raw_rooms: Any) -> tuple[list[dict[str, Any]], list[st
 
         room[CONF_ROOM_SORT_ORDER] = finite_int(room.get(CONF_ROOM_SORT_ORDER), 9999)
         prepared.append(room)
-    return prepared, issues
+    # Inside doors never act as outside openings (contact_sides.py). A contact classified
+    # differently in two rooms keeps the previous outside behaviour and is reported.
+    conflicts = side_conflicts(prepared)
+    issues.extend(f"contact:{contact}:side_conflict:{','.join(keys)}" for contact, keys in sorted(conflicts.items()))
+    runtime = [runtime_view(room, conflicts) for room in prepared]
+    # F05: one inside sensor, contradicting room pairs – no air path is assumed for it
+    issues.extend(f"contact:{contact}:door_link_conflict:{'|'.join('+'.join(p) for p in pairs)}" for contact, pairs in sorted(door_link_conflicts(runtime).items()))
+    return runtime, issues
 
 
 def sanitize_runtime_session(room: dict[str, Any]) -> list[str]:

@@ -4,10 +4,12 @@ from __future__ import annotations
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from typing import Any
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_state_change_event
 
-from .const import CONF_CONTACT_COVERS, CONF_ROOM_COVERS, CONF_ROOM_MOISTURE_SOURCES
+from .actuator_control import automation_lock_state
+from .const import CONF_AUTOMATION_LOCK_ENTITY, CONF_CONTACT_COVERS, CONF_ROOM_COVERS, CONF_ROOM_MOISTURE_SOURCES
 from .entity import FreshAirIQEntity
 from .room_devices import add_entities_by_room
 from .runtime import get_runtime_coordinator
@@ -19,7 +21,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: FreshAirIQConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator = get_runtime_coordinator(hass, entry)
-    house = [CrossVentilationSensor(coordinator, entry)]
+    house = [CrossVentilationSensor(coordinator, entry), AutomationLockSensor(coordinator, entry)]
     rooms = {
         room["key"]: [
             RoomCloseSensor(coordinator, entry, room["key"], room["name"]),
@@ -41,6 +43,44 @@ class CrossVentilationSensor(FreshAirIQEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         return bool(self.coordinator.data["cross_ventilation"])
+
+
+class AutomationLockSensor(FreshAirIQEntity, BinarySensorEntity):
+    """0.26.7.0: on while the optional global automation lock is active.
+
+    For the user's own automations (Node-RED, HA automations): FreshAirIQ itself starts no device
+    action while it is on, but it cannot pause other automations – they can read this entity.
+    Enabled by default only when a lock entity is configured.
+    """
+
+    def __init__(self, coordinator: FreshAirIQCoordinator, entry: FreshAirIQConfigEntry) -> None:
+        self._attr_translation_key = "automation_lock"
+        super().__init__(coordinator, entry, "automation_lock", "Automation lock")
+        self._attr_entity_registry_enabled_default = bool(self._lock()["configured"])
+
+    def _lock(self) -> dict[str, Any]:
+        entity = str((self._entry.options or {}).get(CONF_AUTOMATION_LOCK_ENTITY) or "").strip() or None
+        state = self.hass.states.get(entity) if entity and getattr(self, "hass", None) is not None else None
+        return automation_lock_state(entity, state.state if state is not None else None)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        entity = self._lock()["entity_id"]
+        if entity:
+            self.async_on_remove(async_track_state_change_event(self.hass, [entity], self._on_lock_change))
+
+    @callback
+    def _on_lock_change(self, _event: Event) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self._lock()["active"])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        lock = self._lock()
+        return {**super().extra_state_attributes, "configured": lock["configured"], "lock_entity": lock["entity_id"], "lock_entity_state": lock["source_state"]}
 
 
 class RoomCloseSensor(FreshAirIQEntity, BinarySensorEntity):

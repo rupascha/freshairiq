@@ -252,7 +252,7 @@ class FreshAirIQOptionsFlow(ClearableFormMixin, OptionsSettingsMixin, OptionsRoo
     async def async_step_notification_energy_settings(self, user_input=None):
         return self.async_show_menu(
             step_id="notification_energy_settings",
-            menu_options=["notifications", "energy", "back_to_main"],
+            menu_options=["notifications", "energy", "automation_lock", "back_to_main"],
         )
 
     async def async_step_data_learning_settings(self, user_input=None):

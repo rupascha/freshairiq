@@ -9,7 +9,13 @@ from typing import Any
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
+from .contact_sides import conflicting_side
 from .const import (
+    CONF_CONTACT_CONNECTED_ROOMS,
+    CONF_CONTACT_SIDES,
+    CONTACT_SIDE_INSIDE,
+    CONTACT_SIDE_OUTSIDE,
+    CONTACT_SIDES,
     CONF_CONTACT_COVERS,
     CONF_CONTACT_COVER_FOLLOW,
     CONF_CONTACT_DELAY,
@@ -26,6 +32,7 @@ from .const import (
     CONF_ROOM_AUTO_SUN_PROTECTION,
     CONF_ROOM_CLIMATE,
     CONF_ROOM_CO2,
+    CONF_ROOM_MOLD_INDICATOR,
     CONF_ROOM_CONTACT,
     CONF_ROOM_CONTACTS,
     CONF_ROOM_COVERS,
@@ -128,6 +135,10 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         _optional(CONF_ROOM_CO2, room.get(CONF_ROOM_CO2)): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", device_class="carbon_dioxide")
         ),
+        # v0.26.6.1 (#21): only Home Assistant Mold Indicator helpers – never a room humidity sensor
+        _optional(CONF_ROOM_MOLD_INDICATOR, room.get(CONF_ROOM_MOLD_INDICATOR)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", integration="mold_indicator")
+        ),
         vol.Required(CONF_ROOM_TARGET_TEMPERATURE_MODE, default=str(room.get(CONF_ROOM_TARGET_TEMPERATURE_MODE, "automatic"))): selector.SelectSelector(
             selector.SelectSelectorConfig(options=["automatic", "manual"], mode=selector.SelectSelectorMode.DROPDOWN)
         ),
@@ -228,6 +239,9 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             _optional(CONF_ROOM_CO2, room.get(CONF_ROOM_CO2)): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="sensor", device_class="carbon_dioxide")
             ),
+            _optional(CONF_ROOM_MOLD_INDICATOR, room.get(CONF_ROOM_MOLD_INDICATOR)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", integration="mold_indicator")
+            ),
             _optional(CONF_ROOM_EXHAUST_FAN, _entity_list(room.get(CONF_ROOM_EXHAUST_FAN))): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain=["fan", "switch"], multiple=True)
             ),
@@ -310,7 +324,16 @@ def _contact_display_name(hass, entity_id: str) -> str:
     return readable.title() if readable else entity_id
 
 
-def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.Schema:
+def _connected_room_options(room: dict[str, Any], rooms: list[dict[str, Any]] | None) -> list[dict[str, str]]:
+    """Other rooms by their names – the room an inside opening may lead to."""
+    own = str(room.get("key") or "")
+    return [
+        {"value": str(r["key"]), "label": str(r.get(CONF_ROOM_NAME) or r["key"])}
+        for r in (rooms or []) if isinstance(r, dict) and r.get("key") and str(r["key"]) != own
+    ]
+
+
+def _single_contact_reference_schema(room: dict[str, Any], contact: str, rooms: list[dict[str, Any]] | None = None) -> vol.Schema:
     """Static translated schema for exactly one real window/door contact."""
     temperatures = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidities = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
@@ -328,6 +351,9 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
             _climate_sensor_selector(device_class="humidity"),
         vol.Required("contact_kind", default=_choice(kinds.get(contact), "unknown", CONTACT_KINDS)):
             selector.SelectSelector(selector.SelectSelectorConfig(options=CONTACT_KINDS, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="contact_kind")),
+        # where the opening leads: no stored entry = outside (the behaviour of every older configuration)
+        vol.Required("contact_side", default=CONTACT_SIDE_INSIDE if (room.get(CONF_CONTACT_SIDES) or {}).get(contact) == CONTACT_SIDE_INSIDE else CONTACT_SIDE_OUTSIDE):
+            selector.SelectSelector(selector.SelectSelectorConfig(options=CONTACT_SIDES, mode=selector.SelectSelectorMode.LIST, translation_key="contact_side")),
         vol.Required("delay_seconds", default=_safe_int(delays.get(contact, room.get(CONF_CONTACT_DELAY, 0)), 0, minimum=0, maximum=600)):
             _number(0, 600, 1, "s"),
         vol.Required("orientation", default=str(orientations.get(contact, room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN)))):
@@ -341,7 +367,26 @@ def _single_contact_reference_schema(room: dict[str, Any], contact: str) -> vol.
         vol.Optional("cover_follow", default=bool((room.get(CONF_CONTACT_COVER_FOLLOW) or {}).get(contact, False))):
             selector.BooleanSelector(),
     }
+    choices = _connected_room_options(room, rooms)
+    if choices:
+        connected = str((room.get(CONF_CONTACT_CONNECTED_ROOMS) or {}).get(contact) or "")
+        key = vol.Optional("connected_room", default=connected) if connected in {c["value"] for c in choices} else vol.Optional("connected_room")
+        fields[key] = selector.SelectSelector(selector.SelectSelectorConfig(options=choices, mode=selector.SelectSelectorMode.DROPDOWN))
     return vol.Schema(fields)
+
+
+def _contact_side_error(room: dict[str, Any], contact: str, user_input: dict[str, Any], rooms: list[dict[str, Any]] | None) -> str | None:
+    """One physical opening has one side: refuse a classification another room contradicts."""
+    wanted = CONTACT_SIDE_INSIDE if user_input.get("contact_side") == CONTACT_SIDE_INSIDE else CONTACT_SIDE_OUTSIDE
+    if conflicting_side(rooms or [], str(room.get("key") or ""), contact, wanted):
+        return "contact_side_conflict"
+    target = str(user_input.get("connected_room") or "").strip()
+    stored = str((room.get(CONF_CONTACT_CONNECTED_ROOMS) or {}).get(contact) or "")
+    # a room chosen for an outside opening would be dropped silently; the prefilled room of a door that is
+    # being switched to outside is the stored value and goes with the side change, as the field text says
+    if wanted == CONTACT_SIDE_OUTSIDE and target and target != stored:
+        return "connected_room_outside"
+    return None
 
 
 def _schema_with_wizard_back(schema: vol.Schema) -> vol.Schema:
@@ -395,6 +440,21 @@ def _apply_single_contact_reference(
     else:
         kinds[contact] = kind
     room[CONF_CONTACT_KINDS] = kinds
+    sides = dict(room.get(CONF_CONTACT_SIDES) or {})
+    connected = dict(room.get(CONF_CONTACT_CONNECTED_ROOMS) or {})
+    side = user_input.get("contact_side", sides.get(contact, CONTACT_SIDE_OUTSIDE))
+    target = str(user_input.get("connected_room") or "").strip()
+    if side == CONTACT_SIDE_INSIDE:
+        sides[contact] = CONTACT_SIDE_INSIDE
+        if target and target != str(room.get("key") or ""):
+            connected[contact] = target
+        else:
+            connected.pop(contact, None)
+    else:
+        sides.pop(contact, None)
+        connected.pop(contact, None)
+    room[CONF_CONTACT_SIDES] = sides
+    room[CONF_CONTACT_CONNECTED_ROOMS] = connected
     follow = dict(room.get(CONF_CONTACT_COVER_FOLLOW) or {})
     follow[contact] = bool(user_input.get("cover_follow", False) and selected_covers)
     room[CONF_CONTACT_COVER_FOLLOW] = follow
@@ -514,6 +574,8 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_CONTACT_PASSAGE_DOORS: deepcopy(previous.get(CONF_CONTACT_PASSAGE_DOORS, {})),
         CONF_CONTACT_KINDS: dict(previous.get(CONF_CONTACT_KINDS, {})),
         CONF_CONTACT_COVER_FOLLOW: deepcopy(previous.get(CONF_CONTACT_COVER_FOLLOW, {})),
+        CONF_CONTACT_SIDES: dict(previous.get(CONF_CONTACT_SIDES, {})),
+        CONF_CONTACT_CONNECTED_ROOMS: dict(previous.get(CONF_CONTACT_CONNECTED_ROOMS, {})),
     })
     _normalise_room_control(room, previous)
     # If all dimensions are present they are the source of truth; otherwise use
@@ -534,6 +596,16 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     # remains able to read legacy entries until each opening is migrated.
     room.pop(CONF_ROOM_REFERENCE_TEMPERATURE, None)
     room.pop(CONF_ROOM_REFERENCE_HUMIDITY, None)
+    _prune_contact_metadata(room, list(contacts), previous, key)
+    return room, {}
+
+
+def _prune_contact_metadata(room: dict[str, Any], contacts: list[str], previous: dict[str, Any], key: str) -> None:
+    """Every per-contact setting exists only for the room's current contacts (all config paths).
+
+    A removed contact leaves nothing behind that could come back into effect when the
+    same sensor is added again later; kept contacts keep their stored values unchanged.
+    """
     # Remove delays for contacts no longer configured.
     room[CONF_CONTACT_DELAYS] = {c: _safe_int(room[CONF_CONTACT_DELAYS].get(c, previous.get(CONF_CONTACT_DELAY, 0)), 0, minimum=0, maximum=600) for c in contacts}
     room[CONF_CONTACT_ORIENTATIONS] = {c: str(room[CONF_CONTACT_ORIENTATIONS].get(c, room.get(CONF_ROOM_WINDOW_ORIENTATION, ORIENTATION_UNKNOWN))) for c in contacts}
@@ -554,7 +626,11 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
     room[CONF_CONTACT_COVER_FOLLOW] = {
         c: True for c in contacts if room[CONF_CONTACT_COVER_FOLLOW].get(c) and room[CONF_CONTACT_COVERS].get(c)
     }
-    return room, {}
+    room[CONF_CONTACT_SIDES] = {c: CONTACT_SIDE_INSIDE for c in contacts if room[CONF_CONTACT_SIDES].get(c) == CONTACT_SIDE_INSIDE}
+    room[CONF_CONTACT_CONNECTED_ROOMS] = {
+        c: str(room[CONF_CONTACT_CONNECTED_ROOMS][c]) for c in contacts
+        if c in room[CONF_CONTACT_SIDES] and str(room[CONF_CONTACT_CONNECTED_ROOMS].get(c) or "").strip() not in ("", key)
+    }
 
 
 def _normalise_room_control(room: dict[str, Any], previous: dict[str, Any]) -> None:

@@ -17,8 +17,11 @@ automations stay unchanged.
    "Automatic proposal – not saved yet".
 3. **Adjust it:** "Edit floor plan" (administrators only): move, resize and rotate rooms, set corners,
    drag windows onto the right wall.
-4. **Check north and save:** with nothing selected, enter "North (degrees, direction of 'up')" and tick
-   "North direction checked". Only then does the map assign the wind to individual walls.
+4. **Check north and save:** with nothing selected, answer "Which compass direction does the top of your plan face?" –
+   drag the "N" arrow of the compass rose or enter the angle (0° = top is north, 90° = top is east, 180° = top is south,
+   270° = top is west; 345° means "the top faces roughly north-northwest"). The rooms are not rotated. Tick "North
+   direction checked" only once the direction was checked against a site plan, a map or a compass – only then does the
+   map assign sun and wind to individual walls.
 
 You can skip all of this: the unsaved proposal already shows temperature, humidity, recommendations and
 opening states.
@@ -35,7 +38,8 @@ update. "Propose again" first shows how many rooms would change; "Add missing ro
 
 ![Editor: wall length, angles, 90° and locks](images/house_map_editor_90_locks_en.png)
 
-- **Quick:** drag a room to move it, top-right handle to resize, "Rotate 90°", rectangle/L/U templates,
+- **Quick:** drag a room to move it, top-right handle to resize, "Rotate 90°" (in the room's properties after tapping it:
+  turns it about its centre, anticlockwise, windows and doors turn with it; four times = as before, ↶ undoes it), rectangle/L/U templates,
   drag openings along their wall.
 - **Precision:** drag corners, the dot in the middle of a wall inserts a corner, select a corner + Del/✕
   removes it, numeric coordinates, grid 0.05–0.5 m.
@@ -55,6 +59,21 @@ update. "Propose again" first shows how many rooms would change; "Add missing ro
 - **Floors (UI hotfix 0.26.6.0):** the other floors as buttons in a bar at the bottom edge of the card, below the plan (never over it); no "All floors" – for several floors add the card several times, each with `floor: ground_floor` / `floor: upper_floor` (floor id, level or name); each card keeps its own choice; a floor that needs an action (air now, close, critical) pulses gently, with reduced motion it keeps a static mark.
 - **Menu and support:** the menu is a window over the plan; "Support & diagnostics" opens a window with the same functions as the FreshAirIQ card (diagnostics with required description, export, feedback).
 - **Touch editing:** tap a room, wall, door or window; a finger on something not chosen moves the view, two fingers zoom, only the chosen room can be dragged. Tap a wall → enter its length in m, choose the corner that stays, apply; "Lock length" keeps it. Doors: hinge left/right and opening direction. A "door"/"open passage" connection can be drawn as a door/passage on the shared wall.
+- **Editing window (0.26.6.1):** the editor opens full screen in its own window – however narrow the card is on the
+  dashboard. The drawing is the centre and keeps its size: on wide screens and in landscape the properties stand beside
+  it at a fixed width, on a tablet in portrait and on a phone in a fixed share below it (scrolling on their own). At the
+  top: floor, **Quick | Precision** (Quick: move and resize whole rooms; Precision: corners, wall lengths and angles),
+  **+ Room**, **Window**, **Door**, **Passage** and **More** (grid, snap to 90°, fit rooms together, propose again,
+  export/import, help). Undo/redo and zoom/fit sit in the bottom corners of the drawing, save and discard under the
+  properties. A short hint over the drawing says what the chosen object or tool does ("Tap an outside wall to place a
+  window."), otherwise the next sensible step; with nothing chosen the properties show the steps floor → rooms →
+  position/shape → windows/doors → contacts → save with ticks. "+ Room": choose the room, its shape as a picture
+  (rectangle, L, U, own shape = a rectangle in Precision mode), add. Properties by object: room (area, add window, rotate,
+  edit corners, floor; corners as numbers and connections in sections), wall (length, corner that stays, lock, angles),
+  window/door (kind, width, hinge, contact; position and mechanism in sections). On a phone "Drawing only" gives the
+  drawing the whole height, the selection stays and "Edit" brings its properties back. "Fit" stays on until you zoom or
+  move the view. Colours follow the Home Assistant theme; if its contrast is too low the editor uses a checked light or
+  dark palette.
 - **One wall at a time, angles and locks (editor):** a wall length changes that wall only – the chosen corner stays,
   the other one moves along the wall and the next wall takes up the change. The opposite wall keeps its length; a room
   does not have to stay a rectangle. Neighbouring rooms are never dragged along – if the wall would grow into a
@@ -162,7 +181,155 @@ auto_focus: hint          # off | hint | auto
 layer: action             # action | temperature | humidity | co2 | airflow | quality
 manual_lock_min: 10
 animation: true
+# 0.26.7.0+ – all of it also in the card editor; without these the card looks as before
+room_info: [name, temperature, absolute_humidity, action]   # name | temperature | humidity | absolute_humidity | action | co2 | mould
+room_overrides: { bad: [temperature, mould] }               # own choice per room (room key)
+rooms_button: true        # "Rooms" button next to the menu
+floors_visible: [ground_floor, upper_floor]                 # floors shown (id, level or name; never none)
+default_floor: ground_floor                                 # this floor whenever the card is opened
+weather_effects: dynamic  # off | subtle | dynamic (as before) | full
+weather_entity: weather.home                                # optional, else FreshAirIQ's weather entity
+weather_info: [compact, overview, hourly, daily, wind, sun, datetime]   # + compass (compass rose on the plan)
+weather_details: [temperature, condition, humidity]        # values in the weather window (empty = none; not given = all)
+weather_chip: [temperature, condition, wind]               # top right: temperature | condition | humidity | wind | rain | apparent | pressure | sun | datetime
+animation_level: auto     # off | minimal | normal | intense | auto (device, card size, reduced motion)
+animation_parts: [wind, weather, light, ambient]           # what may move
+layout: auto              # auto | focus | info
+design: freshairiq        # freshairiq (default) | ha (Home Assistant theme) | custom (own colours)
+design_accent: "#7a3cff"  # custom only: accent colour of the buttons
+design_background: "#ffffff"   # custom only: card background (#rrggbb or transparent)
+design_dialog: "#f4f1e8"  # custom only: window background
+design_text: auto         # custom only: auto | light | dark
+design_border: 2          # custom only: border width 0–6 px
+design_radius: 12         # custom only: corner radius 0–32 px
 ```
+
+### Design & colours (0.26.7.0+)
+
+In the card editor under **"Design & colours"**. Without it the card keeps the FreshAirIQ design (blue, as before).
+- **Use the Home Assistant theme** (`design: ha`): the card's frame and windows take the background, text, accent and
+  border colour, border width and corner radius of the dashboard's theme; switching between a light and a dark theme
+  is taken over at once. A transparent (glass) theme stays transparent; its windows get an opaque background.
+- **Custom** (`design: custom`): own accent, card and window colour, text colour, border width and corner radius.
+- Plan, weather, light, wind and the state colours of the rooms (ventilate, wait, close, critical) are the same in every
+  design. The weather window keeps its sky on purpose.
+- Every colour is checked against its background (text at least 4.5:1, buttons 3:1). A choice or theme that misses
+  this is replaced by a readable colour automatically; the editor says so.
+- Limit: with the glass effect the card does not know the dashboard's background – text directly on the transparent
+  card (outside the plan and the windows) cannot be checked. The settings apply to this card only.
+
+### Room information (0.26.7.0+)
+
+`room_info` sets what each room shows on the plan – any combination (e.g. only `temperature`, or `temperature`,
+`absolute_humidity` and `action`). Without it the label is as before (name, state, readings of the chosen layer). Another
+layer chosen in the menu (temperature, humidity, CO₂, quality) still shows its reading. `room_overrides` gives single rooms
+their own choice. Where a small room cannot hold everything the readings go first, then the name is shortened – door
+leaves and open sashes stay free. Hidden values are always in the room details (tap the room).
+
+### Rooms overview, floors, moisture by room
+
+- **"Rooms"** (`rooms_button: true`): every room of the shown floors with temperature, relative and absolute humidity,
+  recommendation, mould risk and removable moisture. A tap opens the room details, ⌖ jumps to the room on the plan
+  (its floor, a short highlight). Live values update the open window in place.
+- **Floors:** `floors_visible` hides floors in this card only – the calculation and the saved plan stay unchanged, the
+  auto focus never switches to a hidden floor, at least one floor always stays. `default_floor` shows that floor
+  whenever the card is opened; every card on every dashboard keeps its own settings.
+- **The millilitres at the top left:** below the explanation the split by room – exactly the values FreshAirIQ publishes
+  per room (no second calculation): without airing the realistic amount for the recommended time, while airing the amount
+  removed so far and the time left. The total is the FreshAirIQ card's; if the rounded room values add up differently,
+  the difference is shown.
+
+### Weather world (0.26.7.0+)
+
+`weather_effects`: `off` (no weather effects), `subtle` (calmer: no flash, no rays, slower precipitation), `dynamic`
+(default, the look until now) and `full`. "Fully animated" joins house and weather:
+
+- **Light of the real sun** (`sun.sun`): colour and strength follow the sun's elevation – warm and golden in the morning
+  and evening, clear and white at noon; clouds dim it. The sky changes steplessly with the elevation between day,
+  twilight and night. The house's shadow falls away from the sun and grows longer when it stands low – only with a
+  confirmed north, otherwise without a direction; no hard shadow under a closed cloud deck.
+- **Wind:** clouds and rain follow the measured wind direction (where it comes from, turned into the house's
+  orientation); with strong wind and storm (Bft 8+ or gusts from 72 km/h) gusts sweep across the garden. The air streams
+  in the house stay the modelled airing – a different quantity than the outdoor wind.
+- **Rain, thunderstorm, snow, fog, frost:** rain slanted by the wind, with moderate and heavy rain rings on the ground and
+  a darker sky; the strength is graded only with an amount from the hourly forecast, otherwise by the reported condition.
+  Thunderstorms with a rare, soft brightening (no measured strike; no flashing with reduced motion). Fog takes the
+  distance away, frost gives a cool light (an illustration, not a measurement).
+- **Night:** a dark sky, stars when it is clear, the moon only with a moon-phase entity (`sensor.moon_phase`) – an
+  illustration of its phase in the corner, never an invented position.
+
+Effects stay outside the rooms; rooms, windows, contact states and recommendations come first. A card outside the visible
+area or on a hidden page pauses its animations; small cards draw fewer effects; reduced motion and `animation: false`
+keep everything still, every weather value stays available.
+
+**Weather overview:** a tap on the weather at the top right (or "Weather" in the menu) opens the overview in the house
+map's sky: condition and temperature, feels like, humidity, pressure (converted to hPa), chance of rain, date and time,
+the sun's day arc with sunrise, sunset and its position, the next hours as a temperature curve with rain bars, the next
+days as temperature ranges and the wind as a compass rose (direction, km/h, gusts, Beaufort). Forecasts come through Home
+Assistant (`weather/subscribe_forecast`), shared by every house map and only while something shows them – no extra
+weather API. A missing value shows "–"; without a forecast or with the weather source unavailable the current picture
+stays.
+
+**Weather source and wind:** with an own `weather_entity`, wind speed, gusts and direction come from exactly that entity –
+for the overview, the compass rose, the drift of clouds and rain and the wind streams. If it lacks a single value (or is
+unavailable), only that value falls back to FreshAirIQ's wind; the compass rose then says "Wind partly from FreshAirIQ".
+Without an own entity FreshAirIQ's wind is used as before. Directions are accepted as degrees or compass points (N, NNE,
+NW, SW … in English and German) and turned into the plan's north. Date, time, the sun's arc and forecast times follow
+Home Assistant's time zone (with the profile setting "local time" the browser's). Forecast subscriptions are shared per
+Home Assistant connection; after a connection change they are subscribed anew.
+
+### Weather, rooms, menu and animation (0.26.7.0, second round)
+
+**Top right** shows what `weather_chip` chooses (in that order); without a choice outdoor temperature and humidity as
+before (or the older `weather_sensors`), an empty choice shows nothing there. A `weather_chip` choice wins over
+`weather_sensors`. A tap on the display always opens the weather window, also with `weather_info: [compact]`. A narrow card shows the first entries. A tap opens the **weather window**: the
+present weather large (a drawn weather symbol, temperature, condition, high/low, date and time), the values as tiles, the sun
+with day length and elevation, the wind with gusts and a Beaufort scale, the next hours and days. Which values appear is set
+by `weather_details` – a value switched off never comes back by itself; with the condition switched off no symbol appears
+either. What the source lacks is simply left out.
+
+**Rooms:** every room card is one button (name, floor, recommendation in its state colour, temperature, relative and absolute
+humidity, mould risk, removable moisture). A tap opens the room's details and shows its floor behind; "Show on the plan" is in
+the room's details. **Room details** (also by tapping the room on the plan): the room is clearly outlined on the plan, the rest
+steps back, windows and doors stay visible; plus everything the FreshAirIQ card knows about the room – the reason with every
+cause, climate, wall and mould, moisture and forecast, air exchange, moisture source, fan, learning, windows and doors, the room
+model, extra sensors.
+
+**Menu** (bottom right): information (the house's decision and key figures, "More about the decision" with every background
+view of the FreshAirIQ card – water in the house air, airing threshold, night forecast, pollen, IQ decision, last airing –,
+"Learning & forecast quality" with "FreshAirIQ is currently learning", the learning areas and the passive formula
+comparison, moisture overview, weather, rooms), control & modes (guests, the animation level – what the plan shows is the card setting "Start layer"), tools (edit the floor plan, airing log
+as PDF/CSV, support) and notes.
+
+**Wind and animation:** no small white strokes any more – calm, slower wind ribbons, each with its own lane, length, wave, pace
+and brightness; light wind shows a few faint ribbons, a storm more and livelier ones. `animation_level` *auto* chooses by
+device: reduced motion → off, a phone or small card → minimal, otherwise normal. Only *auto* calms down after 2 minutes without a touch
+and stands still after 10 minutes until it is touched again; a level chosen explicitly (minimal, normal, intense) stays while the card is
+visible. *Intense* shows more wind ribbons in three layers, a stronger swing, livelier clouds, rays and precipitation – still no white strokes, 30 frames a second. Hidden, scrolled-away or covered cards pause; all
+house maps share one animation loop (12/20/30 frames per second by level instead of 60).
+
+**Layout:** `auto` uses the free space beside the plan on wide cards (where the plan is limited by the screen height) for
+weather and the house's state; `focus` shows the plan only; `info` always with the weather and status column. The column
+stands beside the plan, never over it; the plan's coordinates stay unchanged.
+
+### 0.26.7.0 UI hotfix
+
+- **One continuous surface:** no solid blue bars above and below the plan. Sky, weather and wind ribbons run on under the controls (no
+  second animation loop). The sky and the moving weather (clouds, rain, snow, fog, stars, flash, gusts, rain rings) lie in their own
+  layer under the plan that the browser only moves or fades instead of painting the drawing again – rain and storm stay smooth on
+  large screens too; floors, rooms, menu, moisture and weather displays sit over it semi-transparently and never
+  cover rooms, windows or doors. With the animation off the background stays still; at *minimal* (phones, saving energy) the wind stays around the house too and only the still sky continues under the bars.
+- **Back in every window:** "‹ Back" at the top left goes back exactly one level (menu → learning → back → menu; rooms → room →
+  back → rooms), the scroll position is kept; "Close" closes everything; Escape acts like Back. Opened right from the plan there is
+  no made-up menu step.
+- **Sun arc:** the sun always lies on the drawn curve; the day from sunrise to sunset (noon at the top), at night a flat arc below
+  the horizon until the next sunrise. With Home Assistant's location the card computes the day's sunrise and sunset itself (checked
+  against astral, the library of HA's sun integration), otherwise from `sun.sun`. Polar day and polar night are named.
+- **The weather display at the top right** reacts to mouse and touch again (a decorative layer caught the clicks).
+- **Absolute humidity** (g/m³) as a choice at the top right (`weather_chip: abs_humidity`) and in the weather window
+  (`weather_details: abs_humidity`): without an own weather entity FreshAirIQ's outdoor value, otherwise from the chosen entity's
+  temperature and humidity with the integration's own formula; invalid values are left out. Existing choices stay.
+- **Menu:** "View on the plan" is gone; the card setting "Start layer" decides the view.
 
 ## What the map deliberately does not do (yet)
 

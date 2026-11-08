@@ -7,6 +7,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .contact_sides import connected_room as contact_connected_room, side as contact_side
 from .exhaust_reference import exhaust_reference_pair
 from .const import DIAGNOSTICS_SCHEMA_VERSION
 from .diagnostic_transport import normalise_resident_names
@@ -78,6 +79,9 @@ class DiagnosticsRecordsMixin:
                     "reference_humidity_configured": bool(contact_ref_h.get(contact)),
                     "cover_count": len([item for item in covers if item]),
                     "passage_door": bool(passage_doors.get(contact, False)),
+                    # 0.26.7.0: where the opening leads (outside unless configured as an inside door)
+                    "leads_to": contact_side(raw, str(contact)),
+                    "connected_room_configured": bool(contact_connected_room(raw, str(contact))),
                     **self._contact_profile(str(contact), three_state),
                 })
             room_rows.append({
@@ -339,6 +343,10 @@ class DiagnosticsRecordsMixin:
             if not isinstance(raw, dict):
                 continue
             room = _pick(raw, _ROOM_KEYS)
+            # v0.26.6.1 (#21): where the (estimated) surface RH came from – never the helper's entity id
+            room["surface_rh_source"] = str(raw.get("surface_rh_source") or "internal_estimate")
+            if raw.get("surface_rh_source_issue"):
+                room["surface_rh_source_issue"] = str(raw["surface_rh_source_issue"])
             room.setdefault("key", str(key))
             # Do not export entity-id keyed orientation maps. Direction values
             # are enough for model analysis and keep the trace anonymous.

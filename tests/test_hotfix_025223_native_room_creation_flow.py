@@ -18,7 +18,7 @@ def _add_flow() -> str:
 
 def test_native_add_uses_supported_per_contact_reference_contract():
     block = _add_flow()
-    assert "_single_contact_reference_schema(room, contact)" in block
+    assert "_single_contact_reference_schema(room, contact, self._entry_rooms())" in block  # changed expectation (0.26.7.0 inside doors): the call also passes the room list for the connected-room choice
     assert "_apply_single_contact_reference(room, contact, user_input)" in block
     assert "_add_reference_contact_index" in block
     assert "_contact_reference_schema(room, self.hass)" not in block

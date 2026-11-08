@@ -95,3 +95,13 @@ def test_staging_copy_is_version_neutral_and_release_versions_match() -> None:
     assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
     for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
         assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (COMP / "frontend" / name).read_text(encoding="utf-8")
+
+
+def test_frame_time_projects_measure_without_trace_recording() -> None:
+    """0.26.7.0 UI/theme order: the frame-time projects record no trace (the trace's screencast slowed the measured
+    sun scenes to p95 = 50 ms on the unchanged release too); the functional projects keep "retain-on-failure"."""
+    config = (ROOT / "playwright.config.mjs").read_text(encoding="utf-8")
+    frames = [line for line in config.splitlines() if "name: 'frames-" in line]
+    assert len(frames) == 2
+    assert all("trace: 'off'" in line for line in frames)
+    assert "trace: 'retain-on-failure'" in config

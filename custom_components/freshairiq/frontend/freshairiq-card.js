@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.6.0";
+const FAIQ_VERSION = "0.26.7.0";
 const FAIQ_CARD = "freshairiq-card";
 // Legacy source-contract markers only; rendered duplicate controls are intentionally removed: id="room-ref-temp", id="room-ref-humidity", OPTIONALE ZUSATZSENSOREN · GLOBAL.
 // Legacy goal-selector contract markers (not executed): room-goal-priority-1 room-goal-priority-2 room-goal-priority-3
@@ -1298,8 +1298,8 @@ class FreshAirIQCard extends HTMLElement {
             const isUnsavedRoomControl = ["INPUT", "SELECT", "TEXTAREA"].includes(tag) &&
                 current.closest && current.closest(".room-form");
             // A room editor is a draft until the user presses “Raum speichern”.
-            // Live HA state refreshes must never restore another select to the
-            // last persisted value while the user is configuring its pair.
+            // Live HA refreshes must never restore another select to the last
+            // persisted value while the user is configuring its pair.
             if (isUnsavedRoomControl) return;
         }
         if (current.nodeType === 3) {
@@ -1308,12 +1308,11 @@ class FreshAirIQCard extends HTMLElement {
         }
         if (current.nodeType !== 1) return;
         const active = current.getRootNode && current.getRootNode().activeElement === current;
-        // Native <details> open/closed state belongs to the user's interaction, not
-        // to freshly rendered HA data. Preserve it while patching live contents.
+        // <details> open state and the runtime popover (top layer, #20) stay as the user left them.
         const preserveDetailsOpen = String(current.tagName || "").toUpperCase() === "DETAILS";
         const detailsWasOpen = preserveDetailsOpen ? current.open : false;
         for (const attr of Array.prototype.slice.call(current.attributes || [])) {
-            if (preserveDetailsOpen && attr.name === "open") continue;
+            if ((preserveDetailsOpen && attr.name === "open") || attr.name === "popover") continue;
             if (!fresh.hasAttribute(attr.name)) current.removeAttribute(attr.name);
         }
         for (const attr of Array.prototype.slice.call(fresh.attributes || [])) {
@@ -1395,6 +1394,7 @@ class FreshAirIQCard extends HTMLElement {
             const fresh = current ? this._freshLiveNode(`info:${this._info}`, html, ".subdialog") : null;
             if (fresh) this._patchLiveNode(current, fresh);
         }
+        faiqLiftOverlays(this.shadowRoot);
         this._roomViewUpdatePending = false;
     }
     _relevantStateChanged(previous, next) {

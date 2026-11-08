@@ -1,21 +1,25 @@
 {
   "domain": "freshairiq",
   "name": "FreshAirIQ",
-  "version": "0.26.6.0",
-  "config_flow": true,
-  "documentation": "https://github.com/rupascha/freshairiq",
-  "issue_tracker": "https://github.com/rupascha/freshairiq/issues",
-  "integration_type": "hub",
-  "iot_class": "calculated",
-  "single_config_entry": true,
-  "requirements": [],
+  "categories": [
+    "climate.fans_ventilation",
+    "sensors.air_quality"
+  ],
   "codeowners": [
     "@rupascha"
   ],
+  "config_flow": true,
   "dependencies": [
     "frontend",
     "http",
     "lovelace",
     "websocket_api"
-  ]
+  ],
+  "documentation": "https://github.com/rupascha/freshairiq",
+  "integration_type": "hub",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/rupascha/freshairiq/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.26.7.0"
 }

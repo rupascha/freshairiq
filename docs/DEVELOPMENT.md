@@ -78,6 +78,12 @@ Danach ZIP entpacken: Struktur, Versionen (manifest/const/JS/package/policy), ke
 ## Release (nicht Teil dieses Auftrags)
 Tag `v<version>` → `release.yml` → `quality.yml` (wiederverwendbar) → `verify-release` (Tag = Manifest) → CLEAN-ZIP anhängen. Versionen nur mit `tools/bump_release_version.py`.
 
+Ab 0.26.7.0: `publish` prüft CLEAN-ZIP (Gate) und Installations-ZIP (`tools/build_install_zip.py --check --version`, Neubau aus dem Tag per `cmp` byte-gleich), legt das Release als Entwurf mit `FreshAirIQ-v<version>-CLEAN.zip` **und** `freshairiq.zip` an, prüft die Assets und veröffentlicht erst dann. `freshairiq.zip` (manuelle Installation, Downloads von GitHub gezählt) = Dateien von `custom_components/freshairiq` im ZIP-Wurzelverzeichnis, ohne die zur Laufzeit erzeugten `.gz`/`.br`/`.precompressed.json` (gleiche Ausschlüsse wie CLEAN laut `quality/quality_policy.json`; HA schreibt sie beim ersten Start über `frontend_assets.ensure_precompressed`) (HACS/Marketplace entpacken per `extractall` nach `custom_components/freshairiq/`), reproduzierbar.
+- `hacs.json` ohne `zip_release`/`filename` (Gate erzwingt es, A-236): HACS und Marketplace installieren aus dem Quellarchiv; mit `zip_release` suchten beide das Asset auch in älteren Releases ohne Asset (Rückkehr zu alten Versionen unmöglich). Bestehende Releases werden nicht verändert; ein Wechsel auf `zip_release` nur mit eigener Freigabe und geprüften Assets je Tag.
+- Downloads: `python3 tools/release_downloads.py [--json]` bzw. Workflow `downloads.yml` (wöchentlich, Job-Summary + JSON-Artefakt). Nur GitHub-`download_count` der Assets; Quellarchive zählt GitHub nicht; Download ≠ Installation.
+- Validierung: `hacs.yml` (hacs/action, ohne `ignore`) und `hassfest.yml`; alle neuen Workflows laufen nur im öffentlichen Repo und mit minimalen Rechten.
+- Nach der Aufnahme in den Standardkatalog (hacs/default) braucht kein weiteres Release einen neuen Aufnahme-PR: Tag → `release.yml` genügt.
+
 ## Ausgangsmodell übernehmen (0.26.5.4)
 Nur wenn der Hub (Admin → „Ausgangsmodell für neue Installationen“) Werte als **empfohlen** ausweist:
 ```bash

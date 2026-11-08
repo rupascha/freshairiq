@@ -297,12 +297,15 @@ def live_payload(hass: HomeAssistant, entry: Any, layout: dict[str, Any] | None)
             continue
         cfg = configs.get(key, {})
         mem = stored_rooms.get(key) if isinstance(stored_rooms.get(key), dict) else {}
-        three_state = set(room.get("three_state_contacts") or [])
-        stable = mem.get("stable_opening_modes") if isinstance(mem.get("stable_opening_modes"), dict) else {}
+        # F08: inside doors keep their own three-state profile and debounced mode (coordinator_room_contacts)
+        three_state = set(room.get("three_state_contacts") or []) | set(mem.get("inside_three_state_contacts") or [])
+        stable = {**(mem.get("inside_opening_modes") if isinstance(mem.get("inside_opening_modes"), dict) else {}),
+                  **(mem.get("stable_opening_modes") if isinstance(mem.get("stable_opening_modes"), dict) else {})}
         delays = cfg.get(CONF_CONTACT_DELAYS) or {}
         stable_since = mem.get("stable_opening_since") if isinstance(mem.get("stable_opening_since"), dict) else {}
         contacts = {}
-        for contact in room.get("contact_entities") or []:
+        inside = [str(c) for c in room.get("inside_contact_entities") or []]
+        for contact in [*(room.get("contact_entities") or []), *inside]:
             state = hass.states.get(contact)
             contacts[contact] = live_contact(
                 normalize_opening_state(state.state) if state is not None else "unknown", three_state=contact in three_state,
@@ -313,7 +316,7 @@ def live_payload(hass: HomeAssistant, entry: Any, layout: dict[str, Any] | None)
         # the room publishes its devices under configured_actuators (coordinator_room.py)
         actuators = room.get("configured_actuators") if isinstance(room.get("configured_actuators"), dict) else {}
         fans = fan_entities(actuators.get("exhaust_fan"))
-        rooms_live[key] = {"contacts": contacts, "orientations": room.get("contact_orientations") or {}, "session_active": bool(room.get("active")),
+        rooms_live[key] = {"contacts": contacts, "inside_contacts": inside, "orientations": room.get("contact_orientations") or {}, "session_active": bool(room.get("active")),
                            "exhaust_fan": fans, "exhaust_fans": {fan: _entity_on(hass, fan) for fan in fans},
                            "mechanical_exhaust_active": bool(actuators.get("mechanical_exhaust_active"))}
     usable = layout is not None and not errors(validate(layout))

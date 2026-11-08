@@ -484,7 +484,9 @@ async def test_config_entry_diagnostics_omits_identifiers(hass, cfg) -> None:
     result = await async_get_config_entry_diagnostics(hass, entry)
     assert result["freshairiq_version"] == "9.9.9"
     assert result["house_status"] == "ok"
-    assert result["rooms"] == [{**{k: None for k in result["rooms"][0]}, "name": "Bad", "humidity": 61.0, "action": "Ventilate"}]
+    # v0.26.6.1 (#21, requirement change): each room also names its surface-humidity source (never the helper's id)
+    assert result["rooms"] == [{**{k: None for k in result["rooms"][0]}, "name": "Bad", "humidity": 61.0, "action": "Ventilate",
+                                "surface_rh_source": "internal_estimate"}]
     assert "sensor.bath" not in json.dumps(result)
 
     entry.runtime_data = SimpleNamespace(integration_version="1.0", data=None)

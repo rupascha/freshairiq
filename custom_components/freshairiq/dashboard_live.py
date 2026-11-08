@@ -128,6 +128,8 @@ class DashboardPayload:
             # 0.26.6.0(7): outdoor readings for the house map's weather corner (additive)
             "outdoor_temperature": self.coordinator.data.get("outdoor_temperature"),
             "outdoor_humidity": self.coordinator.data.get("outdoor_humidity"),
+            # 0.26.7.0 UI hotfix: the outdoor absolute humidity the decision already computed (model.absolute_humidity), additive
+            "outdoor_absolute_humidity": self.coordinator.data.get("outdoor_absolute_humidity"),
             "wind_bearing": self.coordinator.data.get("wind_bearing"),
             "wind_speed": self.coordinator.data.get("wind_speed"),
             "last_ventilation": self.coordinator.data.get("last_ventilation"),

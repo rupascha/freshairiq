@@ -7,6 +7,10 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
+from .contact_sides import door_links, door_path
+from .open_connections import connection_map
+from .opening_state import normalize_opening_state
+from .robustness import prepare_runtime_rooms
 from .const import (
     CONF_ROOMS,
     CONF_ROOM_FLOOR,
@@ -17,7 +21,7 @@ from .const import (
     CONF_ROOM_TEMPERATURE_AGGREGATION,
     CONF_ROOM_VOLUME,
 )
-from . import cover_guard
+from . import cover_guard, cross_pairs
 from .climate_sources import aggregate_states, climate_report_snapshot, participating_climate_entities
 from .coordinator_contacts import _contact_ids, _room_ventilation_state
 from .intelligence import clear_session_behaviour, learn_completed_session
@@ -570,16 +574,35 @@ class SessionFinishMixin:
     def _cross_ventilation_active(self) -> bool:
         pairs_raw = str(self.options.get("cross_ventilation_pairs", "")).strip()
         if not pairs_raw: return False
-        room_by_key = {r["key"]: r for r in self.entry.data.get(CONF_ROOMS, []) if r.get(CONF_ROOM_INCLUDE_CALCULATIONS, True)}
+        # inside doors are never openings of the pair (contact_sides.py): the runtime view keeps only outside ones
+        runtime_rooms, _issues = prepare_runtime_rooms(self.entry.data.get(CONF_ROOMS, []))
+        room_by_key = {r["key"]: r for r in runtime_rooms if r.get(CONF_ROOM_INCLUDE_CALCULATIONS, True)}
         now = dt_util.now()
-        for pair in pairs_raw.split(","):
-            keys = [x.strip() for x in pair.split("+") if x.strip()]
-            if len(keys) == 2 and all(k in room_by_key for k in keys):
+        # v0.26.6.1 (#25): the same resolution as the options flow and the recommendation (key, then unique name)
+        all_rooms = [r for r in self.entry.data.get(CONF_ROOMS, []) if isinstance(r, dict)]
+        links = door_links(runtime_rooms)
+        # F07: the debounced modes the room stage stored for its inside doors (three-state profile included);
+        # the raw state only until a first stable mode exists
+        stable: dict[str, str] = {}
+        for room in runtime_rooms:
+            saved = (self.store.data.get("rooms", {}).get(room["key"]) or {}).get("inside_opening_modes")
+            stable.update(saved if isinstance(saved, dict) else {})
+        door_modes = {
+            contact: stable.get(contact) or (normalize_opening_state(state.state) if (state := self.hass.states.get(contact)) is not None else "unknown")
+            for doors in links.values() for contact in doors
+        }
+        doorless = connection_map(self.options, room_by_key)
+        for keys in cross_pairs.key_pairs(pairs_raw, all_rooms):
+            if all(k in room_by_key for k in keys):
                 a,b=(room_by_key[k] for k in keys)
                 same_zone = str(a.get(CONF_ROOM_FLOOR,"")) == str(b.get(CONF_ROOM_FLOOR,""))
-                links = str(self.options.get("cross_zone_connections", ""))
-                explicit = f"{keys[0]}+{keys[1]}" in links or f"{keys[1]}+{keys[0]}" in links
-                if same_zone or explicit:
+                explicit = cross_pairs.linked(self.options.get("cross_zone_connections"), all_rooms, *keys)
+                # A known inside door between the two rooms decides the path: open joins them, closed
+                # separates them – unless an opening without a door joins them anyway.
+                path = door_path(links, keys[0], keys[1], door_modes)
+                if path == "closed" and keys[1] not in doorless.get(keys[0], set()):
+                    continue
+                if same_zone or explicit or path == "open":
                     # Contact delays gate only the *start* of a room session. If a
                     # running session is reopened after a brief close, cross-flow
                     # must resume immediately as well instead of waiting through

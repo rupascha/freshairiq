@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import CONF_CONTACT_COVERS
 from .climate_sources import entity_ids
+from .house_wind import parse_bearing
 from .outdoor_air import plausible_pm25
 from .robustness import finite_float
 
@@ -160,7 +161,8 @@ def _weather_wind(hass: HomeAssistant, entity_id: str | None) -> tuple[float | N
     if state is None: return None, None
     bearing = state.attributes.get("wind_bearing")
     speed = state.attributes.get("wind_speed")
-    bearing = finite_float(bearing)
+    # 0.26.7.0: a compass text ("NW", "SSW", "NNO") is a valid bearing as on the house map – it was dropped before
+    bearing = parse_bearing(bearing)
     speed = finite_float(speed)
     return bearing, speed
 

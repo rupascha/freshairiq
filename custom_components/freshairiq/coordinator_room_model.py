@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
 from .air_exchange import advance_air_exchange
 from .const import (
@@ -12,6 +13,7 @@ from .const import (
     CONF_CONTACT_REFERENCE_TEMPERATURES,
     CONF_ROOM_CO2,
     CONF_ROOM_MOISTURE_SOURCES,
+    CONF_ROOM_MOLD_INDICATOR,
     CONF_ROOM_NAME,
     CONF_ROOM_REFERENCE_HUMIDITY,
     CONF_ROOM_REFERENCE_TEMPERATURE,
@@ -37,6 +39,7 @@ from .moisture_source import update_moisture_source
 from .post_stabilization import prune_history as prune_stabilization_history, update_post_close_observation
 from .room_recommendation import _recommendation, co2_lead
 from .start_model import seed_room, validate as _validate_start_model
+from .surface_source import helper_reading, source_fields
 from .start_model_data import START_MODEL as _SHIPPED_START_MODEL
 
 START_MODEL = _validate_start_model(_SHIPPED_START_MODEL)
@@ -79,6 +82,26 @@ class RoomModelMixin:
     """Per-room physics: room model, recommendation, forecast and the frozen session prediction."""
 
     hass: HomeAssistant  # provided by the coordinator
+
+    def _surface_rh_helper(self, key: Any, cfg: Any) -> float | None:
+        """v0.26.6.1 (#21): the room's Home Assistant Mold Indicator reading, or None for the internal estimate.
+
+        Only a registered ``mold_indicator`` entity (or an unregistered one) with a finite value of 0–100 % counts;
+        unknown, unavailable, NaN/Inf, another unit or another integration fall back to the estimate. The source is
+        remembered for the room payload – only for rooms that name a helper, so others publish exactly as before."""
+        entity = cfg.get(CONF_ROOM_MOLD_INDICATOR)
+        sources = self.__dict__.setdefault("_surface_sources", {})
+        if not entity:
+            sources.pop(str(key), None)
+            return None
+        state = self.hass.states.get(str(entity))
+        registered = er.async_get(self.hass).async_get(str(entity))
+        value, reason = helper_reading(
+            state.state if state is not None else None, state.attributes.get("unit_of_measurement") if state is not None else None,
+            registered.platform if registered is not None else None,
+        )
+        sources[str(key)] = source_fields(str(entity), value, reason)
+        return value
 
     def _evaluate_room_model(
         self,
@@ -185,7 +208,7 @@ class RoomModelMixin:
             volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
             learning_rate=effective_learning_rate, learning_samples=effective_learning_samples, co2=co2,
             cooling_allowed="temperature" not in disabled_goals, comfort_target_c=room_comfort_target(cfg, mem)[0] if "temperature" not in disabled_goals else None,
-            surface_reference_temperature=self.__dict__.get("_wall_reference_t", {}).get(str(key)), co2_lead_latched=bool(mem.get("co2_lead_latched")), session_co2_only=bool(mem["session_active"] and mem.get("session_co2_only")),
+            surface_reference_temperature=self.__dict__.get("_wall_reference_t", {}).get(str(key)), surface_rh_helper=self._surface_rh_helper(key, cfg), co2_lead_latched=bool(mem.get("co2_lead_latched")), session_co2_only=bool(mem["session_active"] and mem.get("session_co2_only")),
             co2_sensor_missing=bool(cfg.get(CONF_ROOM_CO2)) and co2 is None and "co2" not in disabled_goals,
             humidity_plateau=track_session(mem, session_active=bool(mem["session_active"]), elapsed_min=elapsed, temp_c=t, rh=rh, reports=int(mem.get("session_humidity_reports", 0))),
             session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),

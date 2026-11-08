@@ -48,6 +48,9 @@ _LABELS = {
     "shared_owner": "Gemeinsamer Ablüfter läuft – FreshAirIQ steuert ihn über einen anderen Raum",
     "external": "Ablüfter wird gerade von einer anderen Automation gesteuert – FreshAirIQ schaltet ihn nicht aus",
     "block_time": "Ablüfter wegen eingestellter Sperrzeit ausgeschaltet",
+    # 0.26.7.0: the global automation lock (e.g. holidays)
+    "automation_lock": "Automationssperre aktiv – FreshAirIQ schaltet den Ablüfter nicht automatisch",
+    "automation_lock_off": "Automationssperre aktiv – FreshAirIQ beendet nur noch die eigene Lüftung",
 }
 COMPLETED_LABEL = _LABELS["completed"]
 _LABELS_EN = {
@@ -67,6 +70,8 @@ _LABELS_EN = {
     "shared_owner": "Shared exhaust fan running – FreshAirIQ controls it through another room",
     "external": "The exhaust fan is controlled by another automation right now – FreshAirIQ does not switch it off",
     "block_time": "Exhaust fan switched off because of the set lock period",
+    "automation_lock": "Automation lock active – FreshAirIQ does not switch the exhaust fan automatically",
+    "automation_lock_off": "Automation lock active – FreshAirIQ only ends its own airing",
 }
 
 
@@ -135,6 +140,13 @@ def _group(snap: dict[str, Any]) -> dict[str, Any]:
 def _state(mode, fan_on, owned, aligned, room, snap, command, command_state) -> tuple[str, str | None]:
     if snap.get("external_lock"):
         return "external", "external"
+    if snap.get("automation_lock"):
+        # 0.26.7.0: nothing automatic – the user decides; only FreshAirIQ's own switch-off may still be on its way
+        if command == "off" and fan_on and command_state == "failed":
+            return "failed", "failed_off"
+        if command == "off" and fan_on and command_state == "pending":
+            return "stopping", "automation_lock_off"
+        return "locked", "automation_lock"
     # 0.26.5.5: lock period – off (or FreshAirIQ's own switch-off on its way); a fan switched on by hand stays the user's
     if snap.get("block_time") and fan_on and command == "off" and command_state == "failed":
         return "failed", "failed_off"  # hotfix 0.26.6.0: the switch-off at the lock period did not arrive – never "stopping"

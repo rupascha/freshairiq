@@ -9,7 +9,11 @@ import sys
 import zipfile
 from pathlib import Path, PurePosixPath
 
-REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", "CHANGELOG.md", ".coveragerc-pure", ".github/workflows/quality.yml", ".github/workflows/validate.yml", ".github/workflows/release.yml")
+REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", "CHANGELOG.md", ".coveragerc-pure", ".github/workflows/quality.yml", ".github/workflows/validate.yml", ".github/workflows/release.yml",
+                 ".github/workflows/hacs.yml", ".github/workflows/hassfest.yml", ".github/workflows/downloads.yml",
+                 "tools/build_install_zip.py", "tools/release_downloads.py")
+# hacs.json ``filename`` of the installation ZIP every release carries (see tools/build_install_zip.py)
+INSTALL_ASSET = "freshairiq.zip"
 REQUIRED_COMPONENT = ("__init__.py", "manifest.json", "config_flow.py")
 REQUIRED_BRAND = ("icon.png", "icon@2x.png", "dark_icon.png", "dark_icon@2x.png", "logo.png", "logo@2x.png", "dark_logo.png", "dark_logo@2x.png")
 FORBIDDEN_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules", "quality_reports"}
@@ -84,6 +88,16 @@ def _check_common(paths: set[str], read_text, errors: list[str]) -> str | None:
             fail(errors, "hacs.json name must be FreshAirIQ")
         if not hacs.get("homeassistant"):
             fail(errors, "hacs.json must declare the minimum Home Assistant version")
+        # Backward compatibility (A-236): with ``zip_release`` HACS and the Marketplace look for the asset in
+        # every release a user picks, also older ones without it – going back to an older version would fail.
+        # Installs keep using the source archive; the installation ZIP is attached for manual installs.
+        if hacs.get("zip_release") is not None or hacs.get("filename") is not None:
+            fail(errors, "hacs.json must not set zip_release/filename: older releases carry no installation ZIP (A-236)")
+        release = ".github/workflows/release.yml"
+        if release in paths:
+            text = read_text(release)
+            if "tools/build_install_zip.py" not in text or INSTALL_ASSET not in text:
+                fail(errors, f"release workflow must build and attach {INSTALL_ASSET}")
     except Exception as exc:
         fail(errors, f"invalid hacs.json: {exc}")
 

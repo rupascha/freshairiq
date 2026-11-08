@@ -20,6 +20,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.util import dt as dt_util
 
+from . import cross_pairs
 from .const import (
     CONF_CONTACT_MODE,
     CONF_LEGACY_ENTRY_ID,
@@ -490,6 +491,24 @@ def _async_cleanup_removed_room_registry_entries(
         device_registry.async_remove_device(device.id)
 
 
+_CROSS_PAIRS_LOGGED: set[tuple[str, str]] = set()  # what was logged in this Home Assistant run
+
+
+def _async_migrate_cross_pairs(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> None:
+    """v0.26.6.1 (#25): cross-ventilation pairs stored with room names become room keys – once, idempotently.
+
+    Valid key pairs stay exactly as they are. What cannot be resolved stays in the option and is logged once per
+    Home Assistant run (never dropped silently, never logged on every update)."""
+    rooms = [r for r in entry.data.get(CONF_ROOMS, []) if isinstance(r, dict)]
+    updated, unresolved = cross_pairs.migrate(dict(entry.options), rooms)
+    if updated != dict(entry.options):
+        hass.config_entries.async_update_entry(entry, options=updated)
+    fresh = [item for item in unresolved if (entry.entry_id, item) not in _CROSS_PAIRS_LOGGED]
+    if fresh:
+        _CROSS_PAIRS_LOGGED.update((entry.entry_id, item) for item in fresh)
+        _LOGGER.warning("Cross-ventilation pairs that name no known room are not used: %s", "; ".join(fresh))
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> bool:
     # Older releases allowed individually valid but mutually contradictory
     # model thresholds. Repair only those relationships once at load so the
@@ -503,6 +522,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -
             if repaired_options.get(key) != merged_options.get(key):
                 updated_options[key] = repaired_options[key]
         hass.config_entries.async_update_entry(entry, options=updated_options)
+    _async_migrate_cross_pairs(hass, entry)
 
     # Rooms deleted directly as subentries are removed from the parent data
     # first; otherwise the mirror below would re-create them.
