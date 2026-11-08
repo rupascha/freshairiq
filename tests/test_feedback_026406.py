@@ -78,10 +78,16 @@ def test_night_hold_option_is_wired_into_settings_and_translations():
     assert "presence_night_hold" in NATIVE_OPTION_KEYS
     flow = module_source("config_flow")
     assert 'native_option_key("presence_night_hold")' in flow
+    # Test note (0.26.7.0 hassfest hotfix, owner order): 8 occurrences counted the two in the older duplicate
+    # "options.step.residents.section", which Home Assistant never showed and hassfest rejects; every place that is shown
+    # is now checked by its path instead of a raw count
     for name in ("translations/de.json", "translations/en.json", "strings.json"):
         text = (ROOT / "custom_components/freshairiq" / name).read_text(encoding="utf-8")
-        assert text.count('"presence_night_hold"') == 8, name
-        json.loads(text)
+        assert text.count('"presence_night_hold"') == 6, name
+        data = json.loads(text)
+        steps = data["options"]["step"]
+        for place in (steps["house"], steps["residents"], steps["residents"]["sections"]["presence"]):
+            assert place["data"]["presence_night_hold"] and place["data_description"]["presence_night_hold"], name
 
 
 def _pollen_level():

@@ -3,9 +3,9 @@
   "approved_from_version": "0.26.2.14",
   "purpose": "User-approved Dashboard settings and Home Assistant Geräte & Dienste configuration contracts. Change hashes only for an explicitly approved UI/configuration change. Since 0.26.4.2 the only settings surface is Devices & services; the dashboard settings centre was removed.",
   "config_flow_sha256": "0df3cb77de9dad23e2124769b4274c3f27651ceda147d2b236bad686701d970a",
-  "de_configuration_sha256": "46afdc2e242ad94c96557934ceafc48faa4c76dcef08115a38a4c96c54f97431",
-  "en_configuration_sha256": "b6941e786552dca2a925eb010109450d30fd5245da1867a475d52c4bce8cad33",
-  "strings_configuration_sha256": "b6941e786552dca2a925eb010109450d30fd5245da1867a475d52c4bce8cad33",
+  "de_configuration_sha256": "ae30d7d8eb56053cf370a09beefd5c39110f4ce4272e00417a85e611bf049cd6",
+  "en_configuration_sha256": "302557d8bdf0bab09114681fe4264ee684b514b377715a59c5cfba82b512679c",
+  "strings_configuration_sha256": "302557d8bdf0bab09114681fe4264ee684b514b377715a59c5cfba82b512679c",
   "approved_changes": [
     "0.26.4.6: one-dropdown reordering for goals/rooms, overnight presence hold option, several pollen sensors (user feedback)",
     "0.26.4.7: outdoor fine dust protection – PM2.5 sensors under Outdoor air source, 'Consider outdoor fine dust' and limit under Air quality (user feedback; pending maintainer approval)",
@@ -35,6 +35,7 @@
     "0.26.6.1 (owner order 2026-11-06, approved): Devices & services → room setup (add, edit, import from a Home Assistant area, room subentry) gains the optional field 'Mold indicator (HA helper)' (mold_indicator; only entities of the mold_indicator integration; issue #21); Cross ventilation validates the pairs and accepts unique room names, stores room keys only and names malformed, unknown, ambiguous, same-room and repeated pairs (error cross_pairs_invalid with the detail, DE/EN; issue #25)",
     "0.26.7.0 (owner request 2026-11-06, approved): the menu 'Notifications & energy' gains the page 'Automation lock (e.g. holidays)' with one optional entity (automation_lock_entity: input_boolean, switch, binary sensor, timer or schedule; empty = no lock) – while it is on FreshAirIQ starts no automatic device action and only ends the airing it started itself; a status binary sensor 'Automation lock' for other automations",
     "0.26.7.0 (owner order 'Logikprüfung, Innentüren und UX', point 1/2, approved): the per-opening form gains 'Opening leads to' (outside / another room, stored only for inside openings – existing contacts stay outside) with the explanation of inside doors and the optional 'Connected room'; error contact_side_conflict refuses a contact classified differently in another room; per-contact metadata pruning moved into one helper",
-    "0.26.7.0 (owner order 'Hotfix F05–F08 + zusätzliche UI-/Textfehler', U04/T01–T04, approved): error connected_room_outside explains that 'Connected room' only applies to inside doors instead of dropping a room chosen for an outside opening silently (the prefilled room of a door switched to outside still goes with the side change); the connected-room label/description, the legacy cross-ventilation pairs description, the contact-mode option labels and descriptions and the contact_side_conflict error use the owner's wording in German and English."
+    "0.26.7.0 (owner order 'Hotfix F05–F08 + zusätzliche UI-/Textfehler', U04/T01–T04, approved): error connected_room_outside explains that 'Connected room' only applies to inside doors instead of dropping a room chosen for an outside opening silently (the prefilled room of a door switched to outside still goes with the side change); the connected-room label/description, the legacy cross-ventilation pairs description, the contact-mode option labels and descriptions and the contact_side_conflict error use the owner's wording in German and English.",
+    "0.26.7.0 (owner order 'Hassfest-Hotfix', approved): hassfest schema errors removed – options.selector (never read; every selector text is at the top level), the older duplicate options.step.<id>.section (Home Assistant shows 'sections', whose texts are unchanged) and the missing config_subentries.room.entry_type (Raum/Room) added; no visible text of a form changes."
   ]
 }

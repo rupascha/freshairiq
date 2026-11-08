@@ -221,3 +221,21 @@ def test_ventilate_followed_after_notification_is_counted_as_such():
     room = store["rooms"]["bad"]
     assert (room["recommendation_followed"], room["recommendation_notified"], room["recommendation_followed_notified"]) == (1, 1, 1)
     assert mark_recommendation_notified({}, NOW) is False
+
+
+def test_signature_counts_only_the_integration_package_not_a_directory_named_freshairiq(tmp_path):
+    """0.26.7.0: a checkout or config directory named "freshairiq" (e.g. GitHub's /home/runner/work/freshairiq/freshairiq)
+    made every file below it an "integration frame" – only custom_components/freshairiq counts."""
+    import sys
+    outside = tmp_path / "freshairiq" / "tests"
+    inside = tmp_path / "freshairiq" / "custom_components" / "freshairiq"
+    outside.mkdir(parents=True)
+    inside.mkdir(parents=True)
+    ns = {}
+    exec(compile("def boom():\n    raise ValueError('x')\n", str(inside / "config_flow.py"), "exec"), ns)
+    exec(compile("def call():\n    boom()\n", str(outside / "test_flow.py"), "exec"), ns)   # a caller outside the package
+    try:
+        ns["call"]()
+    except ValueError as err:
+        sig = flow_error_signature(err, sys.exc_info()[2], flow="options_flow", step="room_goals")
+    assert sig["locations"] == ["config_flow:2 boom"]

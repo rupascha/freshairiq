@@ -16,6 +16,12 @@ PACKAGE_DIR = "freshairiq"
 MAX_FRAMES = 4
 
 
+def _in_package(path: PurePath) -> bool:
+    """A frame of the integration: ``custom_components/freshairiq/`` – not any directory that is merely named freshairiq."""
+    parts = path.parts
+    return any(parts[i] == "custom_components" and parts[i + 1] == PACKAGE_DIR for i in range(len(parts) - 1))
+
+
 def flow_error_signature(
     error: BaseException, tb: TracebackType | None, *, flow: str, step: str
 ) -> dict[str, Any]:
@@ -25,7 +31,7 @@ def flow_error_signature(
     while frame is not None:
         code = frame.tb_frame.f_code
         path = PurePath(code.co_filename)
-        if PACKAGE_DIR in path.parts:
+        if _in_package(path):
             locations.append(f"{path.stem}:{frame.tb_lineno} {code.co_name}")  # no ".py": diagnostics redact dotted names
         frame = frame.tb_next
     locations = locations[-MAX_FRAMES:]

@@ -33,8 +33,10 @@ SECTION_FIELDS = {
 SECTION_FIELDS["edit_room"] = SECTION_FIELDS["add_room"]
 
 
+# Test note (0.26.7.0 hassfest hotfix, owner order): Home Assistant shows the texts of a form section from "sections";
+# the older duplicate "section" was never displayed and is rejected by hassfest – both tests now check what is shown.
 def test_reported_resident_fields_are_translated_inside_section():
-    residents = DE["options"]["step"]["residents"]["section"]["residents"]
+    residents = DE["options"]["step"]["residents"]["sections"]["residents"]
     assert residents["data"]["adult_occupants"].startswith("Erwachsene")
     assert residents["data"]["adult_resident_names"].startswith("Namen Erwachsene")
     assert residents["data"]["adult_presence_entities"].startswith("Tracker Erwachsene")
@@ -44,9 +46,9 @@ def test_sectioned_forms_have_nested_german_field_translations():
     steps = DE["options"]["step"]
     for step_id, sections in SECTION_FIELDS.items():
         step = steps[step_id]
-        assert "section" in step
+        assert "sections" in step and "section" not in step
         for section_id, fields in sections.items():
-            sec = step["section"][section_id]
+            sec = step["sections"][section_id]
             for field in fields:
                 label = sec["data"].get(field, "")
                 description = sec["data_description"].get(field, "")

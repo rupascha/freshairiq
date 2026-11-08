@@ -15,6 +15,7 @@ from homeassistant.components.lovelace.resources import ResourceStorageCollectio
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.const import CONF_ID, CONF_TYPE, CONF_URL
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -70,6 +71,9 @@ from .typing import FreshAirIQConfigEntry
 
 
 _LOGGER = logging.getLogger(__name__)
+# Set up from the UI only (config entry); async_setup registers the bundled frontend and reads no YAML.
+# hassfest (config_schema) requires a schema for every integration that implements async_setup.
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _FRONTEND_DIR = Path(__file__).parent / "frontend"
 _FRONTEND_URL = "/freshairiq/frontend"
