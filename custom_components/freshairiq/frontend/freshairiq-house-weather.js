@@ -333,7 +333,7 @@ export const WORLD_STYLE = `
 .wxv .sunpos{fill:#ffd65c;filter:drop-shadow(0 0 8px rgba(255,214,92,.9))}.wxv .sunpos.below{fill:#8fa0c8;filter:none}
 .wxv .sunfacts{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;font-weight:800}.wxv .sunfacts span{color:#cfe6ff;font-weight:700}
 .wxv .days{display:grid;gap:2px}
-.wxv .day{display:grid;grid-template-columns:3.4em 28px 2.6em minmax(40px,1fr) 2.6em 3em;gap:8px;align-items:center;font-size:13px;font-weight:800;padding:5px 2px;border-bottom:1px solid rgba(201,243,255,.08)}
+.wxv .day{display:grid;grid-template-columns:3.4em 28px 2.6em minmax(16px,1fr) 2.6em 3em;gap:6px;align-items:center;font-size:13px;font-weight:800;padding:5px 2px;border-bottom:1px solid rgba(201,243,255,.08)}
 .wxv .day:last-child{border-bottom:0}.wxv .day .lo{color:#a9cbe6;text-align:right}.wxv .day .rain{color:#8fd3ff;font-size:12px;text-align:right}
 .wxv .day svg{width:26px;height:26px}
 .wxv .range{position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.1)}.wxv .range i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#7cc8f0,#ffd27a,#ff8f5c)}

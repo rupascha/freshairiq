@@ -2,7 +2,7 @@
 // custom), contrast in light, dark and custom themes, phones to desktops. Fixture and mount as in house.spec.mjs.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { loadModule } from './harness.mjs';
+import { loadModule, settle } from './harness.mjs';
 
 const LAYOUT = {
   schema_version: 1, revision: 3, building: { north_deg: 0, units: 'm', north_confirmed: true },
@@ -76,7 +76,7 @@ async function mount(page, { config = {}, stored = true, admin = true, saveError
   }, { config, stored, admin, saveError, LAYOUT, ROOMS, HOUSE });
   await page.waitForFunction(() => window.__subs['freshairiq/house_map/subscribe']);
   await page.evaluate(() => { window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }); window.__subs['freshairiq/house_map/subscribe'](window.__HOUSE); });
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   return errors;
 }
 const impl = page => page.locator('freshairiq-house-card-impl');
@@ -96,10 +96,10 @@ async function openDialog(page, [, sel, extra]) {
   if (extra === 'live') await page.evaluate(() => { const r = window.__ROOMS; window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...r, bad: { ...r.bad, active: true, result_ml: 120, session_target_min: 12, session_elapsed_min: 5 } }, status: 'ventilate', potential_total_ml: 1500, live_balance_ml: 121.6, recommended_duration_min: 12, remaining_duration_min: 7 }); });
   else if (extra && typeof extra === 'object') await push(page, extra);
   if (extra === 'nodata') await impl(page).evaluate(el => { const r = { ...el._rooms }; delete r.flur; el._rooms = r; });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   if (sel === 'menu') await impl(page).evaluate(el => el._openMenu());
   else await impl(page).evaluate((el, sel) => { el._nav = []; el._menuOpen = false; el._selected = sel; el._render(); }, sel);
-  await page.waitForTimeout(250);
+  await settle(page, 250);
   return impl(page).locator(sel === 'menu' ? 'dialog.menudlg[open] .dlg' : 'dialog.roomdlg[open] .dlg');
 }
 
@@ -228,7 +228,7 @@ test('UI04: the state colours of the plan are the same in every design', async (
   for (const [, config, theme] of DESIGNS.slice(1)) {
     if (theme) await setTheme(page, HA_THEMES[theme]);
     await impl(page).evaluate((el, c) => el.setConfig(c), config);
-    await page.waitForTimeout(80);
+    await settle(page, 80);
     expect(await fills()).toBe(base);
   }
 });
@@ -296,14 +296,14 @@ test('UI04: two house maps with different designs stay independent; a design swi
   await setTheme(page, HA_THEMES.light);
   await page.evaluate(() => { const c = document.createElement('freshairiq-house-card'); c.id = 'card2'; c.setConfig({ design: 'custom', design_dialog: '#20232a', design_accent: '#ffd400' }); document.getElementById('m').appendChild(c); c.hass = document.getElementById('card').hass; });
   await page.waitForFunction(() => document.querySelectorAll('freshairiq-house-card-impl').length === 2);
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   await implN(page, 0).evaluate(el => el._applyDesign());
   const first = await designOf(implN(page, 0)), second = await designOf(implN(page, 1));
   expect([first.design, first.scheme, second.design, second.scheme]).toEqual(['ha', 'light', 'custom', 'dark']);
   // Home Assistant switches to its dark theme: the HA card follows (new hass.themes), the custom card does not change
   await setTheme(page, HA_THEMES.dark);
   await page.evaluate(() => { const c = document.getElementById('card'); c.hass = { ...c.hass, themes: { darkMode: true } }; });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   expect((await designOf(implN(page, 0))).scheme).toBe('dark');
   expect(await designOf(implN(page, 1))).toEqual(second);
   // the first card goes back to the FreshAirIQ design at runtime; the second keeps its own
@@ -360,7 +360,7 @@ test('UI06/UI07: removable moisture – short explanation before and while airin
   expect(r.more[2]).toContain('Sensor „Entfernbare Feuchtigkeit“'); expect(r.more[2]).toContain('nicht für ein vollständiges Austrocknen');
   // right after the airing started: nothing measured yet – the reason is shown at once
   await page.evaluate(() => { const r = window.__ROOMS; window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...r, bad: { ...r.bad, active: true, result_ml: 0, session_target_min: 12, session_elapsed_min: 0 } }, status: 'ventilate', potential_total_ml: 1500, live_balance_ml: 0, recommended_duration_min: 12, remaining_duration_min: 12 }); });
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   r = await read();
   expect(r.intro).toContain('Hier siehst du die bisher geschätzte Feuchteabgabe der aktuell lüftenden Räume. Der Wert wird anhand neuer Messungen aktualisiert.');
   expect(r.intro).toContain('nur die Räume, die gerade gelüftet werden');
@@ -369,12 +369,12 @@ test('UI06/UI07: removable moisture – short explanation before and while airin
   expect(r.heading).toBe('Nach Räumen');
   // later in the airing the reason moves into the folded part
   await page.evaluate(() => { const r = window.__ROOMS; window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...r, bad: { ...r.bad, active: true, result_ml: 80, session_target_min: 12, session_elapsed_min: 4 } }, status: 'ventilate', potential_total_ml: 1500, live_balance_ml: 80, recommended_duration_min: 12, remaining_duration_min: 8 }); });
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   r = await read();
   expect(r.zero).toBe(false); expect(r.more[2]).toContain('0 ml');
   // English: the same structure and the sensor's English name
   await impl(page).evaluate(el => { el._hass = { ...el._hass, language: 'en', locale: { language: 'en' } }; el._roomsLang = null; el._render(); });
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   r = await read();
   expect(r.title).toBe('Removable moisture');
   expect(r.intro).toContain('This shows the estimated moisture given off so far by the rooms being aired right now.');
@@ -387,8 +387,8 @@ test('UI08: removable moisture – the values of the payload: removable, added, 
   await mount(page);
   await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
   const tiles = () => impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('dialog.roomdlg[open] .tile')].map(t => `${t.querySelector('.l').textContent}=${t.querySelector('.v').textContent.trim()}`));
-  const show = async payload => { await page.evaluate(p => window.__subs['freshairiq/dashboard/subscribe'](p), payload); await page.waitForTimeout(250);
-    await impl(page).evaluate(el => { el._nav = []; el._selected = { type: 'moisture' }; el._render(); }); await page.waitForTimeout(150); return tiles(); };
+  const show = async payload => { await page.evaluate(p => window.__subs['freshairiq/dashboard/subscribe'](p), payload); await settle(page, 250);
+    await impl(page).evaluate(el => { el._nav = []; el._selected = { type: 'moisture' }; el._render(); }); await settle(page, 150); return tiles(); };
   const rooms = await page.evaluate(() => window.__ROOMS);
   expect(await show({ rooms, status: 'ventilate', potential_total_ml: 1947.4, recommended_duration_min: 12, prognosis_confidence: 70.4 })).toEqual(['Jetzt entfernbar=≈ 1947 ml', 'Empfohlene Lüftungszeit=12 Min.', 'Prognosesicherheit=70 %']);
   expect(await show({ rooms, status: 'ok', potential_total_ml: -230, recommended_duration_min: 9 })).toEqual(['Jetzt entfernbar=+230 ml', 'Empfohlene Lüftungszeit=9 Min.', 'Prognosesicherheit=–']);
@@ -420,7 +420,7 @@ test('UI05/UI08: a running airing updates the open window in place – the value
   const before = await body('top');
   expect(before).toBeGreaterThan(0);
   await page.evaluate(() => { const r = window.__ROOMS; window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...r, bad: { ...r.bad, result_ml: 180, session_elapsed_min: 7 } }, status: 'ventilate', potential_total_ml: 1500, live_balance_ml: 556, recommended_duration_min: 12, remaining_duration_min: 5 }); });   // the sum of the rooms, as the coordinator publishes it
-  await page.waitForTimeout(1200);
+  await settle(page, 1200);
   expect(await body('text')).toContain('556 ml'); expect(await body('text')).toContain('180 ml');
   expect(await body('top')).toBe(before);
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('dialog.roomdlg[open]'))).toBe(true);

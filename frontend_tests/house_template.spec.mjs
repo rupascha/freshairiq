@@ -1,7 +1,7 @@
 // House map editor – floor plan template: upload, scale, north, room detection by tapping, assignment
 // and windows by tapping. The plans are drawn on a canvas here, so every expected area is known exactly.
 import { test, expect } from '@playwright/test';
-import { loadModule } from './harness.mjs';
+import { loadModule, settle } from './harness.mjs';
 
 const V = '0.26.5.4';
 const S = 0.02; // metres per pixel of the drawn plans (800 × 600 px = 16 × 12 m)
@@ -203,12 +203,14 @@ const pngOf = async (page, opts) => Buffer.from(await page.evaluate(o => window.
 async function tapImage(page, editor, q) {
   const xy = await editor.evaluate((el, q) => {
     const u = el._ul[el._floor], p = window.T.toPlan(u, q), svg = el.shadowRoot.querySelector('svg');
-    svg.scrollIntoView({ block: 'center' });
+    // Test note 0.26.7.0 CI fix (cross-browser): WebKit ignores scrollIntoView({ block: 'center' }) on an <svg> element; its
+    // drawing area (div.canvas, the same box) scrolls in every engine
+    (svg.closest('.canvas') || svg).scrollIntoView({ block: 'center' });
     const m = svg.getScreenCTM();
     return [m.a * p[0] + m.c * -p[1] + m.e, m.b * p[0] + m.d * -p[1] + m.f];
   }, q);
   await page.mouse.click(xy[0], xy[1]);
-  await page.waitForTimeout(60);
+  await settle(page, 60);
 }
 const click = (editor, selector) => editor.evaluate((el, s) => el.shadowRoot.querySelector(s).click(), selector);
 
@@ -218,7 +220,7 @@ test('editor: upload, calibrate, north, tap rooms, assign, tap a window, save', 
   expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('PDF bitte vorher als Bild');
   await editor.locator('input[data-f="ul_file"]').setInputFiles({ name: 'plan.png', mimeType: 'image/png', buffer: await pngOf(page, { furniture: true }) });
   await page.waitForFunction(() => window.__calls.some(c => c.type === 'freshairiq/house_map/underlay_save'));
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/underlay_save').underlay);
   expect(saved).toMatchObject({ floor_id: 'f_eg', mime: 'image/jpeg', width: 800, height: 600, scale_m_per_px: null, close_px: 2 });
   expect(await editor.evaluate(el => el._tool)).toBe('calibrate');
@@ -234,7 +236,7 @@ test('editor: upload, calibrate, north, tap rooms, assign, tap a window, save', 
   await tapImage(page, editor, [40, 580]);
   await tapImage(page, editor, [760, 580]);
   await editor.evaluate(el => { el.shadowRoot.querySelector('[data-f="ul_meters"]').value = '14.4'; el.shadowRoot.querySelector('[data-a="ul-calibrate"]').click(); });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const scale = await editor.evaluate(el => el._ul.f_eg.scale_m_per_px);
   expect(Math.abs(scale - 0.02) / 0.02).toBeLessThan(0.03); // clicks land on screen pixels
   expect(await editor.evaluate(el => el._tool)).toBe('trace');
@@ -270,7 +272,7 @@ test('editor: upload, calibrate, north, tap rooms, assign, tap a window, save', 
 
   // the layout save carries the traced rooms; the picture itself is never part of it
   await click(editor, '[data-a="save"]');
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   const calls = await page.evaluate(() => window.__calls.map(c => c.type));
   expect(calls).toContain('freshairiq/house_map/save');
   expect(errors).toEqual([]);
@@ -282,7 +284,7 @@ test('editor: separator line and gap slider are stored; stored template loads; d
   const stored = { floor_id: 'f_eg', mime: 'image/png', data, width: 800, height: 600, scale_m_per_px: 0.02, calibration: null, walls: [], close_px: 2, opacity: 0.55 };
   const editor = await mountEditor(page, { stored });
   await page.waitForFunction(() => window.__calls.some(c => c.type === 'freshairiq/house_map/underlay_get'));
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   expect(await editor.evaluate(el => !!el.shadowRoot.querySelector('image.ul'))).toBe(true);
   await click(editor, '[data-tool="trace"]');
   await tapImage(page, editor, [600, 150]);
@@ -290,25 +292,25 @@ test('editor: separator line and gap slider are stored; stored template loads; d
   await click(editor, '[data-tool="separator"]');
   await tapImage(page, editor, [402, 140]);
   await tapImage(page, editor, [402, 175]);
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   expect(await page.evaluate(() => window.__ul.f_eg.walls.length)).toBe(1);
   await click(editor, '[data-tool="trace"]');
   await tapImage(page, editor, [600, 150]);
   expect(Math.abs((await editor.evaluate(el => el._trace.areaM2)) - 28.62) / 28.62).toBeLessThan(0.05);
   await editor.evaluate(el => { const s = el.shadowRoot.querySelector('[data-f="ul_close"]'); s.value = '6'; s.dispatchEvent(new Event('change')); });
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   expect(await page.evaluate(() => window.__ul.f_eg.close_px)).toBe(6);
   await editor.evaluate(el => { const s = el.shadowRoot.querySelector('[data-f="ul_show"]'); s.checked = false; s.dispatchEvent(new Event('change')); });
   expect(await editor.evaluate(el => !!el.shadowRoot.querySelector('image.ul'))).toBe(false);
   page.once('dialog', d => d.accept());
   await click(editor, '[data-a="ul-delete"]');
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   expect(await page.evaluate(() => window.__ul)).toEqual({});
   expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('Bild hochladen');
 
   // a PDF is refused in the browser; a refused save is reported
   await editor.locator('input[data-f="ul_file"]').setInputFiles({ name: 'plan.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7') });
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('Nur PNG, JPEG oder WebP');
 });
 
@@ -317,7 +319,7 @@ test('editor: a refused template upload is shown and nothing is kept', async ({ 
   const editor = await mountEditor(page, { failSave: true });
   await editor.locator('input[data-f="ul_file"]').setInputFiles({ name: 'plan.png', mimeType: 'image/png', buffer: await pngOf(page, {}) });
   await page.waitForFunction(() => window.__calls.some(c => c.type === 'freshairiq/house_map/underlay_save'));
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('Vorlage konnte nicht gespeichert werden');
   expect(await editor.evaluate(el => Object.keys(el._ul))).toEqual([]);
 });

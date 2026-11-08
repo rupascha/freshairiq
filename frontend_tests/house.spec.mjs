@@ -2,7 +2,7 @@
 // floor plan, wind, honest opening states, air-path hypothesis, floor focus and the editor.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { loadModule } from './harness.mjs';
+import { loadModule, settle } from './harness.mjs';
 
 const LAYOUT = {
   schema_version: 1, revision: 3, building: { north_deg: 0, units: 'm', north_confirmed: true },
@@ -76,7 +76,7 @@ async function mount(page, { config = {}, stored = true, admin = true, saveError
   }, { config, stored, admin, saveError, LAYOUT, ROOMS, HOUSE });
   await page.waitForFunction(() => window.__subs['freshairiq/house_map/subscribe']);
   await page.evaluate(() => { window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }); window.__subs['freshairiq/house_map/subscribe'](window.__HOUSE); });
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   return errors;
 }
 const impl = page => page.locator('freshairiq-house-card-impl');
@@ -106,14 +106,14 @@ test('a mould warning never shows green; a critical one wins over the action col
       schlaf: { ...window.__ROOMS.schlaf, surface_rh: 72, mould_level: 'Elevated' },
       wohnen: { ...window.__ROOMS.wohnen, action: 'Okay', house_aligned_action: 'okay', surface_rh: 95, mould_level: 'Very high' } } });
   });
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const rooms = await q(page, 'polygon.room');
   expect(rooms.find(r => r.label.startsWith('Flur')).cls).not.toContain('t-ok');
   const wohnen = rooms.find(r => r.label.startsWith('Wohnen'));
   expect(wohnen.cls).toContain('t-critical');
   expect(wohnen.label).toContain('In Ordnung');  // the canonical action is not overridden
   await impl(page).evaluate(el => { const p = [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_wohnen'); p.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   expect(await shadowText(page)).toContain('Schimmelrisiko-Hinweis');
 });
 
@@ -135,7 +135,7 @@ test('air paths are a marked estimate and stop animating with reduced motion', a
   const animation = await impl(page).evaluate(el => getComputedStyle(el.shadowRoot.querySelector('polyline.path')).animationName);
   expect(animation).toBe('none');
   await impl(page).evaluate(el => el.shadowRoot.querySelector('polyline.path').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   const detail = await shadowText(page);
   expect(detail).toContain('Querlüftung (vermutet)');
   expect(detail).toContain('keine gemessene Strömung');
@@ -144,7 +144,7 @@ test('air paths are a marked estimate and stop animating with reduced motion', a
 test('without wind data there is no wind arrow and no invented direction', async ({ page }) => {
   await mount(page);
   await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, wind: { ...window.__HOUSE.wind, available: false, reason: 'no_direction', from_deg: null }, airflow: null }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await shadowText(page)).toContain('Keine Windrichtung');
   expect((await q(page, 'line.windarrow')).length).toBe(0);
 });
@@ -152,10 +152,10 @@ test('without wind data there is no wind arrow and no invented direction', async
 test('tapping a room explains it with the canonical reason; names are escaped', async ({ page }) => {
   await mount(page);
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, flur: { ...window.__ROOMS.flur, name: '<img src=x onerror="window.__xss=1">' } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('img').length)).toBe(0);
   await impl(page).evaluate(el => { const p = [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad'); p.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   expect(await shadowText(page)).toContain('Bad: Grund');
   expect(await page.evaluate(() => window.__xss)).toBeUndefined();
 });
@@ -165,13 +165,13 @@ test('floor focus: auto switches on a new action elsewhere, a manual choice is r
   await page.evaluate(() => localStorage.clear());
   const closeUpstairs = () => page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, schlaf: { ...window.__ROOMS.schlaf, action: 'Close', house_aligned_action: 'close' } } }));
   await closeUpstairs();
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect((await q(page, 'polygon.room')).map(r => r.label.split(',')[0])).toEqual(['Schlafzimmer']);
   // the user goes back down: stays there although the upper floor still needs action
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('[data-floor]')].find(b => b.textContent.startsWith('Erdgeschoss')).click());
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS }));
   await closeUpstairs();
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect((await q(page, 'polygon.room')).length).toBe(3);
   expect(await shadowText(page)).toContain('Auto-Fokus pausiert bis');
 });
@@ -179,7 +179,7 @@ test('floor focus: auto switches on a new action elsewhere, a manual choice is r
 test('hint mode keeps the floor and offers the other one', async ({ page }) => {
   await mount(page, { config: { auto_focus: 'hint' } });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, schlaf: { ...window.__ROOMS.schlaf, action: 'Close', house_aligned_action: 'close' } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect((await q(page, 'polygon.room')).length).toBe(3);
   // 0.26.6.0(2): no "action on another floor" notice any more (owner request) – the upper floor's button pulses
   expect(await shadowText(page)).not.toContain('Handlung auf anderer Etage');
@@ -201,7 +201,7 @@ async function openEditor(page, options = {}) {
   await mount(page, options);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
   await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   return page.locator('freshairiq-house-layout-editor');
 }
 const roomPoints = (editor, id) => editor.evaluate((el, id) => el._layout.rooms.find(r => r.id === id).polygon, id);
@@ -220,11 +220,11 @@ test('editor: drag a room, undo, insert a corner, blocked save on overlap, save 
   expect((await roomPoints(editor, 'r_bad')).length).toBe(5);
   // overlapping rooms cannot be saved; the problem is named at the room
   await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_bad').polygon = [[1, 1], [3, 1], [3, 3], [1, 3]]; }); el.shadowRoot.querySelector('[data-a="save"]').click(); });
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('überlappt einen anderen Raum');
   expect(await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').length)).toBe(0);
   await editor.evaluate(el => { el._undo(); el.shadowRoot.querySelector('[data-a="save"]').click(); });
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const save = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save'));
   expect(save.base_revision).toBe(3);
   expect(save.layout.rooms.find(r => r.id === 'r_bad').polygon.length).toBe(5);
@@ -236,7 +236,7 @@ test('editor: a concurrent save is reported, not overwritten; hass updates keep 
   await impl(page).evaluate(el => { el.hass = { ...el.hass }; });  // HA pushes new states while editing
   expect(await editor.evaluate(el => el._layout.building.north_deg)).toBe(42);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const text = await editor.evaluate(el => el.shadowRoot.textContent);
   expect(text).toContain('anderswo gespeichert');
   expect(await editor.evaluate(el => !!el.shadowRoot.querySelector('[data-a="reload"]'))).toBe(true);
@@ -314,7 +314,7 @@ test('every floor is shown on its own (no all-floors overview any more); removin
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('[data-floor="__all"]'))).toBe(false);
   expect((await q(page, 'polygon.room')).length).toBe(3);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-floor="f_og"]').click());
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   expect((await q(page, 'polygon.room')).length).toBe(1);
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('svg[role="group"]').length)).toBe(1);
   // Test note (0.26.7.0, owner request: weather beside the plan on wide cards): this wide card also holds the shared
@@ -376,7 +376,7 @@ test('wind streams: bounce off closed walls, enter through a confirmed open wind
   });
   expect(inside).toBe(true);
   await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, revision: 3, wind: { ...window.__HOUSE.wind, available: false, reason: 'calm', calm: true } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect((await streamsOf(page)).length).toBe(0);
 });
 
@@ -384,7 +384,7 @@ test('stronger wind makes the streams faster', async ({ page }) => {
   await mount(page);
   const seconds = async speed => {
     await page.evaluate(v => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, revision: 3, wind: { ...window.__HOUSE.wind, speed_ms: v } }), speed);
-    await page.waitForTimeout(80);
+    await settle(page, 80);
     return impl(page).evaluate(el => parseFloat(el.shadowRoot.querySelector('svg.plan').style.getPropertyValue('--dur')));
   };
   const calmish = await seconds(1), strong = await seconds(12);
@@ -398,7 +398,7 @@ test('the hero shows the house data: recommendation, forecast for the set horizo
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', status_text: 'Alles gut',
     forecast_horizon_min: 15, forecast_moisture_effect_ml: 180, forecast_temperature_change_c: -0.6, overnight_forecast_ml: 240,
     weather_now: { outdoor_temperature: 11.4, condition: 'cloudy' }, intelligent_recommendation: { kind: 'ventilate', title: 'Jetzt lüften', instruction: 'Bad und Flur' } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const text = await shadowText(page);
   for (const part of ['Jetzt lüften', 'Bad und Flur', 'Prognose 15 min', '−180 ml', '-0.6 °C', '+240 ml', '11.4 °C', 'bewölkt', 'Alles gut']) expect(text).toContain(part);
 });
@@ -406,12 +406,12 @@ test('the hero shows the house data: recommendation, forecast for the set horizo
 test('a tap on a room opens the detail window; closing it returns to the map', async ({ page }) => {
   await mount(page);
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const open = await impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.roomdlg'); return d && d.open && d.textContent; });
   expect(open).toContain('Bad: Grund');
   expect(open).toContain('Fenster & Türen');
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-close-detail]').click());
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('dialog.roomdlg'))).toBe(false);
 });
 
@@ -419,7 +419,7 @@ test('room labels stay readable: at least 12 px on screen, also on a phone', asy
   await mount(page);
   for (const width of [760, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.waitForTimeout(150);
+    await settle(page, 150);
     await impl(page).evaluate(el => el._render());
     const smallest = await impl(page).evaluate(el => {
       const svg = el.shadowRoot.querySelector('svg.plan'), scale = svg.getBoundingClientRect().width / Number(svg.getAttribute('viewBox').split(' ')[2]);
@@ -453,7 +453,7 @@ test('the plan fits a phone without sideways scrolling and live updates keep the
   await page.evaluate(() => { const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; document.head.appendChild(m); });
   for (const width of [320, 390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.waitForTimeout(120);
+    await settle(page, 120);
     await impl(page).evaluate(el => el._render());
     const box = await impl(page).evaluate(el => {
       const map = el.shadowRoot.querySelector('.map'), svg = map.querySelector('svg.plan');
@@ -466,10 +466,10 @@ test('the plan fits a phone without sideways scrolling and live updates keep the
   }
   await page.setViewportSize({ width: 390, height: 260 });  // the room window scrolls
   await impl(page).evaluate(el => { const p = [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_wohnen'); p.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const before = await impl(page).evaluate(el => { const b = el.shadowRoot.querySelector('.dlg .body'); b.scrollTop = 60; return b.scrollTop; });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }));
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   const after = await impl(page).evaluate(el => el.shadowRoot.querySelector('.dlg .body').scrollTop);
   expect(before).toBeGreaterThan(0);
   expect(after).toBe(before);
@@ -494,14 +494,14 @@ test('wind: soft wave strands per stream, driven by the card clock (no CSS anima
   // its broad air mass) instead of three; the levels are checked in house_next.spec.mjs
   expect(a.waves).toBe(a.streams * 2);
   expect(a.cssAnimations).toBe(0);
-  await page.waitForTimeout(400);
+  await settle(page, 400);
   const b = await waveState(page);
   expect(b.d).not.toBe(a.d);  // the waves move
 });
 
 test('wind: new data and a full redraw continue the waves where they were', async ({ page }) => {
   await mount(page);
-  await page.waitForTimeout(500);
+  await settle(page, 500);
   const result = await impl(page).evaluate(el => {
     const before = el._windPhase, node = el.shadowRoot.querySelector('path.wave');
     const h = JSON.parse(JSON.stringify(window.__HOUSE)); h.revision = 4; h.wind = { ...h.wind, speed_ms: 6 };
@@ -513,7 +513,7 @@ test('wind: new data and a full redraw continue the waves where they were', asyn
   expect(result.replaced).toBe(true);           // the element is new …
   expect(result.before).toBeGreaterThan(0);
   expect(result.after).toBeCloseTo(result.before, 6);  // … and starts at the phase the old one had
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   expect((await waveState(page)).phase).not.toBeCloseTo(result.after, 3);  // and keeps moving
 });
 
@@ -538,7 +538,7 @@ test('wind: the wave is periodic in its phase (no seam) and calm at both ends of
 test('wind: reduced motion and a switched-off animation keep the waves still', async ({ page }) => {
   await mount(page, { reducedMotion: 'reduce' });
   const a = await waveState(page);
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   const b = await waveState(page);
   expect(a.waves).toBeGreaterThan(0);
   expect(b.d).toBe(a.d);
@@ -652,15 +652,15 @@ test('editor: a door widened beyond the shared wall is shown as an outside openi
 
 test('wind: switching the animation off stops the loop at once, on again continues the same phase', async ({ page }) => {
   await mount(page);
-  await page.waitForTimeout(250);
+  await settle(page, 250);
   const off = await impl(page).evaluate(el => { const before = el._windPhase; el.setConfig({ ...el._config, animation: false }); return { before, raf: el._windRaf }; });
   expect(off.raf).toBeNull();
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   const still = await impl(page).evaluate(el => ({ phase: el._windPhase, raf: el._windRaf }));
   expect(still.phase).toBe(off.before);  // nothing moved while off
   expect(still.raf).toBeNull();
   await impl(page).evaluate(el => el.setConfig({ ...el._config, animation: true }));
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   const on = await impl(page).evaluate(el => ({ phase: el._windPhase, raf: !!el._windRaf }));
   expect(on.raf).toBe(true);
   expect(on.phase).not.toBe(off.before);  // continues from where it stopped
@@ -668,15 +668,15 @@ test('wind: switching the animation off stops the loop at once, on again continu
 
 test('wind: "reduce motion" switched while shown stops it, leaving the card stops it, one loop per card', async ({ page }) => {
   await mount(page);
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const reduced = await impl(page).evaluate(el => ({ raf: el._windRaf, phase: el._windPhase }));
   expect(reduced.raf).toBeNull();
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   expect(await impl(page).evaluate(el => el._windPhase)).toBe(reduced.phase);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.waitForTimeout(250);
+  await settle(page, 250);
   expect(await impl(page).evaluate(el => !!el._windRaf && el._windPhase !== undefined)).toBe(true);
   // a redraw never starts a second loop
   const frames = await impl(page).evaluate(async el => {
@@ -704,13 +704,13 @@ for (const [language, held, monitored] of [['de', '⏳ Lüften möglich · noch 
   test(`house map: ventilate_later and monitor_open have their own words, symbol and tone (${language})`, async ({ page }) => {
     const errors = await mount(page);
     await feed(page, 'ventilate_later', language);
-    await page.waitForTimeout(80);
+    await settle(page, 80);
     let rooms = await q(page, 'polygon.room');
     const wohnen = rooms.find(r => r.label.startsWith('Wohnen'));
     expect(wohnen.label).toContain(held);
     expect(wohnen.cls).toContain('t-wait');
     await feed(page, 'monitor_open', language);
-    await page.waitForTimeout(80);
+    await settle(page, 80);
     rooms = await q(page, 'polygon.room');
     const bad = rooms.find(r => r.label.startsWith('Bad'));
     expect(bad.label).toContain(monitored);
@@ -718,12 +718,12 @@ for (const [language, held, monitored] of [['de', '⏳ Lüften möglich · noch 
     expect(bad.cls).not.toContain('t-close');  // the physical "Close" is not shown while the house tolerates the opening
     for (const r of rooms) expect(r.label).not.toMatch(/Unbekannt|Unknown/);
     await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    await page.waitForTimeout(50);
+    await settle(page, 50);
     expect(await shadowText(page)).toContain(monitored.slice(3));  // the room window says the same
     // a normal close and a protection close keep the close colour and word
     for (const scenario of ['close', 'protection_close']) {
       await feed(page, scenario, language);
-      await page.waitForTimeout(60);
+      await settle(page, 60);
       const closing = (await q(page, 'polygon.room')).find(r => r.label.startsWith('Bad'));
       expect(closing.cls).toContain('t-close');
       expect(closing.label).toContain(language === 'de' ? '🪟 Schließen' : '🪟 Close');
@@ -741,7 +741,7 @@ test('house map hero: every backend recommendation kind has its symbol and colou
   for (const [kind, [emoji, tone]] of Object.entries(expected)) {
     await page.evaluate(({ kind, severity }) => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de',
       intelligent_recommendation: { kind, severity, title: 'Vorerst geschlossen lassen' } }), { kind, severity: severity[kind] || 'neutral' });
-    await page.waitForTimeout(40);
+    await settle(page, 40);
     const bubble = await impl(page).evaluate(el => { const b = el.shadowRoot.querySelector('.bubble'); return { emo: b.querySelector('.emo').textContent, tone: b.dataset.tone, border: b.style.borderLeftColor }; });
     expect(bubble.emo, kind).toBe(emoji);
     expect(bubble.tone, kind).toBe(tone);
@@ -755,7 +755,7 @@ test('house map hero: every backend recommendation kind has its symbol and colou
   for (const rec of [{ kind: 'okay', severity: 'warning' }, { kind: 'something_new', severity: 'neutral' }]) {
     await page.evaluate(rec => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de',
       intelligent_recommendation: { ...rec, title: 'Hinweis' } }), rec);
-    await page.waitForTimeout(40);
+    await settle(page, 40);
     expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('.bubble .emo').textContent)).not.toBe('✅');
   }
 });
@@ -782,7 +782,7 @@ test('editor: tap a room, arrow keys move it (Shift = 10 steps), the page does n
   await page.keyboard.press('Control+z');
   expect(await first()).toEqual([before[0] - 0.1, before[1]]);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout);
   expect(saved.rooms.find(r => r.id === 'r_bad').polygon[0]).toEqual([before[0] - 0.1, before[1]]);
   // reloaded from the saved layout: the moved room is there
@@ -853,7 +853,7 @@ test('openings: door, passage and window get their own symbol in the editor and 
   expect(kinds.some(k => k.includes('jamb'))).toBe(true);                         // passage: a gap with jambs
   expect(kinds.some(k => k.includes('pane'))).toBe(true);                         // window: panes
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout);
   expect(saved.openings.filter(o => o.kind === 'passage').length).toBe(1);
   // the house map draws the saved openings with the same symbols
@@ -945,7 +945,7 @@ test('house map: rooms breathe only while airing is shown and animation is allow
   // Test note 0.26.7.0(2): on a phone "auto" is "minimal" now (no breathing rooms there, owner order: less load) – the normal
   // level is asked for explicitly
   await impl(page).evaluate(el => el.setConfig({ animation: true, animation_level: 'normal' }));
-  await page.waitForTimeout(50);
+  await settle(page, 50);
   expect(await anim()).toBe('breathe');
 });
 
@@ -1074,8 +1074,19 @@ test('hotfix 0.26.6.0 (3): arrow keys and Delete change the plan only while the 
   for (const sel of ['[data-a="save"]', 'input', 'select']) {
     const found = await editor.evaluate((el, s) => { const n = el.shadowRoot.querySelector(s); if (n) n.focus(); return !!n && el.shadowRoot.activeElement === n; }, sel);
     if (!found) continue;
+    const value = await editor.evaluate((el, s) => el.shadowRoot.querySelector(s).value, sel);
     for (const key of ['ArrowLeft', 'ArrowUp', 'Shift+ArrowRight', 'Delete', 'Backspace']) await page.keyboard.press(key);
     expect(await plan(), sel).toBe(before);
+    // Test note 0.26.7.0 CI fix (cross-browser): Firefox and WebKit move a focused <select> to its next option with an arrow
+    // key (Chromium does not). That is the control at work, not a drawing shortcut: the editor then shows the chosen floor
+    // (the bath of the other floor is no longer chosen); the floor is set back and the bath chosen again, as before
+    const moved = await editor.evaluate((el, [s, v]) => { const n = el.shadowRoot.querySelector(s); return n.tagName === 'SELECT' && n.value !== v ? n.value : null; }, [sel, value]);
+    if (moved) {
+      expect(await editor.evaluate(el => el._floor), sel).toBe(moved);
+      await editor.evaluate((el, v) => { const n = el.shadowRoot.querySelector('[data-f="view_floor"]'); n.value = v; n.dispatchEvent(new Event('change')); }, value);
+      await page.mouse.click(box.x, box.y);
+      expect(await plan(), sel).toBe(before);
+    }
   }
   expect(await editor.evaluate(el => el._sel && el._sel.id)).toBe('r_bad');
   // back on the drawing: the arrow moves the room
@@ -1127,7 +1138,7 @@ test('0.26.6.0(2) D1/D5: the house map and the editor draw the very same walls; 
   const card = await wallsOf(page, 'card');
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
   await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await wallsOf(page, 'editor')).toEqual(card);   // D1: one classification for both views
   // the room outlines no longer draw walls: no stroke, no per-room shadow filter on the house map
   await impl(page).evaluate(el => el._openEditor && (el._editing = null));
@@ -1218,7 +1229,7 @@ test('0.26.6.0(2) D11: door hinge and swing – drawn on the right side, kept th
   const set = async (field, value) => editor.evaluate((el, [f, v]) => { const n = el.shadowRoot.querySelector(`[data-f="${f}"]`); n.value = v; n.dispatchEvent(new Event('change')); }, [field, value]);
   await set('door_hinge', 'right'); await set('door_swing', 'out'); await set('width', '0.8'); await set('offset', '0.4');
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout.openings.find(o => o.id === 'd_bad'));
   expect([saved.door_hinge, saved.door_swing, saved.width_m, saved.offset]).toEqual(['right', 'out', 0.8, 0.4]);
   const again = await page.evaluate(layout => { const ed = document.createElement('freshairiq-house-layout-editor'); document.body.appendChild(ed);
@@ -1291,7 +1302,7 @@ test('0.26.6.0(2) D10: wall length – fixed corner, shared walls move along, lo
   // saved as it is
   await editor.evaluate(el => el._redo());
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout.rooms.find(r => r.id === 'r_bad'));
   expect([saved.polygon, saved.locked_walls]).toEqual([before, [2]]);
 });
@@ -1321,10 +1332,10 @@ test('0.26.6.0(2) D6/D7: floors as buttons on the plan; a floor pulses only when
     [{ action: 'Wait', house_aligned_action: 'wait' }, null], [{ action: 'Okay', house_aligned_action: 'okay' }, null],
     [{ action: 'Okay', house_aligned_action: 'okay', mould_level: 'Very high' }, 'critical'], [{ action: 'Okay', house_aligned_action: 'okay', mould_level: null }, null],
   ]) {
-    await room(patch); await page.waitForTimeout(60);
+    await room(patch); await settle(page, 60);
     expect((await buttons())[0], JSON.stringify(patch)).toEqual(['f_og', action]);   // and it ends by itself
   }
-  await room({ action: 'Close', house_aligned_action: 'close' }); await page.waitForTimeout(60);
+  await room({ action: 'Close', house_aligned_action: 'close' }); await settle(page, 60);
   const anim = () => impl(page).evaluate(el => { const b = el.shadowRoot.querySelector('.floorbtn.pulse'); return [getComputedStyle(b).animationName, getComputedStyle(b, '::after').content]; });
   expect((await anim())[0]).toBe('floorpulse');
   expect(await shadowText(page)).not.toContain('Handlung auf anderer Etage');
@@ -1337,7 +1348,7 @@ test('0.26.6.0(2) D6/D7: floors as buttons on the plan; a floor pulses only when
 test('0.26.6.0(2) D7b: with reduced motion the floor button does not pulse but keeps a static mark', async ({ page }) => {
   await mount(page, { reducedMotion: 'reduce' });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, schlaf: { ...window.__ROOMS.schlaf, action: 'Close', house_aligned_action: 'close' } } }));
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   const s = await impl(page).evaluate(el => { const b = el.shadowRoot.querySelector('.floorbtn.pulse'); return [getComputedStyle(b).animationName, getComputedStyle(b, '::after').content, getComputedStyle(b).boxShadow.includes('rgb(255, 159, 67)')]; });
   expect(s).toEqual(['none', '""', true]);
 });
@@ -1353,7 +1364,7 @@ test('0.26.6.0(2) D8/D9: the menu is a real window without a jump; support opens
   expect(await menu()).toEqual({ open: true, modal: true, layers: 0, floors: 0 });
   expect(await page.evaluate(() => window.scrollY)).toBe(y);
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', status_text: 'neu' }));
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect((await menu()).open).toBe(true);                         // a live update keeps it open
   expect(await page.evaluate(() => window.scrollY)).toBe(y);
   // support: its own window, the dashboard card's functions (required description, sending through the API)
@@ -1365,11 +1376,11 @@ test('0.26.6.0(2) D8/D9: the menu is a real window without a jump; support opens
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.menudlg').open)).toBe(false);
   expect(await page.evaluate(() => location.pathname)).not.toContain('/config/integrations');
   await impl(page).evaluate(el => el.shadowRoot.getElementById('diagnostics-send').click());
-  await page.waitForTimeout(40);
+  await settle(page, 40);
   expect((await page.evaluate(() => window.__alerts))[0]).toContain('Bitte beschreibe den Fehler');   // the description is required
   await impl(page).evaluate(el => { el.shadowRoot.getElementById('diagnostics-message').value = 'Die Hauskarte zeigt falsche Wände'; });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }));
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect(await impl(page).evaluate(el => el.shadowRoot.getElementById('diagnostics-message').value)).toBe('Die Hauskarte zeigt falsche Wände');  // kept during live updates
   await impl(page).evaluate(el => el.shadowRoot.getElementById('diagnostics-send').click());
   await expect.poll(() => page.evaluate(() => window.__api.filter(c => c[1] === 'freshairiq/support-diagnostics').length)).toBe(1);
@@ -1382,11 +1393,22 @@ test('0.26.6.0(2) D8/D9: the menu is a real window without a jump; support opens
 
 test.describe('0.26.6.0(2) D12: touch editing on a phone', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
-  test('a tap chooses, a finger over unchosen things moves the view only, two fingers zoom, the chosen room moves', async ({ page }) => {
+  test('a tap chooses, a finger over unchosen things moves the view only, two fingers zoom, the chosen room moves', async ({ page, browserName }) => {
     const editor = await openEditor(page);
     await editor.locator('svg').scrollIntoViewIfNeeded();
-    const cdp = await page.context().newCDPSession(page);
-    const touch = async (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
+    // Test note 0.26.7.0 CI fix (cross-browser): several fingers at once only exist as CDP input in Chromium; Firefox and WebKit
+    // get the same gestures as the pointer events (pointerType "touch") that a touch screen produces and the editor listens to
+    const cdp = browserName === 'chromium' ? await page.context().newCDPSession(page) : null;
+    const down = new Map();
+    const pointer = (type, id, x, y) => editor.evaluate((el, [type, id, x, y]) => {
+      const target = el.shadowRoot.elementFromPoint(x, y) || el.shadowRoot.querySelector('svg');
+      target.dispatchEvent(new PointerEvent(type, { bubbles: true, composed: true, cancelable: true, pointerId: 10 + id, pointerType: 'touch', isPrimary: id === 0, clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 }));
+    }, [type, id, x, y]);
+    const touch = async (type, points) => {
+      if (cdp) return cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
+      if (type === 'touchEnd') { for (const [id, [x, y]] of down) await pointer('pointerup', id, x, y); down.clear(); return; }
+      for (const [id, [x, y]] of points.entries()) { await pointer(type === 'touchStart' ? 'pointerdown' : 'pointermove', id, x, y); down.set(id, [x, y]); }
+    };
     const centre = id => editor.evaluate((el, i) => { const r = el.shadowRoot.querySelector(`polygon[data-id="${i}"]`).getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, id);
     const plan = () => editor.evaluate(el => JSON.stringify(el._layout.rooms.map(r => r.polygon)));
     const view = () => editor.evaluate(el => ({ ...el._view }));
@@ -1469,7 +1491,7 @@ for (const [w, h] of [[320, 568], [375, 667], [390, 844], [820, 1180]]) {
       for (let i = 2; i < 6; i++) { lay.floors.push({ id: `f${i}`, name: `Etage ${i}`, level_key: names[i], order: i }); lay.rooms.push({ id: `r${i}`, room_key: `x${i}`, floor_id: `f${i}`, polygon: [[0, 0], [5, 0], [5, 4], [0, 4]], provenance: 'user' }); }
       el._floor = 'f_eg'; el._render();
     });
-    await page.waitForTimeout(150);
+    await settle(page, 150);
     const out = await impl(page).evaluate(el => {
       const R = n => n.getBoundingClientRect();
       const plan = [...el.shadowRoot.querySelectorAll('svg.plan polygon.room, svg.plan .tag, svg.plan line.op, svg.plan line.wall, svg.plan g.symbol')].map(R);
@@ -1565,7 +1587,7 @@ test('UI hotfix 8 (F01): an interior door is not moved onto an outside wall – 
   expect(codes).toContain('E_OPENING_INTERIOR');
   // saved and loaded again: still on the shared wall with its mark
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(id => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout.openings.find(o => o.id === id), placed.id);
   expect([saved.edge, saved.interior]).toEqual([placed.edge, true]);
 });
@@ -1649,7 +1671,7 @@ test('0.26.6.0(6) 1/2: a window on an interior wall is found and moved to the ou
   expect(await editor.evaluate(el => el.shadowRoot.textContent.includes('an einer Innenwand'))).toBe(false);
   expect(await editor.evaluate(el => el._history.past.length)).toBe(1);        // one step, undoable
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout);
   const o = saved.openings.find(x => x.id === 'o_wc');
   expect([o.edge, o.offset]).toEqual([0, 0.5]);
@@ -1720,7 +1742,7 @@ test('0.26.6.0(6) 4–8: no white boxes; labels readable and inside the room; si
   expect([s.r_bad.rim, s.r_wohnen.rim, s.r_flur.rim]).toEqual([true, true, false]);
   expect(s.r_bad.rimAnim).toBe('rimglow');
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, action: 'Wait', house_aligned_action: 'wait' }, flur: { ...window.__ROOMS.flur, mould_level: 'Very high' } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   s = await look();
   expect([s.r_bad.fill, s.r_bad.rim, s.r_flur.fill, s.r_flur.hatch]).toEqual(['url(#rf-wait)', false, 'url(#rf-critical)', true]);
   // a tiny room shows only its state symbol
@@ -1749,8 +1771,10 @@ const labelsOutside = page => impl(page).evaluate(el => {
   rooms.forEach((r, i) => {
     const tag = tags[i]; if (!tag || tag.querySelector('circle.dot')) return;   // the state dot of a tiny room is the exception
     for (const n of tag.querySelectorAll('text, rect')) {
-      const b = n.getBoundingClientRect();
-      for (const [x, y] of [[b.left, b.top], [b.right, b.top], [b.left, b.bottom], [b.right, b.bottom]]) if (!inside(P(x, y), r.polygon)) { bad.push(`${r.id}: ${n.textContent || n.getAttribute('class')}`); break; }
+      // Test note 0.26.7.0 CI fix (cross-browser): the box of the text itself (getBBox, the same in every engine) in plan
+      // coordinates – Firefox's getBoundingClientRect also counts the halo stroke around SVG text, Chromium and WebKit do not
+      const b = n.getBBox();
+      for (const [x, y] of [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]]) if (!inside([x, -y], r.polygon)) { bad.push(`${r.id}: ${n.textContent || n.getAttribute('class')}`); break; }
     }
   });
   return { bad: [...new Set(bad)], dots: tags.filter(t => t.querySelector('circle.dot')).length, rooms: rooms.length };
@@ -1769,7 +1793,7 @@ for (const width of [320, 390, 820]) {
     let out = await labelsOutside(page);
     expect(out.bad).toEqual([]);                       // the L-shaped living room included
     await useLShapes(page);
-    await page.waitForTimeout(80);
+    await settle(page, 80);
     out = await labelsOutside(page);
     expect(out.bad).toEqual([]);
     expect(out.rooms).toBe(7);
@@ -1789,7 +1813,7 @@ test('0.26.6.0(7): local weather top right – FreshAirIQ outdoor values or own 
     return { text: w.textContent, right: card.right - r.right < 20, top: r.top - card.top < 20, abovePlan: r.bottom <= Math.min(house, plan.bottom) + 1 }; });
   expect(await chip()).toBe(null);   // nothing known yet: nothing invented
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, outdoor_temperature: 7.43, outdoor_humidity: 86.4, weather_now: { outdoor_temperature: 7.4 } }));
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect(await chip()).toEqual({ text: '🌡️ 7,4 °C💧 86 %', right: true, top: true, abovePlan: true });
   // own sensors instead (the card option weather_sensors)
   await impl(page).evaluate(el => {
@@ -1852,7 +1876,7 @@ test('order 7 / 5: weather around the house only from Home Assistant data – ra
   for (const [now, sun, expected] of cases) {
     await impl(page).evaluate((el, sun) => { el._hass = { ...el._hass, states: sun ? { 'sun.sun': { entity_id: 'sun.sun', ...sun } } : {} }; }, sun);
     await push(page, { weather_now: now });
-    await page.waitForTimeout(60);
+    await settle(page, 60);
     const s = await atmos(page);
     expect(s.weather, JSON.stringify(now)).toEqual(expected && [...expected].sort());
     if (expected) { expect(s.mask).toBe('url(#wx-out)'); expect(s.weatherBeforeRooms).toBe(true); }   // never over rooms and labels
@@ -1860,11 +1884,11 @@ test('order 7 / 5: weather around the house only from Home Assistant data – ra
   }
   // rain falls slanted with the wind (5 m/s → 25°); calm → straight
   await push(page, { weather_now: { condition: 'rainy', raining: true } });
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   const tilt = () => impl(page).evaluate(el => { const r = el.shadowRoot.querySelector('.wx.rain'); return r.dataset.tilt != null ? r.dataset.tilt : r.getAttribute('transform').match(/rotate\(([-\d.]+)/)[1]; });
   expect(Math.abs(Number(await tilt()))).toBeCloseTo(25, 0);
   await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, revision: 3, wind: { ...window.__HOUSE.wind, speed_ms: 0 } }));
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect(Number(await tilt())).toBe(0);
 });
 
@@ -1875,7 +1899,7 @@ test('order 7 / 3: the rooms show their climate at rest – warm/cool, humid (ri
       configured_actuators: { mechanical_exhaust_active: true } },
     flur: { ...await page.evaluate(() => window.__ROOMS.flur), temperature: 17.5, humidity: 30, humidity_trend_pct_h: 0, mould_level: 'Low' },
     wohnen: { ...await page.evaluate(() => window.__ROOMS.wohnen), temperature: 21, humidity: 50, humidity_trend_pct_h: 0, mould_level: 'Slightly elevated' } } });
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const cl = await impl(page).evaluate(el => Object.fromEntries([...el.shadowRoot.querySelectorAll('g.climate')].map(g => [g.getAttribute('clip-path').slice(5, -1),
     [...g.children].map(n => n.getAttribute('class'))])));
   expect(cl['rc-r_bad']).toEqual(['cl warm', 'cl mist rising', 'cl mould m-3', 'steam']);
@@ -1887,7 +1911,7 @@ test('order 7 / 3: the rooms show their climate at rest – warm/cool, humid (ri
   expect(await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('.tag text.c')].some(t => t.textContent.includes('% ↑')))).toBe(true);
   // stale readings: no climate is shown (nothing invented)
   await push(page, { rooms: { ...await page.evaluate(() => window.__ROOMS), bad: { ...await page.evaluate(() => window.__ROOMS.bad), temperature: 26, humidity: 80, data_quality: 'stale', mould_level: 'Low' } } });
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('g.climate[clip-path="url(#rc-r_bad)"]'))).toBe(false);
   const A = await page.evaluate(async () => { const A = await import('/freshairiq-house-atmos.js?v=t');
     return [A.roomClimate({ temperature: 21.9, humidity: 58 }), A.roomClimate({ temperature: 25, humidity: 80, humidity_trend_pct_h: 2.9 }), A.roomClimate(null),
@@ -1906,7 +1930,7 @@ test('order 7 / 4: fresh air at open windows – deep when open, short when tilt
   expect(await plumes()).toEqual(['o_wohnen plume tilted']);                 // o_bad is still pending (opening delay)
   // particles travel with every inflow stream into the room
   await windward(page);
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   // order 8 (requirement change): the particles of the incoming air moved from SVG dots to the canvas air layer – one
   // route of threads per inflow stream
   const parts = await impl(page).evaluate(el => ({ particles: el._flowLayer.routes.length, inflow: el.shadowRoot.querySelectorAll('path.stream.inflow').length }));
@@ -1917,10 +1941,10 @@ test('order 7 / 4: fresh air at open windows – deep when open, short when tilt
     const ops = { ...el._house.airflow.openings, o_bad: { ...el._house.airflow.openings.o_bad, state: 'closed' }, o_wohnen: { ...el._house.airflow.openings.o_wohnen, state } };
     el._house = { ...el._house, airflow: { ...el._house.airflow, openings: ops } }; el._render(); }, state);
   await set('open');
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await plumes()).toEqual(['o_bad plume fade', 'o_wohnen plume']);   // the bath window was just closed
   await set('closed');
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await plumes()).toEqual(['o_bad plume fade', 'o_wohnen plume fade']);   // the air fades out instead of vanishing
   await impl(page).evaluate(el => { el._airSeen.o_wohnen.at -= 5000; el._airSeen.o_bad.at -= 5000; el._render(); });
   expect(await plumes()).toEqual([]);
@@ -1931,7 +1955,7 @@ test('order 7 / 1: Schlafzimmer and Badezimmer keep their readings; labels avoid
     await page.setViewportSize({ width, height: 900 });
     await mount(page);
     await useLShapes(page);
-    await page.waitForTimeout(80);
+    await settle(page, 80);
     const rows = await impl(page).evaluate(el => {
       const rooms = el._layoutInfo.layout.rooms.filter(r => r.floor_id === el._floor), tags = [...el.shadowRoot.querySelectorAll('.tag')];
       return Object.fromEntries(rooms.map((r, i) => [r.room_key, { rows: [...tags[i].querySelectorAll('text')].map(t => t.getAttribute('class').split(' ')[0]), names: [...tags[i].querySelectorAll('text.n')].map(t => t.textContent), title: (tags[i].querySelector('title') || {}).textContent }]));
@@ -2000,7 +2024,7 @@ test('order 7 / night: night and twilight from sun.sun – dim veil over the roo
   const look = async (sun, condition) => {
     await impl(page).evaluate((el, sun) => { el._hass = { ...el._hass, states: sun ? { 'sun.sun': { entity_id: 'sun.sun', ...sun } } : {} }; }, sun);
     await push(page, { weather_now: { condition } });
-    await page.waitForTimeout(60);
+    await settle(page, 60);
     return impl(page).evaluate(el => {
       const svg = el.shadowRoot.querySelector('svg.plan'), all = [...svg.querySelectorAll('*')], veil = svg.querySelector('g.night-veil');
       return { veil: veil ? veil.getAttribute('class') : null, polys: veil ? veil.querySelectorAll('polygon').length : 0, rooms: svg.querySelectorAll('polygon.room').length,
@@ -2160,7 +2184,7 @@ const canvasState = page => impl(page).evaluate(el => {
 
 test('order 8 / 2+3: the canvas air lies exactly over the plan, draws threads outside, keeps labels clear, flows in through an open window', async ({ page }) => {
   const errors = await mount(page);
-  await page.waitForTimeout(1200);
+  await settle(page, 1200);
   let s = await canvasState(page);
   expect(s.over).toBe(true);
   // Test note 0.26.7.0(2) (owner order: "remove the small white strokes completely", calmer wind): no threads around the house
@@ -2170,7 +2194,7 @@ test('order 8 / 2+3: the canvas air lies exactly over the plan, draws threads ou
   expect(s.onLabels).toBe(0);                                   // never over a name, state or value
   expect(s.routes).toEqual([]);                                 // windows closed or unconfirmed: no air in the house
   await windward(page);
-  await page.waitForTimeout(1500);
+  await settle(page, 1500);
   s = await canvasState(page);
   expect(s.routes.length).toBeGreaterThan(0);
   expect(s.inside).toBeGreaterThan(0);                          // threads inside the rooms
@@ -2179,7 +2203,7 @@ test('order 8 / 2+3: the canvas air lies exactly over the plan, draws threads ou
   await impl(page).evaluate(el => { const ops = { ...el._house.airflow.openings, o_bad: { ...el._house.airflow.openings.o_bad, state: 'closed' }, o_wohnen: { ...el._house.airflow.openings.o_wohnen, state: 'closed' } }; el._house = { ...el._house, airflow: { ...el._house.airflow, openings: ops } }; el._render(); });
   s = await canvasState(page);
   expect([s.routes.length, s.fading > 0]).toEqual([0, true]);
-  await page.waitForTimeout(4600);
+  await settle(page, 4600);
   expect((await canvasState(page)).fading).toBe(0);
   expect(errors).toEqual([]);
 });
@@ -2203,23 +2227,23 @@ test('order 8 / 2.4: wind strength changes the density; no wind data – no air 
 
 test('order 8 / 9: the air pauses with the card and stands still with reduced motion or the animation off; 40 rooms stay fast', async ({ page }) => {
   await mount(page);
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   await impl(page).evaluate(el => el.setAttribute('data-paused', ''));
   // Test note (0.26.6.1): the frame right after pausing still draws the step gathered before it (≤ 33 ms); reading
   // t0 in that same frame made this test fail under load (0.4 → 0.4167). The pause is measured from the next frames
   // on – the expectation (no movement while paused) is unchanged.
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
-  const t0 = (await canvasState(page)).t; await page.waitForTimeout(400);
+  const t0 = (await canvasState(page)).t; await settle(page, 400);
   expect((await canvasState(page)).t).toBe(t0);                 // paused: the air does not move on
   await mount(page, { reducedMotion: 'reduce' });
-  await page.waitForTimeout(300);
-  const a = await canvasState(page); await page.waitForTimeout(500); const b = await canvasState(page);
+  await settle(page, 300);
+  const a = await canvasState(page); await settle(page, 500); const b = await canvasState(page);
   // Test note 0.26.7.0(2): no threads around the house any more (owner order) – the still picture is the ribbons, standing still
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('path.stream').length)).toBeGreaterThan(0);
   expect([b.t, b.ink]).toEqual([a.t, a.ink]);                   // … nothing moves
   await mount(page, { config: { animation: false } });
-  await page.waitForTimeout(300);
-  const c = await canvasState(page); await page.waitForTimeout(400);
+  await settle(page, 300);
+  const c = await canvasState(page); await settle(page, 400);
   expect((await canvasState(page)).t).toBe(c.t);
   await mount(page);
   const ms = await impl(page).evaluate(el => {
@@ -2242,6 +2266,9 @@ const classicFacts = (page, payload) => page.evaluate(async payload => {
   card.hass = { states: { 'sensor.freshairiq_status': { entity_id: 'sensor.freshairiq_status', state: String(payload.status || 'ok'),
     attributes: { freshairiq_transport: 'status_v2', freshairiq_entry_id: 'e1', room_sort_order: Object.keys(payload.rooms || {}), night_start_hour: '23:59', night_end_hour: '00:00', ...payload } } }, language: 'de', locale: { language: 'de' } };
   await new Promise(r => setTimeout(r, 150));
+  // Test note 0.26.7.0 CI fix: the card draws in its next animation frame (_queueRender) – on a slower runner later than
+  // 150 ms, the text of the previous step was read; wait until that frame has run (at most 5 s)
+  for (let t = 0; card._renderFrame != null && t < 5000; t += 16) await new Promise(r => requestAnimationFrame(() => r()));
   const facts = card.shadowRoot && card.shadowRoot.querySelector('.ai-compact .ai-facts');
   return facts ? facts.textContent.replace(/\s+/g, ' ').trim() : 'NOFACTS';
 }, payload);
@@ -2268,7 +2295,7 @@ test('order 9 / 1: removable now top left is exactly the FreshAirIQ card value �
   ];
   for (const [name, payload, expected] of cases) {
     await push(page, payload);
-    await page.waitForTimeout(1000);                                  // after the gliding transition
+    await settle(page, 1000);                                  // after the gliding transition
     const house = await houseFacts(page), classic = await classicFacts(page, payload);
     expect(house, name).toBe(expected);
     // the same amount (and time where the card shows one) as the FreshAirIQ card
@@ -2280,7 +2307,7 @@ test('order 9 / 1: removable now top left is exactly the FreshAirIQ card value �
   }
   // nothing computed yet (no house values in the payload): nothing is shown – no invented value
   await push(page, { rooms });
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   expect(await houseFacts(page)).toBe(null);
 });
 
@@ -2290,10 +2317,10 @@ test('order 9 / 1b: several floors – the house value counts each room once (no
   const rooms = await page.evaluate(() => window.__ROOMS);
   const payload = { rooms: { ...rooms, bad: { ...rooms.bad, potential_ml: 300 }, schlaf: { ...rooms.schlaf, potential_ml: 900 } }, status: 'ventilate', potential_total_ml: 812, recommended_duration_min: 10 };
   await push(page, payload);
-  await page.waitForTimeout(1000);
+  await settle(page, 1000);
   for (const floor of ['f_eg', 'f_og']) {                               // the same value whichever floor is shown
     await impl(page).evaluate((el, f) => el._chooseFloor(f), floor);
-    await page.waitForTimeout(100);
+    await settle(page, 100);
     expect(await houseFacts(page), floor).toBe('💧 ≈ 812 ml ⏱ in 10 Min.');
   }
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-moisture]').click());
@@ -2306,7 +2333,7 @@ test('order 9 / 1b: several floors – the house value counts each room once (no
   await impl(page).evaluate(el => el._closeDialog());
   await page.setViewportSize({ width: 360, height: 780 });
   await push(page, { ...payload, outdoor_temperature: 6.2, outdoor_humidity: 81 });
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   const bar = await impl(page).evaluate(el => { const m = el.shadowRoot.querySelector('.moist').getBoundingClientRect(), w = el.shadowRoot.querySelector('.weather').getBoundingClientRect(), p = el.shadowRoot.querySelector('svg.plan').getBoundingClientRect();
     // NOTE (0.26.7.0 UI hotfix: one continuous surface): above the plan's rooms and windows – the drawing itself reaches under the bar
     const house = [...el.shadowRoot.querySelectorAll('svg.plan polygon.room, svg.plan line.op, svg.plan .tag')].map(n => n.getBoundingClientRect()).reduce((a, b) => Math.min(a, b.top), Infinity);
@@ -2354,7 +2381,7 @@ test('order 9 / 4: the scene follows the weather together – mood on the map an
     await impl(page).evaluate((el, sun) => { el._hass = { ...el._hass, states: sun ? { 'sun.sun': { entity_id: 'sun.sun', ...sun } } : {} }; }, sun);
     await push(page, { rooms, weather_now: weather });
     await setWind(page, wind);
-    await page.waitForTimeout(900);
+    await settle(page, 900);
     const c = await canvasState(page);
     return { mood: await impl(page).evaluate(el => el.shadowRoot.querySelector('svg.plan').dataset.mood), layer: await impl(page).evaluate(el => el._flowLayer.field && el._flowLayer.field.mood.name),
       fills: await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].map(p => `${p.getAttribute('class')} ${p.getAttribute('fill')}`).join('|')), onLabels: c.onLabels, ink: c.ink,
@@ -2380,7 +2407,7 @@ test('order 9 / 4: the scene follows the weather together – mood on the map an
 // real IQ view (classicFacts) and the house map with the same payload and compare what each one shows.
 const sameAsCard = async (page, name, payload, expected) => {
   await push(page, payload);
-  await page.waitForTimeout(1000);
+  await settle(page, 1000);
   const house = await houseFacts(page), card = await classicFacts(page, payload);
   if (expected !== undefined) expect(house, name).toBe(expected);
   const amount = numbers(house)[0];
@@ -2430,7 +2457,7 @@ test('hotfix (9) F06: a remaining time below zero is time over the target, never
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-moisture]').click());
   // the explanation window names the over-run too
   await push(page, { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 300, recommended_duration_min: 12, remaining_duration_min: -3 });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg[open]').textContent)).toContain('Über Ziel');
 });
 
@@ -2525,7 +2552,7 @@ test('order 10 A: one wall changes alone – the opposite wall keeps its length,
   expect(after.slice(0, 3)).toEqual(before.slice(0, 3));                   // only the moving corner left its place
   expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_flur').polygon)).toEqual(LAYOUT.rooms[1].polygon);  // no neighbour moved
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout.rooms.find(r => r.id === 'r_bad').polygon);
   expect(saved).toEqual(after);                                            // not squared back on save
 });
@@ -2634,7 +2661,7 @@ test('order 10 D/E: rooms fitted together – preview first, locked lengths kept
   await editor.evaluate(el => el._redo());
   expect(await polys()).toEqual(JOIN.joined);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.find(c => c.type === 'freshairiq/house_map/save').layout);
   expect(Object.fromEntries(saved.rooms.map(r => [r.id, r.polygon]))).toEqual(JOIN.joined);
   expect(saved.rooms.map(r => r.locked_walls)).toEqual(JOIN.layout.rooms.map(r => r.locked_walls));
@@ -2669,7 +2696,7 @@ test('order 10 G: the sun moves on within the day – redrawn in 2° steps, on i
   await impl(page).evaluate(el => { window.__renders = 0; const r = el._render.bind(el); el._render = (...a) => { window.__renders += 1; return r(...a); }; });
   const sunAt = async (az, elev, other = 'off') => {
     await impl(page).evaluate((el, [az, elev, other]) => { el.hass = { ...el._hass, states: { 'sun.sun': { entity_id: 'sun.sun', state: elev > 0 ? 'above_horizon' : 'below_horizon', attributes: { azimuth: az, elevation: elev } }, 'light.x': { state: other } } }; }, [az, elev, other]);
-    await page.waitForTimeout(60);
+    await settle(page, 60);
     return impl(page).evaluate(el => { const c = el.shadowRoot.querySelector('.wx.sunlight circle'); return { sun: c && [+c.getAttribute('cx'), +c.getAttribute('cy')], day: !!el.shadowRoot.querySelector('.wx.daylight'), renders: window.__renders }; });
   };
   const east = await sunAt(90, 30);
@@ -2764,7 +2791,7 @@ test('review F04: a locked angle is protected when corners are added or removed 
   const inserted = await editor.evaluate(el => { const r = el._layout.rooms.find(x => x.id === 'r_bad'); return [r.polygon.length, r.polygon[r.locked_corners[0]]]; });
   expect(inserted).toEqual([5, [4, 8]]);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout.rooms.find(r => r.id === 'r_bad'));
   expect(saved.polygon[saved.locked_corners[0]]).toEqual([4, 8]);
 });
@@ -2810,7 +2837,7 @@ test('review F01: a window drawn in one room can carry the sensor another room a
   expect(offered).toContainEqual(['binary_sensor.bad_fenster', true, 'binary_sensor.bad_fenster ⚠ nicht mehr eingerichtet']);
   await editor.evaluate(el => { const b = el.shadowRoot.querySelector('[data-contact="sensor.wohnen_lage"]'); b.checked = true; b.dispatchEvent(new Event('change')); });
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout.openings.find(o => o.id === 'o_bad'));
   expect([saved.room_id, saved.contacts]).toEqual(['r_bad', ['binary_sensor.bad_fenster', 'sensor.wohnen_lage']]);
   // on the map: the opening's window shows the sensor's live state from the room that airs by it
@@ -2839,7 +2866,7 @@ const openWorkspace = async (page, cardWidth, wrap = '', themeVars = {}) => {
   }, [cardWidth, wrap, themeVars]);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
   await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   return page.locator('freshairiq-house-layout-editor');
 };
 
@@ -2864,7 +2891,7 @@ for (const [label, vw, vh, card] of [['desktop, narrow card', 1440, 900, 320], [
     // choosing a room, a wall and a window keeps scale, centre and drawing size
     for (const sel of [{ type: 'room', id: 'r_bad' }, { type: 'wall', id: 'r_bad', index: 2 }, { type: 'opening', id: 'o_bad' }, null]) {
       await editor.evaluate((el, sel) => { el._sel = sel; el._render(); }, sel);
-      await page.waitForTimeout(60);
+      await settle(page, 60);
       const now = await workspaceOf(page);
       expect([now.svg, now.viewBox], JSON.stringify(sel)).toEqual([first.svg, first.viewBox]);
     }
@@ -2873,14 +2900,14 @@ for (const [label, vw, vh, card] of [['desktop, narrow card', 1440, 900, 320], [
     expect(reach).toEqual([true, true]);
     if (!wide) {   // narrow: the properties can be hidden to give the drawing the room
       await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="panel_toggle"]').click());
-      await page.waitForTimeout(80);
+      await settle(page, 80);
       const hidden = await workspaceOf(page);
       expect(hidden.panel[3]).toBe(0);
       expect(hidden.svg[3]).toBeGreaterThan(first.svg[3]);
     }
     // close: the workspace leaves the top layer and the map is back
     await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="cancel"]').click());
-    await page.waitForTimeout(120);
+    await settle(page, 120);
     expect(await impl(page).evaluate(el => [!!el.shadowRoot.querySelector('.faiq-editor-workspace'), !!el.shadowRoot.querySelector('svg.plan')])).toEqual([false, true]);
   });
 }
@@ -2891,14 +2918,14 @@ test('v0.26.6.1 editor: fit stays on until the user zooms; a zoom or a pan is ke
   const vb = () => editor.evaluate(el => el.shadowRoot.querySelector('svg').getAttribute('viewBox'));
   const fitted = await vb();
   await page.setViewportSize({ width: 900, height: 700 });            // resized: refitted, the plan stays whole
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   expect(await vb()).not.toBe(fitted);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="zoom-in"]').click());
   const zoomed = await vb();
   expect(await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="fit"]').getAttribute('aria-pressed'))).toBe('false');
   await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_flur' }; el._render(); });
   await page.setViewportSize({ width: 920, height: 700 });            // the user's zoom is not undone by a resize
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   expect((await vb()).split(' ')[2]).toBe(zoomed.split(' ')[2]);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="fit"]').click());
   expect(await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="fit"]').getAttribute('aria-pressed'))).toBe('true');
@@ -2945,7 +2972,7 @@ test('v0.26.6.1 editor workspace: open an existing plan, edit, save, reopen – 
   const editor = await openWorkspace(page, 500);
   await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_bad').polygon[2] = [4, 8.5]; l.openings.find(o => o.id === 'o_bad').contacts.push('sensor.wohnen_lage'); }); });
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
   expect(saved.rooms.find(r => r.id === 'r_bad').polygon[2]).toEqual([4, 8.5]);
   expect(saved.openings.find(o => o.id === 'o_bad').contacts).toContain('sensor.wohnen_lage');
@@ -2967,7 +2994,7 @@ const layoutOf = editor => editor.evaluate(el => {
     layout: el.getAttribute('data-layout'), vw: innerWidth, vh: innerHeight, asideScroll: [q('.aside').scrollHeight, q('.aside').clientHeight, q('.aside').scrollWidth, q('.aside').clientWidth] };
 });
 const plan2screen = (editor, p) => editor.evaluate((el, p) => { const svg = el.shadowRoot.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = p[0]; pt.y = -p[1]; const s = pt.matrixTransform(svg.getScreenCTM()); return [s.x, s.y]; }, p);
-const tapPlan = async (page, editor, p) => { const [x, y] = await plan2screen(editor, p); await page.mouse.click(x, y); await page.waitForTimeout(60); };
+const tapPlan = async (page, editor, p) => { const [x, y] = await plan2screen(editor, p); await page.mouse.click(x, y); await settle(page, 60); };
 const hintText = editor => editor.evaluate(el => el.shadowRoot.querySelector('.hint').textContent.trim());
 const TEXT = page => page.evaluate(async () => (await import('/freshairiq-house-editor.js?v=t')).EDITOR_TEXT);
 const STATES = [
@@ -2995,7 +3022,7 @@ test('v0.26.6.1 editor hotfix (A) 768 × 1024: choosing objects, tools or panels
   }
   for (const [name, set] of STATES) {
     await editor.evaluate((el, f) => { (new Function('el', `(${f})(el)`))(el); el._render(); }, set.toString());
-    await page.waitForTimeout(60);
+    await settle(page, 60);
     const now = await layoutOf(editor);
     expect([now.svg, now.viewBox, now.aside.h], name).toEqual([first.svg, first.viewBox, first.aside.h]);
     expect(now.final.b, name).toBeLessThanOrEqual(now.vh);
@@ -3017,7 +3044,7 @@ test('v0.26.6.1 editor hotfix (B) 844 × 390: drawing, properties, toolbar and s
   if (first.vw === 844) expect(first.layout).toBe('side short');
   for (const [name, set] of STATES) {
     await editor.evaluate((el, f) => { (new Function('el', `(${f})(el)`))(el); el._render(); }, set.toString());
-    await page.waitForTimeout(60);
+    await settle(page, 60);
     const l = await layoutOf(editor);
     expect([l.svg, l.viewBox], name).toEqual([first.svg, first.viewBox]);
     for (const box of [l.tools, l.svg, l.aside, l.final]) expect(box.x >= 0 && box.y >= 0 && box.r <= l.vw && box.b <= l.vh, `${name}: inside the screen`).toBe(true);
@@ -3061,7 +3088,7 @@ test('v0.26.6.1 editor hotfix 360 × 780: draw, edit the properties, switch to d
   expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_bad' });
   const [x, y] = await plan2screen(editor, [2, 6]), [x2] = await plan2screen(editor, [1, 6]);
   await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move((x + x2) / 2, y, { steps: 3 }); await page.mouse.move(x2, y, { steps: 3 }); await page.mouse.up();
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   const moved = await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').polygon);
   expect(moved[0][0]).toBeLessThan(before[0][0]);
   // the window: tap it, make it wider in the properties
@@ -3082,7 +3109,7 @@ test('v0.26.6.1 editor hotfix 360 × 780: draw, edit the properties, switch to d
   expect(await editor.evaluate(el => el.shadowRoot.querySelector('.aside h4').textContent)).toBe('Fenster · Bad');
   }
   await editor.locator('[data-a="save"]').click();
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
   expect(saved.rooms.find(r => r.id === 'r_bad').polygon).toEqual(moved);
   expect(saved.openings.find(o => o.id === 'o_bad').width_m).toBe(width);
@@ -3180,7 +3207,7 @@ test('v0.26.6.1 editor hotfix, a new user: from an empty floor to a room with a 
   expect(await editor.evaluate(el => [el._mode, el._sel.type, el.shadowRoot.querySelectorAll('[data-k="v"]').length])).toEqual(['precise', 'room', 4]);
   // saved and opened again: nothing lost
   await editor.locator('[data-a="save"]').click();
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
   expect([saved.rooms.length, saved.rooms.find(r => r.room_key === 'bad').polygon, saved.openings.length]).toEqual([2, room.polygon, 1]);
 });
@@ -3399,7 +3426,7 @@ test('0.26.7.0 weather: one shared forecast subscription per entity and type; a 
   // 17. a second card with other settings: its own effect level, the same forecast subscription
   await page.evaluate(() => { const c = document.createElement('freshairiq-house-card'); c.id = 'card2'; c.setConfig({ weather_effects: 'off', weather_entity: 'weather.other', layout: 'info' }); document.getElementById('m').appendChild(c); c.hass = document.getElementById('card').hass; });
   await page.waitForFunction(() => document.querySelectorAll('freshairiq-house-card-impl').length === 2);
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const cards = await page.evaluate(() => [...document.querySelectorAll('freshairiq-house-card-impl')].map(c => c.getAttribute('data-fx')));
   expect(cards).toEqual(['dynamic', 'off']);
   expect(await count()).toBe(2);
@@ -3456,7 +3483,7 @@ test('0.26.7.0 rooms button: off by default; the overview in the map style; a ro
   expect(await dlg()).toEqual({ open: true, key: 'rooms:', floors: ['Erdgeschoss', 'Obergeschoss'], rooms: ['Bad', 'Flur', 'Wohnen', 'Schlafzimmer'], dark: true });
   const el1 = await impl(page).evaluate(el => { window.__dlg = el.shadowRoot.querySelector('dialog.roomdlg'); return true; });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: 25.5 } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg') === window.__dlg && window.__dlg.textContent.includes('25,5'))).toBe(true);
   // Test note 0.26.7.0(2) (owner order: no extra round buttons beside the room cards): "show on the plan" is in the room's window
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-room-open="r_schlaf"]').click());
@@ -3473,7 +3500,7 @@ test('0.26.7.0 floors: hidden floors never come back by themselves, one floor al
   // the hidden floor needs action and auto focus is on: it still is not shown
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, auto_focus: 'auto' }); });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, schlaf: { ...window.__ROOMS.schlaf, action: 'Close', house_aligned_action: 'close', mould_level: 'Very high' } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await impl(page).evaluate(el => el._floor)).toBe('f_eg');
   // a stored choice of the hidden floor is not taken
   await impl(page).evaluate(el => { el._floor = 'f_og'; el._render(); });
@@ -3485,7 +3512,7 @@ test('0.26.7.0 floors: hidden floors never come back by themselves, one floor al
   await mount(page, { config: { default_floor: 'f_og' } });
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-floor="f_eg"]').click());
   await page.evaluate(() => { const c = document.getElementById('card'), p = c.parentNode; p.removeChild(c); p.appendChild(c); });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   expect(await impl(page).evaluate(el => el._floor)).toBe('f_og');
 });
 
@@ -3518,19 +3545,19 @@ test('0.26.7.0 a room aired only by its fan never reads "Close": the fan\'s real
   const fanRoom = extra => page.evaluate(x => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, action: 'Close', house_aligned_action: 'close',
     configured_actuators: { ventilation_type: 'window', mechanical_exhaust_active: true, window_open: false, exhaust_fan: ['switch.fan'] }, ...x } } }), extra);
   await fanRoom({});
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect(await word()).toEqual([expect.stringContaining('Lüfter ausschalten'), 't-close']);   // the user switches it off
   await fanRoom({ fan_automation: { state: 'stopping', label_key: 'stopping' } });
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect(await word()).toEqual([expect.stringContaining('Lüfter stoppt automatisch'), 't-run']);
   for (const [state, text] of [['external', 'Lüfter extern gesteuert'], ['shared', 'Gemeinsamer Lüfter läuft'], ['follow_up', 'Lüfter-Nachlauf'], ['blocked_time', 'Lüfter-Sperrzeit'], ['failed', 'Lüfter ausschalten'], ['locked', 'Lüfter ausschalten']]) {
     await fanRoom({ fan_automation: { state } });
-    await page.waitForTimeout(40);
+    await settle(page, 40);
     expect((await word())[0], state).toContain(text);
   }
   // a window open as well: a window to close
   await fanRoom({ configured_actuators: { ventilation_type: 'window', mechanical_exhaust_active: true, window_open: true } });
-  await page.waitForTimeout(60);
+  await settle(page, 60);
   expect((await word())[0]).toContain('Schließen');
 });
 
@@ -3578,7 +3605,7 @@ test('0.26.7.0 performance: 40 rooms, 3000 Home Assistant entities and full weat
   expect(r.grow).toBe(0);               // re-rendering never piles up elements
   await impl(page).evaluate(el => { el._selected = { type: 'weather', id: '' }; el._render(); window.__impl = el; });
   await page.evaluate(() => document.getElementById('card').remove());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const after = await page.evaluate(() => ({ subs: customElements.get('freshairiq-house-card-impl').weatherModule.forecastSubscriptions(), raf: window.__impl._windRaf, io: window.__impl._io, tween: window.__impl._tweenRaf }));
   expect(after).toEqual({ subs: 0, raf: null, io: null, tween: after.tween });
 });
@@ -3780,14 +3807,14 @@ test('0.26.7.0 visual acceptance: sun, rain, storm, snow, thunder, day and night
     }, [fx, state, elev, az, attrs, wind]);
     // still pictures (no animation) to compare: the weather world off and fully on
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await setup('off'); await page.waitForTimeout(120);
+    await setup('off'); await settle(page, 120);
     const boxes = await labels();
     expect(boxes.length, name).toBeGreaterThan(3);
     // the card beside the drawing (outside the plan): no effect may reach there
     const beside = await impl(page).evaluate(el => { const s = el.shadowRoot.querySelector('svg.plan').getBoundingClientRect(), c = el.getBoundingClientRect(); return s.left - c.left > 30 ? { x: Math.ceil(c.left) + 2, y: Math.ceil(s.top) + 2, width: Math.floor(s.left - c.left) - 6, height: Math.floor(s.height) - 4 } : null; });
     const besidePlain = beside ? await page.screenshot({ clip: beside, fullPage: true }) : null;
     const plain = await Promise.all(boxes.map(clip => page.screenshot({ clip, fullPage: true })));
-    await setup('full'); await page.waitForTimeout(120);
+    await setup('full'); await settle(page, 120);
     const world = await Promise.all(boxes.map(clip => page.screenshot({ clip, fullPage: true })));
     if (beside) expect(Buffer.compare(besidePlain, await page.screenshot({ clip: beside, fullPage: true })), `${name}: nothing drawn beside the plan`).toBe(0);
     // every weather layer is bounded by the drawing: the mask (keeps it off the rooms too) or the frame clip of the moving parts
@@ -3929,7 +3956,7 @@ test('hotfix U01: a changed north angle needs a new confirmation – number fiel
   await editor.evaluate(el => el._redo());
   await confirm();
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const save = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').pop());
   expect([save.layout.building.north_deg, save.layout.building.north_confirmed]).toEqual([270, true]);   // re-confirmed + saved: kept
 });
@@ -3982,7 +4009,7 @@ test('hotfix U03: "Lage und Form" follows the stored layout – reopening, undo 
   await editor.evaluate(el => el._redo());
   expect(await stepDone(editor, 'Lage und Form')).toBe(true);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const save = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').pop());
   expect(save.layout.rooms.find(r => r.id === 'r_bad').provenance).toBe('user');         // what a reopen or a restart reads
 });

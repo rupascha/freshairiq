@@ -2,7 +2,7 @@
 // the calmer wind and the animation levels – checked in a real browser (fixtures and mount as in house.spec.mjs).
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { loadModule } from './harness.mjs';
+import { loadModule, settle } from './harness.mjs';
 
 const LAYOUT = {
   schema_version: 1, revision: 3, building: { north_deg: 0, units: 'm', north_confirmed: true },
@@ -76,7 +76,7 @@ async function mount(page, { config = {}, stored = true, admin = true, saveError
   }, { config, stored, admin, saveError, LAYOUT, ROOMS, HOUSE });
   await page.waitForFunction(() => window.__subs['freshairiq/house_map/subscribe']);
   await page.evaluate(() => { window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }); window.__subs['freshairiq/house_map/subscribe'](window.__HOUSE); });
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   return errors;
 }
 const impl = page => page.locator('freshairiq-house-card-impl');
@@ -161,10 +161,10 @@ test('0.26.7.0(2) weather at the top right: the card chooses what shows, a narro
   await setup(page, { weather_chip: ['temperature', 'humidity', 'wind', 'pressure'] });
   await page.evaluate(() => { const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; document.head.appendChild(m); });   // as Home Assistant's page
   await page.setViewportSize({ width: 330, height: 700 });
-  await page.waitForTimeout(200); await impl(page).evaluate(el => el._render());
+  await settle(page, 200); await impl(page).evaluate(el => el._render());
   expect((await chip()).length).toBe(2);                                      // narrow: the first two of the choice
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   await impl(page).evaluate(el => { el._forecast = { hourly: [], daily: [] }; el._render(); el.shadowRoot.querySelector('[data-weather-open]').click(); });
   expect(await impl(page).evaluate(el => el._selected && el._selected.type)).toBe('weather');
 });
@@ -210,9 +210,9 @@ test('0.26.7.0(2) a room tapped on the plan: its outline stands out, the rest is
   await mount(page);
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ output_language: 'de', rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, recommendation_reasons: ['Raumluftfeuchte hoch', 'Außen trockener'], water_in_air_ml: 312, volume_m3: 18.5,
     moisture_effect_next_5_min_ml: 42, temp_next_5_min_c: 21.1, realistic_potential_ml: 120, learning_status: 'Lernt noch', comfort_target_c: 21, co2: 640, surface_rh_source: 'internal_estimate' } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const r = await impl(page).evaluate(el => { const svg = el.shadowRoot.querySelector('svg.plan'), d = el.shadowRoot.querySelector('dialog.roomdlg');
     const outline = svg.querySelector('[data-outline="r_bad"]'), all = [...svg.children], opIdx = all.findIndex(n => n.matches && n.matches('line.op'));
     return { focus: svg.classList.contains('focus'), outline: !!outline, beforeOpenings: all.indexOf(outline) < opIdx, others: getComputedStyle(svg.querySelector('polygon.room[data-room="r_flur"]')).filter, sel: getComputedStyle(svg.querySelector('polygon.room[data-room="r_bad"]')).filter,
@@ -236,7 +236,7 @@ test('0.26.7.0(2) the menu: information, control and modes, tools and notes – 
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', potential_total_ml: 420, recommended_duration_min: 9, total_water_ml: 4100, ventilation_threshold_ml: 380,
     overnight_forecast_ml: 160, night_model_samples: 12, pollen_enabled: true, pollen_index: 2.1, pollen_limit: 3, effective_occupants: 2, intelligent_recommendation: { kind: 'ventilate', title: 'Jetzt lüften', instruction: 'Bad und Flur' },
     water_history_14d: [{ date: 'a', samples: 3, water_ml: 3900 }, { date: 'b', samples: 3, water_ml: 4200 }, { date: 'c', samples: 2, water_ml: 4000 }] }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
   const m = await impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.menudlg');
     return { groups: [...d.querySelectorAll('.mgroup > h4')].map(h => h.textContent), hero: !!d.querySelector('.hero'), items: [...d.querySelectorAll('button.mitem')].map(b => [...b.attributes].find(a => a.name.startsWith('data-')).name),
@@ -268,7 +268,7 @@ test('0.26.7.0(2) animation levels: off, minimal, normal, intense and auto; redu
   await mount(page);
   const state = () => impl(page).evaluate(el => ({ level: el.getAttribute('data-motion'), still: el.hasAttribute('data-still'), loop: !!el._windRaf, fps: el._windRaf && el._windRaf.fps,
     streams: el.shadowRoot.querySelectorAll('path.stream').length, waves: el.shadowRoot.querySelectorAll('path.wave').length, n: el._flowLayer ? el._flowLayer.n : 0 }));
-  const level = async l => { await impl(page).evaluate((el, l) => { el.setConfig({ ...el._config, animation_level: l }); el._render(); }, l); await page.waitForTimeout(150); return state(); };
+  const level = async l => { await impl(page).evaluate((el, l) => { el.setConfig({ ...el._config, animation_level: l }); el._render(); }, l); await settle(page, 150); return state(); };
   const auto = await state();
   expect([auto.level, auto.fps, auto.streams, auto.waves]).toEqual(['normal', 20, 5, 10]);      // auto on a desktop card: normal
   const intense = await level('intense'), minimal = await level('minimal'), off = await level('off');
@@ -278,13 +278,13 @@ test('0.26.7.0(2) animation levels: off, minimal, normal, intense and auto; redu
   expect([off.still, off.loop]).toEqual([true, false]);
   // the parts: without wind the air stands still, the rest may move; without ambient the rooms do not breathe
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, animation_level: 'normal', animation_parts: ['weather', 'light'] }); el._render(); });
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   expect(await impl(page).evaluate(el => [!!el._windRaf, el.hasAttribute('data-no-wind'), el.hasAttribute('data-no-ambient'), el.hasAttribute('data-no-weather')])).toEqual([false, true, true, false]);
   // a phone (narrow card): auto is minimal
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, animation_level: undefined, animation_parts: undefined }); });
-  await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(200); await impl(page).evaluate(el => el._render());
+  await page.setViewportSize({ width: 390, height: 844 }); await settle(page, 200); await impl(page).evaluate(el => el._render());
   expect((await state()).level).toBe('minimal');
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.waitForTimeout(200); await impl(page).evaluate(el => el._render());
+  await page.setViewportSize({ width: 1280, height: 900 }); await settle(page, 200); await impl(page).evaluate(el => el._render());
   // untouched for 3 minutes: calmer; for 11 minutes: rests (still); a touch brings the chosen level back
   await impl(page).evaluate(el => { el._lastActive = Date.now() - 3 * 60e3; el._render(); });
   expect((await state()).level).toBe('minimal');
@@ -292,7 +292,7 @@ test('0.26.7.0(2) animation levels: off, minimal, normal, intense and auto; redu
   const rest = await state();
   expect([rest.level, rest.still, rest.loop]).toEqual(['rest', true, false]);
   await impl(page).evaluate(el => el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 })));
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   const woke = await state();
   expect([woke.level, woke.loop]).toEqual(['normal', true]);
   // reduced motion: off, whatever the level
@@ -308,7 +308,7 @@ test('0.26.7.0(2) animation levels: off, minimal, normal, intense and auto; redu
 test('0.26.7.0(2) calmer wind: no two streams alike, no white strokes ("shooting stars") around the house, the strength readable, the direction kept', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await mount(page);
-  await page.waitForTimeout(400);
+  await settle(page, 400);
   const r = await impl(page).evaluate(el => {
     const waves = el._waves.filter(w => w.el.classList.contains('stream'));
     const L = el._flowLayer;
@@ -329,7 +329,7 @@ test('0.26.7.0(2) calmer wind: no two streams alike, no white strokes ("shooting
   expect(flow[0]).toBeGreaterThan(0); expect(flow[1]).toBeGreaterThan(0);
   // the air still comes in through an open window (the canvas carries only that), without bright heads
   await impl(page).evaluate(el => { const h = JSON.parse(JSON.stringify(el._house)); h.wind = { ...h.wind, from_deg: 0 }; h.airflow.openings.o_bad = { ...h.airflow.openings.o_bad, pending: false, state: 'open', pressure: 0.8 }; el._house = h; el._windSmooth = 0; el._render(); });
-  await page.waitForTimeout(800);
+  await settle(page, 800);
   const inside = await impl(page).evaluate(el => [el._flowLayer.routes.length, el._flowLayer.stats.inside, el._flowLayer.routes.some(rt => rt.parts.some(p => 'spark' in p))]);
   expect(inside[0]).toBeGreaterThan(0); expect(inside[1]).toBeGreaterThan(0); expect(inside[2]).toBe(false);
   // the strength: a breath of air draws fewer, quieter ribbons than a storm
@@ -342,14 +342,14 @@ test('0.26.7.0(2) calmer wind: no two streams alike, no white strokes ("shooting
 test('0.26.7.0(2) performance: one loop for every card at its own pace, nothing under a window, far less work per second than 0.26.7.0', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await mount(page);
-  await page.waitForTimeout(300);
+  await settle(page, 300);
   // the d-attribute writes per second of the wind ribbons (0.26.7.0: ~630 for 21 ribbons at 30 frames a second)
   const writes = await impl(page).evaluate(async el => { let n = 0; const o = new MutationObserver(l => { n += l.length; }); o.observe(el.shadowRoot, { attributes: true, subtree: true, attributeFilter: ['d'] }); await new Promise(r => setTimeout(r, 2000)); o.disconnect(); return n / 2; });
   expect(writes).toBeLessThan(260);
   // a second card shares the loop: still one animation frame per due frame, two entries in it
   await page.evaluate(() => { const c = document.createElement('freshairiq-house-card'); c.id = 'card2'; c.setConfig({ animation_level: 'minimal' }); document.getElementById('m').appendChild(c); c.hass = document.getElementById('card').hass; });
   await page.waitForFunction(() => document.querySelectorAll('freshairiq-house-card-impl').length === 2);
-  await page.waitForTimeout(600);
+  await settle(page, 600);
   const loop = await page.evaluate(async () => { const M = await import('/freshairiq-house-motion.js?v=0.26.7.0'); let calls = 0; const orig = window.requestAnimationFrame.bind(window);
     window.requestAnimationFrame = cb => { calls += 1; return orig(cb); }; await new Promise(r => setTimeout(r, 1000)); window.requestAnimationFrame = orig; return { calls, size: M.loopSize() }; });
   expect(loop.calls).toBeLessThan(40);                                // 0.26.7.0: ~60 per card and second
@@ -430,7 +430,7 @@ test('0.26.7.0(2) correction 3: every view behind the FreshAirIQ card\'s details
   await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
   await page.evaluate(L => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, water_in_air_ml: 312, volume_m3: 18.5 } }, output_language: 'de', total_water_ml: 4100,
     ventilation_threshold_ml: 380, overnight_forecast_ml: 160, pollen_enabled: true, pollen_index: 2.1, pollen_limit: 3, intelligent_recommendation: { kind: 'ventilate', title: 'Jetzt lüften', reasons: ['Außen trockener'] }, ...L }), LEARNING);
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   const view = id => impl(page).evaluate((el, id) => { el._menuOpen = false; el._selected = { type: 'classic', id }; el._render(); const d = el.shadowRoot.querySelector('dialog.roomdlg');
     return { title: d.querySelector('h3').textContent, text: d.textContent.replace(/\s+/g, ' '), links: [...d.querySelectorAll('[data-classic-info]')].map(b => b.dataset.classicInfo), rooms: [...d.querySelectorAll('[data-classic-room]')].map(b => b.dataset.classicRoom), back: !!d.querySelector('.pactions.top button'), ids: d.querySelectorAll('.classic [id]').length }; }, id);
   // the menu leads there, the house details list every view
@@ -473,14 +473,14 @@ test('0.26.7.0(2) correction 3: the room details carry every value the FreshAirI
     learning_diagnosis: 'Learned: duration 12 min', last_learning_valid: true, last_learning_at: '2026-11-05T18:00:00Z', outcome_feedback_samples: 7, outcome_success_rate: 0.71, outcome_removed_factor: 0.93,
     shadow_learning_status: 'Vergleicht Produktionsmodell mit Alternativen', shadow_learning_promotions: 2, shadow_learning_rollbacks: 1, routine_maturity: 44, routine_source_samples: 31, routine_expected_source_ml_min: 0.5,
     strategy_maturity: 38, strategy_samples: 12, strategy_outcome_samples: 9, history_14d: [{ removed_ml: 900, sessions: 2, ventilation_minutes: 24, cost: 0.2 }, { removed_ml: 650, sessions: 1, ventilation_minutes: 12, cost: 0.1 }] } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   const text = await impl(page).evaluate(el => { el._selected = { type: 'room', id: 'r_bad' }; el._render(); return el.shadowRoot.querySelector('dialog.roomdlg').textContent.replace(/\s+/g, ' '); });
   for (const part of ['Theoretisch entfernbar', '≈ 410 ml', '≈ 180 ml', '0,12 €', 'Luftstromfaktor', '0,85', 'Messwerte plausibel', 'Gelernt: Dauer 12 min', 'Rückmeldung Realität', '71 %', '7 Vergleiche · Feuchtefaktor 0,93',
     'Vergleicht Produktionsmodell mit Alternativen', 'Übernahmen 2 · Rollbacks 1', 'Routine-IQ', '44 %', '31 Zeitmuster-Proben · erwartet 30 ml/h', 'Strategie-IQ', '12 Empfehlungen ausgewertet · 9 Ergebnisse',
     'Bilanz der letzten 2 Tage', '−1,55 l', 'Lüftungen', '36', '0,30 €']) expect(text, part).toContain(part);
   // a display-only room says so
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ output_language: 'de', rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, calculation_enabled: false } } }));
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg').textContent)).toContain('Nur anzeigen');
 });
 
@@ -494,7 +494,7 @@ const AH_REF = JSON.parse(fs.readFileSync(new URL('./fixtures/abs_humidity_refer
 test('0.26.7.0 UI hotfix 1: a chosen level stays what it is after more than 2 minutes untouched; every level is its own; auto still calms', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await mount(page);
-  const at = async (l, idleMin) => { await impl(page).evaluate((el, [l, idleMin]) => { el.setConfig({ ...el._config, animation_level: l }); el._lastActive = Date.now() - idleMin * 60e3; el._render(); }, [l, idleMin]); await page.waitForTimeout(150);
+  const at = async (l, idleMin) => { await impl(page).evaluate((el, [l, idleMin]) => { el.setConfig({ ...el._config, animation_level: l }); el._lastActive = Date.now() - idleMin * 60e3; el._render(); }, [l, idleMin]); await settle(page, 150);
     return impl(page).evaluate(el => ({ level: el.getAttribute('data-motion'), fps: el._windRaf ? el._windRaf.fps : 0, waves: el.shadowRoot.querySelectorAll('path.wave').length, loop: !!el._windRaf })); };
   const levels = {};
   for (const l of ['off', 'minimal', 'normal', 'intense']) levels[l] = await at(l, 0);
@@ -509,7 +509,7 @@ test('0.26.7.0 UI hotfix 1: a chosen level stays what it is after more than 2 mi
   }
   // the loop keeps the level while time passes (the 5 s check inside the loop)
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, animation_level: 'intense' }); el._lastActive = Date.now() - 5 * 60e3; el._levelCheck = 0; el._render(); });
-  await page.waitForTimeout(400);
+  await settle(page, 400);
   expect(await impl(page).evaluate(el => [el.getAttribute('data-motion'), el._windRaf && el._windRaf.fps])).toEqual(['intense', 30]);
   // auto alone adapts: calmer after 2 minutes, resting after 10
   expect((await at(undefined, 3)).level).toBe('minimal');
@@ -517,7 +517,7 @@ test('0.26.7.0 UI hotfix 1: a chosen level stays what it is after more than 2 mi
   // hidden page: paused whatever the level
   await at('intense', 0);
   await impl(page).evaluate(el => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   expect(await impl(page).evaluate(el => [el.hasAttribute('data-paused'), !!el._windRaf])).toEqual([true, false]);
   await impl(page).evaluate(() => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
 });
@@ -621,11 +621,11 @@ test('0.26.7.0 UI hotfix 4: Back in every window – one level at a time, the sc
   expect(Math.abs(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg .body').scrollTop) - top)).toBeLessThanOrEqual(2);   // where the list was
   // a live update keeps the window, its history and its Back
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }));
-  await page.waitForTimeout(120);
+  await settle(page, 120);
   expect(await state()).toMatchObject({ open: 1, kind: 'rooms:', back: true });
   // Escape goes back one level like the button
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(80);
+  await settle(page, 80);
   expect(await state()).toMatchObject({ open: 1, kind: 'menu' });
   await click('[data-close-menu]');
   expect(await state()).toMatchObject({ open: 0 });
@@ -634,7 +634,7 @@ test('0.26.7.0 UI hotfix 4: Back in every window – one level at a time, the sc
   expect(await state()).toMatchObject({ kind: 'rooms:', back: false });
   await click('dialog.roomdlg [data-room-open="r_bad"]');
   expect(await state()).toMatchObject({ kind: 'room:r_bad', back: true });
-  await page.keyboard.press('Escape'); await page.waitForTimeout(80);
+  await page.keyboard.press('Escape'); await settle(page, 80);
   expect(await state()).toMatchObject({ kind: 'rooms:', back: false });
   // a room tapped on the plan opens without history; Close closes everything
   await click('dialog.roomdlg [data-close-detail]');
@@ -665,20 +665,23 @@ test('0.26.7.0 UI hotfix 5A: the weather button at the top right opens with a re
   // after live updates (new readings, house data) and a theme change the same
   await page.evaluate(() => { window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', outdoor_temperature: 7, outdoor_humidity: 80 }); window.__subs['freshairiq/house_map/subscribe'](window.__HOUSE); });
   await impl(page).evaluate(el => { el._hass = { ...el._hass, themes: { darkMode: true, theme: 'x' } }; el.style.setProperty('--primary-color', '#ff0000'); el._render(); });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   [x, y] = await centre(); await page.mouse.click(x, y); expect(await opened()).toBe(true); await close();
   await impl(page).evaluate(el => el.shadowRoot.querySelector('.topbar button.weather').focus());
   await page.keyboard.press('Enter'); expect(await opened()).toBe(true);
 });
 
-test('0.26.7.0 UI hotfix 5A: the weather button opens with a touch tap (phone)', async ({ browser }) => {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+test('0.26.7.0 UI hotfix 5A: the weather button opens with a touch tap (phone)', async ({ browser, browserName }) => {
+  // Test note 0.26.7.0 CI fix (cross-browser): Firefox has no mobile emulation (isMobile) – a touch screen of phone size there;
+  // the page gets Home Assistant's viewport meta, else a mobile engine lays it out 980 px wide and WebKit's tap misses the button
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: browserName !== 'firefox' });
   const page = await ctx.newPage();
   await mount(page);
+  await page.evaluate(() => { const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; document.head.appendChild(m); });
   await setup(page, {}, STATES(), FORECAST);
   const [x, y] = await impl(page).evaluate(el => { const r = el.shadowRoot.querySelector('.topbar button.weather').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
   await page.touchscreen.tap(x, y);
-  await page.waitForTimeout(100);
+  await settle(page, 100);
   expect(await impl(page).evaluate(el => !!(el._selected && el._selected.type === 'weather'))).toBe(true);
   await ctx.close();
 });
@@ -694,7 +697,7 @@ test('0.26.7.0 UI hotfix 5B: absolute humidity (g/m³) at the top right and in t
   const live = extra => page.evaluate(extra => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', outdoor_temperature: 10, outdoor_humidity: 80, ...extra }), extra);
   // without an own weather entity: FreshAirIQ's own outdoor value, combinable with relative humidity
   await impl(page).evaluate(el => el.setConfig({ ...el._config, weather_entity: undefined, weather_chip: ['temperature', 'humidity', 'abs_humidity'] }));
-  await live({ outdoor_absolute_humidity: 7.536 }); await page.waitForTimeout(80);
+  await live({ outdoor_absolute_humidity: 7.536 }); await settle(page, 80);
   expect(await chip()).toEqual(['🌡️ 10,0 °C', '💧 80 %', '💧 7,5 g/m³']);
   // relative alone, absolute alone
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, weather_chip: ['humidity'] }); el._render(); });
@@ -702,10 +705,10 @@ test('0.26.7.0 UI hotfix 5B: absolute humidity (g/m³) at the top right and in t
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, weather_chip: ['abs_humidity'] }); el._render(); });
   expect(await chip()).toEqual(['💧 7,5 g/m³']);
   // the integration says nothing (older version): computed from its temperature and humidity with the same formula
-  await live({ outdoor_absolute_humidity: undefined }); await page.waitForTimeout(80);
+  await live({ outdoor_absolute_humidity: undefined }); await settle(page, 80);
   expect(await chip()).toEqual(['💧 7,5 g/m³']);
   // invalid or unavailable: left out, never a guess
-  await live({ outdoor_absolute_humidity: null, outdoor_humidity: 'unavailable' }); await page.waitForTimeout(80);
+  await live({ outdoor_absolute_humidity: null, outdoor_humidity: 'unavailable' }); await settle(page, 80);
   expect(await chip()).toEqual([]);
   // an own weather entity: its temperature and humidity (8.5 °C, 88 %) – the window shows it as one of its values
   await setup(page, { weather_chip: ['abs_humidity'], weather_details: undefined, weather_info: undefined });
@@ -729,7 +732,7 @@ for (const [label, vw, vh, cfg] of [['phone 360 × 780', 360, 780, {}], ['landsc
     await page.setViewportSize({ width: vw, height: vh });
     await mount(page, { config: { rooms_button: true, ...cfg } });
     await setup(page, {}, STATES('rainy'));
-    await page.waitForTimeout(250);
+    await settle(page, 250);
     const r = await impl(page).evaluate(el => {
       const R = n => n.getBoundingClientRect(), q = s => el.shadowRoot.querySelector(s);
       const svg = R(q('svg.plan')), stage = R(q('.stage')), top = q('.topbar'), bar = q('.mapbar');
@@ -752,14 +755,14 @@ test('0.26.7.0 UI hotfix 6: animation off – a still, even background without b
   await page.setViewportSize({ width: 1440, height: 900 });
   await mount(page, { config: { animation_level: 'off', rooms_button: true } });
   await setup(page, {}, STATES('sunny'));
-  await page.waitForTimeout(200);
+  await settle(page, 200);
   const r = await impl(page).evaluate(el => ({ loop: !!el._windRaf, bar: getComputedStyle(el.shadowRoot.querySelector('.mapbar')).backgroundColor,
     side: el.shadowRoot.querySelector('.wxside') ? [el.shadowRoot.querySelector('.wxside').firstElementChild.getBoundingClientRect().top, el.shadowRoot.querySelector('.topbar').getBoundingClientRect().bottom] : null }));
   expect(r.loop).toBe(false); expect(r.bar).toBe('rgba(0, 0, 0, 0)');
   if (r.side) expect(r.side[0]).toBeGreaterThanOrEqual(r.side[1] - 1);
   // several cards: one shared loop entry each, none more
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, animation_level: 'intense' }); el._render(); });
-  await page.waitForTimeout(150);
+  await settle(page, 150);
   expect(await page.evaluate(async () => (await import('/freshairiq-house-motion.js?v=0.26.7.0')).loopSize())).toBe(1);
 });
 

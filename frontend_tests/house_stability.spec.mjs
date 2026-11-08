@@ -7,7 +7,7 @@
 // await: exactly two subscriptions per shown card, none after it is removed.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { loadModule } from './harness.mjs';
+import { loadModule, settle as settleFrame } from './harness.mjs';
 
 const SRC = fs.readFileSync(new URL('./house.spec.mjs', import.meta.url), 'utf8');
 const LAYOUT = eval(`(${SRC.slice(SRC.indexOf('const LAYOUT = ') + 15, SRC.indexOf('};\n// Room fields') + 1)})`);
@@ -47,7 +47,7 @@ async function mount(page, { before = 1500, after = 40, nested = false, width = 
   }, { LAYOUT, ROOMS });
   await page.waitForFunction(() => window.__subs['freshairiq/house_map/subscribe'] && window.__active >= 2);
   await push(page, 0);
-  await page.waitForTimeout(150);
+  await settleFrame(page, 150);
   return errors;
 }
 const push = (page, i) => page.evaluate(({ i, HOUSE }) => {
@@ -69,7 +69,7 @@ for (const nested of [false, true]) {
     expect(bottom).toBeGreaterThan(2000);
     for (let i = 1; i <= 10; i += 1) {
       await push(page, i);
-      await page.waitForTimeout(40);
+      await settleFrame(page, 40);
       expect(await getY(page, nested), `push ${i}`).toBe(bottom);
       expect((await frame(page)).same).toBe(true);  // the same <ha-card>, never an empty frame
     }
@@ -77,7 +77,7 @@ for (const nested of [false, true]) {
     for (const wanted of [1800, 2200, bottom - 50]) {
       const y = await setY(page, nested, wanted);  // where the browser really put the page
       expect(Math.abs(y - wanted)).toBeLessThan(40);
-      await push(page, y); await page.waitForTimeout(30); await push(page, y + 1); await page.waitForTimeout(30);
+      await push(page, y); await settleFrame(page, 30); await push(page, y + 1); await settleFrame(page, 30);
       expect(await getY(page, nested)).toBe(y);
     }
     expect(errors).toEqual([]);
@@ -91,31 +91,31 @@ test('F02: switching layers and floors, the room window, banners and longer text
   // UI hotfix 0.26.6.0: no "All floors" button any more – the floors are switched one by one
   // Test note 0.26.7.0 UI hotfix (owner order: "view on the plan" left the menu): the view changes through the card setting now
   for (const layer of ['temperature', 'airflow']) {
-    await impl(page).evaluate((el, layer) => el.setConfig({ ...el._config, layer }), layer); await page.waitForTimeout(30);
+    await impl(page).evaluate((el, layer) => el.setConfig({ ...el._config, layer }), layer); await settleFrame(page, 30);
     expect(await impl(page).evaluate(el => el._layer), layer).toBe(layer);
     expect(await getY(page, false), layer).toBe(y);
   }
   for (const step of ['[data-floor="f_og"]', '[data-floor="f_eg"]']) {
-    await click(step); await page.waitForTimeout(30);
+    await click(step); await settleFrame(page, 30);
     expect(await getY(page, false), step).toBe(y);
   }
   // open the room window, pushes while it is open, close it
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  await page.waitForTimeout(40);
-  for (let i = 0; i < 3; i += 1) { await push(page, i); await page.waitForTimeout(30); }
+  await settleFrame(page, 40);
+  for (let i = 0; i < 3; i += 1) { await push(page, i); await settleFrame(page, 30); }
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-close-detail]').click());
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await getY(page, false)).toBe(y);
   // a warning banner comes and goes (live connection disrupted), status texts change length
   await impl(page).evaluate(el => { el._failed = true; el._queue(); });
-  await page.waitForTimeout(40);
+  await settleFrame(page, 40);
   expect(await impl(page).evaluate(el => el.shadowRoot.textContent)).toContain('Live-Verbindung gestört');
   expect(await getY(page, false)).toBe(y);
   await impl(page).evaluate(el => { el._failed = false; });
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', status_text: 'Ein sehr langer Statustext '.repeat(6) }));
-  await page.waitForTimeout(40);
+  await settleFrame(page, 40);
   expect(await getY(page, false)).toBe(y);
-  await push(page, 3); await page.waitForTimeout(40);
+  await push(page, 3); await settleFrame(page, 40);
   expect(await getY(page, false)).toBe(y);
 });
 
@@ -126,15 +126,15 @@ test('F02: a live push keeps the focused button, the open room window (no second
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
   // Test note 0.26.7.0 UI hotfix: the layer buttons left the menu – a button of the Animation area keeps the focus instead
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-motion-level="normal"]').focus({ preventScroll: true }));
-  await push(page, 1); await page.waitForTimeout(40);
+  await push(page, 1); await settleFrame(page, 40);
   expect(await impl(page).evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.dataset.motionLevel)).toBe('normal');
   // 0.26.6.0(2): the menu is its own window – closed again before the room window is counted
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-close-menu]').click());
   await page.evaluate(() => { window.__modal = 0; });
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  await page.waitForTimeout(40);
+  await settleFrame(page, 40);
   await impl(page).evaluate(el => { window.__dialog = el.shadowRoot.querySelector('dialog.roomdlg'); el.shadowRoot.querySelector('[data-close-detail]').focus({ preventScroll: true }); });
-  for (let i = 2; i < 6; i += 1) { await push(page, i); await page.waitForTimeout(30); }
+  for (let i = 2; i < 6; i += 1) { await push(page, i); await settleFrame(page, 30); }
   const state = await impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.roomdlg'); return { same: d === window.__dialog, open: d.open, focus: !!(el.shadowRoot.activeElement && el.shadowRoot.activeElement.hasAttribute('data-close-detail')), text: d.textContent }; });
   expect(state).toMatchObject({ same: true, open: true, focus: true });
   expect(state.text).toContain('Bad');
@@ -149,10 +149,10 @@ test('F02: a live update waits while a finger is on the card and follows when it
   const mark = () => impl(page).evaluate(el => { const m = el.shadowRoot.querySelector('.faiq-main .map'); m.__mark = (m.__mark || 0) + 1; return m.__mark; });
   await mark();
   await impl(page).evaluate(el => el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 })));
-  await push(page, 4); await page.waitForTimeout(80);
+  await push(page, 4); await settleFrame(page, 80);
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('.faiq-main .map').__mark)).toBe(true);  // not replaced mid-gesture
   await page.evaluate(() => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 })));
-  await page.waitForTimeout(80);
+  await settleFrame(page, 80);
   expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('.faiq-main .map').__mark)).toBe(false);  // the pending update is drawn
   expect(await impl(page).evaluate(el => el.shadowRoot.textContent)).toContain('Stand ····');
 });
@@ -163,7 +163,7 @@ test('F02 editor: selecting, changing an opening, undo/redo, inputs and saving k
   const y = await setY(page, false, 1300);
   await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
   await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect((await frame(page)).same).toBe(true);
   expect(await getY(page, false)).toBe(y);
   const editor = page.locator('freshairiq-house-layout-editor');
@@ -171,12 +171,12 @@ test('F02 editor: selecting, changing an opening, undo/redo, inputs and saving k
   expect(await getY(page, false)).toBe(y);
   // type a width: the field keeps the focus after the re-render
   await editor.evaluate(el => { const f = el.shadowRoot.querySelector('[data-f="width"]'); f.focus({ preventScroll: true }); f.value = '1.4'; f.dispatchEvent(new Event('change', { bubbles: true })); });
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await editor.evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.dataset.f)).toBe('width');
   expect(await editor.evaluate(el => el._layout.openings.find(o => o.id === 'o_wohnen').width_m)).toBe(1.4);
   for (const action of ['[data-w="1"]', '[data-a="undo"]', '[data-a="redo"]', '[data-a="zoom-in"]', '[data-a="zoom-out"]']) {
     await editor.evaluate((el, s) => { const b = el.shadowRoot.querySelector(s); b.focus({ preventScroll: true }); b.click(); }, action);
-    await page.waitForTimeout(20);
+    await settleFrame(page, 20);
     expect(await getY(page, false), action).toBe(y);
     // the same control keeps the focus (a button that is disabled now, like redo at the end, cannot hold it)
     expect(await editor.evaluate((el, s) => { const b = el.shadowRoot.querySelector(s); return el.shadowRoot.activeElement === b || b.disabled; }, action), action).toBe(true);
@@ -186,7 +186,7 @@ test('F02 editor: selecting, changing an opening, undo/redo, inputs and saving k
   await page.mouse.move(box.x, box.y); await page.mouse.down(); await page.mouse.move(box.x + 30, box.y + 10, { steps: 4 }); await page.mouse.up();
   expect(await getY(page, false)).toBe(y);
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
-  await page.waitForTimeout(120);
+  await settleFrame(page, 120);
   expect(await page.evaluate(() => window.__calls.includes('freshairiq/house_map/save'))).toBe(true);
   expect((await frame(page)).same).toBe(true);
   expect(await getY(page, false)).toBe(y);
@@ -223,7 +223,7 @@ async function lifecyclePage(page) {
   return errors;
 }
 const live = page => page.evaluate(() => window.__live);
-const settle = page => page.waitForTimeout(60);
+const settle = page => settleFrame(page, 60);
 
 test('F01: parallel starts (hass before and after connecting, repeated hass) give exactly two subscriptions; removal gives none', async ({ page }) => {
   const errors = await lifecyclePage(page);
@@ -332,23 +332,23 @@ const active = page => page.evaluate(() => window.__active3());
 test('re-audit F01: entry A→B, connection 1→2 and both together move the two subscriptions; normal hass updates do not resubscribe', async ({ page }) => {
   const errors = await targetPage(page);
   await page.evaluate(() => { const el = document.createElement('freshairiq-house-card-impl'); window.__el = el; el.setConfig({ entry_id: 'A' }); document.body.appendChild(el); window.__c1 = window.__mkConn('c1'); el.hass = window.__hassFor(window.__c1); });
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await active(page)).toEqual({ 'c1:A:freshairiq/dashboard/subscribe': 1, 'c1:A:freshairiq/house_map/subscribe': 1 });
   // twenty ordinary hass updates (same connection, new states object): nothing new
   await page.evaluate(() => { for (let i = 0; i < 20; i += 1) window.__el.hass = { ...window.__hassFor(window.__c1), states: { i } }; window.__el.setConfig({ entry_id: 'A' }); });
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(Object.values(await page.evaluate(() => window.__subsBy)).reduce((a, b) => a + b, 0)).toBe(2);
   await page.evaluate(() => window.__el.setConfig({ entry_id: 'B' }));  // another entry, same connection
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await active(page)).toEqual({ 'c1:B:freshairiq/dashboard/subscribe': 1, 'c1:B:freshairiq/house_map/subscribe': 1 });
   await page.evaluate(() => { window.__c2 = window.__mkConn('c2'); window.__el.hass = window.__hassFor(window.__c2); });  // new connection, same entry
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await active(page)).toEqual({ 'c2:B:freshairiq/dashboard/subscribe': 1, 'c2:B:freshairiq/house_map/subscribe': 1 });
   await page.evaluate(() => { const el = window.__el; el.setConfig({ entry_id: 'A' }); el.hass = window.__hassFor(window.__mkConn('c3')); });  // both at once
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await active(page)).toEqual({ 'c3:A:freshairiq/dashboard/subscribe': 1, 'c3:A:freshairiq/house_map/subscribe': 1 });
   await page.evaluate(() => window.__el.remove());
-  await page.waitForTimeout(40);
+  await settleFrame(page, 40);
   expect(await active(page)).toEqual({});
   expect(errors).toEqual([]);
 });
@@ -357,20 +357,20 @@ test('re-audit F01: a switch during a running start and during a failure/retry e
   await targetPage(page);
   // the first start waits for its layout answer; meanwhile entry and connection change
   await page.evaluate(() => { window.__getMode = 'hold'; const el = document.createElement('freshairiq-house-card-impl'); window.__el = el; el.setConfig({ entry_id: 'A' }); document.body.appendChild(el); el.hass = window.__hassFor(window.__mkConn('c1')); });
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   await page.evaluate(() => { window.__el.setConfig({ entry_id: 'B' }); window.__el.hass = window.__hassFor(window.__mkConn('c2')); });
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   await page.evaluate(() => { window.__getMode = 'now'; for (const p of window.__pending.splice(0)) p.resolve(0); });  // the late answers arrive
-  await page.waitForTimeout(80);
+  await settleFrame(page, 80);
   expect(await active(page)).toEqual({ 'c2:B:freshairiq/dashboard/subscribe': 1, 'c2:B:freshairiq/house_map/subscribe': 1 });
   expect(await page.evaluate(() => window.__el._layoutInfo.entry_id)).toBe('B');  // the late answer for A did not win
   // a failed start with a pending retry, then a new connection: one start there, the retry is gone
   await page.evaluate(() => { const bad = { name: 'bad', subscribeMessage: () => Promise.reject(new Error('down')) }; window.__el.hass = window.__hassFor(bad); });
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await page.evaluate(() => !!window.__el._retry)).toBe(true);
   expect(await active(page)).toEqual({});
   await page.evaluate(() => { window.__el.hass = window.__hassFor(window.__mkConn('c4')); });
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await page.evaluate(() => window.__el._retry)).toBe(null);
   expect(await active(page)).toEqual({ 'c4:B:freshairiq/dashboard/subscribe': 1, 'c4:B:freshairiq/house_map/subscribe': 1 });
 });
@@ -378,37 +378,37 @@ test('re-audit F01: a switch during a running start and during a failure/retry e
 test('re-audit F02: layout answers out of order never replace a newer revision; one request at a time', async ({ page }) => {
   await targetPage(page);
   await page.evaluate(() => { const el = document.createElement('freshairiq-house-card-impl'); window.__el = el; el.setConfig({}); document.body.appendChild(el); window.__c1 = window.__mkConn('c1'); el.hass = window.__hassFor(window.__c1); });
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await page.evaluate(() => window.__el._layoutInfo.revision)).toBe(0);
   const house = rev => page.evaluate(rev => window.__cbs['c1:-:freshairiq/house_map/subscribe']({ revision: rev, wind: null, rooms: {}, airflow: null }), rev);
   await page.evaluate(() => { window.__getMode = 'hold'; });
   await house(1); await house(2); await house(2); await house(2);  // repeated pushes while the first request runs
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await page.evaluate(() => window.__pending.length)).toBe(1);  // deduplicated
   await page.evaluate(() => window.__pending.shift().resolve(1));    // the answer for revision 1 …
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await page.evaluate(() => window.__pending.length)).toBe(1);  // … and revision 2 is fetched right after
   await page.evaluate(() => window.__pending.shift().resolve(2));
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await page.evaluate(() => window.__el._layoutInfo.revision)).toBe(2);
   // an older answer (e.g. a slow server read) does not move the layout back
   await house(3);
-  await page.waitForTimeout(20);
+  await settleFrame(page, 20);
   await page.evaluate(() => window.__pending.shift().resolve(1));
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await page.evaluate(() => window.__el._layoutInfo.revision)).toBe(2);
   // a request still running when the connection changes is dropped
   await house(4);
-  await page.waitForTimeout(20);
+  await settleFrame(page, 20);
   await page.evaluate(() => { const old = window.__pending.splice(0); window.__getMode = 'now'; window.__serverRev = 5; window.__el.hass = window.__hassFor(window.__mkConn('c2')); window.__old = old; });
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   await page.evaluate(() => { for (const p of window.__old) p.resolve(4); });
-  await page.waitForTimeout(40);
+  await settleFrame(page, 40);
   expect(await page.evaluate(() => window.__el._layoutInfo.revision)).toBe(5);
   // the editor context is not touched by a late answer
   await page.evaluate(() => { window.__el._proposal = { layout: window.__LAYOUT }; window.__el._editing = { hass: null }; });
   await page.evaluate(() => window.__cbs['c2:-:freshairiq/house_map/subscribe']({ revision: 9, wind: null, rooms: {}, airflow: null }));
-  await page.waitForTimeout(30);
+  await settleFrame(page, 30);
   expect(await page.evaluate(() => [window.__el._layoutInfo.revision, !!window.__el._proposal])).toEqual([5, true]);
 });
 
@@ -422,10 +422,10 @@ test('re-audit F03: a finger held for 1 s or 9 s keeps every live update back un
     await mark();
     await el.evaluate(e => e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 5, pointerType: 'touch' })));
     await el.evaluate((e, held) => { e._gestureSeen = Date.now() - held; }, held);  // the finger has been down this long
-    for (let i = 0; i < 5; i += 1) { await push(page, held + i); await page.waitForTimeout(25); }
+    for (let i = 0; i < 5; i += 1) { await push(page, held + i); await settleFrame(page, 25); }
     expect(await marked(), `${held} ms`).toBe(true);  // still the same map: nothing re-rendered under the finger
     await page.evaluate(() => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 5, pointerType: 'touch' })));
-    await page.waitForTimeout(60);
+    await settleFrame(page, 60);
     expect(await marked()).toBe(false);  // drawn right after lifting
     expect(await getY(page, false)).toBe(y);
   }
@@ -433,29 +433,29 @@ test('re-audit F03: a finger held for 1 s or 9 s keeps every live update back un
   await mark();
   await el.evaluate(e => { e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 6, pointerType: 'touch' })); e._onDown({ type: 'touchstart' }); });
   await page.evaluate(() => window.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 6, pointerType: 'touch' })));
-  await push(page, 30); await page.waitForTimeout(40);
+  await push(page, 30); await settleFrame(page, 40);
   expect(await marked()).toBe(true);
   // two fingers: lifting one keeps it held, lifting the last one releases
   await el.evaluate(e => e._onUp({ type: 'touchend', touches: [{}] }));
-  await push(page, 31); await page.waitForTimeout(40);
+  await push(page, 31); await settleFrame(page, 40);
   expect(await marked()).toBe(true);
   await el.evaluate(e => e._onUp({ type: 'touchend', touches: [] }));
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await marked()).toBe(false);
   // a release that never arrives: after a minute without any touch or pointer event the card draws again
   await mark();
   await el.evaluate(e => e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7, pointerType: 'touch' })));
-  await push(page, 40); await page.waitForTimeout(40);
+  await push(page, 40); await settleFrame(page, 40);
   expect(await marked()).toBe(true);
   await el.evaluate(e => { e._gestureSeen = Date.now() - 61000; });
-  await push(page, 41); await page.waitForTimeout(60);
+  await push(page, 41); await settleFrame(page, 60);
   expect(await marked()).toBe(false);
   // the page goes to the background with a finger down: released
   await mark();
   await el.evaluate(e => { e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 8, pointerType: 'touch' })); });
-  await push(page, 50); await page.waitForTimeout(30);
+  await push(page, 50); await settleFrame(page, 30);
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-  await page.waitForTimeout(60);
+  await settleFrame(page, 60);
   expect(await marked()).toBe(false);
 });
 
@@ -473,10 +473,10 @@ test('re-audit F04: unknown forecasts show "–", known values (also 0 and negat
     [{ house: { forecast_moisture_effect_ml: -15, overnight_forecast_ml: 30 }, next: -4 }, ['+15 ml', '+30 ml']],
   ];
   await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('polygon.room')].find(n => n.dataset.room === 'r_bad').dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  await page.waitForTimeout(40);
+  await settleFrame(page, 40);
   for (const [values, [forecast, night]] of cases) {
     await hero(values);
-    await page.waitForTimeout(40);
+    await settleFrame(page, 40);
     const kpis = await read();
     expect(kpis[1], JSON.stringify(values)).toBe(forecast);
     expect(kpis[2], JSON.stringify(values)).toBe(night);

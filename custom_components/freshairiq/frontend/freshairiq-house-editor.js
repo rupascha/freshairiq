@@ -404,6 +404,7 @@ text{fill:var(--ed-fg);pointer-events:none}
 :host([data-layout~="side"]) .ptoggle{display:none}
 :host([data-layout~="short"]) .tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
 :host([data-layout~="short"]) .tools>*{flex:none}
+:host([data-layout~="short"]) .tools button{padding-left:8px;padding-right:8px}
 :host([data-layout~="phone"]) .tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
 :host([data-layout~="phone"]) .tg-add{grid-column:1/-1;display:flex;gap:4px}
 :host([data-layout~="phone"]) .tg-add>button{flex:1 1 auto;padding:6px 4px;font-size:14px;min-width:0}
@@ -493,13 +494,22 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     this._onFocusIn = ev => { this._kbd = !!(ev.target && ev.target.classList && ev.target.classList.contains("canvas")); };
     this.shadowRoot.addEventListener("focusin", this._onFocusIn);
     // v0.26.6.1: the drawing follows the size of the editor (window, rotation, inspector) – the plan stays in view
-    if (typeof ResizeObserver === "function") { this._resizeObs = new ResizeObserver(() => this._onResize()); this._resizeObs.observe(this); }
+    // 0.26.7.0 CI fix: answered in the next animation frame (once per frame) – redrawing inside the observer's callback changed the
+    // observed size again in the same frame, which WebKit reports as an error ("ResizeObserver loop completed …")
+    if (typeof ResizeObserver === "function") {
+      this._resizeObs = new ResizeObserver(() => {
+        if (this._resizeRaf) return;
+        this._resizeRaf = requestAnimationFrame(() => { this._resizeRaf = null; if (this.isConnected) this._onResize(); });
+      });
+      this._resizeObs.observe(this);
+    }
     this._checkContrast();
   }
   disconnectedCallback() {
     this.shadowRoot.removeEventListener("keydown", this._onKey);
     this.shadowRoot.removeEventListener("focusin", this._onFocusIn);
     if (this._resizeObs) { this._resizeObs.disconnect(); this._resizeObs = null; }
+    if (this._resizeRaf) { cancelAnimationFrame(this._resizeRaf); this._resizeRaf = null; }
     for (const url of Object.values(this._ulUrl)) URL.revokeObjectURL(url);
     this._ulUrl = {}; this._ul = {}; this._pix = {};
   }
@@ -605,7 +615,8 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     this._kbd = true;
     const canvas = this.shadowRoot.querySelector(".canvas");
     if (canvas && this.shadowRoot.activeElement !== canvas) { try { canvas.focus({ preventScroll: true }); } catch (_) { /* old engine */ } }
-    ev.currentTarget.setPointerCapture(ev.pointerId);
+    // Firefox throws when the pointer is not (or no longer) active; capture is a convenience – the edit still happens
+    try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (_) { /* no capture */ }
     this._pointers.set(ev.pointerId, [ev.clientX, ev.clientY]);
     if (this._pointers.size === 2) { this._drag = { kind: "pinch", dist: this._pinchDist(), size: this._view.size }; return; }
     const start = this._plan(ev);

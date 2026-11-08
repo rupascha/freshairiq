@@ -1172,6 +1172,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     // 0.26.6.1(9) regression fix: every variant is tried keeping door swings and open sashes free, then – rather than
     // dropping readings or cutting the name – over the quiet swing hairline.
     const parts = extra.split(" · ").filter(Boolean), metricRows = parts.map(text => ({ kind: "c", text, f: metricF, w: measure(text, metricF, 700) + 4, h: metricF * 1.4 }));
+    const metricAt = (text, f) => ({ kind: "c", text, f, w: measure(text, f, 700) + 4, h: f * 1.45 });
     const short = shortName(name), split = splitName(name);
     const names = [[nameRow(15)], [nameRow(13)], [nameRow(12)], ...(split ? [split.map(t => nameRow(13, t)), split.map(t => nameRow(12, t))] : []), ...(short !== name ? [[nameRow(12, short)]] : [])];
     const withMetrics = (n, p) => (extra ? [[...n, p, metricRow], ...(parts.length > 1 ? [[...n, p, ...metricRows]] : [])] : []);
@@ -1181,6 +1182,10 @@ class FreshAirIQHouseCard extends HTMLElement {
       // compact: the state symbol in front of the name, the readings below (a low room keeps its values)
       ...names.slice(1).flatMap(n => (extra ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), metricRow],
         ...(parts.length > 1 ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), ...metricRows]] : [])] : [])),
+      // 0.26.7.0 CI fix: before the readings are dropped they may shrink to the 12 px of the smallest name (a wider system font
+      // – e.g. DejaVu Sans – left a small room 1 px short of its readings)
+      ...names.slice(1).flatMap(n => (extra ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), metricAt(extra, 12)],
+        ...(parts.length > 1 ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), ...parts.map(text => metricAt(text, 12))]] : [])] : [])),
       [...names[0], pill(`${icon} ${word}`)], [...names[1], pill(`${icon} ${word}`)], [...names[1], pill(`${icon} ${shortWord}`)],
       ...names.slice(1).map(n => [...n, pill(icon)]),
       // a small room with a long name ("Gäste-WC"): at last its short name alone – the surface shows its state
@@ -1870,10 +1875,10 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
       ${c.design_background === "transparent" ? "" : colour("design_background", L.background, "#06305c")}
       <label><input type="checkbox" data-design-glass${c.design_background === "transparent" ? " checked" : ""}> ${esc(L.glass)}</label>
       ${colour("design_dialog", L.dialog, "#0b2f57")}
-      <label>${esc(L.text)}<br><select data-k="design_text">${D.TEXT_MODES.map(v => `<option value="${v}"${choice.text === v ? " selected" : ""}>${esc(L.texts[v])}</option>`).join("")}</select></label>
+      <label>${esc(L.text)}<br><select data-k="design_text" style="max-width:100%">${D.TEXT_MODES.map(v => `<option value="${v}"${choice.text === v ? " selected" : ""}>${esc(L.texts[v])}</option>`).join("")}</select></label>
       <label>${esc(L.border)}<br><input data-k="design_border" type="number" min="0" max="${D.BORDER_MAX}" value="${esc(c.design_border ?? "")}" placeholder="1"></label>
       <label>${esc(L.radius)}<br><input data-k="design_radius" type="number" min="0" max="${D.RADIUS_MAX}" value="${esc(c.design_radius ?? "")}" placeholder="12"></label>`;
-    return `<label>${esc(L.mode)}<br><select data-k="design">${D.DESIGN_MODES.map(v => `<option value="${v}"${mode === v ? " selected" : ""}>${esc(L.modes[v])}</option>`).join("")}</select></label>
+    return `<label>${esc(L.mode)}<br><select data-k="design" style="max-width:100%">${D.DESIGN_MODES.map(v => `<option value="${v}"${mode === v ? " selected" : ""}>${esc(L.modes[v])}</option>`).join("")}</select></label>
       ${note(L.keep)}${mode === "ha" ? note(L.ha) : ""}${custom}
       ${[...new Set(issues)].map(k => `<div data-design-issue="${esc(k)}" style="color:var(--warning-color,#b26b00)">${esc(L.issues[k] || k)}</div>`).join("")}`;
   }
@@ -1939,7 +1944,7 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
     const open = this._open || (this._open = new Set(["general"]));
     const group = (id, body) => `<details data-group="${id}" style="border:1px solid var(--divider-color,#ccc);border-radius:10px;padding:6px 10px"${open.has(id) ? " open" : ""}>
       <summary style="cursor:pointer;min-height:36px;display:flex;flex-direction:column;justify-content:center"><b>${esc(S[id][0])}</b><span style="font-size:.85em;opacity:.75">${esc(S[id][1])}</span></summary>
-      <div style="display:grid;gap:10px;padding:8px 0 4px">${body}</div></details>`;
+      <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:8px 0 4px">${body}</div></details>`;
     const boxes = html => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 8px">${html}</div>`;
     const note = text => `<span style="font-size:.85em;opacity:.7">${esc(text)}</span>`;
     // the stored floor/room choices still on the plan of the (possibly changed) integration entry
@@ -1949,16 +1954,16 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
     const stale = staleFloors.length || staleRooms.length ? `<div style="color:var(--warning-color,#b26b00)">${esc(S.stale)}: ${esc([...new Set([...staleFloors, ...staleRooms])].join(", "))} <button type="button" data-stale="1">${esc(S.stale_fix)}</button></div>` : "";
     const lockHidden = (c.auto_focus || "hint") === "off" ? " hidden" : "";
     const detailsHidden = info.includes("overview") ? "" : " hidden";
-    this.innerHTML = `<div style="display:grid;gap:10px;padding:8px 0">
+    this.innerHTML = `<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:8px 0">
       ${group("general", `<label>${L.title}<br><input data-k="title" value="${esc(c.title || "")}" style="width:100%"></label>
         <label>${L.entry}<br><input data-k="entry_id" value="${esc(c.entry_id || "")}" style="width:100%"><br>${note(S.entry_hint)}</label>
-        <label>${L.layer}<br><select data-k="layer">${LAYERS.map(l => `<option value="${l}"${(c.layer || "action") === l ? " selected" : ""}>${esc(T[de ? "de" : "en"][`layer_${l}`])}</option>`).join("")}</select></label>`)}
+        <label>${L.layer}<br><select data-k="layer" style="max-width:100%">${LAYERS.map(l => `<option value="${l}"${(c.layer || "action") === l ? " selected" : ""}>${esc(T[de ? "de" : "en"][`layer_${l}`])}</option>`).join("")}</select></label>`)}
       ${group("floors", `${floors ? `<div>${L.floors_visible}</div>${boxes(floors.map(f => box("floors_visible", f.id, floorName(f), visible.includes(f.id))).join(""))}
-        <label>${L.default_floor}<br><select data-k="default_floor"><option value="">${L.default_none}</option>${floors.map(f => `<option value="${esc(f.id)}"${c.default_floor === f.id ? " selected" : ""}>${esc(floorName(f))}</option>`).join("")}</select></label>`
+        <label>${L.default_floor}<br><select data-k="default_floor" style="max-width:100%"><option value="">${L.default_none}</option>${floors.map(f => `<option value="${esc(f.id)}"${c.default_floor === f.id ? " selected" : ""}>${esc(floorName(f))}</option>`).join("")}</select></label>`
         : `<label>${L.floors_visible}<br><input data-k="floors_visible" value="${esc(visible.join(", "))}" placeholder="ground_floor, upper_floor" style="width:100%"></label>
         <label>${L.default_floor}<br><input data-k="default_floor" value="${esc(c.default_floor || "")}" placeholder="ground_floor" style="width:100%"></label>`}
         ${stale}
-        <label>${L.focus}<br><select data-k="auto_focus">${FOCUS_MODES.map(m => `<option value="${m}"${(c.auto_focus || "hint") === m ? " selected" : ""}>${L[m]}</option>`).join("")}</select></label>
+        <label>${L.focus}<br><select data-k="auto_focus" style="max-width:100%">${FOCUS_MODES.map(m => `<option value="${m}"${(c.auto_focus || "hint") === m ? " selected" : ""}>${L[m]}</option>`).join("")}</select></label>
         <label data-when="auto_focus"${lockHidden}>${L.lock}<br><input data-k="manual_lock_min" type="number" min="1" max="240" value="${esc(c.manual_lock_min || 10)}"><br>${note(S.lock_hint)}</label>
         <label><input data-k="rooms_button" type="checkbox"${c.rooms_button ? " checked" : ""}> ${L.rooms_button}</label>`)}
       ${group("rooms", `<div>${L.room_info}</div>${boxes(ROOM_INFO.map(k => box("room_info", k, L.ri[k], chosen.includes(k))).join(""))}
@@ -1968,11 +1973,11 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
         <div>${L.weather_chip}</div>${boxes(W.CHIP_ITEMS.map(k => box("weather_chip", k, L.ci[k], chip.includes(k))).join(""))}`)}
       ${group("wxwin", `<div>${L.weather_views}</div>${boxes(W.WEATHER_INFO.filter(k => !W.WEATHER_DETAILS.includes(k)).map(k => box("weather_info", k, L.wi[k], info.includes(k))).join(""))}
         <div data-when="overview"${detailsHidden}><div>${L.weather_details}</div>${note(S.details_hint)}${boxes(W.WEATHER_DETAILS.map(k => box("weather_details", k, L.wi[k], details.includes(k))).join(""))}</div>`)}
-      ${group("motion", `<label>${L.motion_level}<br><select data-k="animation_level">${["auto", "off", "minimal", "normal", "intense"].map(v => `<option value="${v}"${M.chosenLevel(c) === v ? " selected" : ""}>${L.ml[v]}</option>`).join("")}</select></label>
+      ${group("motion", `<label>${L.motion_level}<br><select data-k="animation_level" style="max-width:100%">${["auto", "off", "minimal", "normal", "intense"].map(v => `<option value="${v}"${M.chosenLevel(c) === v ? " selected" : ""}>${L.ml[v]}</option>`).join("")}</select></label>
         <div>${L.motion_parts}</div>${boxes(M.MOTION_PARTS.map(k => box("animation_parts", k, L.mp[k], parts.includes(k))).join(""))}
-        <label>${L.effects}<br><select data-k="weather_effects">${W.EFFECT_LEVELS.map(v => `<option value="${v}"${(c.weather_effects || "dynamic") === v ? " selected" : ""}>${L.fx[v]}</option>`).join("")}</select></label>
+        <label>${L.effects}<br><select data-k="weather_effects" style="max-width:100%">${W.EFFECT_LEVELS.map(v => `<option value="${v}"${(c.weather_effects || "dynamic") === v ? " selected" : ""}>${L.fx[v]}</option>`).join("")}</select></label>
         <label><input data-k="animation" type="checkbox"${c.animation === false ? "" : " checked"}> ${L.anim}</label>
-        <label>${L.layout}<br><select data-k="layout">${W.LAYOUTS.map(v => `<option value="${v}"${(c.layout || "auto") === v ? " selected" : ""}>${L.lay[v]}</option>`).join("")}</select></label>`)}
+        <label>${L.layout}<br><select data-k="layout" style="max-width:100%">${W.LAYOUTS.map(v => `<option value="${v}"${(c.layout || "auto") === v ? " selected" : ""}>${L.lay[v]}</option>`).join("")}</select></label>`)}
       ${group("design", this._designGroup(c, de, note))}
       ${group("adv", `<label>${L.weather}<br><input data-k="weather_sensors" value="${esc(Array.isArray(c.weather_sensors) ? c.weather_sensors.join(", ") : c.weather_sensors || "")}" placeholder="sensor.aussen_temperatur, sensor.aussen_feuchte" style="width:100%"><br>${note(S.weather_sensors_hint)}</label>
         <label>${L.floor}<br><input data-k="floor" value="${esc(c.floor || "")}" placeholder="ground_floor" style="width:100%"><br>${note(S.floor_hint)}</label>`)}</div>`;

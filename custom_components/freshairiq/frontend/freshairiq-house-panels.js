@@ -316,7 +316,7 @@ button.rcard.t-close,button.rcard.t-critical{box-shadow:0 0 0 1px var(--tone) in
 button.mitem{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 12px;border-radius:14px;border:1px solid var(--fq-line2,rgba(201,243,255,.16));background:var(--fq-surface,rgba(2,16,36,.4));color:inherit;font:inherit;text-align:left;cursor:pointer}
 button.mitem:hover{border-color:var(--fq-line2,rgba(201,243,255,.4))}button.mitem:focus-visible{outline:3px solid var(--fq-focus,#ffd27a);outline-offset:2px}
 .mitem .mi{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:var(--fq-line2,rgba(201,243,255,.1));font-size:18px}.mitem .mi svg{width:26px;height:26px}
-.mitem .mt{display:grid;flex:1 1 auto;min-width:0}.mitem .mt b{font-size:15px}.mitem .mt small{font-size:12px;color:var(--fq-muted2,#a9cbe6)}.mitem .chev{width:18px;height:18px;opacity:.6;flex:none}
+.mitem .mt{display:grid;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}.mitem .mt b{font-size:15px}.mitem .mt small{font-size:12px;color:var(--fq-muted2,#a9cbe6)}.mitem .chev{width:18px;height:18px;opacity:.6;flex:none}
 .pcheck{display:flex;gap:8px;align-items:center;min-height:40px;font-size:14px}
 .field input[type=date]{min-height:40px;border-radius:10px;border:1px solid var(--fq-line2,rgba(201,243,255,.3));background:var(--fq-surface,rgba(2,16,36,.4));color:inherit;padding:0 10px;font:inherit}
 /* 0.26.7.0 UI hotfix: "Back" at the top left of every window that was opened from another one */
