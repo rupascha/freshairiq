@@ -3711,6 +3711,37 @@ test('0.26.7.0 forecast subscriptions are shared per Home Assistant connection o
   expect(moved.newSubs).toBe(2); expect(moved.keys).toBe(2);
 });
 
+// 0.26.7.0 CI fix: the old connection's forecast subscriptions ended only with the next drawing (_render → _syncForecast) –
+// on a slow runner later than the test looked, in a hidden tab (no animation frames) not at all. A connection change
+// releases and moves them at once, like the house channels; a forecast another card still shows on the old connection stays.
+test('0.26.7.0 CI fix: a connection change moves the forecast subscriptions at once, without a redraw; two cards share them per connection', async ({ page }) => {
+  await mount(page);
+  await addSecondCard(page, { weather_entity: 'weather.home' });   // the same weather entity as the first card (it has no house data here)
+  const r = await page.evaluate(async () => {
+    const log = [];
+    const conn = name => ({ name, subscribeMessage(cb, msg) { log.push(`${name}:sub:${msg.type}`); return Promise.resolve(() => log.push(`${name}:unsub:${msg.type}`)); } });
+    const A = conn('A'), B = conn('B'), C = conn('C');
+    const cards = [document.getElementById('card'), document.getElementById('card2')];
+    const impls = [...document.querySelectorAll('freshairiq-house-card-impl')];
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    const count = (name, what) => log.filter(x => x === `${name}:${what}:weather/subscribe_forecast`).length;
+    const open = name => count(name, 'sub') - count(name, 'unsub');   // forecast subscriptions still running on a connection
+    for (const c of cards) c.hass = { ...c.hass, connection: A };
+    for (const el of impls) { el._selected = { type: 'weather', id: '' }; el._render(); }
+    await tick();
+    const opened = open('A');
+    for (const el of impls) el._queue = () => {};           // no drawing from here on (a hidden tab draws nothing)
+    cards[0].hass = { ...cards[0].hass, connection: B }; await tick();
+    const first = { openA: open('A'), openB: open('B') };
+    cards[1].hass = { ...cards[1].hass, connection: C }; await tick();
+    const second = { openA: open('A'), openB: open('B'), openC: open('C') };
+    return { opened, first, second };
+  });
+  expect(r.opened).toBe(2);                                        // hourly and daily, shared by both cards on A
+  expect(r.first).toEqual({ openA: 2, openB: 2 });                 // the second card still shows them on A; the first moved to B
+  expect(r.second).toEqual({ openA: 0, openB: 2, openC: 2 });      // the last card left A: both ended at once, nothing left behind
+});
+
 test('0.26.7.0 wind directions as numbers or compass texts (EN/DE), turned into the plan with its north', async ({ page }) => {
   await mount(page);
   const r = await page.evaluate(async src => {
@@ -3835,6 +3866,20 @@ test('0.26.7.0 visual acceptance: sun, rain, storm, snow, thunder, day and night
         const x = c.getContext('2d'); x.drawImage(ia, 0, 0); const da = x.getImageData(0, 0, c.width, c.height).data; x.drawImage(ib, 0, 0); const db = x.getImageData(0, 0, c.width, c.height).data;
         let worst = 0; for (let k = 0; k < da.length; k += 4) worst = Math.max(worst, Math.abs(da[k] - db[k]), Math.abs(da[k + 1] - db[k + 1]), Math.abs(da[k + 2] - db[k + 2])); return worst;
       }, [`data:image/png;base64,${plain[boxes.indexOf(changed[0])].toString('base64')}`, `data:image/png;base64,${world[boxes.indexOf(changed[0])].toString('base64')}`]);
+      if (diff > 40) {
+        // 0.26.7.0 CI fix: evidence for the analysis (uploaded by the workflow when a test fails) – both pictures of the label,
+        // the whole screen and what lies under the most changed pixel; the check below is unchanged
+        const i = boxes.indexOf(changed[0]), box = boxes[i];
+        fs.writeFileSync(testInfo.outputPath(`${name}-label-plain.png`), plain[i]);
+        fs.writeFileSync(testInfo.outputPath(`${name}-label-world.png`), world[i]);
+        fs.writeFileSync(testInfo.outputPath(`${name}-screen.png`), await page.screenshot({ fullPage: true }));
+        const where = await impl(page).evaluate((el, b) => {
+          const pts = [[b.x + b.width / 2, b.y + b.height / 2], [b.x + 1, b.y + 1], [b.x + b.width - 1, b.y + b.height - 1]];
+          return { box: b, dpr: devicePixelRatio, scroll: [scrollX, scrollY], at: pts.map(([x, y]) => ({ x, y, stack: el.shadowRoot.elementsFromPoint(x - scrollX, y - scrollY).slice(0, 8).map(n => `${n.tagName}.${n.getAttribute('class') || ''}`) })),
+            text: [...el.shadowRoot.querySelectorAll('g.tag text')].map(t => { const r = t.getBoundingClientRect(); return { t: t.textContent, x: Math.floor(r.x), y: Math.floor(r.y), w: Math.ceil(r.width), h: Math.ceil(r.height), font: getComputedStyle(t).fontFamily }; }) };
+        }, box);
+        fs.writeFileSync(testInfo.outputPath(`${name}-where.json`), JSON.stringify({ diff, ...where }, null, 1));
+      }
       expect(diff, `${name}: label pixels changed`).toBeLessThanOrEqual(40);   // a shade of the shadow below, never an effect over the text
     }
     await testInfo.attach(`weather-${name}`, { body: await page.screenshot(), contentType: 'image/png' });

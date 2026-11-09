@@ -503,7 +503,8 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (this._editing) this._editing.hass = hass; // the editor keeps its own state; no re-render on hass
     // re-audit F01: a new Home Assistant connection – subscribe there once and release the old ones
     const conn = hass && hass.connection;
-    if (this._subConn && conn !== this._subConn) { this._stop(); this._start(); return; }
+    // 0.26.7.0 CI fix: the forecasts move with it at once (they followed only with the next drawing – none in a hidden tab)
+    if (this._subConn && conn !== this._subConn) { this._stop(); this._start(); this._syncForecast(); return; }
     if (first || (!this._subs.length && !this._failed)) this._start();
     // 0.26.6.1(7): day, twilight and night follow sun.sun – redraw when the phase changes, not on every state
     // 0.26.6.1(10): also when the sun moves on within the same phase – in 2° steps of azimuth and elevation (about
