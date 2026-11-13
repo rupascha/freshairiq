@@ -159,9 +159,19 @@ def test_model_fallback_can_close_after_15_minutes_when_model_requires_it():
         session_active=True, session_elapsed_min=30, session_start_temp=21,
         learning_rate=0.03, session_fresh_measurements=0,
     )
+    # Testvermerk 0.26.7.0 (F11): 30 min past a 20 min "maximum" no longer closes – the model still sees ~2.9 g/m³
+    # drier air. The fallback itself stays ready and closes once the model says the air no longer dries.
     result = evaluate_room(room, options, False)
     assert result.close_decision_ready
     assert result.close_decision_model_fallback
+    assert result.action == "Continue ventilating" and not result.close_recommended
+    exhausted = RoomInput(
+        "living", "Living room", 20, 58, 15, 78, 80, True, 1800,
+        session_active=True, session_elapsed_min=30, session_start_temp=21,
+        learning_rate=0.03, session_fresh_measurements=0,
+    )
+    result = evaluate_room(exhausted, options, False)
+    assert result.close_decision_model_fallback
     assert result.action == "Close"
-    assert result.close_recommended
+    assert result.close_recommended and result.reason.startswith("Sensor updates are missing")
 

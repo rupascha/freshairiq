@@ -389,6 +389,25 @@ def _strategy_context_validation_parts(
     )
 
 
+def _usage_behaviour_component(valid: Any) -> dict[str, Any]:
+    """0.26.7.0 "Nutzungsverhalten & Empfehlungen": recommendations somebody could act on, kept apart from episodes
+    while everybody was away or FreshAirIQ's own fan automation carried them out. Observation only: no timing,
+    repetition or notification frequency is changed from it, protection and CO₂/critical humidity warnings never."""
+    actionable = sum(int(_num(r.get("behaviour_actionable"))) for r in valid)
+    followed = sum(int(_num(r.get("behaviour_actionable_followed"))) for r in valid)
+    unactionable = sum(int(_num(r.get("behaviour_unactionable"))) for r in valid)
+    streak = max((int(_num(r.get("behaviour_ignored_streak"))) for r in valid), default=0)
+    maturity = min(actionable / (max(len(valid), 1) * 30.0), 1.0) * 100.0
+    detail = (f"{actionable} Empfehlungen mit Handlungsmöglichkeit · {round(100.0 * followed / actionable)} % umgesetzt · "
+              f"{unactionable} ohne Handlungsmöglichkeit · längste Ignorierserie {streak}"
+              if actionable else f"Noch keine Empfehlung mit Handlungsmöglichkeit · {unactionable} ohne Handlungsmöglichkeit")
+    return _component("usage_behaviour", "Nutzungsverhalten & Empfehlungen", actionable, maturity, max(len(valid), 1) * 30, detail,
+                      description="Beobachtet, welche Empfehlungen umgesetzt werden – nur wenn jemand handeln konnte "
+                                  "(nicht bei Abwesenheit aller oder wenn FreshAirIQ selbst lüftet). Ändert keine Empfehlung "
+                                  "und keine Benachrichtigung; Schutz-, CO₂- und kritische Feuchtewarnungen bleiben immer unverändert.",
+                      observation_only=True)
+
+
 def _learning_components_summary(
     *,
     calendar_span_days: Any, completed_seasons: Any, duration_samples: Any, evidence: Any,
@@ -430,6 +449,7 @@ def _learning_components_summary(
                    description="Misst die objektive Prognosegüte, getrennt vom adaptiven Lernmodell.", quality_percent=_num(reliability_score) if reliability_score is not None else None),
         _component("post_close", "Feuchtepuffer", stabilization_samples, stabilization_maturity, 50, stabilization_detail,
                    description="Vermisst Nachstabilisierung und hygroskopischen Feuchterückstrom.", observation_only=True),
+        _usage_behaviour_component(valid),
     ]
 
     # UI evidence units: raw polling samples are deliberately not presented as

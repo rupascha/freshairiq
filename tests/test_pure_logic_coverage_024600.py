@@ -67,6 +67,9 @@ def test_live_coach_finite_guard_close_extend_and_shortened():
     assert out2['live_coach_state']=='shortened'
     ready={**fast,'close_decision_ready':True,'session_elapsed_min':12,'session_recommended_duration_min':10}
     out3=live.refine_live_recommendation({'r':ready},options,rec)
+    # Testvermerk 0.26.7.0 (F11): the coach closes only when the reference air no longer dries
+    assert out3['kind']=='continue'
+    out3=live.refine_live_recommendation({'r':{**ready,'delta_g_m3':0.2}},options,rec)
     assert out3['kind']=='close'
     already=live.refine_live_recommendation({'r':active},options,{'kind':'close'})
     assert already['live_coach_remaining_min']==0

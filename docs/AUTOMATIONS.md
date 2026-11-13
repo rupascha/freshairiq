@@ -127,7 +127,7 @@ From 0.26.5.5 the room result's `fan_automation` also carries `follow_up_until` 
 | `freshairiq_house_recommendation` | one coherent whole-home recommendation | on change of kind/rooms/instruction (0.26.5.3+: without the running countdown – "about 18 min left" no longer fires a new event); silent after restart | announcements to everyone |
 | `freshairiq_notification` | exactly the push texts (information **and** calls to action, see `type`) | at most once per notification interval (default 90 min) per type/room | Telegram, Alexa |
 
-Since 2026-10-16 the whole-home decision keeps a close recommendation it already issued while the combined 5-minute return merely wobbles around the threshold (125 % hysteresis); hard close reasons (maximum duration, cooling) still act immediately.
+Since 2026-10-16 the whole-home decision keeps a close recommendation it already issued while the combined 5-minute return merely wobbles around the threshold (125 % hysteresis); hard close reasons still act immediately. Since 0.26.7.0 there is no maximum airing duration: FreshAirIQ closes only when the outdoor/reference air no longer dries (more humid or at most 0.4 g/m³ drier) or the temperature limit you set for airing is reached.
 
 ### `freshairiq_notification` – every FreshAirIQ message as an event (0.26.4.9+)
 

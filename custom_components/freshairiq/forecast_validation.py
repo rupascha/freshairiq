@@ -20,7 +20,13 @@ VALIDATION_RETENTION_DAYS = 30
 VALIDATION_MAX_RECORDS = 500
 
 
-START_FORECAST_CONTEXT_VERSION = 2
+# 0.26.7.0 (#28): v3 replays the start forecast physically – without the humidity-target cap of the recommendation
+# layer. v2 contexts were replayed with that cap (a room below target_rh was predicted ~0 ml while the measured removal
+# is absolute) and are not scored any more, so capped and physical predictions never share one statistic.
+START_FORECAST_CONTEXT_VERSION = 3
+# what the measured removal is compared with: the physical start-curve replay (net of the room's own moisture source)
+PREDICTION_BASIS = "physical_start_replay"
+VALIDATION_RECORD_VERSION = 3
 
 _FORECAST_CONTROL_KEYS = (
     "min_return_next_5_min_ml",
@@ -89,8 +95,13 @@ def freeze_start_forecast_context(
 def evaluate_start_forecast_at_duration(
     context: dict[str, Any] | None,
     duration_min: float,
+    *,
+    limit_to_target: bool = False,
 ) -> dict[str, Any] | None:
     """Replay a frozen start model at the actual measurement duration.
+
+    ``limit_to_target`` (#28) reproduces the recommendation layer's humidity-target cap for consumers that
+    show the expected airing progress (live coach); validation and learning always use the physical replay.
 
     This is a genuine start forecast: only start-time state/model inputs are
     used.  The end timestamp selects the point on that frozen forecast curve;
@@ -127,7 +138,9 @@ def evaluate_start_forecast_at_duration(
     forecast = horizon_forecast(
         horizon_min=duration,
         target_ah=float(context.get("target_ah")),
-        cap_positive_to_target=duration > 5.0,
+        # #28: the measured removal is absolute, so the replay is too. The humidity-target cap belongs to the
+        # recommendation layer (how long it is worth airing), not to validating a physical removal prediction.
+        cap_positive_to_target=bool(limit_to_target and duration > 5.0),
         # 0.26.4.7: same volume-scaled close threshold as the live forecast.
         min_return_next_5_min_ml=scaled_min_return(controls.get("min_return_next_5_min_ml", 25.0), args.get("volume_m3")),
         max_temp_loss_next_5_min_c=float(controls.get("max_temp_loss_next_5_min_c", 0.6)),
@@ -161,9 +174,15 @@ def evaluate_start_forecast_at_duration(
     if float(forecast.get("temperature_change_c", 0.0) or 0.0) >= 0.0:
         cost = 0.0
 
+    # #28: marked, not hidden – the recommendation layer would have limited this prediction to the humidity target
+    target_gap_ml = max((float(args["current_ah"]) - float(context.get("target_ah"))) * float(args["volume_m3"]), 0.0)
+    physical_ml = float(forecast.get("physical_moisture_effect_ml", 0.0) or 0.0)
     return {
         "duration_min": round(duration, 3),
         "predicted_removed_ml": float(forecast.get("net_moisture_change_ml", 0.0) or 0.0),
+        "prediction_basis": "target_limited_start_replay" if limit_to_target else PREDICTION_BASIS,
+        "target_limited": bool(duration > 5.0 and physical_ml > target_gap_ml + 0.5),
+        "target_gap_ml": round(target_gap_ml, 1),
         "predicted_temperature_change_c": float(forecast.get("temperature_change_c", 0.0) or 0.0),
         "predicted_cost": float(cost or 0.0),
         "confidence": int(forecast.get("confidence", 0) or 0),
@@ -334,7 +353,7 @@ def build_validation_record(
             else:
                 invalid_reason = "Zeitgleiche Startprognose vorhanden, aber keine Session erfüllte alle objektiven Validierungskriterien."
                 invalid_code = "validation_criteria_not_met"
-        elif any(item.get("prediction_reference") == "session_start_curve_v2" for item in session_rows):
+        elif any(str(item.get("prediction_reference") or "").startswith("session_start_curve_v") for item in session_rows):
             invalid_reason = "Eingefrorene Startprognose vorhanden, konnte aber nicht auf dieselbe Messdauer der abgeschlossenen Lüftung ausgewertet werden."
             invalid_code = "duration_mismatch"
         else:
@@ -345,7 +364,8 @@ def build_validation_record(
         invalid_code = "no_completed_room_sessions"
 
     return {
-        "validation_version": 2,
+        "validation_version": VALIDATION_RECORD_VERSION,
+        "prediction_basis": PREDICTION_BASIS,
         "model_version": str(model_version),
         "started_at": result.get("started_at"),
         "ended_at": result.get("ended_at"),
@@ -399,6 +419,10 @@ def _collect_session_validation(
         predicted_cost = _number(item.get("predicted_cost"))
         actual_cost = _number(item.get("cost"))
         horizon = _number(item.get("prediction_horizon_min"))
+        # 0.26.7.0 (support case C): a time-aligned replay sets its horizon to the measured duration, so
+        # "duration - horizon" was always 0.0 – not a perfect close time. The close time predicted at the
+        # start is compared instead; without one there is no close-time error (None, never 0.0).
+        close_horizon = _number(item.get("prediction_close_min")) if item.get("prediction_time_aligned") else horizon
         duration = _number(item.get("validation_duration_min")) if item.get("validation_duration_min") is not None else _number(item.get("duration_min"))
         confidence = _number(item.get("prediction_confidence"))
 
@@ -489,8 +513,8 @@ def _collect_session_validation(
         else:
             row["cost_error"] = None
 
-        if is_comparable and horizon is not None and duration is not None:
-            duration_error = duration - horizon
+        if is_comparable and close_horizon is not None and duration is not None:
+            duration_error = duration - close_horizon
             duration_errors.append(duration_error)
             row["close_time_error_min"] = round(duration_error, 1)
         else:
@@ -572,7 +596,10 @@ def validation_summary(records: list[dict[str, Any]], *, days: int = 30) -> dict
         if stamp.date() >= cutoff:
             scoped.append(item)
 
-    valid = [item for item in scoped if item.get("valid")]
+    # #28: records of the earlier, target-capped replay (validation_version < 3) stay in the history unchanged but are
+    # not mixed into today's errors – the summary says how many were set aside
+    previous_basis = [item for item in scoped if item.get("valid") and int(item.get("validation_version") or 0) < VALIDATION_RECORD_VERSION]
+    valid = [item for item in scoped if item.get("valid") and int(item.get("validation_version") or 0) >= VALIDATION_RECORD_VERSION]
     moisture_abs = [float(item["moisture_abs_error_ml"]) for item in valid if _number(item.get("moisture_abs_error_ml")) is not None]
     moisture_signed = [float(item["moisture_error_ml"]) for item in valid if _number(item.get("moisture_error_ml")) is not None]
     temp_mae = [float(item["temperature_mae_c"]) for item in valid if _number(item.get("temperature_mae_c")) is not None]
@@ -625,11 +652,13 @@ def validation_summary(records: list[dict[str, Any]], *, days: int = 30) -> dict
     room_summary.sort(key=lambda item: (-int(item.get("samples", 0)), str(item.get("name", ""))))
 
     return {
-        "validation_engine": "v2",
+        "validation_engine": "v3",
+        "prediction_basis": PREDICTION_BASIS,
         "period_days": days,
         "record_count": len(scoped),
         "valid_record_count": len(valid),
-        "invalid_record_count": len(scoped) - len(valid),
+        "previous_basis_record_count": len(previous_basis),
+        "invalid_record_count": len(scoped) - len(valid) - len(previous_basis),
         # 0.26.4.7 (Hub cluster FAIQ-FORECAST-001): exports only showed *that*
         # comparisons were unusable; the codes tell why (no free text exported).
         "invalid_reason_counts": _invalid_reason_counts(item for item in scoped if not item.get("valid")),

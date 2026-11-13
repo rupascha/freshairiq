@@ -18,7 +18,9 @@ from .const import (
     MOISTURE_SOURCE_DRYER,
     MOISTURE_SOURCE_IRONING_STATION,
     MOISTURE_SOURCE_LAUNDRY_DRYING,
+    MOISTURE_SOURCE_DISHWASHER,
 )
+from .dishwasher import AFTER_EVAPORATION, ATTRIBUTION_PHASES, DOOR_OPEN, RELEASE_PHASES, effective_phase
 from .energy import exchanged_air_fraction
 
 # Post-close rebound guard (0.26.4.7): minutes after closing in which a newly
@@ -38,6 +40,7 @@ _LABELS = {
     MOISTURE_SOURCE_DRYER: "Trockner",
     MOISTURE_SOURCE_IRONING_STATION: "Bügelstation",
     MOISTURE_SOURCE_LAUNDRY_DRYING: "Wäsche trocknen",
+    MOISTURE_SOURCE_DISHWASHER: "Geschirrspüler",
 }
 
 
@@ -120,7 +123,41 @@ def _source_signatures(
         matches.append(MOISTURE_SOURCE_LAUNDRY_DRYING)
     if MOISTURE_SOURCE_IRONING_STATION in configured and monotonic and temp_rise >= 0.15 and ah_rise >= 0.30 and source_rate >= 4.0 and generated_ml >= 22.0:
         matches.append(MOISTURE_SOURCE_IRONING_STATION)
+    # 0.26.7.0 (#18): a dishwasher drying with the door ajar / opened after the end – a short warm vapour burst,
+    # clearly less heat than cooking (>= 0.40 °C) and less water than a shower (>= 6 ml/min); people alone stay
+    # below 2.5 ml/min. The device signal, where set up, names it without this guess.
+    if MOISTURE_SOURCE_DISHWASHER in configured and samples >= 3 and monotonic and 0.05 <= temp_rise < 0.40 and 0.15 <= ah_rise < 0.60 and 2.5 <= source_rate < 6.0 and generated_ml >= 12.0:
+        matches.append(MOISTURE_SOURCE_DISHWASHER)
     return matches
+
+
+# 0.26.7.0 (F09): source-independent moisture balance while the room is aired. The water in the room rises although
+# clearly drier air is coming in – that is only possible with an internal load, whatever it is (and whether or not
+# it was configured or its own signature matched). Noise, held (stale) values and implausible jumps are filtered.
+BALANCE_MIN_REFERENCE_GAP_G_M3 = 0.5   # reference air at least this much drier than the room
+BALANCE_MIN_AH_RISE_G_M3 = 0.25        # rise against the baseline: above sensor quantisation (~0.1 g/m³)
+BALANCE_MAX_AH_RISE_G_M3 = 3.0         # more within minutes is a sensor jump, not a room load
+BALANCE_MAX_PEAK_RATE_G_M3_MIN = 1.5   # one step faster than this is a jump (e.g. a sensor swap / reset)
+BALANCE_MIN_RATE_ML_MIN = 0.8          # people alone in a ventilated room stay below this net generation
+BALANCE_MIN_SAMPLES = 3                # at least three distinct, new readings (a held value adds none)
+
+
+def ventilated_moisture_balance(
+    *, ventilated: bool, room_ah: float, reference_ah: float, ah_rise: float, interval_min: float,
+    generated_ml: float, source_rate: float, volume_m3: float, pattern: dict[str, float],
+) -> bool:
+    """True when the moisture balance of an aired room proves an internal load (F09, source-independent)."""
+    if not ventilated or interval_min <= 0:
+        return False
+    return bool(
+        reference_ah <= room_ah - BALANCE_MIN_REFERENCE_GAP_G_M3
+        and int(pattern.get("samples", 0)) >= BALANCE_MIN_SAMPLES
+        and pattern.get("ah_monotonic", 0.0) >= 0.66
+        and BALANCE_MIN_AH_RISE_G_M3 <= ah_rise <= BALANCE_MAX_AH_RISE_G_M3
+        and pattern.get("peak_ah_rate", 0.0) <= BALANCE_MAX_PEAK_RATE_G_M3_MIN
+        and generated_ml >= max(4.0, 0.3 * max(float(volume_m3), 0.0))
+        and source_rate >= BALANCE_MIN_RATE_ML_MIN
+    )
 
 
 def _identify_source(matches: list[str]) -> tuple[str, str | None, str]:
@@ -138,6 +175,7 @@ def _identify_source(matches: list[str]) -> tuple[str, str | None, str]:
         MOISTURE_SOURCE_WASHING_MACHINE: "Waschmaschine erkannt. Das moderate, anhaltende Feuchte- und Wärmemuster passt zur konfigurierten Quelle.",
         MOISTURE_SOURCE_IRONING_STATION: "Bügelstation erkannt. Das Wärme- und Feuchtemuster passt zur konfigurierten Quelle.",
         MOISTURE_SOURCE_LAUNDRY_DRYING: "Wäsche aufhängen erkannt. Der langsame, anhaltende Feuchteanstieg ohne deutliche Wärmequelle passt zur konfigurierten Quelle.",
+        MOISTURE_SOURCE_DISHWASHER: "Geschirrspüler erkannt. Der kurze, warme Feuchteanstieg passt zur konfigurierten Quelle; FreshAirIQ berücksichtigt die zusätzliche Feuchtelast.",
     }.get(key, "Zusätzliche interne Feuchtigkeit erkannt.")
     return label, key, text
 
@@ -166,6 +204,7 @@ def update_moisture_source(
     airflow_factor: float,
     cross_ventilation: bool,
     configured_sources: list[str] | tuple[str, ...] | None,
+    device_phase: str | None = None,
 ) -> dict[str, Any]:
     """Update and return moisture-source state for one room.
 
@@ -252,6 +291,9 @@ def update_moisture_source(
         window_open=window_open,
     )
 
+    identified_source, label, source_message, confidence = _device_signal(
+        memory, now=now, phase=device_phase, active_before=active_before, identified_source=identified_source,
+        label=label, source_message=source_message, confidence=confidence)
     active = bool(memory.get("moisture_source_active", False))
     if active and not identified_source:
         identified_source = memory.get("moisture_source_identified_source")
@@ -283,6 +325,8 @@ def update_moisture_source(
         "absolute_humidity_rise_g_m3": round(ah_rise, 3),
         "temperature_rise_c": round(temp_rise, 2),
         "window_min": round(interval_min, 1),
+        "detection": memory.get("moisture_source_detection") if active else None,
+        "device_phase": memory.get("dishwasher_phase"),
         "started_at": memory.get("moisture_source_started_at"),
         "last_ended_at": memory.get("moisture_source_last_ended_at"),
         "changed": bool(
@@ -345,14 +389,22 @@ def _source_from_baseline(
         # Strong unconfigured loads may still be recognised as an unspecified
         # internal moisture load. Configured activities, however, are activated
         # only by their own signature: configuration is never evidence by itself.
+        # 0.26.7.0 (F09): also beside configured sources – a strong load whose own signature did not match is still
+        # a load (named generally, never as the configured activity).
         generic_strong = (
-            not configured
-            and source_rate >= 7.0
+            source_rate >= 7.0
             and generated_ml >= 40.0
             and ah_rise >= 0.45
             and (pattern.get("ah_monotonic", 0.0) >= 0.66 or pattern.get("samples", 0.0) < 3)
         )
-        detected = bool(matches) or generic_strong
+        balance = ventilated_moisture_balance(
+            ventilated=bool(base.get("open")) and bool(window_open),
+            room_ah=(old_ah + float(absolute_humidity_g_m3)) / 2.0, reference_ah=(old_ref + float(reference_ah_g_m3)) / 2.0,
+            ah_rise=ah_rise, interval_min=interval_min, generated_ml=generated_ml, source_rate=source_rate,
+            volume_m3=volume_m3, pattern=pattern)
+        detected = bool(matches) or generic_strong or balance
+        if detected:  # diagnostics: which evidence recognised the load (F09/F10 traceability)
+            memory["moisture_source_detection"] = "signature" if matches else "generic" if generic_strong else "balance"
 
         # 0.26.4.7 (support case "Lüften empfohlen 5 min nach dem Lüften"):
         # after a long airing, walls, towels and furniture release moisture again
@@ -428,3 +480,35 @@ def _source_from_baseline(
         ah_rise, confidence, generated_ml, identified_source, interval_min, label, observed_change_ml,
         source_message, source_rate, temp_rise, ventilation_change_ml,
     )
+
+
+DEVICE_DRYING_MESSAGE = "Geschirrspüler trocknet (Gerätesignal). FreshAirIQ rechnet mit zusätzlicher Feuchte, bevor sie gemessen wird."
+DEVICE_FINISHED_MESSAGE = "Geschirrspüler fertig (Gerätesignal). Der Feuchteanstieg passt dazu; FreshAirIQ berücksichtigt die zusätzliche Feuchtelast."
+DEVICE_DOOR_MESSAGE = "Geschirrspüler-Tür geöffnet (Gerätesignal). Warmer Dampf entweicht jetzt; FreshAirIQ rechnet mit zusätzlicher Feuchte."
+DEVICE_AFTER_MESSAGE = "Geschirrspüler: Nachverdunstung nach Trocknung oder Türöffnung. Der Feuchteanstieg passt dazu; FreshAirIQ berücksichtigt die zusätzliche Feuchtelast."
+
+
+def _device_signal(memory: dict[str, Any], *, now: datetime, phase: str | None, active_before: bool, identified_source: Any,
+                   label: Any, source_message: Any, confidence: Any) -> tuple[Any, Any, Any, Any]:
+    """0.26.7.0 (#18): the dishwasher's own signal. Drying counts as a source at once (announced by the device, not
+    guessed from the climate); after the end a humidity rise is named "dishwasher". Washing, idle or no signal change
+    nothing – the climate decides as before, and the source ends by the same hysteresis (six quiet minutes).
+    F10: a door opening releases vapour like drying; after either, the after-evaporation names a measured rise."""
+    phase = effective_phase(memory, phase, now) if phase is not None or memory.get("dishwasher_release_at") else None
+    if phase is None:
+        memory.pop("dishwasher_phase", None)  # no device signal: nothing persisted
+    else:
+        memory["dishwasher_phase"] = phase
+    if phase in RELEASE_PHASES:
+        memory["moisture_source_detection"] = "device"
+        memory["moisture_source_last_positive_at"] = now.isoformat()
+        if not active_before:
+            memory["moisture_source_started_at"] = now.isoformat()
+        memory["moisture_source_active"] = True
+        memory["moisture_source_last_ended_at"] = None
+        message = DEVICE_DOOR_MESSAGE if phase == DOOR_OPEN else DEVICE_DRYING_MESSAGE
+        return MOISTURE_SOURCE_DISHWASHER, _LABELS[MOISTURE_SOURCE_DISHWASHER], message, max(int(confidence or 0), 80)
+    if phase in ATTRIBUTION_PHASES and memory.get("moisture_source_active") and not identified_source:
+        message = DEVICE_AFTER_MESSAGE if phase == AFTER_EVAPORATION else DEVICE_FINISHED_MESSAGE
+        return MOISTURE_SOURCE_DISHWASHER, _LABELS[MOISTURE_SOURCE_DISHWASHER], message, confidence
+    return identified_source, label, source_message, confidence

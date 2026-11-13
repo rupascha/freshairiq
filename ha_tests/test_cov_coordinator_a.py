@@ -521,7 +521,9 @@ def test_recommendation_active_session_branches() -> None:
     assert "aktiven Feuchtequelle" in reasons[-1]
 
     action, _t, reasons = _rec(_result(active=True, close_recommended=True))
-    assert (action, reasons[-1]) == ("Close", "Lüftungsziel erreicht oder zusätzlicher Nutzen ist zu gering")
+    # Testvermerk 0.26.7.0 (F11): the close text names the physical reason instead of "target reached / benefit low"
+    assert (action, reasons[-1]) == ("Close", "Die Außenluft ist kaum noch trockener als die Raumluft (höchstens 0.4 g/m³); "
+                                               "weiteres Lüften entfernt keine nennenswerte Feuchtigkeit mehr")
     _a, _t, reasons = _rec(_result(active=True, close_recommended=True, close_decision_model_fallback=True))
     assert "ersatzweise" in reasons[-1]
     _a, _t, reasons = _rec(_result(active=True, close_recommended=True, close_decision_model_fallback=True,

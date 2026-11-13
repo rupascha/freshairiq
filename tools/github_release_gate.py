@@ -16,9 +16,11 @@ REQUIRED_ROOT = ("README.md", "LICENSE", "hacs.json", "CHANGELOG.md", ".coverage
 INSTALL_ASSET = "freshairiq.zip"
 REQUIRED_COMPONENT = ("__init__.py", "manifest.json", "config_flow.py")
 REQUIRED_BRAND = ("icon.png", "icon@2x.png", "dark_icon.png", "dark_icon@2x.png", "logo.png", "logo@2x.png", "dark_logo.png", "dark_logo@2x.png")
-FORBIDDEN_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules", "quality_reports"}
-FORBIDDEN_NAMES = {".coverage", "coverage.xml", ".DS_Store", "Thumbs.db"}
-FORBIDDEN_SUFFIXES = {".pyc", ".pyo"}
+FORBIDDEN_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules", "quality_reports",
+                   # 0.26.7.0 (N9): test runner output and caches (a CLEAN zip carried test-results/.last-run.json)
+                   "test-results", "playwright-report", "blob-report", ".hypothesis", "htmlcov", ".tox", ".nox", ".cache"}
+FORBIDDEN_NAMES = {".coverage", "coverage.xml", ".DS_Store", "Thumbs.db", ".last-run.json"}
+FORBIDDEN_SUFFIXES = {".pyc", ".pyo", ".tmp", ".swp", ".rej"}
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.\d+)?(?:[-+][0-9A-Za-z.-]+)?$")
 
 

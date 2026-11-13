@@ -20,6 +20,7 @@ from typing import Any
 from .automation_events import CATEGORY_STATUS, action_code, notification_category, ventilation_measures_active
 from .close_wording import fan_only, house_handled_by_automation
 from .fan_automation import fan_automation, handled_label
+from .notification_adaptation import notification_adaptation
 from .notification_text import auto_room_event  # noqa: F401 - imported from here by older callers
 from .open_connections import connection_map
 
@@ -32,6 +33,7 @@ PUSH_PENDING = "push_pending"
 PUSH_RETRY_WINDOW_MIN = 30.0
 PUSH_RETRY_STEP_MIN = 1.0
 STATUS_OPTION = "notify_status_messages"
+REMINDERS_SENT = "action_reminders_sent"
 
 
 def status_messages_wanted(options: dict[str, Any], event_type: str) -> bool:
@@ -107,7 +109,7 @@ def _still_open(action: Any, room: dict[str, Any]) -> bool:
 
 def room_notification_events(
     rooms: dict[str, Any], store: Any, now: datetime, options: dict[str, Any], house: dict[str, Any] | None,
-    *, sensor_alerts: Any,
+    *, sensor_alerts: Any, quiet: bool = False,
 ) -> tuple[dict[str, list[dict[str, Any]]], bool]:
     """Room messages due in this cycle and whether the persisted state changed.
 
@@ -123,11 +125,14 @@ def room_notification_events(
             continue
         mem = store.room(key)
         action = effective_room_action(room, house, rooms, connections)
+        # 0.26.7.0 (behaviour learning): how this room's reminders are adapted – visible for diagnostics
+        adaptation = room["notification_adaptation"] = notification_adaptation(room, options, interval)
         if action != mem.get("last_action") and _reopen_held(action, room, mem, now, options):
             pass  # announced once the repeat cooldown is over (the last action stays)
         elif action != mem.get("last_action"):
             mem["last_action"] = action
             mem["action_notified_at"] = now.isoformat()
+            mem[REMINDERS_SENT] = 0
             mem.pop(PUSH_PENDING, None)  # F4: a push of the previous action is no longer valid
             changed = True
             if action in events:
@@ -138,14 +143,9 @@ def room_notification_events(
             if due:
                 events["retry"].append(room)
         elif interval is not None and action in ROOM_EVENT_ACTIONS and _still_open(action, room) and not _automatic(action, room):
-            notified = _parse(mem.get("action_notified_at"))
-            if notified is None:
-                # state from before 0.26.5.3 or a damaged value: count from now
-                mem["action_notified_at"] = now.isoformat()
-                changed = True
-            elif now - notified >= timedelta(minutes=interval):
-                mem["action_notified_at"] = now.isoformat()
-                changed = True
+            due, touched = _reminder_due(room, mem, now, adaptation, quiet=quiet)
+            changed = changed or touched
+            if due:
                 events["reminder"].append(room)
         if room.get("data_quality") != "ok" and sensor_alerts(room):
             events["sensor"].append(room)
@@ -154,6 +154,26 @@ def room_notification_events(
         if room.get("mould_level") in {"High", "Very high"} and not ventilation_measures_active(room):
             events["mould"].append(room)
     return events, changed
+
+
+def _reminder_due(room: dict[str, Any], mem: dict[str, Any], now: datetime, adaptation: dict[str, Any], *, quiet: bool = False) -> tuple[bool, bool]:
+    """(reminder due now, persisted state changed) – after the (adapted) interval, at most ``max_reminders`` times.
+    A reminder in the quiet night window (push held back) does not use up the limit."""
+    notified = _parse(mem.get("action_notified_at"))
+    if notified is None:
+        # state from before 0.26.5.3 or a damaged value: count from now
+        mem["action_notified_at"] = now.isoformat()
+        return False, True
+    if now - notified < timedelta(minutes=float(adaptation["reminder_interval_min"])):
+        return False, False
+    limit = adaptation.get("max_reminders")
+    sent = int(mem.get(REMINDERS_SENT) or 0) if str(mem.get(REMINDERS_SENT) or "0").isdigit() else 0
+    if limit is not None and sent >= int(limit):
+        return False, False  # no reminder loop: the action stays visible on the dashboard
+    mem["action_notified_at"] = now.isoformat()
+    mem[REMINDERS_SENT] = sent if quiet else sent + 1
+    room["reminder_summarize"] = bool(adaptation.get("summarize"))
+    return True, True
 
 
 def _push_retry(action: Any, room: dict[str, Any], mem: dict[str, Any], now: datetime) -> tuple[bool, bool]:

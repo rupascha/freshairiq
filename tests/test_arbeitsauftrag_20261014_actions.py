@@ -81,10 +81,22 @@ def test_f01_clearly_higher_return_still_reopens_continue():
 
 
 def test_f01_hard_close_is_never_held_back_by_hysteresis_or_return():
+    # Testvermerk 0.26.7.0 (F11): there is no maximum airing duration any more. 25 min past a 20 min limit with a
+    # large combined return and clearly drier air is no longer a hard close – the house keeps "continue". The hard
+    # close itself is unchanged for the remaining hard criterion (heat loss with poor efficiency): it is still never
+    # held back by the hysteresis or the return.
     thr = _threshold()
-    # Maximum duration exceeded: hard close regardless of a large combined return.
     seen = _run([thr * 3, thr * 3], previous={"kind": "continue", "room_keys": ["bad", "schlafzimmer"]}, elapsed=25.0)
-    assert seen == [("close", "Close", "Close"), ("close", "Close", "Close")]
+    assert seen == [("continue", "Continue ventilating", "Continue ventilating")] * 2
+    previous = {"kind": "continue", "room_keys": ["bad", "schlafzimmer"]}
+    for _ in range(2):
+        rooms = _active_rooms(thr * 3, elapsed=25.0, temp_next5=-1.0)
+        for room in rooms.values():
+            room["efficiency_ml_per_01c"] = 1.0
+        rec = stabilise_recommendation({"kind": "close", "room_keys": list(rooms)}, rooms, OPTIONS, previous=previous)
+        synchronize_room_presentation_actions(rec, rooms)
+        assert (rec["kind"], rooms["bad"]["action"], rooms["schlafzimmer"]["action"]) == ("close", "Close", "Close")
+        previous = {"kind": rec["kind"], "room_keys": rec["room_keys"]}
 
 
 def test_f01_hysteresis_only_applies_to_the_rooms_it_closed():

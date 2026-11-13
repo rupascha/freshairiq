@@ -262,6 +262,7 @@ class RoomSessionMixin:
         # forecast calculated after the physical opening. Never carry a
         # previous recommendation/live forecast into a new session.
         mem["session_predicted_removed_ml"] = None
+        mem["session_target_limited_removed_ml"] = None
         mem["session_predicted_temperature_change_c"] = None
         mem["session_predicted_cost"] = None
         mem["session_prediction_confidence"] = None

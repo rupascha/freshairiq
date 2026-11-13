@@ -3,9 +3,35 @@ from __future__ import annotations
 
 from typing import Any
 
-from .model import CO2_HYSTERESIS_PPM, SUMMER_WARMING_CLOSE_REASON, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
+from .model import CO2_HYSTERESIS_PPM, SUMMER_WARMING_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, ROOM_TOO_DRY_CLOSE_REASON, co2_release_configured, co2_release_ppm, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
 from .outdoor_air import outdoor_pm25_blocked, pm25_reason
 
+
+
+def _co2_band_reason(co2: float, co2_warn: float, options: dict[str, Any]) -> str:
+    """CO2 below the warning threshold but still inside the release band of a started airing (#29)."""
+    if co2_release_configured(options):
+        return (f"CO₂ {round(co2)} ppm liegt unter der Warnschwelle {round(co2_warn)} ppm; "
+                f"die Empfehlung endet erst unter {round(co2_release_ppm(options))} ppm")
+    return f"CO₂ {round(co2)} ppm liegt knapp unter der Warnschwelle {round(co2_warn)} ppm; die Empfehlung endet erst {round(CO2_HYSTERESIS_PPM)} ppm darunter"
+
+
+def _close_reason(result: Any, options: dict[str, Any]) -> str:
+    """0.26.7.0 (F11): why a running airing closes – the physical situation or the user's temperature limit, never a time."""
+    reason = getattr(result, "reason", "")
+    if reason == SUMMER_WARMING_CLOSE_REASON:
+        return "Die Außenluft ist nicht mehr kühler als der Raum; Schließen hält die Kühle im Raum"
+    if reason == TEMPERATURE_LIMIT_CLOSE_REASON:
+        limit = float(options.get("airing_min_room_temp_c") or 0.0)
+        return (f"Deine Temperaturgrenze beim Lüften ({limit:.1f} °C) ist erreicht – Schließen wegen der Temperatur, "
+                "nicht weil genug Feuchtigkeit entfernt wurde")
+    if reason == ROOM_TOO_DRY_CLOSE_REASON:
+        return (f"Die Raumluft ist bereits trocken (höchstens {float(options.get('humidify_below_rh', 35.0) or 0.0):.0f} % rF); "
+                "weiteres Lüften würde sie zu stark austrocknen")
+    if float(getattr(result, "delta_g_m3", 0.0) or 0.0) < 0.0:
+        return "Die Außenluft ist jetzt feuchter als die Raumluft; weiteres Lüften würde Feuchtigkeit hereinbringen"
+    return (f"Die Außenluft ist kaum noch trockener als die Raumluft (höchstens {float(options.get('close_delta', 0.4)):.1f} g/m³); "
+            "weiteres Lüften entfernt keine nennenswerte Feuchtigkeit mehr")
 
 def _running_reasons(result: Any) -> list[str]:
     """Why a running airing stays open."""
@@ -116,11 +142,7 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
             else:
                 reasons.append("Seit 15 Minuten fehlen zwei neue Klimamessungen; FreshAirIQ entscheidet ersatzweise anhand des physikalischen und gelernten Lüftungsmodells")
         else:
-            reasons.append(
-                "Die Außenluft ist nicht mehr kühler als der Raum; Schließen hält die Kühle im Raum"
-                if getattr(result, "reason", "") == SUMMER_WARMING_CLOSE_REASON
-                else "Lüftungsziel erreicht oder zusätzlicher Nutzen ist zu gering"
-            )
+            reasons.append(_close_reason(result, options))
     elif running:
         action = "Continue ventilating"
         reasons.extend(_running_reasons(result))
@@ -134,7 +156,7 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
         # 0.26.5.4 (review A07): CO2 is a goal of its own; the airing ends once CO2 is down again
         action = "Ventilate"
         if not co2_high:
-            reasons.append(f"CO₂ {round(co2)} ppm liegt knapp unter der Warnschwelle {round(co2_warn)} ppm; die Empfehlung endet erst {round(CO2_HYSTERESIS_PPM)} ppm darunter")
+            reasons.append(_co2_band_reason(co2, co2_warn, options))
         reasons.append("Lüften senkt das CO₂; kurz und kräftig lüften genügt"
                        if float(result.delta_g_m3) >= 0 else "Lüften senkt das CO₂; die etwas feuchtere Außenluft bringt bei kurzem Lüften kaum Feuchte herein")
         if result.cooling_candidate:
@@ -159,7 +181,7 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
         # cooling is an extra benefit, not the label that hides the CO2.
         action = "Ventilate"
         if not co2_high:
-            reasons.append(f"CO₂ {round(co2)} ppm liegt knapp unter der Warnschwelle {round(co2_warn)} ppm; die Empfehlung endet erst {round(CO2_HYSTERESIS_PPM)} ppm darunter")
+            reasons.append(_co2_band_reason(co2, co2_warn, options))
         reasons.append("Zusätzlich kühlt die Außenluft den Raum; der Feuchteeintrag bleibt vertretbar")
     elif result.cooling_candidate:
         action = "Ventilate for cooling"

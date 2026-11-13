@@ -166,11 +166,15 @@ def test_house_mode_takes_precedence_over_floor_mode():
     (50.0, "continue"),  # exactly the shared threshold keeps ventilating
 ])
 def test_aggregate_low_return_threshold_scales_with_square_root_of_rooms(house_mode, net_total, expected_kind):
-    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=net_total / 4) for i in range(4)]
+    # Testvermerk 0.26.7.0 (F11): the return threshold only decides once the reference air no longer dries the rooms
+    # (difference at most close_delta, here 0.3 g/m³); with clearly drier air the airing continues below it as well.
+    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=net_total / 4, delta_g_m3=0.3) for i in range(4)]
     _, _, rec = _floor(rooms, rooms, house_mode=house_mode)
     assert rec["kind"] == expected_kind
     if house_mode:
         assert rec["house_decision_threshold_ml"] == 50
+    drier = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=net_total / 4, delta_g_m3=2.0) for i in range(4)]
+    assert _floor(drier, drier, house_mode=house_mode)[2]["kind"] == "continue"
 
 
 @pytest.mark.parametrize("house_mode", [True, False])
@@ -182,10 +186,14 @@ def test_aggregate_low_return_threshold_scales_with_square_root_of_rooms(house_m
 def test_aggregate_thermal_protection_closes_on_strong_cooling_with_poor_efficiency(house_mode, cooling_c, profile, expected_kind):
     # 3 rooms x 15 ml = 45 ml, above the return threshold 20 ml * sqrt(3) = 34.6 ml.
     # At 0.6 K cooling the efficiency is 45 / (0.6 * 10) = 7.5 ml per 0.1 K, below the default 8.
-    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=15.0, forecast_5_min_temperature_change_c=-cooling_c) for i in range(3)]
+    # Testvermerk 0.26.7.0 (F11): heat loss with poor efficiency closes only once the reference air no longer dries
+    # (0.3 g/m³ here); with clearly drier air it never ends the airing – only the explicit temperature limit may.
+    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=15.0, forecast_5_min_temperature_change_c=-cooling_c, delta_g_m3=0.3) for i in range(3)]
     options = {"operating_profile": profile, "min_return_next_5_min_ml": 20}
     _, _, rec = _floor(rooms, rooms, house_mode=house_mode, options=options)
     assert rec["kind"] == expected_kind
+    drier = [dict(room, delta_g_m3=2.0) for room in rooms]
+    assert _floor(drier, drier, house_mode=house_mode, options=options)[2]["kind"] == "continue"
 
 
 @pytest.mark.parametrize("house_mode", [True, False])
@@ -324,7 +332,8 @@ def test_neutral_night_without_minimum_temperature_still_explains():
     (15.9, "close"),     # 47.7 ml / 6 = 7.95: inefficient at 0.6 K cooling
 ])
 def test_thermal_efficiency_limit_is_eight_ml_per_tenth_kelvin(house_mode, net_per_room, expected_kind):
-    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=net_per_room, forecast_5_min_temperature_change_c=-0.6) for i in range(3)]
+    # Testvermerk 0.26.7.0 (F11): the efficiency limit applies once the air no longer dries (0.3 g/m³)
+    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=net_per_room, forecast_5_min_temperature_change_c=-0.6, delta_g_m3=0.3) for i in range(3)]
     _, _, rec = _floor(rooms, rooms, house_mode=house_mode, options={"min_return_next_5_min_ml": 20})
     assert rec["kind"] == expected_kind
 
@@ -335,7 +344,8 @@ def test_thermal_efficiency_limit_is_eight_ml_per_tenth_kelvin(house_mode, net_p
     (0.051, "close"),     # above it the (here very poor) efficiency applies
 ])
 def test_negligible_cooling_limit(house_mode, cooling_c, expected_kind):
-    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=0.1, forecast_5_min_temperature_change_c=-cooling_c) for i in range(2)]
+    # Testvermerk 0.26.7.0 (F11): air that no longer dries (0.3 g/m³) – only then the thermal rule may close
+    rooms = [_room(f"r{i}", forecast_5_min_net_moisture_change_ml=0.1, forecast_5_min_temperature_change_c=-cooling_c, delta_g_m3=0.3) for i in range(2)]
     options = {"min_return_next_5_min_ml": 0, "max_temp_loss_next_5_min_c": 0.0}  # isolate the thermal rule
     _, _, rec = _floor(rooms, rooms, house_mode=house_mode, options=options)
     assert rec["kind"] == expected_kind

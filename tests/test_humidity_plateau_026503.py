@@ -87,20 +87,29 @@ def test_heinzels_fan_is_switched_off_once_the_humidity_stops_falling() -> None:
         rh = 58.7 + 9.3 * exp(-minute / 6.0)  # from 68 % towards 58.7 %
         plateau = track_session(mem, session_active=True, elapsed_min=float(minute), temp_c=21.0, rh=rh)
         actions.append(evaluate_room(_fan(humidity=rh, session_elapsed_min=float(minute), humidity_plateau=plateau), OPTIONS, False).action)
-    first_off = actions.index("Close")
-    assert actions[:20] == ["Continue ventilating"] * 20  # really drying at the start
-    assert 20 <= first_off <= 45  # soon after the curve flattened – not "forever"
+    # Testvermerk 0.26.7.0 (F11): a measured plateau while the supply air is still clearly drier (50 % vs 59 %) is the
+    # balance against an internal load (walls, towels) – switching off would let the humidity rise again. The fan is
+    # therefore no longer switched off by the plateau; the honest countdown (no "3 minutes") stays (see above).
+    assert actions == ["Continue ventilating"] * 61
+    # once the supply air no longer dries (anteroom as humid as the bathroom), the fan is switched off
+    stalled = evaluate_room(_fan(humidity=59.0, reference_humidity=58.0, session_elapsed_min=45.0, humidity_plateau=True), OPTIONS, False)
+    assert stalled.action == "Close"
 
 
 def test_what_keeps_the_fan_running() -> None:
     assert evaluate_room(_fan(), OPTIONS, False).action == "Continue ventilating"  # no plateau seen yet
     for extra in ({"moisture_source_active": True}, {"moisture_source_recovery": True}, {"co2": 1200.0}):
         assert evaluate_room(_fan(humidity_plateau=True, **extra), OPTIONS, False).action != "Close"
-    assert evaluate_room(_fan(humidity_plateau=True), OPTIONS, False).action == "Close"
+    # Testvermerk 0.26.7.0 (F11): the plateau alone no longer ends it while the supply air is drier
+    assert evaluate_room(_fan(humidity_plateau=True), OPTIONS, False).action == "Continue ventilating"
+    assert evaluate_room(_fan(humidity_plateau=True, reference_humidity=58.0), OPTIONS, False).action == "Close"
 
 
 def test_a_window_inside_its_planned_time_also_ends_on_a_plateau() -> None:
     window = dict(mechanical_only=False, session_elapsed_min=12.0, session_target_min=25.0, reference_humidity=40.0,
                   reference_temperature=15.0, humidity=59.0)
     assert evaluate_room(_fan(**window), OPTIONS, False).action == "Continue ventilating"
-    assert evaluate_room(_fan(humidity_plateau=True, **window), OPTIONS, False).action == "Close"
+    # Testvermerk 0.26.7.0 (F11): no close on a plateau while the outdoor air (40 % at 15 °C) still dries
+    assert evaluate_room(_fan(humidity_plateau=True, **window), OPTIONS, False).action == "Continue ventilating"
+    damp = {**window, "reference_humidity": 84.0}
+    assert evaluate_room(_fan(humidity_plateau=True, **damp), OPTIONS, False).action == "Close"

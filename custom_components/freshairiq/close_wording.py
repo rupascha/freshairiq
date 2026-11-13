@@ -117,9 +117,15 @@ def fan_stop_message(room: Any) -> str:
     # 0.26.5.4: the fan draws its air from the neighbouring room when one is configured
     neighbour = isinstance(room, dict) and room.get("reference_path") == "neighbour_room"
     failed = fan_automation(room).get("state") == "failed"
-    return _FAN_STOP_TEXT[(neighbour, delta is not None and delta < 0, failed)]
+    text = _FAN_STOP_TEXT[(neighbour, delta is not None and delta < 0, failed)]
+    if fan_automation(room).get("state") == "manual":
+        # 0.26.7.0 (support case B): the automatic control is on, but this run was started by hand or by another
+        # automation – FreshAirIQ does not switch off what it did not switch on, and says so instead of a bare order
+        return f"{MANUAL_FAN_NOTE} {text}"
+    return text
 
 
+MANUAL_FAN_NOTE = "Der Lüfter wurde nicht von FreshAirIQ eingeschaltet (von Hand oder durch eine andere Automation) und wird deshalb nicht automatisch ausgeschaltet."
 _FAN_STOP_TEXT = {
     (False, True, False): "Die Außenluft ist gerade feuchter als die Raumluft. Lüfter ausschalten.",
     (False, False, False): "Die Außenluft ist kaum noch trockener als die Raumluft. Lüfter ausschalten.",

@@ -7,7 +7,7 @@ humidity hysteresis of the room.
 """
 from __future__ import annotations
 
-from ha_tests.test_cov_coordinator_b import CO2, OPTIONS, _cleanup_coordinators, _make  # noqa: F401
+from ha_tests.test_cov_coordinator_b import CO2, HUM, OPTIONS, TEMP, _cleanup_coordinators, _make  # noqa: F401
 
 
 async def _airing(hass, freezer, thermostat_target: float):
@@ -32,7 +32,12 @@ async def test_kitchen_co2_airing_from_request_to_close(hass, freezer) -> None:
     assert d.mem("kueche")["session_co2_only"] is True
     # kept open while CO2 is high (incl. the 50 ppm hysteresis band), closed once it is down
     assert all(action != "Close" for co2, action, _ in actions if co2 >= 960), actions
-    assert any(action == "Close" or close for co2, action, close in actions if co2 < 950), actions
+    # Testvermerk 0.26.7.0 (F11): with CO2 down the airing is not ended while the outdoor air (9 °C / 82 %) still
+    # dries the kitchen; it closes once the outdoor air no longer dries it.
+    assert all(action != "Close" for _co2, action, _close in actions), actions
+    await d.step(60, sensor__aussen_t=(21.0, TEMP), sensor__aussen_h=(75.0, HUM), sensor__kueche_h=(58.5, HUM))
+    await d.step(60, sensor__kueche_h=(58.6, HUM))
+    assert d.room("kueche")["action"] == "Close" or d.room("kueche")["close_recommended"]
 
 
 async def test_a_co2_airing_that_also_cools_stays_open_for_the_temperature_goal(hass, freezer) -> None:

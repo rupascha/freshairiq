@@ -102,9 +102,15 @@ def test_a_finished_co2_airing_is_not_released_again_by_its_drying_effect() -> N
     room = dict(temperature=21.0, reference_temperature=21.0, ref_rh=30.0, rh=55.0, contact_open=True, contact_open_seconds=600,
                 session_active=True, session_elapsed_min=8.0, session_start_temp=21.0, session_fresh_measurements=3,
                 session_co2_only=True, mechanical_only=True)
+    # Testvermerk 0.26.7.0 (F11): while the reference air still removes moisture the airing is not ended – also not
+    # when the CO2 job is done (no close on a small return, no time limit). Once the air no longer helps, the
+    # finished CO2 airing closes and stays closed as before (not released again by its drying effect).
     first = evaluate_room(_room(900, **room), opts, False)
-    assert first.close_recommended and first.moisture_effect_next_5_min_ml > 31  # still drying well, but the CO2 job is done
-    again = evaluate_room(_room(880, close_notified=True, **room), opts, False)
+    assert not first.close_recommended and first.moisture_effect_next_5_min_ml > 31
+    exhausted = {**room, "ref_rh": 55.0}
+    closed = evaluate_room(_room(900, **exhausted), opts, False)
+    assert closed.close_recommended and closed.action == "Close"
+    again = evaluate_room(_room(880, close_notified=True, **exhausted), opts, False)
     assert again.close_recommended and again.action == "Close"
 
 

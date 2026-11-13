@@ -447,7 +447,7 @@ class LearningStore:
                     "session_cover_last_tick", "session_cover_last_blocked",
                     "session_cross_seconds", "session_cross_last_update",
                     "session_recommended_duration_min", "session_recommendation_followed",
-                    "session_recommendation_issued_at", "session_predicted_removed_ml",
+                    "session_recommendation_issued_at", "session_predicted_removed_ml", "session_target_limited_removed_ml",
                     "session_predicted_temperature_change_c", "session_predicted_cost",
                     "session_prediction_confidence", "session_prediction_snapshot_at",
                     "session_prediction_horizon_min", "session_prediction_snapshot_elapsed_min", "session_prediction_snapshot_valid",

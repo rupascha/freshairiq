@@ -3,6 +3,83 @@
 Format: ID · Priorität · Status · Quelle/Nachweis · Auswirkung · Empfehlung. Beobachtung, Hypothese und
 reproduzierter Defekt sind getrennt benannt. Keine personenbezogenen Rohdaten.
 
+## Finaler Hotfix vor Release 2026-11-13 (F11-A/B/C)
+
+Basis: gelieferter Stand `FreshAirIQ-v0.26.7.0-WorkingCopy.zip` (SHA-256 `151bb9a1…`) = Arbeitsbaum über öffentlichem `46a55ff`.
+
+| ID | Root Cause | Behebung | Regressionsschutz |
+|---|---|---|---|
+| F11-A | `model._running_close`: `summer_warming` (Profil summer_cooling, Raum ≥ Kühlstarttemperatur − 1 K, Außenluft nicht kühler) schloss ohne Rücksicht auf den Feuchteabtransport; die Kühlstarttemperatur wirkte wie eine versteckte Schließgrenze | `summer_warming` verlangt zusätzlich, dass die Luft nicht mehr trocknet (`air_no_longer_helps`) | `tests/test_f11_final_hotfix_026700.py` (Repro 28 °C/70 % vs. 27,5 °C/35 %, 5–120 min, Kühlstarttemperaturen, Ende-zu-Ende) |
+| F11-B | `too_dry = humidity <= humidify_below_rh` war Teil von `air_no_longer_helps` (in der Vorrunde eingeführt) | aus der Schließentscheidung entfernt; die Einstellung behält ihre übrigen Funktionen (Befeuchter-Hinweis in `intervention.py`) | Repro 22 °C/30 % vs. 10 °C/20 %, alle Profile und Grenzwerte |
+| F11-C | `forecast._simulate_forecast_steps` setzte `optimal_close_in_min = max_duration − elapsed`, Grund `max_duration` (Default 20, z. B. im Validierungs-Replay mit eingefrorenen Steuerwerten); zudem zeigte die Karte bei laufender Lüftung „optimal noch ca. X min“ aus Prognose-Endpunkten (Ziel/Rest-Ertrag/Wärme), die keine Schließgründe mehr sind | Maximaldauer ist kein Prognose-Endpunkt mehr (Parameter bleibt für Kompatibilität); bei laufender Lüftung wird kein Prognose-Schließzeitpunkt gemeldet, der physikalische Endpunkt bleibt additiv als `forecast_physical_end_*`; Produktions-Formel-ID `…-r2` | Matrix Maximaldauer × Laufzeit, Horizont bleibt begrenzt, Quelltextprüfung |
+
+Gespeicherte Schließzustände aus diesen Gründen werden freigegeben (Ursache entfällt; Freigabe nur mit frischen, bestätigten Messwerten). Lüfter-Höchstlaufzeit (Gerätegrenze) unverändert.
+
+**Offener Entwicklungsumfang (nicht Teil dieses Hotfixes):** uhrzeitabhängige Personalisierung (Erinnerungs-/Meldezeitpunkte nach Tageszeit) ist noch nicht umgesetzt; IQ2 inkl. künftiger Wetterintegration folgt im nächsten Update.
+
+## Nachbesserung 2026-11-13 (Logik-Hotfixes F09–F11, Verhaltenslernen, Releaseprüfung)
+
+| ID | Prio | Status | Befund / Nachweis | Erledigung / Regressionsschutz |
+|---|---|---|---|---|
+| F11 | P0 | behoben | Zeitbasierte Schließwege: Raum (Maximaldauer, Plateau, kleiner Rest-Ertrag, CO₂-erledigt bei trockenerer Luft), Haus/Etage (`aggregate_close_allowed`: geringer Gesamtertrag, Wärmeverlust, Netto-5-min ≤ 0 als „Feuchte kommt herein“), Live-Coach, Konsolidierung (Zeit als harter Grund), „Daueröffnung beobachtet“ ab Maximaldauer+10 auch für noch trocknende Räume | Schließen nur bei Fall C (Luft feuchter / ≤ `close_delta` trockener; seit dem finalen Hotfix F11-B nicht mehr wegen `humidify_below_rh`) oder Fall D (Option `airing_min_room_temp_c`); Prognosen ohne Endzeit (`NO_DURATION_LIMIT_MIN`); `tests/test_f11_no_max_duration_026700.py` (Matrix 5–120 min, Profile, Raumgrößen, Quer-, Mehrfenster, CO₂, Temperaturgrenze, Latch, Sensorzustände, Haus/Coach, Ende-zu-Ende über den echten Coordinator, Quelltextprüfung ohne verstecktes Zeitlimit) |
+| F09 | P0 | behoben | Küche 12 m³, 10,0 → 10,85 g/m³ gegen 6,0 g/m³ in 12 min, Geschirrspüler konfiguriert: keine Signatur (Temperaturanstieg 0), allgemeine Erkennung bei konfigurierten Quellen gesperrt → „Schließen“ | quellenunabhängige Feuchtebilanz (`ventilated_moisture_balance`, gefiltert gegen Rauschen, gehaltene Werte, Sprünge); starke ungeklärte Last auch neben konfigurierten Quellen allgemein benannt; `tests/test_f09_moisture_balance_026700.py` |
+| F10 | P0 | behoben | Teilstring-Suche: `drying_complete`, `not_drying` → „trocknet“ | exakte Normalisierung, Phasen washing/drying/door_open/finished/after_evaporation/idle; `tests/test_f10_dishwasher_states_026700.py` (Positiv-/Negativmatrix, Binärsignale, Nachverdunstung, Ende-zu-Ende) |
+| V-01 | P1 | umgesetzt | Verhaltenslernen beobachtete nur | `notification_adaptation.py`: Zeitpunkt, Häufigkeit/Wiederholung (max. 2), Zusammenfassen; Schutz/CO₂/Schimmel/Erstmeldung nie; `tests/test_behaviour_notifications_026700.py` |
+| H-01 | P2 | umgesetzt | neue Felder erreichten den Hub nicht (Raum-Export ohne Quellen-/Verhaltensfelder) | Export additiv (Schema 15 unverändert); Hub 0.3.3.95 `source_behaviour` (Analyzer, Übersicht, Dashboard, Datensatz inkl. Nachfolger-Shadow); Diagnostics-HA 0.5.7 Karte „Feuchtequellen & Verhalten“ |
+| R-01 | P2 | behoben | CLEAN-ZIP enthielt `test-results/.last-run.json` | Ausschluss in Build, Install-ZIP und Gates; `tests/test_clean_hygiene_026700.py` |
+
+**Folgen von F11, die bewusst so umgesetzt sind:** Eine reine CO₂-Lüftung endet nicht mehr allein, weil das CO₂ gesunken
+ist, solange die Luft noch trocknet; ein Ablüfter auf einem Feuchteplateau (Community-Fall „Bad bleibt bei 59 %“) läuft
+weiter, solange die Zuluft trockener ist – die ehrliche Restzeit ohne Countdown bleibt. Die frühere Wärmeverlust-Schutzregel
+(`max_temp_loss_next_5_min_c` + Effizienz) schließt nur noch, wenn die Luft nicht mehr trocknet; die einzige Grenze, die bei
+weiter trocknender Luft schließen darf, ist die ausdrücklich eingestellte Temperaturgrenze.
+
+**Issues erneut geprüft (Stand 0.26.7.0 nach Nachbesserung):**
+| Issue | Ergebnis |
+|---|---|
+| #15 | Mit neuer Schließlogik geprüft: der gemeldete kleine Raum (9,4 m³, ~4,9 g/m³ trockener) wird weder nach 3,5 min noch nach Planende geschlossen, erst wenn die Luft nicht mehr trocknet (`test_issue15_flapping_026503`); Flattern-Schutz (Hysterese, Gegenmeldungssperre) unverändert grün. |
+| #17 | Theme/Styles: Tests grün, keine Änderung nötig. |
+| #18 | Geschirrspüler: durch F10 korrigiert (Zustände) und durch F09 ergänzt (Feuchtebilanz). |
+| #19 | Komfortkühlung: Kühlen hält nicht mehr offen, wenn der Raum am Ziel ist; trockenere Luft hält offen (F11), feuchte Luft schließt (`test_comfort_cooling_*`). |
+| #20 | Dialoge oben: Browser-Suite grün, keine Änderung. |
+| #21 | Mold Indicator: Tests grün, keine Änderung. |
+| #25 | Querlüftungspaare: Tests grün, keine Änderung. |
+| #26 | Werte nach HA-/FreshAirIQ-Update stundenlang 0/nicht verfügbar (ohne Rohdaten): in diesem Auftrag nicht berührt; die Regression aus dem Vorauftrag (`ha_tests/test_issue26_recovery_026700.py`: Start mit noch nicht verfügbaren Quellen → „keine Daten“, keine erfundenen Nullen, Werte kommen ohne Neustart zurück) ist grün. Ohne Diagnose kein weiterer reproduzierbarer Fehler. |
+| #27 | Türsensor im Grundriss: Tests grün, keine Änderung. |
+| #28 | Validierungs-Replay ist physikalisch und nicht zeitlich gedeckelt (Replay bei 15/30/60/100 min mit Maximaldauer 20 und 1440 identisch). |
+| #29 | CO₂-Freigabewert: Tests grün; Schließen einer CO₂-Lüftung folgt jetzt zusätzlich F11. |
+Die drei Supportfälle (A Querlüftung/Grundriss, B Abwesenheit/Benachrichtigung, C Entfeuchtung) bleiben Pflichtregressionen und sind grün.
+
+**Formel:** Produktion und Kandidat werden weiter mit identischer Messdefinition verglichen (gleicher eingefrorener Start,
+gleiche gemessene Dauer, physikalisches Replay ohne Zielwert-Deckel). Kein Wechsel der Produktionsformel ohne neue v3-Daten.
+Vorbereitet ist ein Nachfolger `humidity-hybrid-2026-11-13-r2-physical-input` (gleiche Koeffizienten, physikalisches Replay als
+Eingang) im reinen Schattenbetrieb; Ergebnisse liegen noch nicht vor und werden nicht behauptet.
+
+## Analyse 2026-11-13 (Basis öffentlicher Stand 46a55ff = 0.26.7.0, Hub 0.3.3.94, Diagnostics-HA 0.5.6)
+
+**Reichweite:** Code aller Komponenten lokal; Pure-Suite, Golden Master, Browser-Suite (Chromium, WebKit, Firefox,
+Android-WebView), echte HA-Runtime (HA 2026.11 / Python 3.14), Hub-Suite, Diagnostics-HA-Suiten. Die Supportdiagnosen
+und Hub-Kennzahlen lagen nur zusammengefasst vor (keine Rohdaten); Befunde daraus sind als solche gekennzeichnet.
+
+| ID | Prio | Status | Befund / Nachweis | Auswirkung | Empfehlung / Erledigung |
+|---|---|---|---|---|---|
+| B-01 | P1 | behoben (#28) | `evaluate_start_forecast_at_duration` replayte mit `cap_positive_to_target=duration>5`; unter dem Feuchteziel ≈ 0 ml, gemessen wird absolut | Prognose-MAE, Lernwirkung und Shadow-Vergleich auf verzerrter Basis | Startkontext v3 physikalisch; v2-Datensätze bleiben gespeichert, werden getrennt gezählt (`previous_basis_*`), nicht überschrieben |
+| B-02 | P1 | behoben | `close_time_mae_min` beim zeitgleichen Replay immer 0,0 (Horizont = gemessene Dauer) | Schließzeit-Qualität scheinbar perfekt (Supportfall C, Hub-Kennzahl „Schließzeit-MAE“) | Vergleich mit der Start-Schließzeitprognose; ohne Prognose `None`. Historische Hub-Werte dieser Kennzahl sind nicht aussagekräftig |
+| B-03 | P1 | behoben | Plateau-Schließen trotz klar trockenerer Außenluft und Rückgabe über der Schwelle, wenn eine (unerkannte) Last die Entfeuchtung kompensiert | zu frühe Schließempfehlung (Supportfall C, `dehumidify`) | Plateau ist dort kein Schließgrund mehr, solange der physikalische Nutzen anhält; harte Grenzen unverändert |
+| B-04 | P2 | behoben | Shadow-Kandidat `humidity-hybrid-2026-10-31-r1` ist auf der zielbegrenzten Startprognose kalibriert | nach B-01 hätte er einen anderen Eingang erhalten (andere Formel unter gleicher ID) | Kandidat erhält weiterhin den zielbegrenzten Replay (`candidate_input_basis`), Produktion den physikalischen |
+| B-05 | P2 | behoben | Episoden ohne Handlungsmöglichkeit (alle abwesend, Lüfterautomatik erledigt) zählten als „verpasst“ | Befolgungsquote zu niedrig | getrennte Zählung `recommendation_actionable*`/`unactionable`; historische Zähler unverändert |
+| B-06 | P3 | Beobachtung | Hub-Cluster `…-00level-e4a3e09fb5` stammen aus dem vor 0.26.4.2 behobenen Raumnamen-Ersetzungsfehler | historische Signaturen, kein aktueller Fehler | Hub-seitiges Alias möglich (nicht beauftragt) |
+
+**Formelauswertung (Stand der übermittelten Zahlen):** Die vorhandenen Shadow-Ergebnisse (14 besser / 4 schlechter /
+20 unklar; Querschnitte A–C) beruhen vollständig auf der Produktionsbasis v2 mit Zielwertbegrenzung (B-01). Der
+Produktionsfehler ist dort systematisch überschätzt, wenn Räume unter dem Ziel weiter Feuchte abgeben; Fall B (Nullmodell
+3,2 ml besser als beide) zeigt zusätzlich sehr kleine Ist-Mengen, für die keine Formel belastbar bewertet ist. Eine
+Neuberechnung auf der physikalischen Basis braucht je Session: eingefrorenen Startkontext (`forecast_args`, `target_ah`,
+Steuerwerte), gemessene Dauer und Entfernung, Qualitäts-/Ausschlussflags und Formelversion – diese Rohdaten liegen hier
+nicht vor. Entscheidung: Produktionsformel (forecast.py) unverändert; der Kandidat bleibt Shadow und wird nicht aktiviert;
+kein weiterer Kandidat ohne Validierung auf v3-Daten. Die Startparameter-Analyse (0 von 20 Gruppen übernahmereif) bleibt
+unverändert gültig, da sie gemessene Raten und nicht den Prognosevergleich betrifft.
+
 ## Analyse 2026-10-16 (Basis `-faiq-dev` dbdbdcb = öffentlicher Stand 0.26.5.0, Hub 0.3.3.86, Diagnostics-HA 0.5.2)
 
 **Reichweite:** Code aller fünf Repos gelesen (Website/Internal nur Struktur), vollständige Pure-/Hub-Suiten,

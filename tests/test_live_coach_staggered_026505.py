@@ -53,7 +53,14 @@ def test_two_really_open_windows_wait_for_the_younger_one() -> None:
     rec = {**REC, "room_keys": ["bad", "schlaf"]}
     assert refine_live_recommendation(rooms, OPTIONS, dict(rec))["kind"] == "continue"
     rooms["bad"]["session_elapsed_min"] = 6.0
-    assert refine_live_recommendation(rooms, OPTIONS, dict(rec))["kind"] == "close"  # both had their minimum time
+    # Testvermerk 0.26.7.0 (F11): with 1.2 g/m³ drier air both keep going after their minimum time; once the air no
+    # longer dries (difference at most close_delta) the close comes as before – both had their minimum time.
+    assert refine_live_recommendation(rooms, OPTIONS, dict(rec))["kind"] == "continue"
+    for room in rooms.values():
+        room["delta_g_m3"] = 0.3
+    assert refine_live_recommendation(rooms, OPTIONS, dict(rec))["kind"] == "close"
+    rooms["bad"]["session_elapsed_min"] = 1.3
+    assert refine_live_recommendation(rooms, OPTIONS, dict(rec))["kind"] == "continue"  # still waits for the younger one
 
 
 def test_protection_still_closes_at_once_with_its_own_reason() -> None:

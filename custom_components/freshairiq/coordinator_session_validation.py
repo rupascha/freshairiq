@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import CONF_ROOM_VOLUME, PROFILE_SUMMER_COOLING
 from .energy import exchanged_air_fraction, ventilation_cost
-from .forecast_validation import evaluate_start_forecast_at_duration, prediction_duration_comparable
+from .forecast_validation import START_FORECAST_CONTEXT_VERSION, evaluate_start_forecast_at_duration, prediction_duration_comparable
 from .intelligence import learn_completed_session, learn_outcome_feedback
 from .learning_effectiveness import (
     baseline_context_from_start,
@@ -128,7 +128,7 @@ class SessionValidationMixin:
             mem["session_predicted_cost"] = aligned_prediction["predicted_cost"]
             mem["session_prediction_confidence"] = aligned_prediction["confidence"]
             mem["session_prediction_horizon_min"] = aligned_prediction["duration_min"]
-            mem["session_prediction_reference"] = "session_start_curve_v2"
+            mem["session_prediction_reference"] = f"session_start_curve_v{START_FORECAST_CONTEXT_VERSION}"
             mem["session_prediction_time_aligned"] = True
             # A valid frozen start context is enough for an informational
             # same-duration comparison. Objective validation/learning remains

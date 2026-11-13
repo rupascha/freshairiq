@@ -113,20 +113,33 @@
       ".mypy_cache",
       ".ruff_cache",
       ".git",
-      "node_modules"
+      "node_modules",
+      "test-results",
+      "playwright-report",
+      "blob-report",
+      ".hypothesis",
+      "htmlcov",
+      ".tox",
+      ".nox",
+      ".cache"
     ],
     "forbidden_suffixes": [
       ".br",
       ".gz",
       ".pyc",
-      ".pyo"
+      ".pyo",
+      ".tmp",
+      ".swp",
+      ".rej"
     ],
     "forbidden_file_names": [
       ".coverage",
       "coverage.xml",
       ".DS_Store",
       "Thumbs.db",
-      ".precompressed.json"
+      ".precompressed.json",
+      ".last-run.json",
+      ".coverage.xml"
     ],
     "artifact_suffix": "Public-Beta-Diagnostics-README-Screenshots-CLEAN"
   }

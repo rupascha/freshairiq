@@ -62,7 +62,7 @@ async def test_a_real_airing_produces_the_pair_on_the_frozen_start(hass, freezer
     rooms = _rooms(d.store.data["forecast_validation_history"])
     shadow = rooms[0]["shadow_forecast"]
     assert shadow["paired_valid"] is True and shadow["exclusion_reason"] is None
-    assert shadow["freshairiq_version_at_start"] == VERSION and shadow["start_context_version"] == 2
+    assert shadow["freshairiq_version_at_start"] == VERSION and shadow["start_context_version"] == 3  # Testvermerk 0.26.7.0 (#28): start context v3
     assert shadow["production_predicted_removed_ml"] == rooms[0]["predicted_removed_ml"]
     assert shadow["measured_removed_ml"] == rooms[0]["actual_removed_ml"]
     assert shadow["null_abs_error_ml"] == abs(shadow["measured_removed_ml"]) and shadow["opening_learning_quarantined"] is False

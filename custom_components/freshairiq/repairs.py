@@ -140,3 +140,31 @@ def async_sync_missing_entity_issue(hass: HomeAssistant, entry: FreshAirIQConfig
 def async_clear_missing_entity_issue(hass: HomeAssistant, entry: FreshAirIQConfigEntry) -> None:
     """Remove the repair issue when the config entry is unloaded or removed."""
     ir.async_delete_issue(hass, DOMAIN, issue_id_for_entry(entry))
+
+
+_CROSS_PAIRS_ISSUE_PREFIX = "cross_pairs_unused_"
+
+
+def async_sync_cross_pairs_issue(hass: HomeAssistant, entry: FreshAirIQConfigEntry, problems: list[dict]) -> None:
+    """0.26.7.0 (support case): stored cross-ventilation entries the runtime cannot use are shown as a repair
+    notice with the reason (e.g. a three-room chain) – kept in the settings, never dropped or ignored silently."""
+    from . import cross_pairs  # pure module, no Home Assistant imports
+
+    issue_id = f"{_CROSS_PAIRS_ISSUE_PREFIX}{entry.entry_id}"
+    if not problems:
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
+        return
+    language = getattr(getattr(hass, "config", None), "language", None)
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        is_persistent=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="cross_pairs_unused",
+        translation_placeholders={
+            "entry_title": str(getattr(entry, "title", None) or "FreshAirIQ"),
+            "detail": cross_pairs.describe(problems, language if isinstance(language, str) else "de"),
+        },
+    )

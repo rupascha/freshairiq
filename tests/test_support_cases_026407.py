@@ -234,12 +234,15 @@ def test_floor_close_waits_for_the_minimum_airing_time_of_every_room():
     # Support export: Schlafzimmer open for 1 min, Wohnzimmer opened right now.
     rooms = [_active("schlaf", 1.0), _active("wohnen", 0.0)]
     assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=True, min_duration_min=3.0) is False
-    rooms = [_active("schlaf", 4.0), _active("wohnen", 2.9)]
+    # Testvermerk 0.26.7.0 (F11): the low-return close needs air that no longer dries (0.3 g/m³ here)
+    rooms = [_active("schlaf", 4.0, delta_g_m3=0.3), _active("wohnen", 2.9, delta_g_m3=0.3)]
     assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=False, min_duration_min=3.0) is False
-    rooms = [_active("schlaf", 4.0), _active("wohnen", 3.0)]
+    rooms = [_active("schlaf", 4.0, delta_g_m3=0.3), _active("wohnen", 3.0, delta_g_m3=0.3)]
     assert aggregate_close_allowed(rooms, low_return=True, thermal_bad=False, min_duration_min=3.0) is True
+    assert aggregate_close_allowed([_active("schlaf", 4.0, delta_g_m3=2.0), _active("wohnen", 3.0, delta_g_m3=2.0)],
+                                   low_return=True, thermal_bad=False, min_duration_min=3.0) is False
     # Without the new argument the previous behaviour is unchanged.
-    assert aggregate_close_allowed([_active("a", 0.0)], low_return=True, thermal_bad=False) is True
+    assert aggregate_close_allowed([_active("a", 0.0, delta_g_m3=0.3)], low_return=True, thermal_bad=False) is True
 
 
 def test_protection_and_unanimous_room_close_still_close_immediately():
@@ -259,7 +262,8 @@ def test_protection_and_unanimous_room_close_still_close_immediately():
     assert aggregate_close_allowed([_active("a", 3.5, action="Close"), _active("b", 3.0, action="Close")],
                                    low_return=False, thermal_bad=False, min_duration_min=3.0) is True
     # Unknown session age never blocks (older payloads / partial test rooms).
-    unknown = [_active("a", "nan?"), _active("b", None), _active("c", float("nan"))]
+    # Testvermerk 0.26.7.0 (F11): with air that no longer dries (0.3 g/m³)
+    unknown = [_active("a", "nan?", delta_g_m3=0.3), _active("b", None, delta_g_m3=0.3), _active("c", float("nan"), delta_g_m3=0.3)]
     assert aggregate_close_allowed(unknown, low_return=True, thermal_bad=False, min_duration_min=3.0) is True
 
 
@@ -453,8 +457,12 @@ def test_small_bathroom_is_no_longer_closed_at_the_minimum_duration_by_an_unreac
     assert 7.9 <= small.moisture_effect_next_5_min_ml < 25  # physically possible in 9.4 m³, but far below 25 ml
     assert small.action == "Continue ventilating" and small.close_recommended is False
     # Once even the volume-scaled benefit is gone the session still closes normally.
-    dry = _delta(_bath(**dict(session, humidity=60.0, reference_humidity=95.0)))
-    assert dry.action == "Close"
+    # Testvermerk 0.26.7.0 (F11): a small return alone no longer closes while the air is ~1.1 g/m³ drier; the session
+    # closes once the reference air no longer dries the room (difference below close_delta).
+    still_drying = _delta(_bath(**dict(session, humidity=60.0, reference_humidity=95.0)))
+    assert still_drying.delta_g_m3 > 0.4 and still_drying.action == "Continue ventilating"
+    dry = _delta(_bath(**dict(session, humidity=60.0, reference_temperature=12.0, reference_humidity=92.0)))
+    assert dry.delta_g_m3 <= 0.4 and dry.action == "Close"
 
 
 def test_repeat_cooldown_now_also_applies_to_the_room_action():

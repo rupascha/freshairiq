@@ -39,9 +39,14 @@ def test_live_coach_cannot_close_before_room_gate_is_ready():
 
 
 def test_live_coach_may_close_after_room_gate_is_ready():
-    rooms = {"living": _room(close_decision_ready=True)}
+    # Testvermerk 0.26.7.0 (F11): the coach closes on a small return only when the reference air no longer removes
+    # moisture (difference at most close_delta); with clearly drier air or without the difference it keeps going.
+    rooms = {"living": _room(close_decision_ready=True, delta_g_m3=0.3)}
     out = refine_live_recommendation(rooms, _options(), _recommendation())
     assert out["kind"] == "close"
+    for drier in ({"delta_g_m3": 1.5}, {}):
+        rooms = {"living": _room(close_decision_ready=True, **drier)}
+        assert refine_live_recommendation(rooms, _options(), _recommendation())["kind"] == "continue"
 
 
 def test_final_consolidation_blocks_unreleased_downstream_close():

@@ -30,7 +30,9 @@ def test_low_moisture_return_does_not_close_reachable_temperature_goal():
 
 
 def test_low_return_can_close_when_other_goal_is_not_reachable():
-    assert aggregate_close_allowed([room(goal="co2", achievable=False)], low_return=True, thermal_bad=False) is True
+    # Testvermerk 0.26.7.0 (F11): only with air that no longer dries (0.3 g/m³); a drier one keeps it open
+    assert aggregate_close_allowed([{**room(goal="co2", achievable=False), "delta_g_m3": 0.3}], low_return=True, thermal_bad=False) is True
+    assert aggregate_close_allowed([{**room(goal="co2", achievable=False), "delta_g_m3": 2.0}], low_return=True, thermal_bad=False) is False
 
 
 def test_hard_close_remains_dominant_with_open_goal():
@@ -38,7 +40,9 @@ def test_hard_close_remains_dominant_with_open_goal():
 
 
 def test_thermal_protection_remains_dominant_with_open_goal():
-    assert aggregate_close_allowed([room(goal="temperature")], low_return=False, thermal_bad=True) is True
+    # Testvermerk 0.26.7.0 (F11): thermal protection closes once the air no longer dries; not while it still dries
+    assert aggregate_close_allowed([{**room(goal="temperature"), "delta_g_m3": 0.3}], low_return=False, thermal_bad=True) is True
+    assert aggregate_close_allowed([{**room(goal="temperature"), "delta_g_m3": 2.0}], low_return=False, thermal_bad=True) is False
 
 
 def test_house_and_floor_brains_carry_canonical_scope_and_rooms():

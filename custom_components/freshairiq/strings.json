@@ -42,6 +42,7 @@
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
+          "dishwasher_signal": "Dishwasher signal (optional)",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -83,6 +84,7 @@
           "floor": "Floor/area used for grouping and cross ventilation. Example: “Ground floor”. Default: not assigned.",
           "include_in_calculations": "Off = the room remains visible but is excluded from recommendations, house balance, statistics and learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+          "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
           "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -188,14 +190,16 @@
       "room_dimensions_required": "For dimension-based volume, enter complete length, width and height.",
       "invalid_humidity_order": "Humidity values must be ordered logically: target ≤ ventilation start ≤ high humidity.",
       "invalid_delta_order": "Humidity differences are inconsistent: close difference ≤ high-humidity minimum difference ≤ normal minimum difference.",
-      "invalid_duration_order": "Minimum ventilation duration must not exceed maximum duration.",
+      "invalid_duration_order": "The minimum duration must not be greater than the upper limit of the planned airing duration.",
       "invalid_mould_order": "The four mould limits must rise: slightly elevated < elevated < warning (high) < critical (very high).",
       "invalid_co2_order": "The CO₂ warning threshold must be lower than the critical CO₂ threshold.",
+      "invalid_co2_release": "The CO₂ release level must be 0 (automatic) or lie between 400 ppm and the CO₂ warning threshold.",
       "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
       "contact_side_conflict": "This contact sensor is set up differently in another room. Please decide consistently whether it monitors an outside opening or a connection between inside rooms.",
       "connected_room_outside": "“Connected room” only applies to inside doors. Select “Another room” above or leave the field empty.",
       "outdoor_pair_required": "Outdoor temperature and outdoor humidity must be selected together or both left empty.",
-      "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty)."
+      "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty).",
+      "invalid_airing_temperature_limit": "The temperature limit while airing must be 0 (no limit) or between 5 and 30 °C."
     },
     "abort": {
       "reconfigure_successful": "FreshAirIQ was reconfigured successfully."
@@ -295,7 +299,8 @@
         "washing_machine": "Washing machine",
         "dryer": "Dryer",
         "ironing_station": "Ironing station",
-        "laundry_drying": "Hang / dry laundry"
+        "laundry_drying": "Hang / dry laundry",
+        "dishwasher": "Dishwasher"
       }
     },
     "thermal_preference": {
@@ -499,6 +504,7 @@
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
+          "dishwasher_signal": "Dishwasher signal (optional)",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -545,12 +551,14 @@
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
               "moisture_sources": "Moisture sources in the room",
+              "dishwasher_signal": "Dishwasher signal (optional)",
               "ventilation_threshold_mode": "Individual ventilation threshold",
               "ventilation_threshold_percent": "Room threshold percentage",
               "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -716,6 +724,7 @@
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+          "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
           "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -774,6 +783,7 @@
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
+          "dishwasher_signal": "Dishwasher signal (optional)",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -820,12 +830,14 @@
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
               "moisture_sources": "Moisture sources in the room",
+              "dishwasher_signal": "Dishwasher signal (optional)",
               "ventilation_threshold_mode": "Individual ventilation threshold",
               "ventilation_threshold_percent": "Room threshold percentage",
               "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -991,6 +1003,7 @@
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+          "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
           "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -1041,9 +1054,10 @@
           "min_potential_total_ml": "Minimum total potential (mL)",
           "min_potential_room_ml": "Minimum critical-room potential (mL)",
           "min_duration_min": "Minimum ventilation duration (min)",
-          "max_duration_min": "Maximum ventilation duration (min)",
+          "max_duration_min": "Upper limit of the planned airing duration",
           "min_return_next_5_min_ml": "Minimum next-5-minute return (mL)",
           "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C)",
+          "airing_min_room_temp_c": "Temperature limit while airing (°C, 0 = none)",
           "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C)",
           "surface_factor": "Estimated surface factor",
           "mould_slight_surface_rh": "Mould risk \"slightly elevated\" from surface RH (%)",
@@ -1052,6 +1066,7 @@
           "mould_critical_surface_rh": "Critical mould surface RH (%)",
           "co2_warn": "CO₂ warning threshold (ppm)",
           "co2_critical": "Critical CO₂ threshold (ppm)",
+          "co2_release": "CO₂ release level (ppm, 0 = automatic)",
           "learning_enabled": "Learning model enabled",
           "cross_ventilation_pairs": "Cross-ventilation pairs (room_key+room_key,...)",
           "threshold_mode": "Ventilation threshold mode",
@@ -1073,12 +1088,13 @@
           "min_potential_total_ml": "Fixed mL mode only: minimum potential across all calculated rooms.",
           "min_potential_room_ml": "A single problematic room can be prioritized from this removable potential onward, independently of the house total.",
           "min_duration_min": "Before this point, FreshAirIQ normally does not recommend closing solely because additional benefit is declining.",
-          "max_duration_min": "Upper limit for a normal ventilation recommendation. Safety/health logic may still react separately.",
+          "max_duration_min": "Limits only the planned duration shown when a window is opened. FreshAirIQ does not end an airing by time: it advises closing once the outdoor air takes up no more moisture, moisture would come in or your temperature limit is reached.",
           "post_ventilation_stabilization_min": "After closing, FreshAirIQ waits this long for sensor values and room air to stabilize before issuing a new recommendation.",
           "repeat_recommendation_cooldown_min": "Prevents the same recommendation from reappearing immediately after completed ventilation.",
           "repeat_min_benefit_ml": "A repeated recommendation during the cooldown period requires at least this much additional expected moisture benefit.",
           "min_return_next_5_min_ml": "Another five minutes should remove at least this additional amount of water; otherwise the benefit is considered too low.",
           "max_temp_loss_next_5_min_c": "Limits the additional temperature loss tolerated over the next five minutes.",
+          "airing_min_room_temp_c": "When the room cools down to this value while airing, FreshAirIQ advises closing – even if the outdoor air could still take moisture out. The message then names the temperature limit. 0 = no limit: without this value there is no hidden temperature limit.",
           "min_efficiency_ml_per_01c": "Evaluates how much moisture is removed per 0.1 °C of temperature loss.",
           "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
           "mould_slight_surface_rh": "From this estimated surface humidity (not the room air humidity) the mould risk counts as slightly elevated. Default 60 %.",
@@ -1087,6 +1103,7 @@
           "mould_critical_surface_rh": "Above this estimated surface humidity, mould risk is considered critical.",
           "co2_warn": "Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available.",
           "co2_critical": "Above this CO₂ value, air quality is treated as critical.",
+          "co2_release": "An airing started because of CO₂ keeps going down to this CO₂ value before the recommendation ends (e.g. 750 ppm). 0 = automatic: 50 ppm below the warning threshold (previous behaviour). Must lie between 400 ppm and the warning threshold.",
           "learning_enabled": "Enables persistent learning of air exchange, routines and forecast corrections. Default: on.",
           "learning_max_duration_min": "Longer sessions are not used as clean learning samples because weather, heating and occupancy effects increasingly dominate.",
           "cross_ventilation_pairs": "This setting only exists for compatibility with older versions. You edit cross-ventilation pairs under ‘Cross ventilation’."
@@ -1127,14 +1144,14 @@
             "description": "Time limits, stabilization and protection against overly frequent repeated recommendations.",
             "data": {
               "min_duration_min": "Minimum ventilation duration (min)",
-              "max_duration_min": "Maximum ventilation duration (min)",
+              "max_duration_min": "Upper limit of the planned airing duration",
               "post_ventilation_stabilization_min": "Stabilization time after ventilation",
               "repeat_recommendation_cooldown_min": "Delay before a repeated recommendation",
               "repeat_min_benefit_ml": "Minimum benefit for a repeated recommendation"
             },
             "data_description": {
               "min_duration_min": "Before this point, FreshAirIQ normally does not recommend closing solely because additional benefit is declining.",
-              "max_duration_min": "Upper limit for a normal ventilation recommendation. Safety/health logic may still react separately.",
+              "max_duration_min": "Limits only the planned duration shown when a window is opened. FreshAirIQ does not end an airing by time: it advises closing once the outdoor air takes up no more moisture, moisture would come in or your temperature limit is reached.",
               "post_ventilation_stabilization_min": "After closing, FreshAirIQ waits this long for sensor values and room air to stabilize before issuing a new recommendation.",
               "repeat_recommendation_cooldown_min": "Prevents the same recommendation from reappearing immediately after completed ventilation.",
               "repeat_min_benefit_ml": "A repeated recommendation during the cooldown period requires at least this much additional expected moisture benefit."
@@ -1146,11 +1163,13 @@
             "data": {
               "min_return_next_5_min_ml": "Minimum next-5-minute return (mL)",
               "max_temp_loss_next_5_min_c": "Maximum next-5-minute temperature loss (°C)",
+              "airing_min_room_temp_c": "Temperature limit while airing (°C, 0 = none)",
               "min_efficiency_ml_per_01c": "Minimum efficiency (mL/0.1°C)"
             },
             "data_description": {
               "min_return_next_5_min_ml": "Another five minutes should remove at least this additional amount of water; otherwise the benefit is considered too low.",
               "max_temp_loss_next_5_min_c": "Limits the additional temperature loss tolerated over the next five minutes.",
+              "airing_min_room_temp_c": "When the room cools down to this value while airing, FreshAirIQ advises closing – even if the outdoor air could still take moisture out. The message then names the temperature limit. 0 = no limit: without this value there is no hidden temperature limit.",
               "min_efficiency_ml_per_01c": "Evaluates how much moisture is removed per 0.1 °C of temperature loss."
             }
           },
@@ -1164,7 +1183,8 @@
               "mould_warn_surface_rh": "Mould warning surface RH (%)",
               "mould_critical_surface_rh": "Critical mould surface RH (%)",
               "co2_warn": "CO₂ warning threshold (ppm)",
-              "co2_critical": "Critical CO₂ threshold (ppm)"
+              "co2_critical": "Critical CO₂ threshold (ppm)",
+              "co2_release": "CO₂ release level (ppm, 0 = automatic)"
             },
             "data_description": {
               "surface_factor": "Approximation factor for colder indoor surfaces. Lower values mean stronger assumed cooling toward outdoor temperature.",
@@ -1173,7 +1193,8 @@
               "mould_warn_surface_rh": "Above this estimated surface humidity, FreshAirIQ reports elevated mould risk.",
               "mould_critical_surface_rh": "Above this estimated surface humidity, mould risk is considered critical.",
               "co2_warn": "Above this CO₂ value, ventilation priority increases when a CO₂ sensor is available.",
-              "co2_critical": "Above this CO₂ value, air quality is treated as critical."
+              "co2_critical": "Above this CO₂ value, air quality is treated as critical.",
+              "co2_release": "An airing started because of CO₂ keeps going down to this CO₂ value before the recommendation ends (e.g. 750 ppm). 0 = automatic: 50 ppm below the warning threshold (previous behaviour). Must lie between 400 ppm and the warning threshold."
             }
           },
           "learning": {
@@ -1481,6 +1502,7 @@
         "data": {
           "min_return_next_5_min_ml": "Minimum yield next 5 min",
           "max_temp_loss_next_5_min_c": "Maximum temperature loss next 5 min",
+          "airing_min_room_temp_c": "Temperature limit while airing (°C, 0 = none)",
           "min_efficiency_ml_per_01c": "Minimum moisture/temperature efficiency",
           "cooling_start_temp_c": "Cool from room temperature (lower limit)",
           "cooling_min_outdoor_delta_c": "Outdoor air at least this much cooler",
@@ -1493,6 +1515,7 @@
           "cooling_min_outdoor_delta_c": "Outdoor air must be at least this much cooler. Default: 2 °C.",
           "cooling_start_temp_c": "Below this room temperature FreshAirIQ does not suggest airing for cooling. In the comfort profile the room's comfort target also applies: cooling starts 0.5 °C above it. Default: 24 °C.",
           "max_temp_loss_next_5_min_c": "Maximum tolerated additional room-temperature loss over the next five minutes. Example: 0.6 °C in Comfort mode.",
+          "airing_min_room_temp_c": "When the room cools down to this value while airing, FreshAirIQ advises closing – even if the outdoor air could still take moisture out. The message then names the temperature limit. 0 = no limit: without this value there is no hidden temperature limit.",
           "min_efficiency_ml_per_01c": "Minimum ratio of moisture removal to temperature loss. Example: 8 ml per 0.1 °C.",
           "min_return_next_5_min_ml": "Minimum additional moisture removal FreshAirIQ expects over the next five minutes. Example: 25 ml in Comfort mode."
         }
@@ -2025,6 +2048,7 @@
           "floor": "Floor",
           "include_in_calculations": "Include in FreshAirIQ calculations",
           "moisture_sources": "Moisture sources in the room",
+          "dishwasher_signal": "Dishwasher signal (optional)",
           "voc": "VOC/TVOC sensor (optional)",
           "pm25": "PM2.5 sensor (optional)",
           "illuminance": "Illuminance sensor (optional)",
@@ -2071,12 +2095,14 @@
             "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
             "data": {
               "moisture_sources": "Moisture sources in the room",
+              "dishwasher_signal": "Dishwasher signal (optional)",
               "ventilation_threshold_mode": "Individual ventilation threshold",
               "ventilation_threshold_percent": "Room threshold percentage",
               "ventilation_threshold_ml": "Fixed room threshold"
             },
             "data_description": {
               "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+              "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
               "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
               "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
               "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -2242,6 +2268,7 @@
           "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
           "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
           "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+          "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
           "voc": "Optional. VOC/TVOC sensors measure volatile organic compounds, for example from cleaning products, furniture or cooking fumes. VOC/TVOC is not a CO₂ substitute and not a multi-goal ventilation target. It does not change humidity physics or the ml forecast; values can support air-quality/air-purifier guidance and 30-day diagnostics. VOC index sensors without a unit (scale 1–500, 100 = average, e.g. IKEA VINDSTYRKA) are accepted too; they are rated against their own index threshold of 250.",
           "pm25": "Optional. PM2.5 measures fine particulate matter up to 2.5 µm, typically in µg/m³. It is not a humidity or CO₂ ventilation target and does not change the ml forecast; it can support particulate/air-purifier guidance and 30-day diagnostics.",
           "illuminance": "Optional. Illuminance is measured in lux (lx). It does not change humidity, CO₂ or temperature ventilation goals or the ml forecast; it can support shading/comfort features and 30-day diagnostics.",
@@ -2408,9 +2435,10 @@
       "room_dimensions_required": "For dimension-based volume, enter complete length, width and height.",
       "invalid_humidity_order": "Humidity values must be ordered logically: target ≤ ventilation start ≤ high humidity.",
       "invalid_delta_order": "Humidity differences are inconsistent: close difference ≤ high-humidity minimum difference ≤ normal minimum difference.",
-      "invalid_duration_order": "Minimum ventilation duration must not exceed maximum duration.",
+      "invalid_duration_order": "The minimum duration must not be greater than the upper limit of the planned airing duration.",
       "invalid_mould_order": "The four mould limits must rise: slightly elevated < elevated < warning (high) < critical (very high).",
       "invalid_co2_order": "The CO₂ warning threshold must be lower than the critical CO₂ threshold.",
+      "invalid_co2_release": "The CO₂ release level must be 0 (automatic) or lie between 400 ppm and the CO₂ warning threshold.",
       "contact_reference_pair_required": "A local window/door reference requires both temperature and humidity from the same air zone.",
       "contact_side_conflict": "This contact sensor is set up differently in another room. Please decide consistently whether it monitors an outside opening or a connection between inside rooms.",
       "connected_room_outside": "“Connected room” only applies to inside doors. Select “Another room” above or leave the field empty.",
@@ -2425,7 +2453,8 @@
       "duplicate_goal_order": "A ventilation goal was selected more than once. Each goal may appear only once.",
       "humidity_goal_required": "Dehumidification cannot be switched off – moisture and mould protection always stays active. Choose “Off” only for CO₂ or temperature.",
       "exhaust_reference_pair_required": "For the exhaust fan supply air, select temperature and humidity of the neighbouring room together (or leave both empty).",
-      "cross_pairs_invalid": "Cross ventilation not saved: {error_detail}. Use room keys or unique room names, e.g. Bedroom+Living room."
+      "cross_pairs_invalid": "Cross ventilation not saved: {error_detail}. Use room keys or unique room names, e.g. Bedroom+Living room.",
+      "invalid_airing_temperature_limit": "The temperature limit while airing must be 0 (no limit) or between 5 and 30 °C."
     }
   },
   "device": {
@@ -2647,7 +2676,8 @@
               "washing_machine": "Washing machine",
               "dryer": "Dryer",
               "ironing_station": "Ironing station",
-              "laundry_drying": "Drying laundry"
+              "laundry_drying": "Drying laundry",
+              "dishwasher": "Dishwasher"
             }
           }
         }
@@ -2767,6 +2797,7 @@
             "floor": "Floor",
             "include_in_calculations": "Include in FreshAirIQ calculations",
             "moisture_sources": "Moisture sources in the room",
+            "dishwasher_signal": "Dishwasher signal (optional)",
             "ventilation_threshold_mode": "Individual ventilation threshold",
             "ventilation_threshold_percent": "Room threshold percentage",
             "ventilation_threshold_ml": "Fixed room threshold",
@@ -2897,12 +2928,14 @@
               "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
               "data": {
                 "moisture_sources": "Moisture sources in the room",
+                "dishwasher_signal": "Dishwasher signal (optional)",
                 "ventilation_threshold_mode": "Individual ventilation threshold",
                 "ventilation_threshold_percent": "Room threshold percentage",
                 "ventilation_threshold_ml": "Fixed room threshold"
               },
               "data_description": {
                 "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+                "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
                 "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
                 "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
                 "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -2980,6 +3013,7 @@
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+            "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
@@ -3121,6 +3155,7 @@
             "floor": "Floor / zone",
             "include_in_calculations": "Include in calculations",
             "moisture_sources": "Moisture sources in the room",
+            "dishwasher_signal": "Dishwasher signal (optional)",
             "ventilation_threshold_mode": "Individual ventilation threshold",
             "ventilation_threshold_percent": "Room threshold percentage",
             "ventilation_threshold_ml": "Fixed room threshold",
@@ -3251,12 +3286,14 @@
               "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
               "data": {
                 "moisture_sources": "Moisture sources in the room",
+                "dishwasher_signal": "Dishwasher signal (optional)",
                 "ventilation_threshold_mode": "Individual ventilation threshold",
                 "ventilation_threshold_percent": "Room threshold percentage",
                 "ventilation_threshold_ml": "Fixed room threshold"
               },
               "data_description": {
                 "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+                "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
                 "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
                 "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
                 "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -3334,6 +3371,7 @@
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+            "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
@@ -3387,6 +3425,7 @@
             "floor": "Floor / zone",
             "include_in_calculations": "Include in calculations",
             "moisture_sources": "Moisture sources in the room",
+            "dishwasher_signal": "Dishwasher signal (optional)",
             "ventilation_threshold_mode": "Individual ventilation threshold",
             "ventilation_threshold_percent": "Room threshold percentage",
             "ventilation_threshold_ml": "Fixed room threshold",
@@ -3517,12 +3556,14 @@
               "description": "Special properties such as shower, bathtub or sauna. Default: no moisture source configured.",
               "data": {
                 "moisture_sources": "Moisture sources in the room",
+                "dishwasher_signal": "Dishwasher signal (optional)",
                 "ventilation_threshold_mode": "Individual ventilation threshold",
                 "ventilation_threshold_percent": "Room threshold percentage",
                 "ventilation_threshold_ml": "Fixed room threshold"
               },
               "data_description": {
                 "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+                "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
                 "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
                 "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
                 "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually."
@@ -3600,6 +3641,7 @@
             "floor": "Helps with room grouping and cross ventilation. You can create custom areas under “Floors & areas”.",
             "include_in_calculations": "Off = the room remains visible but does not affect recommendations, house balance, statistics or learning.",
             "moisture_sources": "Multiple selection is possible: shower, bathtub, sauna, cooking, washing machine, dryer, ironing station and/or hung laundry. This is only context for detection; FreshAirIQ activates a moisture source only when the measurements support it.",
+            "dishwasher_signal": "Optional: a signal of the dishwasher – a binary sensor \"drying / door open\" (e.g. eco dry, AutoOpen) or a programme/phase sensor. While it dries FreshAirIQ counts the extra moisture at once; after the end of the programme a humidity rise is attributed to the dishwasher. Leave empty: recognised from the room climate only (select the source \"Dishwasher\").",
             "ventilation_threshold_mode": "Automatic uses the established default room threshold. Percentage and fixed modes override it only for this room; health and safety rules take priority.",
             "ventilation_threshold_percent": "Percentage mode only: share of the current water content in this room air.",
             "ventilation_threshold_ml": "Fixed mode only: removable moisture potential from which this room may be prioritized individually.",
@@ -3676,6 +3718,10 @@
     "missing_required_entities": {
       "title": "FreshAirIQ needs attention",
       "description": "Required entities configured for {entry_title} no longer exist in Home Assistant: {entities}. Open FreshAirIQ settings and replace the missing outdoor, room sensor, or window/door references."
+    },
+    "cross_pairs_unused": {
+      "title": "Cross ventilation: entries are not used",
+      "description": "In {entry_title} the cross-ventilation settings contain entries FreshAirIQ cannot use: {detail}. The entries stay saved. Open FreshAirIQ → Settings → Cross ventilation and enter them as room pairs."
     }
   }
 }

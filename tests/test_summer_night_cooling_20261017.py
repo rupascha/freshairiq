@@ -40,8 +40,11 @@ def test_cooling_airing_is_not_ended_by_the_maximum_duration() -> None:
 
 
 def test_other_profiles_keep_the_maximum_duration() -> None:
+    # Testvermerk 0.26.7.0 (F11): no profile has a maximum duration any more – at 60 min with ~3 g/m³ drier air the
+    # airing continues in the other profiles as well; with air that no longer dries it closes.
     options = {**SUMMER, "operating_profile": "balanced"}
-    assert evaluate_room(_room(), options, False).action == "Close"
+    assert evaluate_room(_room(), options, False).action == "Continue ventilating"
+    assert evaluate_room(_room(reference_temperature=24.0, reference_humidity=55.0), options, False).action == "Close"
 
 
 def test_closes_when_outdoor_air_is_no_longer_cooler() -> None:
@@ -65,8 +68,10 @@ def test_no_warming_close_for_a_cool_room_or_switched_off_goal() -> None:
     assert cool.reason != SUMMER_WARMING_CLOSE_REASON
     off = evaluate_room(_room(reference_temperature=27.0, session_elapsed_min=5, cooling_allowed=False), SUMMER, False)
     assert off.reason != SUMMER_WARMING_CLOSE_REASON
-    # the switched-off temperature goal also brings back the maximum duration
-    assert evaluate_room(_room(cooling_allowed=False), SUMMER, False).action == "Close"
+    # Testvermerk 0.26.7.0 (F11): the switched-off temperature goal no longer brings back a maximum duration – the
+    # drier night air keeps drying; air that no longer dries closes.
+    assert evaluate_room(_room(cooling_allowed=False), SUMMER, False).action == "Continue ventilating"
+    assert evaluate_room(_room(cooling_allowed=False, reference_temperature=24.0, reference_humidity=55.0), SUMMER, False).action == "Close"
 
 
 def test_fan_only_and_urgent_rooms_are_not_closed_for_warming() -> None:

@@ -178,6 +178,7 @@ def _room_model_defaults() -> dict[str, Any]:
         "session_recommendation_followed": False,
         "session_recommendation_issued_at": None,
         "session_predicted_removed_ml": None,
+        "session_target_limited_removed_ml": None,
         "session_predicted_temperature_change_c": None,
         "session_predicted_cost": None,
         "session_prediction_confidence": None,

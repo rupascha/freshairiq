@@ -370,6 +370,11 @@ _GUARD_SKIP = {
     "config_flow_fields.py", "config_flow_schemas.py", "config_flow_goals.py", "config_flow_rooms.py",
     "config_flow_subentry.py", "config_flow_options.py", "config_flow_options_rooms.py",
     "config_flow_options_settings.py",
+    # Testvermerk 0.26.7.0 (support case A): the cross-pair texts moved from config_flow_options_settings.py into
+    # cross_pairs.py, which keeps its own DE/EN table (both languages tested in test_support_a_chain_026700)
+    "cross_pairs.py",
+    # Testvermerk 0.26.7.0 (#18): device-state vocabulary for matching appliance phases (DE/EN words), no output text
+    "dishwasher.py",
 }
 # Fragments that are glued to room names; checked in their assembled form below.
 _GUARD_FRAGMENTS = {" schließen", " und ", " öffnen · ca. 7 min", " schließen · CO₂ neu bewerten",

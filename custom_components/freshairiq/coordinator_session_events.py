@@ -11,6 +11,12 @@ from .forecast_shadow import shadow_forecast_record
 from .robustness import finite_float
 
 
+
+def _close_prediction(mem: dict[str, Any]) -> Any:
+    """0.26.7.0 (support case C): the close time predicted at the start (None without one)."""
+    context = mem.get("session_prediction_start_context")
+    return context.get("close_prediction_min") if isinstance(context, dict) else None
+
 class SessionEventsMixin:
     """Completed-session event records written to the ventilation log and validation history."""
 
@@ -244,7 +250,7 @@ class SessionEventsMixin:
             "predicted_cost": mem.get("session_predicted_cost"),
             "prediction_confidence": mem.get("session_prediction_confidence"),
             "prediction_snapshot_at": mem.get("session_prediction_snapshot_at"),
-            "prediction_horizon_min": mem.get("session_prediction_horizon_min"),
+            "prediction_horizon_min": mem.get("session_prediction_horizon_min"), "prediction_close_min": _close_prediction(mem),
             "prediction_snapshot_elapsed_min": mem.get("session_prediction_snapshot_elapsed_min"),
             "prediction_reference": mem.get("session_prediction_reference"),
             "prediction_time_aligned": bool(prediction_time_aligned),

@@ -267,8 +267,12 @@ def _home_rank(room: dict[str, Any], contact: str, sizes: dict[str, tuple[float,
     return (stated.get(contact) != "window", len(_contacts(room)), size[0] * size[1] if size else math.inf, str(room["key"]))
 
 
+def _outside_door(stated: Any, contact: str, contact_classes: dict[str, Any] | None) -> bool:
+    return stated == "door" or (stated != "window" and str((contact_classes or {}).get(contact) or "") in DOOR_CLASSES)
+
+
 def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]], pairs: dict[tuple[str, str], Any],
-              homes: dict[str, str] | None = None) -> list[dict[str, Any]]:
+              homes: dict[str, str] | None = None, contact_classes: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     shared = {c for info in pairs.values() for c in info.get("contacts", [])}
     openings: list[dict[str, Any]] = []
     per_edge: dict[tuple[str, int], list[dict[str, Any]]] = {}
@@ -283,8 +287,10 @@ def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]],
             index, offset, provenance = _best_edge(key, placed, orientation if orientation in ORIENTATION_DEG else None)
             item = {"id": f"o_{key}_{len([o for o in openings if o['room_id'] == f'r_{key}'])}", "room_id": f"r_{key}", "edge": index,
                     "offset": 0.5 if offset is None else offset, "width_m": None,
-                    # a contact stated as a door is an outside door, every other one a window (as before)
-                    "kind": "door" if kinds.get(contact) == "door" else "window", "mechanics": "door" if kinds.get(contact) == "door" else "unknown",
+                    # a contact stated as a door is an outside door, every other one a window (as before). 0.26.7.0 (#27):
+                    # a door sensor in Home Assistant (balcony door) is a door too unless the setup states a window
+                    "kind": "door" if _outside_door(kinds.get(contact), contact, contact_classes) else "window",
+                    "mechanics": "door" if _outside_door(kinds.get(contact), contact, contact_classes) else "unknown",
                     "contacts": [contact], "provenance": provenance if offset is not None else "unplaced"}
             openings.append(item)
             if offset is not None:
@@ -333,7 +339,7 @@ def propose(rooms: list[dict[str, Any]], levels: list[str], open_connections: di
         for room in members:
             layout["rooms"].append({"id": f"r_{room['key']}", "room_key": room["key"], "floor_id": f"f_{level}",
                                     "polygon": placed[room["key"]], "provenance": sizes[room["key"]][2]})
-        layout["openings"].extend(_openings(members, placed, floor_pairs, homes))
+        layout["openings"].extend(_openings(members, placed, floor_pairs, homes, contact_classes))
     doors = {o["id"] for o in layout["openings"] if o["kind"] == "door"}
     for (a, b), info in sorted(pairs.items()):
         if f"d_{a}_{b}" in doors:

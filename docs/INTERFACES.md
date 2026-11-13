@@ -80,3 +80,20 @@ Status: **verifiziert** = am Code beider Seiten bzw. per Test geprüft; **offen*
 | Hauskarte ↔ HA | Karte liest | `weather.*` (Zustand/Attribute), `weather/subscribe_forecast` (hourly/daily, geteilt, nur bei Anzeige), `sun.sun`, optional `sensor.moon_phase`; Wind weiter aus `house_map/subscribe` | Playwright `0.26.7.0 …` |
 | Hauskarte ↔ Integration | Karte liest | Raumfelder `realistic_potential_ml`, `potential_horizon_min`, `result_ml`, `session_*` (vorhanden, unverändert); Summe = `removableNow` der Classic-Karte | Playwright Feuchte nach Räumen |
 | Diagnostics HA / Hub | – | keine Änderung (neue Option und Entität sind nicht Teil des Upload-Vertrags) | Hub-/Diagnostics-HA-Suiten |
+
+## v0.26.7.0 Nachbesserung – neue additive Felder (Diagnose-Schema 15 unverändert)
+| Feld (Raum) | Werte | Konsument |
+|---|---|---|
+| `moisture_source_detection` | `device`, `signature`, `generic`, `balance`, `null` | Hub `source_behaviour.detection`, Diagnostics-HA-Karte |
+| `dishwasher_phase` | `washing`, `drying`, `door_open`, `finished`, `after_evaporation`, `idle`, `null` | Hub `source_behaviour.dishwasher_phases` |
+| `behaviour_actionable`, `behaviour_actionable_followed`, `behaviour_unactionable`, `behaviour_ignored_streak` | ganze Zahlen ≥ 0 | Hub (Evidenz, unplausible Zähler) |
+| `notification_adaptation` | `{version, active, reason, samples, follow_rate_pct, reminder_interval_min, max_reminders, summarize, …}` | Hub (`behaviour_adaptation_active`) |
+| Sitzung `shadow_forecast.successor_*` | Formel-ID, Status `shadow_only_uncalibrated`, Eingang, Vorhersage, Fehler | Hub-Lüftungsdatensatz `shadow_comparison` |
+Gegenstücke: Diagnostics Hub 0.3.3.95, Diagnostics-HA 0.5.7. Ältere Gegenseiten ignorieren die Felder (additiv), ältere Exporte werden im Hub als `fields_present: false` geführt.
+
+## v0.26.7.0 finaler Hotfix – Prognosefelder (additiv)
+| Feld (Raum) | Bedeutung |
+|---|---|
+| `forecast_optimal_close_in_min` / `_reason` | bei laufender Lüftung `null` (kein Prognose-Schließzeitpunkt); sonst wie bisher, nie mehr `max_duration` |
+| `forecast_physical_end_in_min` / `_reason` | physikalischer Endpunkt der Prognose (nur Diagnose), unverändert berechnet |
+| Shadow `production_formula_id` | `start-curve-v3-horizon-forecast-r2` (Revision wegen F11-C); Hub speichert die ID als Text, keine Änderung nötig |

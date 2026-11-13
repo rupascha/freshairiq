@@ -40,7 +40,9 @@ def _house_close(rooms, house_mode):
 
 @pytest.mark.parametrize("house_mode", [True, False])
 def test_the_house_close_never_closes_the_sauna_room(house_mode):
-    rooms = [_sauna(), _room("bad")]
+    # Testvermerk 0.26.7.0 (F11): a small house return no longer closes while the air still dries (1.2 g/m³ here);
+    # the aggregate close that used to take the sauna room along now comes from a hard limit in the other room.
+    rooms = [_sauna(), _room("bad", goal_state={"hard_close": True, "goals": []})]
     rec = _house_close(rooms, house_mode)
     assert rec["kind"] == "close" and "wellnessraum" in rec["room_keys"]  # the bug: aggregate closes both
     by_key = {r["key"]: r for r in rooms}

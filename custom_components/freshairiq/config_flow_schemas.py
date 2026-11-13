@@ -111,6 +111,8 @@ def _model_schema(current: dict[str, Any]) -> vol.Schema:
         vol.Required("efficiency"): section(vol.Schema({
             vol.Required(native_option_key("min_return_next_5_min_ml"), default=_bounded(current.get("min_return_next_5_min_ml"), 25, 0, 500)): _number(0, 500, 5, "mL"),
             vol.Required(native_option_key("max_temp_loss_next_5_min_c"), default=_bounded(current.get("max_temp_loss_next_5_min_c"), .6, .1, 5)): _number(0.1, 5, 0.1, "°C"),
+            # 0.26.7.0 (F11): the only temperature that may end an airing that still dries the room; 0 = none
+            vol.Required(native_option_key("airing_min_room_temp_c"), default=_bounded(current.get("airing_min_room_temp_c"), 0, 0, 30)): _number(0, 30, 0.5, "°C"),
             vol.Required(native_option_key("min_efficiency_ml_per_01c"), default=_bounded(current.get("min_efficiency_ml_per_01c"), 8, 0, 200)): _number(0, 200, 1, "mL/0,1°C"),
         }), {"collapsed": True}),
         vol.Required("health_limits"): section(vol.Schema({
@@ -122,6 +124,8 @@ def _model_schema(current: dict[str, Any]) -> vol.Schema:
             vol.Required(native_option_key("mould_critical_surface_rh"), default=_bounded(current.get("mould_critical_surface_rh"), 90, 70, 100)): _number(70, 100, 1, "%"),
             vol.Required(native_option_key("co2_warn"), default=_bounded(current.get("co2_warn"), 1000, 600, 2500)): _number(600, 2500, 50, "ppm"),
             vol.Required(native_option_key("co2_critical"), default=_bounded(current.get("co2_critical"), 1400, 800, 4000)): _number(800, 4000, 50, "ppm"),
+            # #29: absolute release level of a started CO2 airing; 0 = automatic (50 ppm below the warning threshold)
+            vol.Required(native_option_key("co2_release"), default=_bounded(current.get("co2_release"), 0, 0, 2500)): _number(0, 2500, 50, "ppm"),
         }), {"collapsed": True}),
         vol.Required("learning"): section(vol.Schema({
             vol.Required(native_option_key("learning_enabled"), default=bool(current.get("learning_enabled", True))): bool,

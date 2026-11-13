@@ -33,6 +33,7 @@ from .const import (
     CONF_ROOM_CLIMATE,
     CONF_ROOM_CO2,
     CONF_ROOM_MOLD_INDICATOR,
+    CONF_ROOM_DISHWASHER_SIGNAL,
     CONF_ROOM_CONTACT,
     CONF_ROOM_CONTACTS,
     CONF_ROOM_COVERS,
@@ -183,6 +184,10 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         vol.Optional(CONF_ROOM_MOISTURE_SOURCES, default=room.get(CONF_ROOM_MOISTURE_SOURCES, [])): selector.SelectSelector(
             selector.SelectSelectorConfig(options=MOISTURE_SOURCES, multiple=True, mode=selector.SelectSelectorMode.LIST, translation_key="moisture_source")
         ),
+        # 0.26.7.0 (#18): optional dishwasher signal – drying / door open, or a programme phase of the appliance
+        _optional(CONF_ROOM_DISHWASHER_SIGNAL, room.get(CONF_ROOM_DISHWASHER_SIGNAL)): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "select", "input_select", "input_boolean", "switch"])
+        ),
         vol.Required(CONF_ROOM_THRESHOLD_MODE, default=_choice(room.get(CONF_ROOM_THRESHOLD_MODE), ROOM_THRESHOLD_AUTOMATIC, [ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED])): selector.SelectSelector(
             selector.SelectSelectorConfig(options=[ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="room_threshold_mode")
         ),
@@ -218,6 +223,9 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
         vol.Optional("properties"): section(vol.Schema({
             vol.Optional(CONF_ROOM_MOISTURE_SOURCES, default=room.get(CONF_ROOM_MOISTURE_SOURCES, [])): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=MOISTURE_SOURCES, multiple=True, mode=selector.SelectSelectorMode.LIST, translation_key="moisture_source")
+            ),
+            _optional(CONF_ROOM_DISHWASHER_SIGNAL, room.get(CONF_ROOM_DISHWASHER_SIGNAL)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "select", "input_select", "input_boolean", "switch"])
             ),
             vol.Required(CONF_ROOM_THRESHOLD_MODE, default=_choice(room.get(CONF_ROOM_THRESHOLD_MODE), ROOM_THRESHOLD_AUTOMATIC, [ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED])): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=[ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="room_threshold_mode")

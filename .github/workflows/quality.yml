@@ -108,32 +108,55 @@ jobs:
           path: ha_tests/coverage-ha.json
 
   frontend-compatibility:
+    # 0.26.7.0 (N8): the full browser matrix in three parallel shards – chromium (desktop, Android WebView and,
+    # after them, the frame-time projects), webkit, firefox – instead of one serial job; npm and the Playwright
+    # browsers are cached. Every project and test still runs; only the wall time shrinks.
+    # All engines (chromium webkit firefox) on main, pull requests, the weekly run and releases.
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - name: chromium
+            browsers: chromium
+            projects: --project=chromium --project=android-webview --project=frames-chromium --project=frames-android-webview
+          - name: webkit
+            browsers: webkit
+            projects: --project=webkit
+          - name: firefox
+            browsers: firefox
+            projects: --project=firefox
     env:
       # work-branch pushes: Chromium only; everything else: chromium webkit firefox
       WORK_BRANCH_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/arbeitsauftrag-') }}
+      RUN_SHARD: ${{ !(github.event_name == 'push' && startsWith(github.ref, 'refs/heads/arbeitsauftrag-')) || matrix.shard.name == 'chromium' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - run: npm ci
-      - if: env.WORK_BRANCH_PUSH != 'true'
-        run: npx playwright install --with-deps chromium webkit firefox
-      - if: env.WORK_BRANCH_PUSH != 'true'
-        run: npx playwright test
+          cache: npm
+      - if: env.RUN_SHARD == 'true'
+        run: npm ci
+      - if: env.RUN_SHARD == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ matrix.shard.browsers }}-${{ hashFiles('package-lock.json') }}
+      - if: env.RUN_SHARD == 'true'
+        run: npx playwright install --with-deps ${{ matrix.shard.browsers }}
+      - if: env.RUN_SHARD == 'true' && env.WORK_BRANCH_PUSH != 'true'
+        run: npx playwright test ${{ matrix.shard.projects }}
+      - if: env.RUN_SHARD == 'true' && env.WORK_BRANCH_PUSH == 'true'
+        run: npx playwright test --project=chromium --project=android-webview --project=frames-chromium --project=frames-android-webview
       # a failed browser test leaves its evidence (traces, screenshots of the visual checks) for the analysis
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: freshairiq-playwright-results
+          name: freshairiq-playwright-results-${{ matrix.shard.name }}
           path: test-results/
           retention-days: 14
           if-no-files-found: ignore
-      - if: env.WORK_BRANCH_PUSH == 'true'
-        run: npx playwright install --with-deps chromium
-      - if: env.WORK_BRANCH_PUSH == 'true'
-        run: npx playwright test --project=chromium --project=android-webview --project=frames-chromium --project=frames-android-webview
 
   hacs:
     runs-on: ubuntu-latest

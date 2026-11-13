@@ -14,6 +14,7 @@ from .const import (
     CONF_ROOM_CO2,
     CONF_ROOM_MOISTURE_SOURCES,
     CONF_ROOM_MOLD_INDICATOR,
+    CONF_ROOM_DISHWASHER_SIGNAL,
     CONF_ROOM_NAME,
     CONF_ROOM_REFERENCE_HUMIDITY,
     CONF_ROOM_REFERENCE_TEMPERATURE,
@@ -30,9 +31,10 @@ from .energy import (
 )
 from .forecast import horizon_forecast
 from .goals import room_comfort_target
+from .dishwasher import dishwasher_phase
 from .humidity_plateau import track_session
 from .forecast_shadow import freeze_shadow_start
-from .forecast_validation import evaluate_start_forecast_at_duration, freeze_start_forecast_context
+from .forecast_validation import START_FORECAST_CONTEXT_VERSION, evaluate_start_forecast_at_duration, freeze_start_forecast_context
 from .learning_effectiveness import freeze_learning_effectiveness_context
 from .model import RoomInput, absolute_humidity, evaluate_room, scaled_min_return
 from .moisture_source import update_moisture_source
@@ -78,6 +80,9 @@ def _minutes_since(value: Any, now: datetime) -> float | None:
     except (TypeError, ValueError):
         return None
 
+# 0.26.7.0 (F11): the forecast gets no maximum airing time – its advisory end point follows the physics only
+NO_DURATION_LIMIT_MIN = 1440.0
+
 class RoomModelMixin:
     """Per-room physics: room model, recommendation, forecast and the frozen session prediction."""
 
@@ -102,6 +107,11 @@ class RoomModelMixin:
         )
         sources[str(key)] = source_fields(str(entity), value, reason)
         return value
+
+    def _dishwasher_phase(self, cfg: dict[str, Any]) -> str | None:
+        """0.26.7.0 (#18): phase of the room's optional dishwasher signal (None without one)."""
+        entity_id = cfg.get(CONF_ROOM_DISHWASHER_SIGNAL)
+        return dishwasher_phase(entity_id, self.hass.states.get(str(entity_id))) if entity_id else None
 
     def _evaluate_room_model(
         self,
@@ -139,7 +149,7 @@ class RoomModelMixin:
                 window_open=bool(is_open),
                 learning_rate_per_min=float(mem.get("learning_rate", .03)),
                 airflow_factor=airflow, cross_ventilation=cross,
-                configured_sources=list(cfg.get(CONF_ROOM_MOISTURE_SOURCES, []) or []),
+                configured_sources=list(cfg.get(CONF_ROOM_MOISTURE_SOURCES, []) or []), device_phase=self._dishwasher_phase(cfg),  # #18
             )
             changed = changed or bool(moisture_source.get("changed"))
             if moisture_source.get("active") and mem.get("session_active"):
@@ -479,7 +489,7 @@ class RoomModelMixin:
                 max_temp_loss_next_5_min_c=float(options.get("max_temp_loss_next_5_min_c", 0.6)),
                 min_efficiency_ml_per_01c=float(options.get("min_efficiency_ml_per_01c", 8.0)),
                 min_duration_min=float(options.get("min_duration_min", 3.0)),
-                max_duration_min=float(options.get("max_duration_min", 20.0)),
+                max_duration_min=NO_DURATION_LIMIT_MIN,  # 0.26.7.0 (F11): no end point at a maximum time
                 operating_profile=str(options.get("operating_profile", "comfort")),
                 **forecast_args,
             )
@@ -543,10 +553,13 @@ class RoomModelMixin:
                     # The frozen model starts at the confirmed measurement
                     # baseline, so predict only the still remaining part.
                     initial_horizon = max(float(recommended_total_horizon) - elapsed, 1.0)
+                    close_source = "recommended_duration"
                 elif dynamic.get("optimal_close_in_min") is not None:
                     initial_horizon = max(float(dynamic.get("optimal_close_in_min")), 1.0)
+                    close_source = "optimal_close"
                 else:
                     initial_horizon = max(float(forecast_horizon), 1.0)
+                    close_source = None  # only the configured forecast horizon: no close-time prediction
                 initial_horizon = min(initial_horizon, 120.0)
 
                 start_ah = float(mem.get("session_validation_start_ah") or absolute_humidity(t, rh))
@@ -573,10 +586,16 @@ class RoomModelMixin:
                     start_context["learning_effectiveness"] = effectiveness_context
                 # passive shadow formula: cross-ventilation known at the start and the version that froze it
                 start_context["shadow"] = freeze_shadow_start(cross_ventilated=bool(cross), integration_version=VERSION)
+                # 0.26.7.0 (support case C): the close time predicted at the start, kept apart from the replay horizon
+                # (which becomes the measured duration at the end and made every close-time error 0.0)
+                start_context["close_prediction_min"] = round(initial_horizon, 2) if close_source else None
+                start_context["close_prediction_source"] = close_source
                 start_prediction = evaluate_start_forecast_at_duration(start_context, initial_horizon)
                 if start_prediction is not None:
                     mem["session_prediction_start_context"] = start_context
                     mem["session_predicted_removed_ml"] = start_prediction["predicted_removed_ml"]
+                    coach = evaluate_start_forecast_at_duration(start_context, initial_horizon, limit_to_target=True)  # #28: live coach basis
+                    mem["session_target_limited_removed_ml"] = coach["predicted_removed_ml"] if coach is not None else None
                     mem["session_predicted_temperature_change_c"] = start_prediction["predicted_temperature_change_c"]
                     mem["session_predicted_cost"] = start_prediction["predicted_cost"]
                     mem["session_prediction_confidence"] = start_prediction["confidence"]
@@ -585,7 +604,7 @@ class RoomModelMixin:
                     mem["session_prediction_snapshot_elapsed_min"] = round(measurement_elapsed_now, 3)
                     mem["session_prediction_snapshot_valid"] = True
                     mem["session_prediction_time_aligned"] = False
-                    mem["session_prediction_reference"] = "session_start_curve_v2"
+                    mem["session_prediction_reference"] = f"session_start_curve_v{START_FORECAST_CONTEXT_VERSION}"
                     mem["session_prediction_snapshot_frame_quality"] = measurement_frame.get("quality")
                     mem["session_prediction_snapshot_frame_skew_s"] = measurement_frame.get("skew_s")
                     mem["session_prediction_snapshot_frame_max_age_s"] = measurement_frame.get("max_age_s")
@@ -659,12 +678,13 @@ class RoomModelMixin:
                     live_to_end = horizon_forecast(
                         horizon_min=remaining,
                         target_ah=target_ah,
-                        cap_positive_to_target=remaining > 5,
+                        # #28: a validation trajectory compared with the measured (absolute) removal – physical, uncapped
+                        cap_positive_to_target=False,
                         min_return_next_5_min_ml=scaled_min_return(options.get("min_return_next_5_min_ml", 25.0), cfg[CONF_ROOM_VOLUME]),
                         max_temp_loss_next_5_min_c=float(options.get("max_temp_loss_next_5_min_c", 0.6)),
                         min_efficiency_ml_per_01c=float(options.get("min_efficiency_ml_per_01c", 8.0)),
                         min_duration_min=float(options.get("min_duration_min", 3.0)),
-                        max_duration_min=float(options.get("max_duration_min", 20.0)),
+                        max_duration_min=NO_DURATION_LIMIT_MIN,  # 0.26.7.0 (F11): no end point at a maximum time
                         operating_profile=str(options.get("operating_profile", "comfort")),
                         **forecast_args,
                     )

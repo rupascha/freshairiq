@@ -52,7 +52,11 @@ def test_the_co2_hold_band_keeps_a_co2_airing_open_on_every_close_path(co2, latc
 
 
 def test_the_hold_band_does_not_override_the_maximum_duration() -> None:
-    assert _action(_room(co2=975, co2_lead_latched=True, session_co2_only=True, session_elapsed_min=41.0, contact_open_seconds=2460)) == "Close"
+    # Testvermerk 0.26.7.0 (F11): there is no maximum airing duration any more, so nothing overrides the CO2 hold
+    # band at 41 min – a CO2 airing still inside the band keeps going; once CO2 leaves the band it closes as before.
+    long_airing = dict(co2_lead_latched=True, session_co2_only=True, session_elapsed_min=41.0, contact_open_seconds=2460)
+    assert _action(_room(co2=975, **long_airing)) == "Continue ventilating"
+    assert _action(_room(co2=949, **long_airing)) == "Close"
 
 
 # --------------------------------------------------------------------------- P1-04

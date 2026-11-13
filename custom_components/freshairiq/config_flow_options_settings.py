@@ -61,26 +61,12 @@ from .notifications import _all_notification_targets, _send_targets
 from .settings_contract import native_option_key
 from .validation import option_relationship_error
 
-# v0.26.6.1 (#25): what is wrong with a cross-ventilation pair, in the user's language
-_CROSS_PAIR_TEXT = {
-    "de": {"malformed": "„{item}“ ist kein Raumpaar (Form: Raum+Raum)",
-           "unknown": "„{room}“ in „{item}“ ist kein bekannter Raum",
-           "ambiguous": "„{room}“ in „{item}“ passt auf mehrere Räume – bitte den Raumschlüssel verwenden",
-           "same": "„{item}“ nennt zweimal denselben Raum",
-           "duplicate": "„{item}“ ist doppelt angegeben"},
-    "en": {"malformed": "\"{item}\" is not a room pair (form: room+room)",
-           "unknown": "\"{room}\" in \"{item}\" is not a known room",
-           "ambiguous": "\"{room}\" in \"{item}\" matches several rooms – please use the room key",
-           "same": "\"{item}\" names the same room twice",
-           "duplicate": "\"{item}\" is listed twice"},
-}
-
+# v0.26.6.1 (#25): what is wrong with a cross-ventilation pair, in the user's language (shared with the repair notice)
+_CROSS_PAIR_TEXT = cross_pairs.TEXT
 
 
 def _cross_pair_problems(problems, language: str) -> str:
-    texts = _CROSS_PAIR_TEXT["de" if str(language).lower().startswith("de") else "en"]
-    return "; ".join(texts[p["code"]].format(item=p.get("item", ""), room=p.get("room", "")) for p in problems)
-
+    return cross_pairs.describe(problems, language)
 
 
 class OptionsSettingsMixin:

@@ -55,13 +55,18 @@ def test_a_self_started_airing_gets_the_default_plan() -> None:
 
 
 def test_the_reported_small_room_is_aired_for_the_plan_not_three_minutes() -> None:
+    # Testvermerk 0.26.7.0 (F11): the outdoor air here is ~4.9 g/m³ drier. Neither the minimum time (3.5 min without
+    # a plan) nor the end of the plan closes the small room any more – only air that no longer dries does.
     plan = session_target_min({"rooms": {}}, OPTIONS)
-    early = evaluate_room(_reported_room(3.5, None), OPTIONS, False)
-    assert early.action == "Close"  # old behaviour without a plan
-    held = evaluate_room(_reported_room(3.5, plan), OPTIONS, False)
-    assert held.action == "Continue ventilating" and not held.close_recommended
-    done = evaluate_room(_reported_room(plan + 0.5, plan), OPTIONS, False)
-    assert done.action == "Close"
+    for elapsed, target in ((3.5, None), (3.5, plan), (plan + 0.5, plan), (60.0, plan)):
+        result = evaluate_room(_reported_room(elapsed, target), OPTIONS, False)
+        assert result.action == "Continue ventilating" and not result.close_recommended, (elapsed, target)
+    dried = RoomInput(
+        "gast", "Gästezimmer", 21.0, 40.0, 10.0, 75.0, 9.4, True, 600,
+        session_active=True, session_elapsed_min=plan + 0.5, session_start_temp=21.0,
+        learning_rate=0.03, session_fresh_measurements=2, session_target_min=plan,
+    )
+    assert evaluate_room(dried, OPTIONS, False).action == "Close"
 
 
 # --- point 3: stricter cooldown override ---------------------------------------------------

@@ -122,7 +122,7 @@ Ab 0.26.5.5 enthält das Raum-Ergebnis `fan_automation` zusätzlich `follow_up_u
 | `freshairiq_house_recommendation` | eine zusammenhängende Empfehlung fürs ganze Haus | bei Änderung von Art/Räumen/Anweisung (ab 0.26.5.3 ohne den laufenden Minuten-Countdown – „noch ca. 18 min“ löst kein neues Ereignis mehr aus); nach Neustart still | Ansagen an alle |
 | `freshairiq_notification` | genau die Push-Texte (Information **und** Handlungsaufforderung, Art in `type`) | höchstens einmal pro Benachrichtigungs-Abstand (Standard 90 min) je Art/Raum | Telegram, Alexa |
 
-Seit 2026-10-16 hält die Hausentscheidung eine bereits ausgegebene Schließempfehlung, solange der gemeinsame 5-Minuten-Ertrag nur knapp um die Schwelle schwankt (Hysterese 125 %); harte Schließgründe (Maximaldauer, Auskühlung) wirken weiterhin sofort.
+Seit 2026-10-16 hält die Hausentscheidung eine bereits ausgegebene Schließempfehlung, solange der gemeinsame 5-Minuten-Ertrag nur knapp um die Schwelle schwankt (Hysterese 125 %); harte Schließgründe wirken weiterhin sofort. Seit 0.26.7.0 gibt es keine maximale Lüftungsdauer mehr: FreshAirIQ schließt nur, wenn die Außen-/Referenzluft nicht mehr trocknet (feuchter oder höchstens 0,4 g/m³ trockener) oder die selbst eingestellte Temperaturgrenze beim Lüften erreicht ist.
 
 ### `freshairiq_notification` – jede FreshAirIQ-Meldung als Ereignis (ab 0.26.4.9)
 

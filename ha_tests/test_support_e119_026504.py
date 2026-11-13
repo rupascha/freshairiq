@@ -62,7 +62,11 @@ async def test_running_fan_is_no_opened_window_for_the_house(hass, freezer) -> N
     bedroom = [r[0] for r in rows]
     assert len(set(bedroom)) == 1, bedroom  # no Close/Continue flip without a changed value
     assert all(r[1] != "Close" for r in rows)  # the drying fan is not told to stop by the house
-    assert not any("waschkuche" in r[3] for r in rows)  # a fan alone is judged by its own room model
+    # Testvermerk 0.26.7.0 (F11): with clearly drier air the bedroom is no longer closed by the house; the running
+    # house airing names the drying fan "keep running" (keep_instruction, 0.26.4.10). A fan alone is still judged by its
+    # own room model – the house never puts it into a close.
+    assert not any("waschkuche" in r[3] for r in rows if r[2] == "close")
+    assert all(r[2] != "continue" or "waschkuche" not in r[3] or r[1] == "Continue ventilating" for r in rows)
     assert "action_hint" not in d.room("waschkuche")  # fan runs: nothing to switch on
 
 

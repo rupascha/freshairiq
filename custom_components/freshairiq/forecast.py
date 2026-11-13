@@ -639,15 +639,10 @@ def _simulate_forecast_steps(
                 profile != "summer_cooling"
                 and state_temp <= min_forecast_end_temp
             )
-            hard_max = hard_max_in <= horizon and step_end >= hard_max_in - 1e-9
             decision_ready_by_time = total_elapsed_at_step >= total_min_duration
-            if hard_max:
-                # A hard configured maximum is not rounded to the next
-                # 5-minute simulation point. Example: after 19 min of a
-                # 20-min maximum the advisory end point is exactly 1 min.
-                optimal_close_in_min = hard_max_in
-                optimal_close_reason = "max_duration"
-            elif decision_ready_by_time and (
+            # final hotfix F11-C: the stored ``max_duration_min`` is no end point of the forecast any more (it was
+            # shown as "optimal close ... max_duration"); the forecast horizon itself stays bounded.
+            if decision_ready_by_time and (
                 reached_target or low_return or thermal_bad
                 or cumulative_thermal_bad or projected_end_too_cold
             ):

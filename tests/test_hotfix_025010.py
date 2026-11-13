@@ -38,7 +38,10 @@ def test_aggregate_close_is_blocked_with_one_fresh_measurement():
 def test_aggregate_close_is_allowed_after_two_fresh_measurements():
     room = _result(fresh=2)
     assert room["close_decision_ready"] is True
-    assert aggregate_close_allowed([room], low_return=True, thermal_bad=False) is True
+    # Testvermerk 0.26.7.0 (F11): the released gate lets the aggregate close once the air no longer dries; with the
+    # ~2.9 g/m³ drier air of this room a low return alone keeps it open
+    assert aggregate_close_allowed([room], low_return=True, thermal_bad=False) is False
+    assert aggregate_close_allowed([{**room, "delta_g_m3": 0.3}], low_return=True, thermal_bad=False) is True
 
 
 def test_aggregate_close_may_use_15_minute_model_fallback_without_two_reports():
@@ -57,7 +60,9 @@ def test_aggregate_close_may_use_15_minute_model_fallback_without_two_reports():
     ))
     assert result["close_decision_ready"] is True
     assert result["close_decision_model_fallback"] is True
-    assert aggregate_close_allowed([result], low_return=True, thermal_bad=False) is True
+    # Testvermerk 0.26.7.0 (F11): see above – the fallback gate is released; the air decides
+    assert aggregate_close_allowed([result], low_return=True, thermal_bad=False) is False
+    assert aggregate_close_allowed([{**result, "delta_g_m3": 0.3}], low_return=True, thermal_bad=False) is True
 
 
 def test_house_and_floor_aggregate_paths_both_use_the_close_gate():

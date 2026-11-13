@@ -36,6 +36,14 @@ def ensure_behaviour_defaults(room: dict[str, Any]) -> None:
         "recommendation_notified": 0,
         "recommendation_followed_notified": 0,
         "recommendation_follow_rate": None,
+        # 0.26.7.0 "Nutzungsverhalten & Empfehlungen": an episode nobody could act on (everybody away for its
+        # whole duration, or FreshAirIQ carried it out itself with the fan automation) is neither followed nor
+        # missed. The counters above keep their historical definition; these are kept apart.
+        "recommendation_actionable": 0,
+        "recommendation_actionable_followed": 0,
+        "recommendation_unactionable": 0,
+        "recommendation_actionable_follow_rate": None,
+        "recommendation_ignored_streak": 0,
         "avg_follow_delay_min": None,
         "follow_delay_samples": 0,
         "preferred_duration_min": None,
@@ -181,6 +189,7 @@ def _finalize_advice(store_data: dict[str, Any]) -> None:
                 room["recommendation_followed_notified"] = min(int(room.get("recommendation_followed_notified", 0)) + 1, 100000)
         opportunities = max(int(room.get("recommendation_opportunities", 0)), 1)
         room["recommendation_follow_rate"] = round(100.0 * int(room.get("recommendation_followed", 0)) / opportunities, 1)
+        _count_actionable(room, advice, key in followed_keys)
         if hold:
             # Keeping windows closed has no reaction time to learn from.
             continue
@@ -198,8 +207,12 @@ def _finalize_advice(store_data: dict[str, Any]) -> None:
             )
 
 
-def sync_active_recommendation(store_data: dict[str, Any], recommendation: dict[str, Any], now: datetime) -> bool:
-    """Track one recommendation episode instead of counting every coordinator refresh."""
+def sync_active_recommendation(store_data: dict[str, Any], recommendation: dict[str, Any], now: datetime,
+                               context: dict[str, Any] | None = None) -> bool:
+    """Track one recommendation episode instead of counting every coordinator refresh.
+
+    ``context`` (0.26.7.0): ``away`` (every known tracker away) and ``automatic`` (FreshAirIQ's fan automation
+    carries it out). An episode is actionable once anybody could have acted on it during its lifetime."""
     kind = str(recommendation.get("kind") or "")
     room_keys = sorted(str(x) for x in (recommendation.get("room_keys") or []))
     trackable = kind in {"ventilate", "pollen_wait", "wait", "prepare"} and bool(room_keys)
@@ -246,18 +259,46 @@ def sync_active_recommendation(store_data: dict[str, Any], recommendation: dict[
             "followed": False,
             "followed_room_keys": [],
             "follow_delay_by_room": {},
+            "actionable": _actionable(context),
         }
         return True
 
     # Keep the original issue time, but let the recommended duration evolve.
+    changed_actionable = False
     if isinstance(previous, dict):
+        changed_actionable = "actionable" in previous and not previous["actionable"] and _actionable(context)
+        if changed_actionable:
+            previous["actionable"] = True
         previous["duration_min"] = recommendation.get("duration_min")
         previous["estimated_removed_ml"] = recommendation.get("estimated_removed_ml")
         previous["expected_temperature_change_c"] = recommendation.get("expected_temperature_change_c")
         previous["estimated_reheat_cost"] = recommendation.get("estimated_reheat_cost")
         previous["forecast_confidence"] = recommendation.get("forecast_confidence")
         previous["selected_option_id"] = recommendation.get("selected_option_id")
-    return False
+    return bool(changed_actionable)
+
+
+def _actionable(context: dict[str, Any] | None) -> bool:
+    """Somebody could act: not everybody away and not carried out by FreshAirIQ's own automation."""
+    context = context if isinstance(context, dict) else {}
+    return not bool(context.get("away")) and not bool(context.get("automatic"))
+
+
+def _count_actionable(room: dict[str, Any], advice: dict[str, Any], followed: bool) -> None:
+    """0.26.7.0: the cleaned follow rate (episodes somebody could act on) next to the historical one."""
+    if "actionable" not in advice:
+        return  # episodes from before 0.26.7.0 are not reclassified afterwards
+    if not advice["actionable"]:
+        room["recommendation_unactionable"] = min(int(room.get("recommendation_unactionable", 0)) + 1, 100000)
+        return
+    room["recommendation_actionable"] = min(int(room.get("recommendation_actionable", 0)) + 1, 100000)
+    if followed:
+        room["recommendation_actionable_followed"] = min(int(room.get("recommendation_actionable_followed", 0)) + 1, 100000)
+        room["recommendation_ignored_streak"] = 0
+    else:
+        room["recommendation_ignored_streak"] = min(int(room.get("recommendation_ignored_streak", 0)) + 1, 1000)
+    room["recommendation_actionable_follow_rate"] = round(
+        100.0 * int(room.get("recommendation_actionable_followed", 0)) / max(int(room.get("recommendation_actionable", 0)), 1), 1)
 
 
 def learn_completed_session(room: dict[str, Any], duration_min: float) -> None:

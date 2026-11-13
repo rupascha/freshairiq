@@ -98,7 +98,9 @@ def test_validation_v2_scores_forecast_timeline_convergence():
     ]
     record = build_validation_record(result, [session], model_version="0.20.3.1")
     room = record["room_results"][0]
-    assert record["validation_version"] == 2
+    # Testvermerk 0.26.7.0 (#28): Validierungsdatensatz v3 (physikalische Prognosebasis)
+    assert record["validation_version"] == 3
+    assert record["prediction_basis"] == "physical_start_replay"
     assert room["timeline_start_abs_error_ml"] == 20.0
     assert room["timeline_latest_abs_error_ml"] == 2.0
     assert room["timeline_best_abs_error_ml"] == 2.0

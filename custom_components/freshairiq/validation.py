@@ -41,6 +41,12 @@ def option_relationship_error(options: dict[str, Any]) -> str | None:
     co2_critical = _number(options, "co2_critical", 1400.0)
     if co2_warn >= co2_critical:
         return "invalid_co2_order"
+    airing_limit = _number(options, "airing_min_room_temp_c", 0.0)
+    if airing_limit > 0.0 and not 5.0 <= airing_limit <= 30.0:  # 0.26.7.0 (F11): 0 = no temperature limit
+        return "invalid_airing_temperature_limit"
+    co2_release = _number(options, "co2_release", 0.0)
+    if co2_release > 0.0 and not 400.0 <= co2_release < co2_warn:  # #29: 0 = automatic
+        return "invalid_co2_release"
 
     return None
 
@@ -50,7 +56,7 @@ RELATION_OPTION_KEYS = {
     "close_delta", "min_delta_high_rh", "min_delta",
     "min_duration_min", "max_duration_min",
     "mould_slight_surface_rh", "mould_elevated_surface_rh", "mould_warn_surface_rh", "mould_critical_surface_rh",
-    "co2_warn", "co2_critical",
+    "co2_warn", "co2_critical", "co2_release", "airing_min_room_temp_c",
 }
 
 
@@ -106,5 +112,13 @@ def repair_option_relationships(options: dict[str, Any]) -> dict[str, Any]:
         out["co2_critical"] = min(4000.0, co2_warn + 50.0)
         if _number(out, "co2_critical", 4000.0) <= co2_warn:
             out["co2_warn"] = max(600.0, co2_critical - 50.0)
+    # 0.26.7.0 (F11): an out-of-range temperature limit means "no limit", never a hidden one
+    airing_limit = _number(out, "airing_min_room_temp_c", 0.0)
+    if airing_limit > 0.0 and not 5.0 <= airing_limit <= 30.0:
+        out["airing_min_room_temp_c"] = 0.0
+    # #29: a release level that no longer fits below the warning threshold falls back to automatic
+    release = _number(out, "co2_release", 0.0)
+    if release > 0.0 and not 400.0 <= release < _number(out, "co2_warn", 1000.0):
+        out["co2_release"] = 0.0
 
     return out

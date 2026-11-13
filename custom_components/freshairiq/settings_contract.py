@@ -16,9 +16,9 @@ NATIVE_OPTION_KEYS = frozenset({
     "min_potential_total_ml", "min_potential_room_ml", "min_duration_min",
     "max_duration_min", "post_ventilation_stabilization_min",
     "repeat_recommendation_cooldown_min", "repeat_min_benefit_ml",
-    "min_return_next_5_min_ml", "max_temp_loss_next_5_min_c",
+    "min_return_next_5_min_ml", "max_temp_loss_next_5_min_c", "airing_min_room_temp_c",
     "min_efficiency_ml_per_01c", "surface_factor", "mould_slight_surface_rh", "mould_elevated_surface_rh", "mould_warn_surface_rh",
-    "mould_critical_surface_rh", "co2_warn", "co2_critical",
+    "mould_critical_surface_rh", "co2_warn", "co2_critical", "co2_release",
     "learning_enabled", "learning_max_duration_min", "cover_position_zero_means", "cover_learning_max_closed_percent",
     # cross ventilation / profile / forecast / air quality
     "cross_ventilation_pairs", "cross_zone_connections", "operating_profile",

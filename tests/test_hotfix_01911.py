@@ -78,10 +78,14 @@ def test_aggregate_close_remains_allowed_after_marginal_return_falls_low():
 
 
 def test_hard_max_duration_still_allows_close_despite_high_return():
+    # Testvermerk 0.26.7.0 (F11): the maximum duration is no longer a hard close – at 20 min with a high return the
+    # house keeps "continue". A remaining hard criterion (heat loss with poor efficiency) still closes despite the return.
     options = {**DEFAULT_OPTIONS, "operating_profile": "dehumidify", "max_duration_min": 20}
     rooms = {"living": _room_result(session_elapsed_min=20, forecast_5_min_moisture_effect_ml=80)}
-    out = stabilise_recommendation(_rec(), rooms, options)
-    assert out["kind"] == "close"
+    assert stabilise_recommendation(_rec(), rooms, options)["kind"] == "continue"
+    thermal = {"living": _room_result(session_elapsed_min=20, forecast_5_min_moisture_effect_ml=80,
+                                      forecast_5_min_temperature_change_c=-1.0, efficiency_ml_per_01c=1.0)}
+    assert stabilise_recommendation(_rec(), thermal, options)["kind"] == "close"
 
 
 def test_close_live_coach_sets_remaining_time_to_zero():

@@ -22,9 +22,9 @@ _SAFE_OPTION_KEYS = (
     "repeat_min_benefit_ml", "repeat_weather_improvement_g_m3",
     "moisture_source_postrun_min", "house_ventilation_enter_ratio",
     "house_ventilation_exit_ratio", "forecast_horizon_min",
-    "max_temp_loss_next_5_min_c", "min_efficiency_ml_per_01c",
+    "max_temp_loss_next_5_min_c", "min_efficiency_ml_per_01c", "airing_min_room_temp_c",
     "surface_factor", "mould_slight_surface_rh", "mould_elevated_surface_rh", "mould_warn_surface_rh", "mould_critical_surface_rh",
-    "co2_warn", "co2_critical", "voc_sensor_enabled", "pm25_sensor_enabled",
+    "co2_warn", "co2_critical", "co2_release", "voc_sensor_enabled", "pm25_sensor_enabled",
     "illuminance_sensor_enabled", "voc_warn", "voc_critical", "pm25_warn",
     "pm25_critical", "humidify_below_rh", "shade_above_temp_c",
     "shade_min_illuminance_lx", "shade_lead_min", "shade_forecast_max_c", "shade_max_cloud_coverage", "learning_enabled", "learning_max_duration_min",
@@ -301,6 +301,7 @@ def _three_state_learning_diagnostic(runtime: Any, stored: Any) -> dict[str, Any
         "session_learning_quarantined": bool(stored.get("session_learning_quarantined")),
         "session_learning_quarantine_code": _json_safe(stored.get("session_learning_quarantine_code")),
         "session_predicted_removed_ml": _json_safe(stored.get("session_predicted_removed_ml")),
+        "session_target_limited_removed_ml": _json_safe(stored.get("session_target_limited_removed_ml")),
         "session_predicted_temperature_change_c": _json_safe(stored.get("session_predicted_temperature_change_c")),
         "session_prediction_confidence": _json_safe(stored.get("session_prediction_confidence")),
         "three_state_transients_suppressed": _safe_int(stored.get("three_state_transients_suppressed")),
@@ -377,6 +378,12 @@ _ROOM_KEYS = (
     # 0.26.5.4 (support case): temperature target and the action at each decision step
     "comfort_target_c", "comfort_target_source", "canonical_action", "house_aligned_action",
     "close_recommended", "close_decision_ready", "contact_count", "action_hint",
+    # 0.26.7.0 (F09/F10, behaviour learning): how a moisture load was recognised, the dishwasher phase and the
+    # counted behaviour evidence with its reminder adaptation – numbers, fixed codes and fixed reason texts only, no entity ids
+    "moisture_source_active", "moisture_source_identified_source", "moisture_source_confidence",
+    "moisture_source_rate_ml_min", "moisture_source_generated_ml_window", "moisture_source_detection", "dishwasher_phase",
+    "behaviour_actionable", "behaviour_actionable_followed", "behaviour_unactionable", "behaviour_ignored_streak",
+    "notification_adaptation",
 )
 
 
@@ -388,7 +395,7 @@ _LEARNING_ROOM_KEYS = (
     "session_active", "session_started", "three_state_transients_suppressed", "session_passage_door", "session_learning_quarantined", "session_learning_quarantine_code", "session_physical_started", "session_result_ml", "session_start_ah",
     "session_start_source_ah", "session_start_temp", "session_fresh_measurements", "session_temperature_reports", "session_humidity_reports", "session_open_temperature_reported_at", "session_open_humidity_reported_at",
     "session_last_valid_temperature", "session_last_valid_humidity", "session_last_valid_reference_temperature", "session_last_valid_reference_humidity", "session_last_valid_at",
-    "session_predicted_removed_ml", "session_predicted_temperature_change_c",
+    "session_predicted_removed_ml", "session_target_limited_removed_ml", "session_predicted_temperature_change_c",
     "session_predicted_cost", "session_prediction_confidence",
     "session_prediction_snapshot_at", "session_prediction_horizon_min",
     "session_prediction_snapshot_valid", "session_prediction_reference",

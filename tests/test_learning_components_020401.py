@@ -36,6 +36,7 @@ def test_all_adaptive_models_are_exposed_with_progress():
         "room_physics", "live_forecast", "forecast_feedback", "shadow_learning", "routines",
         "seasonality", "user_strategy", "personal_context", "night_model",
         "house_strategy", "forecast_validation", "post_close",
+        "usage_behaviour",  # Testvermerk 0.26.7.0: new observation-only section
     }
     assert set(components) == expected
     assert result["component_count"] == len(expected)

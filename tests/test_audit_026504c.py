@@ -48,8 +48,15 @@ def test_co2_needing_the_air_again_lifts_an_earlier_close(co2) -> None:
 def test_the_close_returns_once_co2_is_down_and_protection_still_closes() -> None:
     assert evaluate_room(_room(co2=900), OPTIONS, False).action == "Close"
     assert evaluate_room(_room(co2=None), OPTIONS, False).action == "Close"  # CO2 goal off: the remembered close holds
-    # the maximum airing duration still ends it with CO2 above the warning threshold
-    assert evaluate_room(_room(co2=1100, co2_lead_latched=True, session_elapsed_min=41.0, contact_open_seconds=2460), OPTIONS, False).action == "Close"
+    # Testvermerk 0.26.7.0 (F11): there is no maximum airing duration any more – at 41 min with CO2 above the warning
+    # threshold the airing continues. The protection that remains is the explicitly configured temperature limit:
+    # it still closes with CO2 above the warning threshold (below critical), and only when it is configured.
+    long_airing = dict(co2=1100, co2_lead_latched=True, session_elapsed_min=41.0, contact_open_seconds=2460)
+    assert evaluate_room(_room(**long_airing), OPTIONS, False).action == "Continue ventilating"
+    cold = dict(long_airing, temperature=17.5, reference_temperature=4.0, reference_humidity=80.0)
+    assert evaluate_room(_room(**cold), OPTIONS, False).action == "Continue ventilating"
+    limited = evaluate_room(_room(**cold), {**OPTIONS, "airing_min_room_temp_c": 18.0}, False)
+    assert limited.action == "Close" and "temperature limit" in limited.reason
 
 
 # --------------------------------------------------------------------------- S02

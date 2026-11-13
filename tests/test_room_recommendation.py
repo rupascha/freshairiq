@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from custom_components.freshairiq.model import SUMMER_WARMING_CLOSE_REASON
+from custom_components.freshairiq.model import ROOM_TOO_DRY_CLOSE_REASON, SUMMER_WARMING_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON
 from custom_components.freshairiq.room_recommendation import _recommendation
 
 WIND = {"pollen": 0.0, "co2": None, "airflow": 1.0, "wind_bearing": None, "wind_speed": None}
@@ -52,8 +52,19 @@ def test_close_texts_cover_fallback_weather_risk_summer_and_target():
     assert "ersatzweise" in _rec(model)[2][-1]
     summer = _result(active=True, close_recommended=True, reason=SUMMER_WARMING_CLOSE_REASON)
     assert _rec(summer)[2][-1] == "Die Außenluft ist nicht mehr kühler als der Raum; Schließen hält die Kühle im Raum"
+    # Testvermerk 0.26.7.0 (F11): "target reached or benefit too small" is no longer a close reason; the text names
+    # the physical situation (air no longer drier / more humid / room already dry) or the user's temperature limit.
     target = _result(active=True, close_recommended=True)
-    assert _rec(target)[2][-1] == "Lüftungsziel erreicht oder zusätzlicher Nutzen ist zu gering"
+    assert _rec(target)[2][-1] == ("Die Außenluft ist kaum noch trockener als die Raumluft (höchstens 0.4 g/m³); "
+                                   "weiteres Lüften entfernt keine nennenswerte Feuchtigkeit mehr")
+    wet = _result(active=True, close_recommended=True, delta_g_m3=-0.3)
+    assert _rec(wet)[2][-1] == "Die Außenluft ist jetzt feuchter als die Raumluft; weiteres Lüften würde Feuchtigkeit hereinbringen"
+    limit = _result(active=True, close_recommended=True, delta_g_m3=2.0, reason=TEMPERATURE_LIMIT_CLOSE_REASON)
+    text = _rec(limit, {"airing_min_room_temp_c": 18.0})[2][-1]
+    assert text.startswith("Deine Temperaturgrenze beim Lüften (18.0 °C) ist erreicht") and "nicht weil genug Feuchtigkeit" in text
+    dry = _result(active=True, close_recommended=True, delta_g_m3=2.0, reason=ROOM_TOO_DRY_CLOSE_REASON)
+    assert _rec(dry)[2][-1] == "Die Raumluft ist bereits trocken (höchstens 35 % rF); weiteres Lüften würde sie zu stark austrocknen"
+    assert all("Lüftungsdauer" not in _rec(r)[2][-1] and "Maximal" not in _rec(r)[2][-1] for r in (target, wet, limit, dry))
 
 
 def test_continue_texts_and_weak_or_braking_wind():

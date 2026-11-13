@@ -225,6 +225,24 @@ def _absence_filter(hass: HomeAssistant, options: dict[str, Any], event: str | N
     return (lambda profile: _profile_away(hass, options, profile, household_away)), household_away
 
 
+def _presence_evidence(hass: HomeAssistant, options: dict[str, Any], event: str | None) -> dict[str, Any] | None:
+    """0.26.7.0 (support case B): privacy-safe presence at the moment of a send attempt – counts and the rule
+    applied, never entity ids or names – so a trace shows why a message went out while someone seemed away."""
+    entities = list(dict.fromkeys(_presence_entities(options, "adult") + _presence_entities(options, "child")))
+    if not entities:
+        return None
+    counts = {"home": 0, "away": 0, "unknown": 0}
+    for entity_id in entities:
+        counts[normalize_presence_state(entity_id, hass.states.get(entity_id))] += 1
+    if not options.get("notify_only_when_home"):
+        rule = "off"
+    elif event in _IMPORTANT_WHILE_AWAY and options.get("notify_important_when_away", True):
+        rule = "important_exception"
+    else:
+        rule = "applied"
+    return {**counts, "rule": rule}
+
+
 def _all_notification_targets(options: dict[str, Any]) -> list[str]:
     """Return global and resident targets once, preserving configured order."""
     result: list[str] = []
@@ -256,7 +274,7 @@ TRACE_FOLD_WINDOW_SECONDS = 30 * 60
 def _record_notification_diagnostic(
     store, *, now: datetime, event: str, scope: str, status: str,
     target_count: int, available_service_count: int, reason: str | None = None,
-    exception_type: str | None = None,
+    exception_type: str | None = None, presence: dict[str, Any] | None = None,
 ) -> bool:
     """Persist a bounded privacy-safe notification delivery trace.
 
@@ -306,6 +324,8 @@ def _record_notification_diagnostic(
         row["reason"] = str(reason)[:64]
     if exception_type:
         row["exception_type"] = str(exception_type)[:64]
+    if presence:
+        row["presence"] = {k: presence[k] for k in ("home", "away", "unknown", "rule") if k in presence}
     trace.append(row)
     store.data["notification_diagnostics"] = trace[-50:]
     # 0.26.4.3: link delivery to the active recommendation episode so the follow
@@ -540,7 +560,8 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
 
     # Per-room messages on the house-aligned action, plus reminders (0.26.5.3).
     room_events, room_state_changed = room_notification_events(
-        rooms, store, now, options, data.get("intelligent_recommendation"), sensor_alerts=_room_can_raise_sensor_alerts)
+        rooms, store, now, options, data.get("intelligent_recommendation"), sensor_alerts=_room_can_raise_sensor_alerts,
+        quiet=suppress_at_night)
     changed = changed or room_state_changed
 
     def publish(event: str, title: str, message: str, room_key: str | None = None, extra: dict[str, Any] | None = None) -> None:
@@ -589,6 +610,7 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             status="sent" if sender_ok else "not_sent", target_count=target_count,
             available_service_count=available_count,
             reason=None if sender_ok else ("recipients_away" if away else "no_available_notify_service"),
+            presence=_presence_evidence(hass, options, event),
         ):
             changed = True
         if sender_ok:
@@ -659,11 +681,14 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
                     )
                     changed = True
                 else:
+                    # 0.26.7.0 (support case B): held back because everybody is away is not a missing service
+                    away = not handled and _absence_filter(hass, options, f"iq_{kind}")[1]
                     if _record_notification_diagnostic(
                         store, now=now, event=f"iq_{kind}", scope="house",
                         status="sent" if handled else "not_sent", target_count=target_count,
                         available_service_count=available_count,
-                        reason=None if handled else "no_available_notify_service",
+                        reason=None if handled else ("recipients_away" if away else "no_available_notify_service"),
+                        presence=_presence_evidence(hass, options, f"iq_{kind}"),
                     ):
                         changed = True
                 if handled:

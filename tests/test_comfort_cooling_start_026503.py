@@ -139,4 +139,9 @@ def test_a_running_airing_at_the_target_is_not_kept_open_for_cooling() -> None:
     result = evaluate_room(_running(comfort_target_c=25.5), COMFORT, False)
     assert not result.comfort_cooling_active and not result.reason.startswith("Cooling remains useful")
     case_b = evaluate_room(_running(temperature=24.0, comfort_target_c=24.0, reference_temperature=9.7, reference_humidity=85), COMFORT, False)
-    assert not case_b.comfort_cooling_active and case_b.action == "Close"
+    # Testvermerk 0.26.7.0 (F11): not kept open for cooling – but the cold reference air is drier, so it continues for
+    # drying; it closes once the reference air no longer dries.
+    assert not case_b.comfort_cooling_active and not case_b.reason.startswith("Cooling remains useful")
+    assert case_b.action == "Continue ventilating" and not case_b.close_recommended
+    damp = evaluate_room(_running(temperature=24.0, comfort_target_c=24.0, reference_temperature=22.0, reference_humidity=99), COMFORT, False)
+    assert not damp.comfort_cooling_active and damp.action == "Close"

@@ -48,8 +48,10 @@ def test_optimal_close_respects_exact_remaining_max_duration():
         operating_profile="comfort",
         **_base(session_elapsed_min=19.0, model_maturity_pct=80),
     )
-    assert result["optimal_close_reason"] == "max_duration"
-    assert result["optimal_close_in_min"] == 1.0
+    # Testvermerk 0.26.7.0 final hotfix F11-C: the stored maximum duration is no forecast end point any more (it was
+    # shown as "optimal close in 1 min, max_duration"); with no other end point inside the horizon there is none.
+    assert result["optimal_close_reason"] != "max_duration"
+    assert result["optimal_close_in_min"] is None or result["optimal_close_in_min"] > 1.0
 
 
 def test_forecast_help_separates_energy_cost_model():

@@ -27,12 +27,13 @@ COMPONENT = "custom_components/freshairiq"
 DOMAIN = "freshairiq"
 ASSET_NAME = "freshairiq.zip"          # must equal ``filename`` in hacs.json
 FIXED_DATE = (1980, 1, 1, 0, 0, 0)     # the earliest date a ZIP can hold – reproducible builds
-GENERATED_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules"}
+GENERATED_PARTS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".git", "node_modules",
+                   "test-results", "playwright-report", "blob-report", ".hypothesis", "htmlcov", ".tox", ".nox", ".cache"}
 # Same exclusions as the CLEAN package (quality/quality_policy.json "release"): the dashboard's .gz/.br
 # siblings and their .precompressed.json are written by Home Assistant itself on the first start
 # (frontend_assets.ensure_precompressed) – an install from the source archive never contained them.
-GENERATED_NAMES = {".coverage", "coverage.xml", ".DS_Store", "Thumbs.db", ".precompressed.json"}
-GENERATED_SUFFIXES = {".pyc", ".pyo", ".gz", ".br"}
+GENERATED_NAMES = {".coverage", "coverage.xml", ".DS_Store", "Thumbs.db", ".precompressed.json", ".last-run.json", ".coverage.xml"}
+GENERATED_SUFFIXES = {".pyc", ".pyo", ".gz", ".br", ".tmp", ".swp", ".rej"}
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.\d+)?$")
 REQUIRED = ("__init__.py", "manifest.json", "config_flow.py", "brand/icon.png")
 # The Marketplace refuses a download or unpacked ZIP larger than 100 MiB or with more than 50,000 files

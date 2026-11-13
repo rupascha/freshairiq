@@ -140,15 +140,17 @@ def moisture_coming_in(rooms: list[dict[str, Any]], net_next5_ml: float | None, 
     Despite the name this covers both reasons of the room model (``air_no_longer_helps``):
     moisture really coming in, and reference air only marginally drier (``close_delta``).
     """
-    if net_next5_ml is not None and float(net_next5_ml) <= 0:
-        return True
     deltas = []
     for room in rooms:
         try:
             deltas.append(float(room.get("delta_g_m3")))
         except (TypeError, ValueError):
             continue
-    return bool(deltas) and all(value <= float(close_delta) for value in deltas)
+    if deltas:
+        # 0.26.7.0 (F11, case B): a net 5-minute change of zero while the reference air is still clearly drier is an
+        # internal moisture load in balance with the airing – no reason to close; the air itself decides.
+        return all(value <= float(close_delta) for value in deltas)
+    return net_next5_ml is not None and float(net_next5_ml) <= 0
 
 
 def planned_target_min(rooms: list[dict[str, Any]]) -> float | None:
@@ -247,6 +249,10 @@ def aggregate_close_allowed(
         value is not None and value < float(min_duration_min) for value in elapsed
     ):
         return False
+    # 0.26.7.0 (F11): like the room model, neither a small combined return nor heat loss ends a floor/house airing
+    # while the reference air still dries – only air that no longer helps (case C) does.
+    if not moisture_coming_in(rooms, net_next5_ml, close_delta):
+        return False
     if thermal_bad:
         return True
     if low_return and any(_reachable_open_non_humidity_goal(room) for room in rooms):
@@ -297,6 +303,8 @@ def stabilise_recommendation(
         if not r.get("moisture_source_active")
         and not bool(r.get("opening_state_explicit"))
         and not fan_only(r)  # 0.26.4.10: a long-running fan is no tilted window
+        # F11: only a room that itself says Close – a room that still dries keeps "continue" at any time
+        and (bool(r.get("close_recommended")) or str(r.get("action")) == "Close")
         and _f(r.get("session_elapsed_min")) >= max_duration + 10.0
         and _f(r.get("temperature_change_c")) > -1.5
         and _f(r.get("delta_g_m3")) >= -0.2
@@ -402,10 +410,10 @@ def _active_session_invariant(
             max(_f(r.get("forecast_5_min_moisture_effect_ml", r.get("moisture_effect_next_5_min_ml"))), 0.0)
             for r in closing
         )
+        # 0.26.7.0 (F11): no maximum duration – time never makes a close "hard"
         hard_closing = [
             r for r in closing
-            if _f(r.get("session_elapsed_min")) >= _f(options.get("max_duration_min"), 20.0)
-            or (
+            if (
                 profile != "summer_cooling"
                 and _f(r.get("forecast_5_min_temperature_change_c", r.get("temp_next_5_min_c"))) <= -max_temp_loss
                 and _f(r.get("efficiency_ml_per_01c"), 999.0) < min_efficiency

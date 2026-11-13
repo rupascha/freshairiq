@@ -483,13 +483,14 @@ async def test_room_form_offers_every_moisture_source_with_translated_labels(has
     picker = _field(form, CONF_ROOM_MOISTURE_SOURCES)
     assert isinstance(picker, selector.SelectSelector)
     assert picker.config["multiple"] is True
-    requested = ["shower", "bath", "sauna", "cooking", "washing_machine", "dryer", "ironing_station", "laundry_drying"]
+    # Testvermerk 0.26.7.0 (#18): the dishwasher joins the list as the last option
+    requested = ["shower", "bath", "sauna", "cooking", "washing_machine", "dryer", "ironing_station", "laundry_drying", "dishwasher"]
     assert list(picker.config["options"]) == requested == MOISTURE_SOURCES
     de = json.loads((COMP / "translations/de.json").read_text(encoding="utf-8"))["selector"]["moisture_source"]["options"]
     en = json.loads((COMP / "translations/en.json").read_text(encoding="utf-8"))["selector"]["moisture_source"]["options"]
     expected_de = {"shower": "Dusche", "bath": "Badewanne", "sauna": "Sauna", "cooking": "Kochen",
                    "washing_machine": "Waschmaschine", "dryer": "Trockner", "ironing_station": "Bügelstation",
-                   "laundry_drying": "Wäsche aufhängen"}
+                   "laundry_drying": "Wäsche aufhängen", "dishwasher": "Geschirrspüler"}
     for value, label in expected_de.items():
         assert de[value].startswith(label), value
         assert en[value], value

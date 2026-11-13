@@ -53,6 +53,12 @@ def parse(raw: Any, rooms: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, st
         if not text:
             continue
         parts = [p.strip() for p in text.split("+")]
+        if len(parts) > 2 and all(parts):
+            # 0.26.7.0 (support case): "Wohnzimmer+Flur+Schlafzimmer" is an air path, not a pair. It stays malformed
+            # (never guessed into pairs), but the message names the two window rooms and the room in between.
+            problems.append({"code": "malformed", "item": text, "chain": True, "ends": f"{parts[0]}+{parts[-1]}",
+                             "middle": ", ".join(parts[1:-1])})
+            continue
         if len(parts) != 2 or not all(parts):
             problems.append({"code": "malformed", "item": text})
             continue
@@ -73,6 +79,44 @@ def parse(raw: Any, rooms: Iterable[dict[str, Any]]) -> tuple[list[tuple[str, st
             seen.add(frozenset((a, b)))
             pairs.append((a, b))
     return pairs, problems
+
+
+TEXT = {
+    "de": {"malformed": "„{item}“ ist kein Raumpaar (Form: Raum+Raum)",
+           "chain": ("„{item}“ nennt mehr als zwei Räume. Querlüftung verbindet immer genau zwei Räume mit eigenem "
+                     "Fenster – hier z. B. {ends}. Ein Raum dazwischen ohne eigenes Fenster ({middle}) wird unter "
+                     "„Offene Verbindungen“ bzw. im Grundriss als Durchgang oder Innentür eingetragen"),
+           "unknown": "„{room}“ in „{item}“ ist kein bekannter Raum",
+           "ambiguous": "„{room}“ in „{item}“ passt auf mehrere Räume – bitte den Raumschlüssel verwenden",
+           "same": "„{item}“ nennt zweimal denselben Raum",
+           "duplicate": "„{item}“ ist doppelt angegeben"},
+    "en": {"malformed": "\"{item}\" is not a room pair (form: room+room)",
+           "chain": ("\"{item}\" names more than two rooms. Cross ventilation always links exactly two rooms with their "
+                     "own windows – here e.g. {ends}. A room in between without a window of its own ({middle}) is entered "
+                     "under \"Open connections\" or as a passage or inside door in the floor plan"),
+           "unknown": "\"{room}\" in \"{item}\" is not a known room",
+           "ambiguous": "\"{room}\" in \"{item}\" matches several rooms – please use the room key",
+           "same": "\"{item}\" names the same room twice",
+           "duplicate": "\"{item}\" is listed twice"},
+}
+
+
+def describe(problems: Iterable[dict[str, Any]], language: str) -> str:
+    """What is wrong, in the user's language (options flow and repair notice use the same words)."""
+    texts = TEXT["de" if str(language).lower().startswith("de") else "en"]
+    return "; ".join(
+        texts["chain" if p.get("chain") else p["code"]].format(
+            item=p.get("item", ""), room=p.get("room", ""), ends=p.get("ends", ""), middle=p.get("middle", ""))
+        for p in problems)
+
+
+def unusable(options: dict[str, Any], rooms: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Stored entries the runtime cannot use (shown as a repair notice, never dropped silently)."""
+    rooms = list(rooms)
+    found: list[dict[str, Any]] = []
+    for option in PAIR_OPTIONS:
+        found.extend(p for p in parse(options.get(option), rooms)[1] if p["code"] != "duplicate")
+    return found
 
 
 def canonical(pairs: Iterable[tuple[str, str]]) -> str:

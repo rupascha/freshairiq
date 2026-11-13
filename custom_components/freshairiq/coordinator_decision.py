@@ -16,7 +16,7 @@ from .decision_trace import build_decision_trace, build_recommendation_quality
 from .energy import energy_price_per_kwh_equivalent
 from .forecast import effective_night_rate_ml_h
 from .forecast_backtest import backtest_summary
-from .close_wording import airing_running, fan_only, no_opening_wording
+from .close_wording import airing_running, fan_only, house_handled_by_automation, no_opening_wording
 from .fan_automation import room_fan_automation
 from .forecast_validation import validation_summary
 from .house_decision import floor_ventilation_decision
@@ -136,7 +136,10 @@ class HouseDecisionMixin:
             _decision_validation
         )
 
-        if sync_active_recommendation(self.store.data, intelligent_recommendation, now):
+        # 0.26.7.0: who could act on it (behaviour learning keeps unactionable episodes apart)
+        behaviour_context = {"away": bool(occupancy.get("all_known_trackers_away")), "automatic": house_handled_by_automation(
+            intelligent_recommendation.get("kind"), intelligent_recommendation.get("room_keys"), results)}
+        if sync_active_recommendation(self.store.data, intelligent_recommendation, now, behaviour_context):
             changed = True
         iq_state = build_intelligence_state(
             results, intelligent_recommendation,

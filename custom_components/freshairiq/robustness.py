@@ -171,6 +171,7 @@ def sanitize_runtime_session(room: dict[str, Any]) -> list[str]:
         "session_last_valid_reference_temperature": (-40.0, 70.0),
         "session_last_valid_reference_humidity": (0.0, 100.0),
         "session_predicted_removed_ml": (-1_000_000.0, 1_000_000.0),
+        "session_target_limited_removed_ml": (-1_000_000.0, 1_000_000.0),
         "session_predicted_temperature_change_c": (-50.0, 50.0),
         "session_predicted_cost": (0.0, 1_000_000.0),
         "session_prediction_confidence": (0.0, 100.0),

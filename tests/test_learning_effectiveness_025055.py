@@ -111,6 +111,8 @@ def _record(day: int, gains: list[float], *, model_version: str = "0.25.1.16") -
             "name": f"Raum {index}",
             "comparable": True,
             "learning_effectiveness": {
+                # Testvermerk 0.26.7.0 (#28): Proben tragen jetzt ihre Prognosebasis; nur physikalische zählen.
+                "prediction_basis": "physical_start_replay",
                 "valid": True,
                 "ended_at": ended.isoformat(),
                 "production_abs_error_ml": production_error,
@@ -328,7 +330,10 @@ def test_effectiveness_summary_reports_breakdowns_clustered_evidence_and_progres
     # consistently better and should satisfy the conservative evidence gate.
     records = [_record(i, [20 + (i % 3), 15 + (i % 2)]) for i in range(14)]
     summary = le.learning_effectiveness_summary(records, days=30)
-    assert summary["effectiveness_engine"] == "v1"
+    # Testvermerk 0.26.7.0 (#28): Engine v2 = physikalische Startprognose ohne Zielwert-Cap
+    assert summary["effectiveness_engine"] == "v2"
+    assert summary["prediction_basis"] == "physical_start_replay"
+    assert summary["previous_basis_sample_count"] == 0
     assert summary["mode"] == "paired_same_session_baseline"
     assert summary["observational_only"] is True
     assert summary["samples"] == 28

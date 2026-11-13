@@ -85,10 +85,13 @@ def refine_live_recommendation(
     )
     baseline_target = _clamp(baseline_target, min_duration, max_duration)
 
-    predicted_totals = [
-        _f(r.get("session_predicted_removed_ml"))
-        for r in active if _f(r.get("session_predicted_removed_ml")) > 20
-    ]
+    # #28: session_predicted_removed_ml is the physical start replay (validation/learning); the coach compares
+    # progress with the target-limited expectation the recommendation was based on (fallback: older sessions).
+    def _coach_expected(r: dict[str, Any]) -> float:
+        limited = r.get("session_target_limited_removed_ml")
+        return _f(limited if limited is not None else r.get("session_predicted_removed_ml"))
+
+    predicted_totals = [_coach_expected(r) for r in active if _coach_expected(r) > 20]
     predicted_total = sum(predicted_totals)
     actual_removed = sum(max(_f(r.get("result_ml")), 0.0) for r in active)
     next5 = sum(max(_f(r.get("forecast_5_min_moisture_effect_ml",
@@ -240,9 +243,11 @@ def _coach_close_or_extend(
         state = "goal_extended"
         reason = f"Höher priorisiertes Lüftungsziel noch offen; voraussichtlich etwa {max(round(min(priority_eta)),1)} min bis zum nächsten Ziel"
 
-    # If the learned target has been reached and marginal return is weak, ask to close.
+    # Target reached + weak return closes only when the reference air no longer helps (F11: ingress or no room > close_delta drier)
+    air_no_longer_helps = ingress or all(_f(r.get("delta_g_m3"), 99.0) <= _f(options.get("close_delta"), 0.4) for r in active)
     if (
         not hold
+        and air_no_longer_helps
         and all_close_decisions_ready
         # F06: never before the youngest window's minimum time; 0.26.5.5 (audit F01): moisture really
         # coming in (net 5-minute change below zero) is protection and closes before the minimum.
@@ -270,7 +275,7 @@ def _coach_close_or_extend(
 
     out = dict(recommendation)
     out.update({
-        "instruction": keep_instruction(active, None if fans_only else remaining),
+        "instruction": keep_instruction(active, None if fans_only or remaining <= 0.35 else remaining),  # F11: no time-limit countdown
         "duration_min": round(remaining, 1),
         "estimated_removed_ml": round(next5),
         "live_coach": True, "live_coach_state": state,

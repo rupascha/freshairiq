@@ -22,6 +22,7 @@ from .const import (
     CONF_ROOM_CLIMATE,
     CONF_ROOM_CO2,
     CONF_ROOM_MOLD_INDICATOR,
+    CONF_ROOM_DISHWASHER_SIGNAL,
     CONF_ROOM_EXHAUST_FAN,
     CONF_ROOM_HUMIDITY,
     CONF_ROOM_ILLUMINANCE,
@@ -177,7 +178,8 @@ class CoordinatorListenersMixin:
             for key in (CONF_ROOM_TEMPERATURE, CONF_ROOM_HUMIDITY):
                 entities.update(entity_ids(room.get(key)))
             for key in (CONF_ROOM_REFERENCE_TEMPERATURE, CONF_ROOM_REFERENCE_HUMIDITY, CONF_ROOM_EXHAUST_REFERENCE_TEMPERATURE,
-                        CONF_ROOM_EXHAUST_REFERENCE_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_CLIMATE, CONF_ROOM_MOLD_INDICATOR):
+                        CONF_ROOM_EXHAUST_REFERENCE_HUMIDITY, CONF_ROOM_CO2, CONF_ROOM_CLIMATE, CONF_ROOM_MOLD_INDICATOR,
+                        CONF_ROOM_DISHWASHER_SIGNAL):
                 if room.get(key): entities.add(str(room[key]))
             # exhaust_fan is legacy-scalar compatible but may now contain multiple
             # fan/switch entities (including separate hardware stage entities).

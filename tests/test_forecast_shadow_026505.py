@@ -107,10 +107,12 @@ def test_formula_refuses_outside_the_calibrated_range(kw) -> None:
 
 def test_formula_ids_are_stable_and_the_production_id_follows_the_forecast_code() -> None:
     assert fs.CANDIDATE_FORMULA_ID == "humidity-hybrid-2026-10-31-r1"
-    assert fs.PRODUCTION_FORMULA_ID == "start-curve-v2-horizon-forecast-r1"
+    # Testvermerk 0.26.7.0 (#28): Startkontext v3 (physikalischer Replay) -> neue Produktions-ID
+    # Testvermerk 0.26.7.0 final hotfix F11-C: forecast.py changed (max-duration end point removed) -> revision r2
+    assert fs.PRODUCTION_FORMULA_ID == "start-curve-v3-horizon-forecast-r2"
     # Any change of forecast.py (the active calculation) must bump PRODUCTION_FORMULA_ID and this pin.
     digest = hashlib.sha256((PKG / "forecast.py").read_bytes()).hexdigest()
-    assert digest == "172b4db81be714fba31b9b90efefcfb47c3ce156a7894e9f1db29e661a077cb7", digest
+    assert digest == "f26d7a7f3746d5ec8dc4d91c2824d1e83947d20548fff0e75b8c5fd5e7213df8", digest
 
 
 # --- pairing on the frozen start ---------------------------------------------------------------
@@ -150,7 +152,7 @@ def test_a_valid_pair_uses_the_frozen_curve_at_the_measured_duration() -> None:
     assert record["candidate_predicted_removed_ml"] == round(expected, 1)
     assert record["production_abs_error_ml"] == round(abs(40.0 - production["predicted_removed_ml"]), 1)
     assert record["candidate_abs_error_ml"] == round(abs(40.0 - expected), 1)
-    assert (record["freshairiq_version_at_start"], record["start_context_version"], record["comparison_schema_version"]) == ("0.26.5.5", 2, 1)
+    assert (record["freshairiq_version_at_start"], record["start_context_version"], record["comparison_schema_version"]) == ("0.26.5.5", 3, 1)  # Testvermerk 0.26.7.0 (#28): Startkontext v3
     assert record["null_abs_error_ml"] == 40.0 and record["opening_learning_quarantined"] is False
     assert record["candidate_formula_id"] == fs.CANDIDATE_FORMULA_ID and record["production_formula_id"] == fs.PRODUCTION_FORMULA_ID
 

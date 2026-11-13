@@ -50,6 +50,12 @@ def _scenario(golden, extra_rooms: int):
     for i in range(20):
         h = max(h - (1.2 if i < 8 else 0.0), 55)
         steps.append({"advance": 60, "set": {"sensor.a_h": round(h + (0.01 if i % 2 else 0), 2), "sensor.a_t": round(23.0 - 0.05 * min(i, 8), 2)}})
+    # Testvermerk 0.26.7.0 (F11): a plateau or a small return with clearly drier outdoor air no longer closes A (there
+    # is no maximum duration). For A to release its own close, the outdoor air turns humid enough that it no longer
+    # dries A (difference below close_delta) – while it still dries the much more humid young room B.
+    steps.append({"advance": 60, "set": {"sensor.aussen_t": 14.0, "sensor.aussen_h": 93.0}, "label": "outdoor humid"})
+    steps.append({"advance": 60, "set": {"sensor.a_h": 55.01}})
+    steps.append({"advance": 60, "set": {"sensor.a_h": 55.0}})
     steps.append({"advance": 30, "set": {"binary_sensor.b_f": "on"}, "label": "B open"})
     steps.append({"advance": 30, "label": "B 0.5 min"})
     data = {"outdoor_temperature": "sensor.aussen_t", "outdoor_humidity": "sensor.aussen_h", "rooms": rooms, "levels": ["ground_floor", "upper_floor"]}

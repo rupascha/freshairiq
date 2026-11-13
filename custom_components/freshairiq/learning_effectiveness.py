@@ -24,6 +24,9 @@ from math import isfinite, sqrt
 from typing import Any, Callable
 
 EFFECTIVENESS_SCHEMA_VERSION = 1
+# 0.26.7.0 (#28): production, baseline and previous model are replayed physically (no humidity-target cap).
+# Samples without this basis were scored against the capped replay and are counted, never mixed in.
+SAMPLE_PREDICTION_BASIS = "physical_start_replay"
 BASELINE_RATE_PER_MIN = 0.03
 MIN_EVIDENCE_SAMPLES = 12
 MIN_EVIDENCE_SESSIONS = 8
@@ -347,6 +350,7 @@ def build_effectiveness_sample(
     previous_snapshot = frozen.get("previous_model_snapshot") if isinstance(frozen.get("previous_model_snapshot"), dict) else {}
     result = {
         "schema_version": EFFECTIVENESS_SCHEMA_VERSION,
+        "prediction_basis": SAMPLE_PREDICTION_BASIS,
         "valid": True,
         "ended_at": ended_at,
         "duration_min": round(duration, 3),
@@ -596,6 +600,19 @@ def _record_id(record: dict[str, Any], index: int) -> str:
     return _snapshot_id(payload)
 
 
+def _previous_basis_count(records: list[dict[str, Any]]) -> int:
+    """#28: valid samples of the earlier target-capped replay (kept, not scored)."""
+    count = 0
+    for record in records:
+        if not isinstance(record, dict) or not record.get("valid"):
+            continue
+        for room in record.get("room_results") or []:
+            sample = room.get("learning_effectiveness") if isinstance(room, dict) and room.get("comparable") else None
+            if isinstance(sample, dict) and sample.get("valid") and sample.get("prediction_basis") != SAMPLE_PREDICTION_BASIS:
+                count += 1
+    return count
+
+
 def _extract_samples(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     samples: list[dict[str, Any]] = []
     for record_index, record in enumerate(records):
@@ -607,6 +624,9 @@ def _extract_samples(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 continue
             sample = room.get("learning_effectiveness")
             if not isinstance(sample, dict) or not sample.get("valid"):
+                continue
+            # #28: samples of the earlier target-capped replay are kept in the history but never mixed in
+            if sample.get("prediction_basis") != SAMPLE_PREDICTION_BASIS:
                 continue
             if _number(sample.get("production_abs_error_ml")) is None or _number(sample.get("baseline_abs_error_ml")) is None:
                 continue
@@ -685,7 +705,9 @@ def learning_effectiveness_summary(records: list[dict[str, Any]], *, days: int =
     by_stage.sort(key=lambda x: stage_order.index(str(x.get("learning_stage_id"))) if str(x.get("learning_stage_id")) in stage_order else 999)
 
     return {
-        "effectiveness_engine": "v1",
+        "effectiveness_engine": "v2",
+        "prediction_basis": SAMPLE_PREDICTION_BASIS,
+        "previous_basis_sample_count": _previous_basis_count(scoped),
         "mode": "paired_same_session_baseline",
         "observational_only": True,
         "period_days": max(1, int(days)),

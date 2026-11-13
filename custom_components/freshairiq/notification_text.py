@@ -117,6 +117,22 @@ def action_message(action: Any, room: dict[str, Any], store_data: dict[str, Any]
     return (event, room_title(event, room), body) if event == "cool" else auto_room_event(event, room, body)
 
 
+def _reminder_groups(rooms: list[dict[str, Any]], store: Any) -> list[tuple[str, list[dict[str, Any]]]]:
+    """Reminders in send order; rooms marked for summarising are grouped per action, every other room alone."""
+    groups: list[tuple[str, list[dict[str, Any]]]] = []
+    summary: dict[str, list[dict[str, Any]]] = {}
+    for room in rooms:
+        event = _EVENT_OF_ACTION.get(store.room(room["key"]).get("last_action"), "close")
+        if room.get("reminder_summarize"):
+            if event not in summary:
+                summary[event] = []
+                groups.append((event, summary[event]))
+            summary[event].append(room)
+        else:
+            groups.append((event, [room]))
+    return groups
+
+
 def room_messages(events: dict[str, list[dict[str, Any]]], store: Any, options: dict[str, Any], room_push: bool, *, sensor_recovery: bool) -> list[dict[str, Any]]:
     """Every room message of this cycle in send order (events are published, pushes per option)."""
     data = store.data
@@ -133,10 +149,17 @@ def room_messages(events: dict[str, list[dict[str, Any]]], store: Any, options: 
             add(event, title, message, room, wanted[_EVENT_OF_ACTION[action]], action=action)
     for room in events["mould"]:
         add("mould", f"FreshAirIQ · {room['name']}", f"Schimmelrisiko {room['mould_level'].lower()} · geschätzte Oberflächenfeuchte {round(room['surface_rh'])} %.{fan_hint(room)}", room, "notify_mould")
-    for room in events["reminder"]:
-        event = _EVENT_OF_ACTION.get(store.room(room["key"]).get("last_action"), "close")
-        add(event, room_title(event, room, reminder=True), f"Erinnerung: {room_notification_message(event, room, data)}", room,
-            wanted[event], reminder=True)
+    for event, group in _reminder_groups(events["reminder"], store):
+        room = group[0]
+        if len(group) == 1:
+            add(event, room_title(event, room, reminder=True), f"Erinnerung: {room_notification_message(event, room, data)}", room,
+                wanted[event], reminder=True)
+            continue
+        # 0.26.7.0 (behaviour learning): rooms whose reminders are mostly not acted on are summarised in one message
+        names = ", ".join(str(r.get("name") or r.get("key")) for r in group)
+        text = " ".join(room_notification_message(event, r, data) for r in group)
+        add(event, room_title(event, {**room, "name": names}, reminder=True), f"Erinnerung: {text}", room, wanted[event],
+            reminder=True, summarized_room_keys=[str(r["key"]) for r in group])
     for room in [] if sensor_recovery else events["sensor"]:
         add("sensor", f"FreshAirIQ · {room['name']}", room_notification_message("sensor", room, data), room, "notify_sensor")
     for room in events.get("retry", []):

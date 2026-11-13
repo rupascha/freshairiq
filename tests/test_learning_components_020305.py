@@ -52,6 +52,7 @@ def test_learning_components_expose_each_adaptive_subsystem_independently():
     assert keys == {
         "room_physics", "live_forecast", "forecast_feedback", "shadow_learning", "routines", "seasonality", "user_strategy",
         "personal_context", "night_model", "house_strategy", "forecast_validation", "post_close",
+        "usage_behaviour",  # Testvermerk 0.26.7.0: new observation-only section "Nutzungsverhalten & Empfehlungen"
     }
     by_key = {item["key"]: item for item in result["components"]}
     assert by_key["room_physics"]["samples"] == 15
@@ -71,6 +72,6 @@ def test_learning_components_expose_each_adaptive_subsystem_independently():
 
 def test_learning_components_do_not_confuse_zero_samples_with_accuracy():
     result = build_learning_components_status([], {}, forecast_backtest={}, post_close_stabilization={})
-    assert result["component_count"] == 12
+    assert result["component_count"] == 13  # Testvermerk 0.26.7.0: + usage_behaviour (observation only)
     assert all(item["maturity_percent"] == 0 for item in result["components"])
     assert result["components"][0]["status"] == "Grundschätzung"

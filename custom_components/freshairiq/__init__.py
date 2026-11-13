@@ -65,7 +65,7 @@ from .house_map import async_register_house_map, async_remove_house_map
 from .validation import RELATION_OPTION_KEYS, repair_option_relationships
 from .runtime import clear_runtime_coordinator, get_runtime_coordinator, iter_runtime_coordinators, set_runtime_coordinator
 from .intervention import executable_intervention
-from .repairs import async_clear_missing_entity_issue, async_sync_missing_entity_issue
+from .repairs import async_clear_missing_entity_issue, async_sync_cross_pairs_issue, async_sync_missing_entity_issue
 from .room_devices import assign_room_devices
 from .typing import FreshAirIQConfigEntry
 
@@ -507,6 +507,11 @@ def _async_migrate_cross_pairs(hass: HomeAssistant, entry: FreshAirIQConfigEntry
     updated, unresolved = cross_pairs.migrate(dict(entry.options), rooms)
     if updated != dict(entry.options):
         hass.config_entries.async_update_entry(entry, options=updated)
+    # 0.26.7.0 (support case): visible as a repair notice with the reason, not only in the log
+    try:
+        async_sync_cross_pairs_issue(hass, entry, cross_pairs.unusable(updated, rooms))
+    except Exception:  # noqa: BLE001 - repair UI must never block integration setup
+        _LOGGER.debug("Could not synchronize the FreshAirIQ cross-ventilation repair notice", exc_info=True)
     fresh = [item for item in unresolved if (entry.entry_id, item) not in _CROSS_PAIRS_LOGGED]
     if fresh:
         _CROSS_PAIRS_LOGGED.update((entry.entry_id, item) for item in fresh)

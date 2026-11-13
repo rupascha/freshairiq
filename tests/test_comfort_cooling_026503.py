@@ -37,8 +37,14 @@ def test_the_bedroom_above_its_target_keeps_airing() -> None:
 
 
 def test_without_temperature_goal_the_old_decision_stays() -> None:
-    assert evaluate_room(_bedroom(comfort_target_c=None), OPTIONS, False).action == "Close"
-    assert evaluate_room(_bedroom(cooling_allowed=False), OPTIONS, False).action == "Close"
+    # Testvermerk 0.26.7.0 (F11): the "old decision" no longer ends a 4-hour airing by time: with ~1.4 g/m³ drier air
+    # it continues for drying (never as cooling); once the air no longer helps it closes as before.
+    for room in (_bedroom(comfort_target_c=None), _bedroom(cooling_allowed=False)):
+        result = evaluate_room(room, OPTIONS, False)
+        assert result.action == "Continue ventilating" and not result.comfort_cooling_active
+        assert not result.reason.startswith("Cooling remains useful")
+    assert evaluate_room(_bedroom(comfort_target_c=None, reference_humidity=86), OPTIONS, False).action == "Close"
+    assert evaluate_room(_bedroom(cooling_allowed=False, reference_humidity=86), OPTIONS, False).action == "Close"
 
 
 def test_closing_once_the_target_is_reached_or_the_air_is_not_cooler() -> None:
@@ -51,7 +57,11 @@ def test_moisture_protection_still_wins() -> None:
     wet = _bedroom(reference_humidity=99, reference_temperature=17.5, humidity=40)
     assert evaluate_room(wet, OPTIONS, False).action == "Close"
     # a humid room (above "cooling_max_indoor_rh") is not kept open for cooling
-    assert evaluate_room(_bedroom(humidity=75, reference_humidity=95, reference_temperature=16.5), OPTIONS, False).action == "Close"
+    # Testvermerk 0.26.7.0 (F11): the reference air here is still ~1 g/m³ drier, so the airing continues for drying –
+    # but not as cooling; with reference air that no longer dries, it closes.
+    humid = evaluate_room(_bedroom(humidity=75, reference_humidity=95, reference_temperature=16.5), OPTIONS, False)
+    assert not humid.comfort_cooling_active and not humid.reason.startswith("Cooling remains useful")
+    assert evaluate_room(_bedroom(humidity=75, reference_humidity=99, reference_temperature=18.0), OPTIONS, False).action == "Close"
 
 
 def test_a_closed_window_is_not_asked_to_open_for_this_alone() -> None:

@@ -30,12 +30,16 @@ def _room(ref_t=12.0, ref_rh=60.0, elapsed=4.0, target=None, volume=6.0):
 
 
 def test_small_room_is_not_closed_inside_the_planned_airing_time():
+    # Testvermerk 0.26.7.0 (F11): a tiny but positive return no longer closes at all while the outdoor air is
+    # ~5 g/m³ drier – neither without a plan, nor inside it, nor after it. Air that no longer dries still closes.
     before = evaluate_room(_room(), OPTIONS, False)
-    assert before.action == "Close" and before.moisture_effect_next_5_min_ml > 0  # old behaviour: tiny but positive return
+    assert before.action == "Continue ventilating" and before.moisture_effect_next_5_min_ml > 0
     held = evaluate_room(_room(target=9.0), OPTIONS, False)
     assert held.action == "Continue ventilating" and not held.close_recommended
     after = evaluate_room(_room(elapsed=9.5, target=9.0), OPTIONS, False)
-    assert after.action == "Close"
+    assert after.action == "Continue ventilating" and not after.close_recommended
+    exhausted = evaluate_room(_room(ref_t=22.0, ref_rh=58.0, elapsed=9.5, target=9.0), OPTIONS, False)
+    assert exhausted.delta_g_m3 <= OPTIONS["close_delta"] and exhausted.action == "Close"
 
 
 def test_moisture_coming_in_still_closes_at_once():
@@ -44,8 +48,11 @@ def test_moisture_coming_in_still_closes_at_once():
 
 
 def test_maximum_duration_is_never_extended():
-    capped = evaluate_room(_room(elapsed=float(OPTIONS["max_duration_min"]), target=40.0), OPTIONS, False)
-    assert capped.action == "Close"
+    # Testvermerk 0.26.7.0 (F11): there is no maximum duration – reaching or exceeding the stored value does not
+    # close while the air still dries; the stored value only caps the shown plan.
+    for elapsed in (float(OPTIONS["max_duration_min"]), 2 * float(OPTIONS["max_duration_min"]), 120.0):
+        capped = evaluate_room(_room(elapsed=elapsed, target=40.0), OPTIONS, False)
+        assert capped.action == "Continue ventilating" and not capped.close_recommended, elapsed
 
 
 def _active(elapsed=3.5, action="Close", hard=False):
@@ -157,7 +164,11 @@ def test_live_coach_holds_fan_and_planned_airings():
     fan = refine_live_recommendation({"garage": _coach_room()}, OPTIONS, rec)
     assert fan["kind"] == "continue" and fan["instruction"].startswith("Lüfter in Garage laufen lassen")
     window = refine_live_recommendation({"bad": _coach_room("bad", fan=False, elapsed=4.0)}, OPTIONS, rec)
-    assert window["kind"] == "close"  # old behaviour without a planned time
+    # Testvermerk 0.26.7.0 (F11): without the reference-air difference the coach does not close on a small return;
+    # with air that no longer dries it closes as before without a planned time.
+    assert window["kind"] == "continue"
+    exhausted = refine_live_recommendation({"bad": {**_coach_room("bad", fan=False, elapsed=4.0), "delta_g_m3": 0.2}}, OPTIONS, rec)
+    assert exhausted["kind"] == "close"
     planned = refine_live_recommendation({"bad": _coach_room("bad", fan=False, elapsed=4.0, target=9.0)}, OPTIONS, rec)
     assert planned["kind"] == "continue" and planned["live_coach_target_min"] >= 9.0
     wet = refine_live_recommendation({"bad": _coach_room("bad", fan=False, elapsed=4.0, target=9.0, next5=-8.0)}, OPTIONS, rec)
@@ -201,8 +212,12 @@ def test_target_comes_from_the_earliest_window_and_fans_are_ignored():
 
 def test_moisture_coming_in_matches_the_room_model():
     dry = [{"delta_g_m3": 2.0}, {"delta_g_m3": 0.2}]
-    assert moisture_coming_in(dry, 0.0, 0.4) is True  # no net drying
+    # Testvermerk 0.26.7.0 (F11, case B): no net drying while one room's air is still 2 g/m³ drier is an internal
+    # load in balance with the airing, not moisture coming in – the air decides when its difference is known
+    assert moisture_coming_in(dry, 0.0, 0.4) is False
     assert moisture_coming_in(dry, 25.0, 0.4) is False  # one room still dries
+    assert moisture_coming_in([{"delta_g_m3": -0.5}, {"delta_g_m3": 0.2}], 0.0, 0.4) is True  # really coming in
+    assert moisture_coming_in([{}], -3.0, 0.4) is True and moisture_coming_in([{}], 0.0, 0.4) is True  # no difference known
     assert moisture_coming_in([{"delta_g_m3": 0.3}, {"delta_g_m3": "x"}], 25.0, 0.4) is True
     assert moisture_coming_in([{}], None, 0.4) is False
 

@@ -88,7 +88,10 @@ def test_audit_repro_a_source_that_just_ended_keeps_its_follow_up() -> None:
 ])
 def test_the_follow_up_counts_from_the_end_of_the_source(ended, elapsed, kept) -> None:
     result = evaluate_room(_source_room(moisture_source_recovery=True, moisture_source_ended_min=ended, session_elapsed_min=elapsed), OPTIONS, False)
-    assert (result.action == "Continue ventilating") is kept
+    # Testvermerk 0.26.7.0 (F11): the reference air here is ~1 g/m³ drier, so the airing continues after the follow-up
+    # as well (no close on low return while drying is possible). The follow-up itself stays visible in the reason.
+    assert result.action == "Continue ventilating" and not result.close_recommended
+    assert result.reason.startswith("Active internal moisture source") is kept
 
 
 def test_no_follow_up_when_the_reference_air_is_not_drier() -> None:

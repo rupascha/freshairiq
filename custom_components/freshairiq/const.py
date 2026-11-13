@@ -128,6 +128,7 @@ CONF_ROOM_SORT_ORDER = "sort_order"
 CONF_ROOM_INCLUDE_CALCULATIONS = "include_in_calculations"
 CONF_ROOM_WINDOW_ORIENTATION = "window_orientation"
 CONF_ROOM_MOISTURE_SOURCES = "moisture_sources"
+CONF_ROOM_DISHWASHER_SIGNAL = "dishwasher_signal"  # 0.26.7.0 (#18): optional device signal (phase / drying)
 # Optional per-room ventilation relevance threshold. "automatic" preserves the
 # established global room threshold; percentage/fixed modes only refine when a
 # non-urgent room becomes individually actionable. Safety/health overrides remain authoritative.
@@ -145,9 +146,11 @@ MOISTURE_SOURCE_WASHING_MACHINE = "washing_machine"
 MOISTURE_SOURCE_DRYER = "dryer"
 MOISTURE_SOURCE_IRONING_STATION = "ironing_station"
 MOISTURE_SOURCE_LAUNDRY_DRYING = "laundry_drying"
+MOISTURE_SOURCE_DISHWASHER = "dishwasher"  # 0.26.7.0 (#18)
 MOISTURE_SOURCES = [
     MOISTURE_SOURCE_SHOWER, MOISTURE_SOURCE_BATH, MOISTURE_SOURCE_SAUNA, MOISTURE_SOURCE_COOKING,
     MOISTURE_SOURCE_WASHING_MACHINE, MOISTURE_SOURCE_DRYER, MOISTURE_SOURCE_IRONING_STATION, MOISTURE_SOURCE_LAUNDRY_DRYING,
+    MOISTURE_SOURCE_DISHWASHER,
 ]
 
 FLOOR_GROUND = "ground_floor"
@@ -213,6 +216,7 @@ DEFAULT_OPTIONS = {
     # remain available for backwards compatibility.
     "forecast_horizon_min": 5,
     "max_temp_loss_next_5_min_c": 0.6,
+    "airing_min_room_temp_c": 0.0,  # 0.26.7.0 (F11): own temperature limit for airing; 0 = none (no hidden default)
     "min_efficiency_ml_per_01c": 8.0,
     "surface_factor": 0.25,
     "mould_slight_surface_rh": 60.0,  # 0.26.6.1(7): all four mould risk limits are settings
@@ -221,6 +225,7 @@ DEFAULT_OPTIONS = {
     "mould_critical_surface_rh": 90.0,
     "co2_warn": 1000.0,
     "co2_critical": 1400.0,
+    "co2_release": 0.0,  # #29: 0 = automatic (50 ppm below co2_warn); otherwise absolute ppm
     # Optional post-v0.23 sensors are explicitly gated. They can enrich
     # supplemental recommendations and diagnostics, but never alter the
     # canonical ventilation/forecast physics.

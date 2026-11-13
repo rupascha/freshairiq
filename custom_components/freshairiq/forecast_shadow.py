@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 from math import exp, expm1, isfinite, log, sqrt
 from typing import Any
 
-from .forecast_validation import START_FORECAST_CONTEXT_VERSION
+from .forecast_validation import START_FORECAST_CONTEXT_VERSION, evaluate_start_forecast_at_duration
 from .learning_effectiveness import (
     MIN_EFFECT_PERCENT,
     MIN_EVIDENCE_DAYS,
@@ -36,7 +36,13 @@ CANDIDATE_FORMULA_ID = "humidity-hybrid-2026-10-31-r1"
 # The active start forecast: ``forecast.horizon_forecast`` replayed on the frozen start
 # curve (start context v2). Bump the revision with every change of that calculation;
 # tests/test_forecast_shadow_026505.py pins the source of forecast.py to this ID.
-PRODUCTION_FORMULA_ID = f"start-curve-v{START_FORECAST_CONTEXT_VERSION}-horizon-forecast-r1"
+PRODUCTION_FORMULA_ID = f"start-curve-v{START_FORECAST_CONTEXT_VERSION}-horizon-forecast-r2"  # r2: final hotfix F11-C (no max-duration end point)
+# 0.26.7.0 (owner order point 7): the prepared successor – the same versioned formula and coefficients as the
+# candidate, but fed with the physical start replay (the production side since #28) instead of the target-limited
+# one, matching the time-unlimited close decision (F11). Pure shadow: recorded per session next to the candidate,
+# never used anywhere. Its coefficients are NOT recalibrated (no new data): its error is measured, not claimed.
+SUCCESSOR_FORMULA_ID = "humidity-hybrid-2026-11-13-r2-physical-input"
+SUCCESSOR_STATUS = "shadow_only_uncalibrated"
 TIE_ML = 1.0  # same tie band as the learning-effectiveness comparison
 CROSS_FULL_RATIO = 0.95  # a cross-ventilated start must stay cross-ventilated (sampling slack)
 CROSS_NONE_RATIO = 0.05
@@ -61,6 +67,24 @@ def shadow_removed_ml(*, room_ah_start_g_m3: float, source_ah_start_g_m3: float,
     return (0.20102258 * legacy_start_forecast_ml
             + 0.79897742 * physical_ml
             + 1.17503054 * (1.0 - exp(-horizon_min)))
+
+
+def _successor(args: dict[str, Any], shadow: dict[str, Any], horizon: float, production: float,
+               out: dict[str, Any]) -> float | None:
+    """The prepared successor next to the candidate (shadow only); its own reason when it cannot be computed."""
+    out["successor_formula_id"] = SUCCESSOR_FORMULA_ID
+    out["successor_status"] = SUCCESSOR_STATUS
+    out["successor_input_basis"] = "physical_start_replay"
+    try:
+        value = shadow_removed_ml(
+            room_ah_start_g_m3=float(args["current_ah"]), source_ah_start_g_m3=float(args["source_ah"]),
+            volume_m3=float(args["volume_m3"]), horizon_min=horizon,
+            is_cross_ventilated=bool(shadow.get("cross_ventilated")), legacy_start_forecast_ml=production)
+    except (KeyError, TypeError, OverflowError, ValueError) as err:
+        out["successor_exclusion_reason"] = "outside_calibrated_range" if "range" in str(err) else "invalid_input"
+        return None
+    out["successor_predicted_removed_ml"] = round(value, 1)
+    return value
 
 
 def freeze_shadow_start(*, cross_ventilated: bool, integration_version: str) -> dict[str, Any]:
@@ -152,11 +176,25 @@ def shadow_forecast_record(start_context: Any, *, horizon_min: Any, production_p
         if horizon is None or production is None or not time_aligned:
             out["exclusion_reason"] = "production_unavailable"
             return out
+        # 0.26.7.0 (#28): the candidate was calibrated on the target-limited start replay ("legacy" forecast). The
+        # production side is now the physical replay; the candidate keeps its own input so it stays the same
+        # versioned formula. Its input is replayed from the same frozen start at the same measured duration.
+        try:
+            limited = evaluate_start_forecast_at_duration(context, horizon, limit_to_target=True)
+        except (TypeError, ValueError, OverflowError, ZeroDivisionError):
+            out["exclusion_reason"] = "invalid_input"  # e.g. a non-finite value in the frozen start
+            return out
+        candidate_input = _number(limited.get("predicted_removed_ml")) if isinstance(limited, dict) else None
+        if candidate_input is None:
+            needed = {"current_ah", "source_ah", "volume_m3", "current_temp_c", "source_temp_c", "rate_per_min", "airflow_bonus"}
+            out["exclusion_reason"] = "production_unavailable" if needed <= set(args) else "start_context_incomplete"
+            return out
+        out["candidate_input_basis"] = "target_limited_start_replay"
         try:
             candidate = shadow_removed_ml(
                 room_ah_start_g_m3=float(args["current_ah"]), source_ah_start_g_m3=float(args["source_ah"]),
                 volume_m3=float(args["volume_m3"]), horizon_min=horizon,
-                is_cross_ventilated=bool(shadow.get("cross_ventilated")), legacy_start_forecast_ml=production)
+                is_cross_ventilated=bool(shadow.get("cross_ventilated")), legacy_start_forecast_ml=candidate_input)
         except (KeyError, TypeError, OverflowError):
             out["exclusion_reason"] = "start_context_incomplete"
             return out
@@ -164,6 +202,7 @@ def shadow_forecast_record(start_context: Any, *, horizon_min: Any, production_p
             out["exclusion_reason"] = "outside_calibrated_range" if "range" in str(err) else "invalid_input"
             return out
         out["candidate_predicted_removed_ml"] = round(candidate, 1)
+        successor = _successor(args, shadow, horizon, production, out)
         reason = _exclusion(comparable=bool(comparable), measured=measured,
                             contaminated=bool(contaminated), reference_reversal=bool(reference_reversal),
                             cross_start=bool(shadow.get("cross_ventilated")), cross_ratio=_number(cross_ratio))
@@ -171,6 +210,8 @@ def shadow_forecast_record(start_context: Any, *, horizon_min: Any, production_p
             out.update(production_abs_error_ml=round(abs(measured - production), 1),
                        candidate_abs_error_ml=round(abs(measured - candidate), 1),
                        null_abs_error_ml=round(abs(measured), 1), paired_valid=True)
+            if successor is not None:
+                out["successor_abs_error_ml"] = round(abs(measured - successor), 1)
         out["exclusion_reason"] = reason
         return out
     except Exception:  # noqa: BLE001 - an observation must never break the session end

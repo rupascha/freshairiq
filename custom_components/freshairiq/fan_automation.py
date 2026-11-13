@@ -198,6 +198,10 @@ def _own_state(mode, fan_on, owned, aligned, room, snap, command, command_state)
         return ("completed" if command == "off" and command_state != "failed" else "idle"), None
     if bool((room.get("configured_actuators") or {}).get("window_open")):
         return "idle", None
+    if snap.get("blocked") and command == "off" and snap.get("reason") == "max_runtime" and command_state != "failed":
+        # 0.26.7.0: FreshAirIQ's own switch-off at the fan's maximum runtime – completed, not "switched off by hand"
+        # (with F11 the room may still want air; the device limit ended it, no automatic restart until demand ends)
+        return "completed", None
     if snap.get("blocked"):
         return "manual_off", None  # switched off by hand: no automatic restart until the demand ends
     if snap.get("restart_locked") and not room.get("moisture_source_active"):
