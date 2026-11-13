@@ -278,7 +278,7 @@ svg .sky,svg .weather,svg .climate,svg .plume,svg .fan,svg .steam{pointer-events
 .map .wxu .wx.fog>i{border-radius:50%;background:radial-gradient(closest-side,rgba(232,242,250,.16),rgba(232,242,250,.12) 60%,rgba(232,242,250,0));will-change:transform}
 .map .wxu .wx.stars>i{border-radius:50%;background:#fff}
 .map .wxu .wx.flash{background:#eef6ff}
-.map svg.plan{position:relative;z-index:1}
+.map svg.plan{position:relative;z-index:1;will-change:transform}
 :host([data-paused]) .wx,:host([data-paused]) .wx *,:host([data-paused]) .cl,:host([data-paused]) .steam path,:host([data-paused]) .plume,:host([data-paused]) .particles,:host([data-paused]) .fan .blades{animation-play-state:paused}
 :host([data-still]) .wx,:host([data-still]) .wx *,:host([data-still]) .cl,:host([data-still]) .steam path,:host([data-still]) .plume:not(.fade),:host([data-still]) .particles,:host([data-still]) .fan .blades{animation:none}
 :host([data-still]) .steam path{opacity:.6} :host([data-still]) .wx.flash{opacity:.1}

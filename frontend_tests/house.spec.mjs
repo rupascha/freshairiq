@@ -3817,6 +3817,41 @@ test('0.26.7.0 weather values one by one; cards configured before keep every val
 
 // visual acceptance: every weather situation in a real browser – the labels look exactly the same with and without the weather
 // world (pixel by pixel), the world animates smoothly, and screenshots are kept for review
+// 0.26.7.0 CI fix (evidence: CI artifact of run 42546730326): with moving rain the plan was promoted to its own compositor layer
+// (it lies over the underlay's will-change layers), without weather it was not – Chromium then rasterised the labels once with
+// subpixel (LCD) and once with greyscale smoothing (label pixels 84 / 113 apart, no effect over the text). The plan keeps one
+// layer in every weather mode, so its labels look the same in every weather.
+test('0.26.7.0 CI fix: the plan keeps the same rendering layer in every weather mode – labels are drawn the same way', async ({ page, browserName }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mount(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const cdp = browserName === 'chromium' ? await page.context().newCDPSession(page) : null;
+  let layers = [];
+  if (cdp) { await cdp.send('DOM.enable'); await cdp.send('LayerTree.enable'); cdp.on('LayerTree.layerTreeDidChange', e => { if (e.layers) layers = e.layers; }); }
+  const seen = [];
+  for (const [fx, state] of [['off', 'sunny'], ['full', 'sunny'], ['off', 'rainy'], ['full', 'rainy'], ['dynamic', 'pouring']]) {
+    await impl(page).evaluate((el, [fx, state]) => {
+      el.setConfig({ ...el._config, weather_entity: 'weather.own', weather_effects: fx });
+      el._hass = { ...el._hass, states: { 'weather.own': { entity_id: 'weather.own', state, last_updated: `${state}${fx}`, attributes: { temperature: 9, wind_speed: 18, wind_bearing: 250 } },
+        'sun.sun': { state: 'above_horizon', attributes: { elevation: 20, azimuth: 200 } } } };
+      el._render();
+    }, [fx, state]);
+    await settle(page, 300);
+    const style = await impl(page).evaluate(el => getComputedStyle(el.shadowRoot.querySelector('svg.plan')).willChange);
+    let own = null;
+    if (cdp) {
+      own = false;
+      for (const l of layers.filter(l => l.drawsContent && l.backendNodeId)) {
+        const d = await cdp.send('DOM.describeNode', { backendNodeId: l.backendNodeId }).catch(() => null);
+        if (d && d.node.nodeName.toLowerCase() === 'svg' && (d.node.attributes || []).join(' ').includes('plan')) own = true;
+      }
+    }
+    seen.push({ fx, state, style, own });
+  }
+  for (const s of seen) expect(s.style, `${s.fx} ${s.state}`).toContain('transform');
+  if (cdp) for (const s of seen) expect(s.own, `${s.fx} ${s.state}: the plan on its own layer`).toBe(true);   // Chromium: the layer tree itself
+});
+
 const SITUATIONS = [
   ['sunny morning', 'sunny', 8, 100, { cloud_coverage: 5 }, 2], ['noon', 'sunny', 45, 180, { cloud_coverage: 0 }, 2], ['sunset', 'sunny', 1.5, 262, { cloud_coverage: 5 }, 3],
   ['rain', 'rainy', 20, 200, {}, 5], ['storm', 'pouring', 20, 220, { wind_speed: 95, wind_gust_speed: 125, wind_bearing: 'W' }, 25], ['snow', 'snowy', 12, 170, {}, 3],

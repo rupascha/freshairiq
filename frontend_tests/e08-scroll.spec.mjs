@@ -125,6 +125,10 @@ for (const [label, width, height] of [['iPhone', 390, 844], ['Desktop', 1440, 90
     await second.locator('.subdialog').evaluate(el => { el.scrollTop = 600; });
     await page.waitForTimeout(50);
     await second.locator('#info-close').click();
+    // Test note 0.26.7.0 CI fix: after closing, a card puts the page back where it was for 350 ms (HA/WebView focus scrolling,
+    // _restoreOverlayViewport). A click on the other card within that phase raced it – Playwright scrolled the first card into
+    // view, the restore scrolled back and the click met the second card (Firefox, flaky). Act once that phase has ended.
+    await page.waitForFunction(() => !document.getElementById('card2')._pageScrollSnapshot);
     await page.locator('#card #rooms').click();
     expect(await page.locator('#card .subdialog').evaluate(el => el.scrollTop)).toBe(0);
     expect(errors).toEqual([]);
