@@ -47,21 +47,15 @@ def session_measurement_quality(
 ) -> dict[str, Any]:
     """Return session-specific measurement quality for low-cadence sensors.
 
-    The hard learning gate is based on sensor-report timestamps, not on the age
-    of the currently held numeric value. Production callers provide split
-    temperature/humidity counters that are incremented only when Home Assistant
-    advances ``last_reported`` (or ``last_updated`` on older HA versions) *after*
-    the physical opening and no later than the detected physical close.
-
-    A learning/validation sample is therefore trustworthy only when both climate
-    channels have proved activity during this exact ventilation and the combined
-    activity contains at least two reports. A post-close refresh may improve the
-    end boundary to ``high`` quality, but it can never satisfy the in-session
-    timestamp gate retroactively.
-
-    ``temperature_reports`` / ``humidity_reports`` remain optional only for
-    compatibility with isolated pure-logic callers. Coordinator production paths
-    always provide both counters and therefore use the strict per-channel gate.
+    The learning gate needs at least two real sensor value changes after the
+    physical opening and no later than the detected physical close: two
+    temperature changes, two humidity changes or one of each. Production
+    callers pass the value-change evidence of the strongest logical climate
+    sensor (see :func:`session_value_change_counts`), so repeated identical
+    reports, coordinator refreshes and reports from different sensors are
+    never combined into a pass. A post-close refresh may improve the end
+    boundary to ``high`` quality, but it can never satisfy the in-session gate
+    retroactively. The age of the frozen start values plays no role here.
     """
     try:
         reports = max(int(fresh_reports), 0)
@@ -69,25 +63,22 @@ def session_measurement_quality(
         reports = 0
 
     split_activity_available = temperature_reports is not None or humidity_reports is not None
+    split_valid = True
     try:
         temp_reports = max(int(temperature_reports or 0), 0)
     except (TypeError, ValueError, OverflowError):
         temp_reports = 0
+        split_valid = False
     try:
         rh_reports = max(int(humidity_reports or 0), 0)
     except (TypeError, ValueError, OverflowError):
         rh_reports = 0
+        split_valid = False
 
     if split_activity_available:
         reports = max(reports, temp_reports + rh_reports)
-        timestamp_gate_passed = (
-            reports >= SESSION_ACTIVITY_REQUIRED_REPORTS
-            and temp_reports >= 1
-            and rh_reports >= 1
-        )
-    else:
-        # Compatibility only. Production learning never reaches this branch.
-        timestamp_gate_passed = reports >= SESSION_ACTIVITY_REQUIRED_REPORTS
+    # Malformed runtime counters fail closed instead of being guessed.
+    timestamp_gate_passed = split_valid and reports >= SESSION_ACTIVITY_REQUIRED_REPORTS
 
     end_feedback_count = int(bool(final_temperature_feedback)) + int(bool(final_humidity_feedback))
     if timestamp_gate_passed:
@@ -95,34 +86,20 @@ def session_measurement_quality(
         eligible = True
         weight = 1.0 if quality == "high" else 0.75
         reason = (
-            "Temperatur und Luftfeuchtigkeit haben während dieser Lüftung jeweils mindestens eine neue Meldung geliefert; zusätzlich kamen nach dem Schließen frische Temperatur- und Feuchtewerte zurück."
+            "Während dieser Lüftung wurden mindestens zwei Messänderungen von Temperatur oder Luftfeuchtigkeit gemeldet; zusätzlich kamen nach dem Schließen frische Temperatur- und Feuchtewerte zurück."
             if quality == "high" else
-            "Temperatur und Luftfeuchtigkeit haben während dieser Lüftung jeweils mindestens eine neue Meldung geliefert; die Session ist lernfähig, auch wenn der Abschluss-Refresh nicht beide Kanäle erneut erreicht hat."
+            "Während dieser Lüftung wurden mindestens zwei Messänderungen von Temperatur oder Luftfeuchtigkeit gemeldet; die Session ist lernfähig, auch wenn der Abschluss-Refresh nicht beide Kanäle erneut erreicht hat."
         )
-    elif reports >= SESSION_ACTIVITY_REQUIRED_REPORTS and split_activity_available:
+    elif reports >= 1:
         quality = "limited"
         eligible = False
         weight = 0.0
-        missing = []
-        if temp_reports < 1:
-            missing.append("Temperatur")
-        if rh_reports < 1:
-            missing.append("Luftfeuchtigkeit")
-        missing_text = " und ".join(missing) or "ein Klimakanal"
-        reason = (
-            f"Mehrere Meldungen wurden empfangen, aber {missing_text} hat seit dem Öffnen keinen neuen Zeitstempel geliefert. "
-            "Diese Werte dürfen nicht in physikalisches Lernen oder Prognosekalibrierung einfließen."
-        )
-    elif reports == 1:
-        quality = "limited"
-        eligible = False
-        weight = 0.0
-        reason = "Nur eine neue Klimameldung seit dem Öffnen; der Zeitstempelverlauf reicht nicht für Lernen oder Prognosebewertung."
+        reason = "Weniger als zwei Messänderungen während der Lüftung: seit dem Öffnen wurde nur eine Änderung von Temperatur oder Luftfeuchtigkeit gemeldet."
     else:
         quality = "insufficient"
         eligible = False
         weight = 0.0
-        reason = "Seit dem Öffnen wurde keine neue Raumklimameldung mit neuerem Zeitstempel beobachtet; vor der Lüftung gehaltene Werte dürfen nicht zum Lernen verwendet werden."
+        reason = "Weniger als zwei Messänderungen während der Lüftung: seit dem Öffnen wurde keine Änderung von Temperatur oder Luftfeuchtigkeit gemeldet."
     return {
         "quality": quality,
         "eligible": eligible,
@@ -134,6 +111,50 @@ def session_measurement_quality(
         "final_feedback_count": end_feedback_count,
         "reason": reason,
     }
+
+
+def session_value_change_counts(room: Any) -> tuple[int, int | None, int | None]:
+    """Return ``(changes, temperature, humidity)`` for :func:`session_measurement_quality`.
+
+    The evidence comes from the strongest currently available logical climate
+    sensor, so changes of different sensors are never summed. Sessions restored
+    from a store without per-sensor value tracking keep their stored counters.
+    """
+    if not isinstance(room, dict):
+        return 0, 0, 0
+    state = room.get("session_climate_report_state") if room.get("session_active") else None
+    rows = [row for row in state.values() if isinstance(row, dict) and isinstance(row.get("changes"), dict)] if isinstance(state, dict) else []
+    if not rows:
+        return room.get("session_fresh_measurements", 0), room.get("session_temperature_reports", 0), room.get("session_humidity_reports", 0)
+
+    def _count(value: Any) -> int:
+        try:
+            return min(max(int(value), 0), 99)
+        except (TypeError, ValueError, OverflowError):
+            return 0
+
+    best = (0, 0, 0)
+    for row in rows:
+        if not row.get("available", True):
+            continue
+        temperature = _count(row["changes"].get("temperature", 0))
+        humidity = _count(row["changes"].get("humidity", 0))
+        if temperature + humidity > best[0]:
+            best = (temperature + humidity, temperature, humidity)
+    return best
+
+
+def room_session_measurement_quality(room: Any) -> dict[str, Any]:
+    """Session measurement quality of one room from its persisted session state."""
+    changes, temperature, humidity = session_value_change_counts(room)
+    room = room if isinstance(room, dict) else {}
+    return session_measurement_quality(
+        changes,
+        temperature_reports=temperature,
+        humidity_reports=humidity,
+        final_temperature_feedback=bool(room.get("session_close_temperature_feedback")),
+        final_humidity_feedback=bool(room.get("session_close_humidity_feedback")),
+    )
 
 
 def trusted_session_end_baseline(

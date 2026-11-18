@@ -40,7 +40,10 @@ def test_integration_and_card_wiring():
     assert '"feedback_cooldown_until": self._state.get("feedback_cooldown_until"),' in telemetry
     api = (ROOT / "custom_components/freshairiq/feedback_api.py").read_text(encoding="utf-8")
     assert 'if isinstance(result, dict) and result.get("reason") == "cooldown":' in api and "status_code=429" in api
-    card = CARD_FILE.read_text(encoding="utf-8")
+    # Testvermerk 0.26.7.1 (U03): the feedback form methods moved unchanged into freshairiq-card-data.js (card size gate)
+    card = CARD_FILE.read_text(encoding="utf-8") + (CARD_FILE.parent / "freshairiq-card-data.js").read_text(encoding="utf-8")
     assert '"feedback.cooldown_hint": { de: "Feedback ist alle 15 Minuten möglich."' in card
     assert 'id="feedback-send"${feedbackMins ? " disabled" : ""}' in card
-    assert "this._feedbackCooldownUntil = parsed.cooldown_until;" in card
+    # Testvermerk 0.26.7.1 (B2): the cooldown of a 429 answer is stored for the entry that was sent (entry draft store),
+    # no longer host-wide where it locked another entry shown meanwhile
+    assert "draftRef.cooldownUntil = parsed?.cooldown_until ||" in card

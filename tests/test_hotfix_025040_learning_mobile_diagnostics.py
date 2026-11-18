@@ -19,7 +19,8 @@ def test_forecast_accuracy_has_sample_depth_label():
 def test_android_native_scroll_and_global_viewport_restore():
  t=(COMP/'frontend'/'freshairiq-card.js').read_text(); assert 'touch-action:pan-y pinch-zoom' in t and 'overflow-y:auto' in t; assert '_installAndroidTouchScroll' in t; assert '_captureOverlayViewport()' in t and '_restoreOverlayViewport()' in t
 def test_feedback_has_privacy_minimised_client_context():
- card=(COMP/'frontend'/'freshairiq-card.js').read_text(); api=(COMP/'feedback_api.py').read_text(); tel=module_source("telemetry"); assert 'client_context:this._fieldTestClientContext()' in card and 'payload.get("client_context")' in api; frag=tel[tel.index('safe_client = {}'):tel.index('headers = {',tel.index('safe_client = {}'))]; assert 'device_model' not in frag and 'platform_family' in frag and 'webview_engine_version' in frag
+ # Testvermerk 0.26.7.1 (U03): _sendFeedback moved unchanged into freshairiq-card-data.js
+ card=(COMP/'frontend'/'freshairiq-card.js').read_text()+(COMP/'frontend'/'freshairiq-card-data.js').read_text(); api=(COMP/'feedback_api.py').read_text(); tel=module_source("telemetry"); assert 'client_context:this._fieldTestClientContext()' in card and 'payload.get("client_context")' in api; frag=tel[tel.index('safe_client = {}'):tel.index('headers = {',tel.index('safe_client = {}'))]; assert 'device_model' not in frag and 'platform_family' in frag and 'webview_engine_version' in frag
 def test_transport_observability_fields_present():
  t=module_source("telemetry")
  for f in ('registered','initial_snapshot_received','daily_upload_received','last_successful_upload','next_scheduled_upload'): assert f'"{f}"' in t

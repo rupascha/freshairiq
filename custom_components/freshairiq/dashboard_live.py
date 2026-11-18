@@ -64,6 +64,9 @@ class DashboardPayload:
             "forecast_moisture_effect_ml": self.coordinator.data.get("forecast_moisture_effect_ml", 0),
             "forecast_uncapped_moisture_effect_ml": self.coordinator.data.get("forecast_uncapped_moisture_effect_ml", self.coordinator.data.get("forecast_moisture_effect_ml", 0)),
             "forecast_target_limited": self.coordinator.data.get("forecast_target_limited", False),
+            # IQ2: separate quantities – net change of the room air, modelled transport, what the target still needs, interval
+            **{k: self.coordinator.data.get(k) for k in ("forecast_net_room_change_ml", "forecast_outdoor_transport_ml", "forecast_to_target_ml",
+                                                           "forecast_interval_ml", "forecast_quality_state", "forecast_scored_airings")},
             "forecast_live_adapted": self.coordinator.data.get("forecast_live_adapted", False),
             "forecast_live_observation_weight": self.coordinator.data.get("forecast_live_observation_weight", 0),
             "forecast_temperature_change_c": self.coordinator.data.get("forecast_temperature_change_c", 0),
@@ -76,6 +79,7 @@ class DashboardPayload:
             "cross_ventilation": self.coordinator.data["cross_ventilation"],
             "recommended_duration_min": self.coordinator.data["recommended_duration_min"],
             "remaining_duration_min": self.coordinator.data["remaining_duration_min"],
+            "remaining_duration_state": self.coordinator.data.get("remaining_duration_state"),  # R07: plan/countdown/reassessing/close/overrun
             "temperature_change_live_c": self.coordinator.data["temperature_change_live_c"],
             "operating_profile": self.coordinator.data["operating_profile"],
             "overnight_forecast_ml": self.coordinator.data["overnight_forecast_ml"],

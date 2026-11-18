@@ -348,7 +348,7 @@ def build_validation_record(
                 for item in session_rows
                 if bool(item.get("prediction_time_aligned"))
             ):
-                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber Temperatur und Luftfeuchtigkeit lieferten während der Lüftung nicht beide einen neueren Sensor-Zeitstempel. Die Session bleibt deshalb von Lernen und objektiver Prognosebewertung ausgeschlossen."
+                invalid_reason = "Zeitgleiche Startprognose vorhanden, aber während der Lüftung wurden weniger als zwei Messänderungen von Temperatur oder Luftfeuchtigkeit mit neuem Sensor-Zeitstempel gemeldet. Die Session bleibt deshalb von Lernen und objektiver Prognosebewertung ausgeschlossen."
                 invalid_code = "no_fresh_sensor_timestamps"
             else:
                 invalid_reason = "Zeitgleiche Startprognose vorhanden, aber keine Session erfüllte alle objektiven Validierungskriterien."

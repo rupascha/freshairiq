@@ -27,7 +27,7 @@ from .coordinator_contacts import (
     _room_contacts_known,
     _room_ventilation_state,
 )
-from .coordinator_sources import _cover_learning_guard, _entity_active, _exhaust_stopped_for_seconds, _float_state, _humidity_percent, _humidity_value
+from .coordinator_sources import _cover_learning_guard, _entity_active, _exhaust_stopped_for_seconds, _float_state, _humidity_percent, _humidity_value, _temperature_state
 from .exhaust_reference import exhaust_reference_applies, exhaust_reference_pair
 from .measurement_frame import build_measurement_frame
 from .opening_state import (
@@ -234,7 +234,7 @@ class RoomContactsMixin:
 
     def _neighbour_reference(self, cfg: Any, temperature_entity: str, humidity_entity: str) -> tuple[float | None, float | None]:
         """The neighbouring-room pair; atomic and unit-checked (0.26.5.5): no value, no outdoor fallback."""
-        ref_t = _float_state(self.hass, temperature_entity)
+        ref_t = _temperature_state(self.hass, temperature_entity)
         ref_rh, unit_issue = _humidity_percent(self.hass, humidity_entity)
         issues = self.__dict__.setdefault("_reference_unit_issues", {})
         if unit_issue:
@@ -272,7 +272,7 @@ class RoomContactsMixin:
             self.hass, cfg,
             default_temp_entity=default_reference_temperature_entity,
             default_humidity_entity=default_reference_humidity_entity,
-            default_temp=default_ref_t, default_humidity=default_ref_rh, humidity_reader=_humidity_value,
+            default_temp=default_ref_t, default_humidity=default_ref_rh, humidity_reader=_humidity_value, temperature_reader=_temperature_state,
             contact_modes=_session_reference_modes(self.hass, cfg, now, physical_contact_modes, stable_since, mem, self.__dict__.setdefault("_session_counted_contacts", {}).setdefault(str(cfg.get("key") or ""), set())),
         ))
         reference_temperature_state = self.hass.states.get(reference_temperature_entity) if reference_temperature_entity else outdoor_temp_state

@@ -106,7 +106,7 @@ from .localize import Translator, is_german, protected_names
 from .sensor_recovery import advance_sensor_recovery
 # The coordinator is split into the coordinator_* modules (mixins and helpers); every name that
 # used to live here stays importable from this module.
-from .coordinator_sources import _entity_active, _exhaust_stopped_for_seconds, _float_state, _pollen_level, _outdoor_pm25_level, _cover_learning_guard, _aggregate_state_proxy, _state_report_timestamp, _weather_values, _weather_wind  # noqa: F401 - re-exported
+from .coordinator_sources import _entity_active, _exhaust_stopped_for_seconds, _float_state, _pollen_level, _outdoor_pm25_level, _cover_learning_guard, _aggregate_state_proxy, _state_report_timestamp, _temperature_state, _weather_values, _weather_wind  # noqa: F401 - re-exported
 from .coordinator_contacts import _contact_ids, _contact_specific_reference, _opening_assessments, _open_seconds, _room_contacts_known, _room_physical_opened_at, _contact_unknown_for, _room_closed_for_seconds, _room_ventilation_state, _cover_openings, _ORIENTATION_DEG, _orientation_factor, _room_orientation_factor  # noqa: F401 - re-exported
 from .room_recommendation import _recommendation  # noqa: F401 - re-exported
 from .coordinator_listeners import CoordinatorListenersMixin
@@ -276,7 +276,7 @@ class FreshAirIQCoordinator(
         outdoor_humidity_entity = self.entry.data.get(CONF_OUTDOOR_HUMIDITY)
         outdoor_temp_state = self.hass.states.get(outdoor_temp_entity) if outdoor_temp_entity else outdoor_weather_state
         outdoor_humidity_state = self.hass.states.get(outdoor_humidity_entity) if outdoor_humidity_entity else outdoor_weather_state
-        sensor_t = _float_state(self.hass, outdoor_temp_entity); sensor_rh = _float_state(self.hass, outdoor_humidity_entity)
+        sensor_t = _temperature_state(self.hass, outdoor_temp_entity); sensor_rh = _float_state(self.hass, outdoor_humidity_entity)
         if sensor_t is not None: outdoor_t = sensor_t
         if sensor_rh is not None: outdoor_rh = sensor_rh
         wind_bearing, wind_speed = _weather_wind(self.hass, self.entry.data.get(CONF_OUTDOOR_WEATHER))

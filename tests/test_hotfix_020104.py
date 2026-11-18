@@ -41,7 +41,9 @@ def test_uncapped_forecast_transport_reaches_dashboard_without_changing_decision
     assert '"forecast_uncapped_moisture_effect_ml"' in SENSOR
     assert '"forecast_target_limited"' in SENSOR
     assert 'forecastUncappedEffect' in JS
-    assert 'const forecastDisplayEffect = forecastEffect' in JS
+    # Testvermerk 0.26.7.1 (IQ2): the tile's main value is the forecast net change of the room air when the payload
+    # carries it (not target-limited); an older payload keeps the earlier decision value as fallback
+    assert 'const forecastDisplayEffect = st.forecast_net_room_change_ml != null ? Number(st.forecast_net_room_change_ml) : forecastEffect' in JS
     assert 'forecastLiveAdapted' in JS
     assert 'Live-Messverlauf berücksichtigt' in JS
     assert 'am Feuchteziel begrenzt' in JS

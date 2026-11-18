@@ -14,6 +14,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
+from .climate_sources import celsius
 from .model import absolute_humidity
 from .robustness import finite_float
 
@@ -99,19 +100,21 @@ async def async_hourly_forecast(
         payload, reason = None, "service_error"
 
     rows = _extract_rows(payload, entity_id)
+    state = hass.states.get(entity_id)
     if not rows:
-        state = hass.states.get(entity_id)
         rows = _extract_rows(state.attributes.get("forecast") if state else None, entity_id)
+    # F09: forecast rows come in the weather entity's ``temperature_unit``
+    unit = state.attributes.get("temperature_unit") if state is not None else None
     if not rows and reason is None:
         reason = "no_hourly_rows"
 
     out: list[dict[str, Any]] = []
     for row in rows:
         when = _dt(row.get("datetime") or row.get("time"))
-        temp = _f(row.get("temperature"))
+        temp = celsius(_f(row.get("temperature")), unit)
         rh = _f(row.get("humidity"))
         if rh is None:
-            dew = _f(row.get("dew_point") if "dew_point" in row else row.get("dewpoint"))
+            dew = celsius(_f(row.get("dew_point") if "dew_point" in row else row.get("dewpoint")), unit)
             if temp is not None and dew is not None:
                 rh = _rh_from_dewpoint(temp, dew)
         if when is None or temp is None or rh is None or not (-40 <= temp <= 60 and 0 <= rh <= 100):

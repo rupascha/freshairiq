@@ -8,29 +8,24 @@ ROOT = Path(__file__).resolve().parents[1]
 COORDINATOR = module_source("coordinator")
 
 
-def test_strict_gate_requires_activity_from_both_climate_channels():
-    only_temperature = session_measurement_quality(
-        2, temperature_reports=2, humidity_reports=0
-    )
-    assert only_temperature["quality"] == "limited"
-    assert only_temperature["eligible"] is False
-    assert only_temperature["timestamp_gate_passed"] is False
-    assert only_temperature["learning_weight"] == 0.0
+def test_gate_needs_two_value_changes_in_any_climate_channel_combination():
+    for temperature, humidity in ((2, 0), (0, 2), (1, 1)):
+        quality = session_measurement_quality(
+            temperature + humidity, temperature_reports=temperature, humidity_reports=humidity
+        )
+        assert quality["quality"] == "good"
+        assert quality["eligible"] is True
+        assert quality["timestamp_gate_passed"] is True
+        assert quality["learning_weight"] == 0.75
 
-    only_humidity = session_measurement_quality(
-        2, temperature_reports=0, humidity_reports=2
-    )
-    assert only_humidity["quality"] == "limited"
-    assert only_humidity["eligible"] is False
-    assert only_humidity["timestamp_gate_passed"] is False
-
-    both = session_measurement_quality(
-        2, temperature_reports=1, humidity_reports=1
-    )
-    assert both["quality"] == "good"
-    assert both["eligible"] is True
-    assert both["timestamp_gate_passed"] is True
-    assert both["learning_weight"] == 0.75
+    for temperature, humidity in ((1, 0), (0, 1), (0, 0)):
+        quality = session_measurement_quality(
+            temperature + humidity, temperature_reports=temperature, humidity_reports=humidity
+        )
+        assert quality["eligible"] is False
+        assert quality["timestamp_gate_passed"] is False
+        assert quality["learning_weight"] == 0.0
+        assert "Weniger als zwei Messänderungen" in quality["reason"]
 
 
 def test_post_close_refresh_cannot_retroactively_satisfy_timestamp_gate():

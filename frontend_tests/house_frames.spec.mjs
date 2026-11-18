@@ -1,6 +1,8 @@
 // House map: smooth animation (0.26.7.0, moved here in 0.26.7.0(2)). A frame-time measurement depends on the machine, so it
 // runs in its own Playwright project after every other browser test (playwright.config.mjs: frames-*), never next to them.
 import { test, expect } from '@playwright/test';
+// Testvermerk 0.26.7.1: motion module checks import the exact URL the card loaded (same module instance) instead of a
+// hard-coded ?v= version, which silently tested a second, empty instance after every version bump.
 import fs from 'node:fs';
 import { loadModule } from './harness.mjs';
 
@@ -141,7 +143,7 @@ test('0.26.7.0(2) three house maps for 30 s in a storm: low steady load, one sha
   await page.waitForTimeout(10000);
   const last = await windowOf(10), n1 = await nodes();
   await page.evaluate(() => clearInterval(window.__live));
-  const loop = await page.evaluate(async () => (await import('/freshairiq-house-motion.js?v=0.26.7.0')).loopSize());
+  const loop = await page.evaluate(async () => (await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js')))).loopSize());
   testInfo.annotations.push({ type: 'load', description: JSON.stringify({ first, last, n0, n1, loop }) });
   const visible = await page.evaluate(() => [...document.querySelectorAll('freshairiq-house-card-impl')].filter(el => !el.hasAttribute('data-paused')).length);
   expect([visible, loop]).toEqual([3, 3]);                               // one loop, three visible cards in it
@@ -152,5 +154,5 @@ test('0.26.7.0(2) three house maps for 30 s in a storm: low steady load, one sha
   expect(Math.abs(n1 - n0)).toBeLessThanOrEqual(Math.max(30, n0 * 0.05));
   // all three gone: the loop is empty, no timer keeps running
   await page.evaluate(() => document.querySelectorAll('freshairiq-house-card').forEach(c => c.remove()));
-  expect(await page.evaluate(async () => (await import('/freshairiq-house-motion.js?v=0.26.7.0')).loopSize())).toBe(0);
+  expect(await page.evaluate(async () => (await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js')))).loopSize())).toBe(0);
 });

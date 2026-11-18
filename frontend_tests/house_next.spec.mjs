@@ -1,6 +1,8 @@
 // House map 0.26.7.0(2): the weather window and the weather at the top right, the rooms overview, a room's details, the menu,
 // the calmer wind and the animation levels – checked in a real browser (fixtures and mount as in house.spec.mjs).
 import { test, expect } from '@playwright/test';
+// Testvermerk 0.26.7.1: motion module checks import the exact URL the card loaded (same module instance) instead of a
+// hard-coded ?v= version, which silently tested a second, empty instance after every version bump.
 import fs from 'node:fs';
 import { loadModule, settle } from './harness.mjs';
 
@@ -322,7 +324,7 @@ test('0.26.7.0(2) calmer wind: no two streams alike, no white strokes ("shooting
   expect([r.n, r.ink]).toEqual([0, 0]);                                 // no white strokes around the house at all
   expect(r.dir).toBe(307);
   // the lanes are not an even grid and the streams' phases differ at the same moment
-  const lanes = await page.evaluate(async () => { const M = await import('/freshairiq-house-motion.js?v=0.26.7.0'); const v = M.streamVariety(5, 3); const gaps = v.slice(1).map((x, i) => x.lane - v[i].lane); return { gaps, same: M.streamVariety(5, 3).map(x => x.lane).join() === v.map(x => x.lane).join() }; });
+  const lanes = await page.evaluate(async () => { const M = await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js'))); const v = M.streamVariety(5, 3); const gaps = v.slice(1).map((x, i) => x.lane - v[i].lane); return { gaps, same: M.streamVariety(5, 3).map(x => x.lane).join() === v.map(x => x.lane).join() }; });
   expect(Math.max(...lanes.gaps) - Math.min(...lanes.gaps)).toBeGreaterThan(0.02); expect(lanes.same).toBe(true);
   // the streams still come from the measured direction: a wind from the north-west moves the air to the south-east (right, down)
   const flow = await impl(page).evaluate(el => { const s = el.shadowRoot.querySelector('path.stream.pass, path.stream.deflect'); const pts = s.getAttribute('d').split(/[ML ]+/).filter(Boolean).map(p => p.split(',').map(Number)); return [pts[pts.length - 1][0] - pts[0][0], pts[pts.length - 1][1] - pts[0][1]]; });
@@ -350,7 +352,7 @@ test('0.26.7.0(2) performance: one loop for every card at its own pace, nothing 
   await page.evaluate(() => { const c = document.createElement('freshairiq-house-card'); c.id = 'card2'; c.setConfig({ animation_level: 'minimal' }); document.getElementById('m').appendChild(c); c.hass = document.getElementById('card').hass; });
   await page.waitForFunction(() => document.querySelectorAll('freshairiq-house-card-impl').length === 2);
   await settle(page, 600);
-  const loop = await page.evaluate(async () => { const M = await import('/freshairiq-house-motion.js?v=0.26.7.0'); let calls = 0; const orig = window.requestAnimationFrame.bind(window);
+  const loop = await page.evaluate(async () => { const M = await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js'))); let calls = 0; const orig = window.requestAnimationFrame.bind(window);
     window.requestAnimationFrame = cb => { calls += 1; return orig(cb); }; await new Promise(r => setTimeout(r, 1000)); window.requestAnimationFrame = orig; return { calls, size: M.loopSize() }; });
   expect(loop.calls).toBeLessThan(40);                                // 0.26.7.0: ~60 per card and second
   // a window over the plan pauses it; closing it continues
@@ -359,7 +361,7 @@ test('0.26.7.0(2) performance: one loop for every card at its own pace, nothing 
   await impl(page).first().evaluate(el => el._closeDialog());
   expect(await impl(page).first().evaluate(el => [el.hasAttribute('data-paused'), !!el._windRaf])).toEqual([false, true]);
   await page.evaluate(() => { document.getElementById('card').remove(); document.getElementById('card2').remove(); });
-  expect(await page.evaluate(async () => (await import('/freshairiq-house-motion.js?v=0.26.7.0')).loopSize())).toBe(0);
+  expect(await page.evaluate(async () => (await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js')))).loopSize())).toBe(0);
 });
 
 for (const [label, w, h] of [['phone portrait', 390, 844], ['phone landscape', 844, 390], ['tablet', 768, 1024], ['desktop', 1440, 900], ['narrow card', 320, 640]]) {
@@ -424,6 +426,29 @@ const LEARNING = {
   learning_effectiveness: { samples: 6, independent_sessions: 5, distinct_days: 3, improvement_percent: 4.5, status_label: 'Sammelt Vergleichsdaten' },
   forecast_shadow_comparison: { samples: 6, production_mae_ml: 40, candidate_mae_ml: 35, mae_difference_ml: 5, improvement_percent: 12.5, status: 'collecting' },
 };
+for (const [language, text] of [['de', 'ExperimentellDie neue Grundformel inklusive der Prognosen wurde anhand von 23.000 realen Lüftungen ausgewertet und übernommen. Aktuell gibt es keine neue experimentelle Formel.'],
+  ['en', 'ExperimentalThe new base formula and its forecasts were evaluated using 23,000 real ventilation sessions and have been adopted. There is currently no new experimental formula.']]) {
+  test(`house map, ${language}: "Experimentell" in the forecast quality shows the note on the adopted base formula once – with and without older comparison data`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await mount(page);
+    await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
+    for (const comparison of [LEARNING.forecast_shadow_comparison, null]) {
+      await page.evaluate(([L, language, comparison]) => {
+        const data = { ...L }; if (comparison) data.forecast_shadow_comparison = comparison; else delete data.forecast_shadow_comparison;
+        window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: language, ...data });
+      }, [LEARNING, language, comparison]);
+      await settle(page, 80);
+      const read = () => impl(page).evaluate(el => { el._menuOpen = false; el._selected = { type: 'classic', id: 'learning:quality' }; el._render(); const d = el.shadowRoot.querySelector('dialog.roomdlg');
+        return { notes: [...d.querySelectorAll('.faiq-shadow-test')].map(n => n.textContent.replace(/\s+/g, ' ').trim()), text: d.textContent }; });
+      await read();
+      await expect.poll(() => impl(page).evaluate(el => !!(el._shadow && el._shadow.shadowSection) || !!el.shadowRoot.querySelector('dialog.roomdlg .faiq-shadow-test'))).toBe(true);
+      const out = await read();
+      expect(out.notes).toEqual([text]);
+      expect(out.text).not.toMatch(/ml MAE|Testformel|test formula|passiver Test|passive test/);
+    }
+  });
+}
+
 test('0.26.7.0(2) correction 3: every view behind the FreshAirIQ card\'s details – learning, forecast quality with the formula comparison, water, threshold, night, pollen, decision, last airing', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await mount(page);
@@ -445,7 +470,9 @@ test('0.26.7.0(2) correction 3: every view behind the FreshAirIQ card\'s details
   await expect.poll(() => impl(page).evaluate(el => !!(el._shadow && el._shadow.shadowSection))).toBe(true);   // the card's own section module
   const quality = await view('learning:quality');
   expect(quality.text).toContain('Wie gut FreshAirIQ aktuell vorhersagt'); expect(quality.text).toContain('71 %');
-  expect(quality.text).toContain('Experiment: Neue Feuchteformel (passiver Test)'); expect(quality.text).toMatch(/40 ml MAE.*35 ml MAE/);
+  // the section "Experimentell": the note on the adopted base formula once, none of the published comparison numbers
+  expect(quality.text.split('Die neue Grundformel inklusive der Prognosen wurde anhand von 23.000 realen Lüftungen ausgewertet und übernommen. Aktuell gibt es keine neue experimentelle Formel.').length).toBe(2);
+  expect(quality.text).toContain('Experimentell'); expect(quality.text).not.toMatch(/ml MAE|Testformel|passiver Test/);
   // Test note 0.26.7.0 UI hotfix (owner order): one Back for every window (top left in the header) replaces the view's own back link – reached from the
   // learning overview, Back returns there
   await view('learning');
@@ -763,7 +790,7 @@ test('0.26.7.0 UI hotfix 6: animation off – a still, even background without b
   // several cards: one shared loop entry each, none more
   await impl(page).evaluate(el => { el.setConfig({ ...el._config, animation_level: 'intense' }); el._render(); });
   await settle(page, 150);
-  expect(await page.evaluate(async () => (await import('/freshairiq-house-motion.js?v=0.26.7.0')).loopSize())).toBe(1);
+  expect(await page.evaluate(async () => (await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js')))).loopSize())).toBe(1);
 });
 
 test('0.26.7.0 card settings: seven groups, every key as before, dependent options in context, outdated floors/rooms, phone width', async ({ page }) => {
@@ -808,4 +835,80 @@ test('0.26.7.0 card settings: seven groups, every key as before, dependent optio
   expect(r.lockShown).toBe(true);
   expect(r.wide).toBeLessThanOrEqual(1);                                       // nothing sticks out of the settings (phone width)
   expect(r.datalist).toEqual(['weather.home']);
+});
+
+test('U02 (0.26.7.1): the weather column keeps its scroll position per view across live updates', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 520 });
+  await mount(page);
+  await setup(page, {}, STATES('rainy'), FORECAST);
+  await settle(page, 200);
+  const r = await impl(page).evaluate(async el => {
+    const aside = () => el.shadowRoot.querySelector('.wxside');
+    if (!aside()) return { missing: true };
+    const scrollable = aside().scrollHeight - aside().clientHeight;
+    aside().scrollTop = Math.min(120, scrollable);
+    aside().dispatchEvent(new Event('scroll'));
+    const before = aside().scrollTop;
+    el._render();                                                              // a live update
+    const afterLive = aside().scrollTop;
+    const floor = el._floor;
+    el._floor = floor === 'f_eg' ? 'f_og' : 'f_eg'; el._render();             // another view starts at its own position
+    const otherView = aside().scrollTop;
+    el._floor = floor; el._render();                                          // and back: where it was
+    return { scrollable, before, afterLive, otherView, back: aside().scrollTop };
+  });
+  expect(r.missing).toBeUndefined();
+  expect(r.scrollable).toBeGreaterThan(40);
+  expect(r.before).toBeGreaterThan(0);
+  expect(r.afterLive).toBe(r.before);
+  expect(r.otherView).toBe(0);
+  expect(r.back).toBe(r.before);
+});
+
+test('U04 (0.26.7.1): every menu entry and a nested page go back exactly one level; Close closes; Escape like Back', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 700 });
+  await mount(page, { config: { rooms_button: true } });
+  await setup(page, {}, STATES('rainy'), FORECAST);
+  const state = () => impl(page).evaluate(el => { const open = [...el.shadowRoot.querySelectorAll('dialog')].filter(d => d.open); const d = open[0];
+    return { open: open.length, kind: d ? (d.classList.contains('menudlg') ? 'menu' : `${el._selected && el._selected.type}`) : null, back: !!(d && d.querySelector('header [data-nav-back]')),
+      floor: el._floor }; });
+  const click = sel => impl(page).evaluate((el, sel) => { const n = el.shadowRoot.querySelector(sel); if (!n) throw new Error(`missing ${sel}`); n.click(); }, sel);
+  const floor = (await state()).floor;
+  for (const item of ['[data-house-details]', '[data-weather-open]', '[data-rooms]', '[data-classic-info="learning"]', '[data-ventlog]', '[data-support]']) {
+    await click('[data-menu]');
+    await click(`dialog.menudlg ${item}`);
+    const inside = await state();
+    expect(inside, item).toMatchObject({ open: 1, back: true });
+    expect(inside.kind, item).not.toBe('menu');
+    await click('dialog.roomdlg [data-nav-back]');
+    expect(await state(), item).toMatchObject({ open: 1, kind: 'menu', floor });   // one level: the menu, not closed
+    // the same page again: Escape goes back like the button, Close closes everything
+    await click(`dialog.menudlg ${item}`);
+    await page.keyboard.press('Escape'); await settle(page, 60);
+    expect(await state(), item).toMatchObject({ open: 1, kind: 'menu' });
+    await click(`dialog.menudlg ${item}`);
+    await click('dialog.roomdlg [data-close-detail]');
+    expect(await state(), item).toMatchObject({ open: 0, floor });
+  }
+  // nested: menu → decision → a page linked inside it → Back → decision → Back → menu
+  await click('[data-menu]');
+  await click('dialog.menudlg [data-house-details]');
+  const nested = await impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.roomdlg');
+    const n = d.querySelector('.body [data-moisture], .body [data-moisture-side], .body [data-room-open], .body [data-classic-info], .body [data-weather-open]');
+    return n ? n.outerHTML.slice(0, 80) : null; });
+  expect(nested).toContain('data-classic-info');   // the decision page links one level deeper (learning quality)
+  {
+    const decision = (await state()).kind;
+    await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg .body').querySelector('[data-moisture], [data-moisture-side], [data-room-open], [data-classic-info], [data-weather-open]').click());
+    const second = await state();
+    expect(second.back, nested).toBe(true);
+    await click('dialog.roomdlg [data-nav-back]');
+    expect((await state()).kind, nested).toBe(decision);
+    await click('dialog.roomdlg [data-nav-back]');
+    expect(await state()).toMatchObject({ kind: 'menu' });
+  }
+  // direct entry from a room on the plan: no history, Back is not offered, Close closes
+  await click('[data-close-menu]');
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('svg.plan [data-room="r_wohnen"]').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  expect(await state()).toMatchObject({ open: 1, kind: 'room', back: false });
 });

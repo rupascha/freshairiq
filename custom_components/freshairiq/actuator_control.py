@@ -46,6 +46,8 @@ FAN_COMMAND_TIMEOUT_S = 60.0
 # at most FAN_BLOCK_ATTEMPTS times in all (no endless retries); the room keeps its ownership until then.
 FAN_BLOCK_RETRY_S = 600.0
 FAN_BLOCK_ATTEMPTS = 3
+# F07: a cover command the service did not accept is decided again with the next evaluations, at most this often
+COVER_COMMAND_ATTEMPTS = 3
 
 COVER_OPEN = "open"
 COVER_CLOSE = "close"
@@ -193,6 +195,44 @@ def decide_cover(
     if state == "ours" and view.closed:
         return [(COVER_OPEN, None)]
     return []
+
+
+def combine_cover_setups(first: CoverSetup, second: CoverSetup) -> CoverSetup:
+    """F06: one physical cover in several rooms – the contacts of all of them decide together."""
+    return CoverSetup([*first.contacts, *second.contacts], [*first.follow_contacts, *second.follow_contacts],
+                      [*first.passage_contacts, *second.passage_contacts])
+
+
+def own_fans(mem: dict[str, Any], fans: list[str]) -> list[str]:
+    """F08: the fans FreshAirIQ switched on itself; a fan added to the room later is never among them.
+
+    Runs recorded before the per-device record keep the room's fans (the earlier rule).
+    """
+    if not isinstance(mem.get("owned_fans"), list):
+        return list(fans)
+    owned = set(mem["owned_fans"])
+    return [fan for fan in fans if fan in owned]
+
+
+def cover_command_result(mem: dict[str, Any], before: dict[str, Any], sent: bool) -> None:
+    """F07: the state ``decide_cover`` took over holds only once its commands were accepted.
+
+    A command the service refused leaves the cover memory as it was, so the next evaluation decides again (the
+    restore point is taken from the cover as it really is); after ``COVER_COMMAND_ATTEMPTS`` refusals the decision is
+    kept and no further command is sent for it.
+    """
+    if sent:
+        mem.pop("failed_attempts", None)
+        mem.pop("command_failed", None)
+        return
+    earlier = before.get("failed_attempts")
+    attempts = (int(earlier) if isinstance(earlier, (int, float)) and not isinstance(earlier, bool) else 0) + 1
+    if attempts < COVER_COMMAND_ATTEMPTS:
+        mem.clear()
+        mem.update(before, failed_attempts=attempts)
+    else:
+        mem.pop("failed_attempts", None)
+        mem["command_failed"] = True
 
 
 def _parse(value: Any) -> datetime | None:

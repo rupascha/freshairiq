@@ -378,6 +378,10 @@ const w3 = v => Math.round(v * 1000) / 1000;
 const WP = p => `${w3(p[0])},${w3(-p[1])}`;
 // The symbol of a connection kind (house map and editor, hotfix 0.26.6.0).
 export const CONNECTION_SYMBOL = { open_passage: "⇄", door: "🚪", stairs: "🪜", shaft: "⇵", duct: "〰" };
+// A confirmed partition wall (G.partitionFills): the space between both rooms drawn as wall – never as air.
+export function partitionSvg(fills, color = "#0a1f38") {
+  return fills.map(f => `<polygon class="pwall" data-partition="${f.a}|${f.b}" points="${f.polygon.map(WP).join(" ")}" fill="${color}" fill-opacity="0.78" pointer-events="none"/>`).join("");
+}
 export function wallsSvg(parts, px, color = "#0a1f38") {  // 0.26.6.0(7): slimmer, softer walls
   return parts.map(w => `<line class="wall ${w.interior ? "inner" : "outer"}" x1="${w3(w.a[0])}" y1="${w3(-w.a[1])}" x2="${w3(w.b[0])}" y2="${w3(-w.b[1])}" stroke="${color}" stroke-width="${px(w.interior ? 1.8 : 4.5)}" stroke-linecap="round" stroke-opacity="${w.interior ? 0.7 : 0.9}"/>`).join("");
 }

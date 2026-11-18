@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
+from .room_close_strategy import CLOSE_STRATEGIES, CONF_ROOM_AIRING_MIN_TEMP, CONF_ROOM_CLOSE_STRATEGY, close_strategy, room_temperature_limit
 from .contact_sides import conflicting_side
 from .const import (
     CONF_CONTACT_CONNECTED_ROOMS,
@@ -193,6 +194,11 @@ def _room_schema(room: dict[str, Any] | None = None, levels: list[str] | None = 
         ),
         vol.Required(CONF_ROOM_THRESHOLD_PERCENT, default=_bounded(room.get(CONF_ROOM_THRESHOLD_PERCENT), 5, 1, 30)): _number(1, 30, 0.5, "%"),
         vol.Required(CONF_ROOM_THRESHOLD_ML, default=_bounded(room.get(CONF_ROOM_THRESHOLD_ML), 100, 10, 1000)): _number(10, 1000, 10, "mL"),
+        # K02 (0.26.7.1): optional close strategy and own temperature limit (empty = the global value)
+        vol.Required(CONF_ROOM_CLOSE_STRATEGY, default=close_strategy(room)): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=list(CLOSE_STRATEGIES), mode=selector.SelectSelectorMode.DROPDOWN, translation_key="close_strategy")
+        ),
+        _optional(CONF_ROOM_AIRING_MIN_TEMP, room_temperature_limit(room)): _number(0, 30, 0.5, "°C"),
     })
 
 
@@ -232,6 +238,11 @@ def _room_section_schema(room: dict[str, Any] | None = None, levels: list[str] |
             ),
             vol.Required(CONF_ROOM_THRESHOLD_PERCENT, default=_bounded(room.get(CONF_ROOM_THRESHOLD_PERCENT), 5, 1, 30)): _number(1, 30, 0.5, "%"),
             vol.Required(CONF_ROOM_THRESHOLD_ML, default=_bounded(room.get(CONF_ROOM_THRESHOLD_ML), 100, 10, 1000)): _number(10, 1000, 10, "mL"),
+            # K02 (0.26.7.1): optional close strategy and own temperature limit (empty = the global value)
+            vol.Required(CONF_ROOM_CLOSE_STRATEGY, default=close_strategy(room)): selector.SelectSelector(
+                selector.SelectSelectorConfig(options=list(CLOSE_STRATEGIES), mode=selector.SelectSelectorMode.DROPDOWN, translation_key="close_strategy")
+            ),
+            _optional(CONF_ROOM_AIRING_MIN_TEMP, room_temperature_limit(room)): _number(0, 30, 0.5, "°C"),
         }), {"collapsed": True}),
         vol.Required("sensors"): section(vol.Schema({
             _optional(CONF_ROOM_TEMPERATURE, _entity_list(room.get(CONF_ROOM_TEMPERATURE))): _climate_sensor_selector(device_class="temperature", multiple=True),
@@ -572,6 +583,7 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_ROOM_THRESHOLD_MODE: _choice(room.get(CONF_ROOM_THRESHOLD_MODE), ROOM_THRESHOLD_AUTOMATIC, [ROOM_THRESHOLD_AUTOMATIC, ROOM_THRESHOLD_PERCENT, ROOM_THRESHOLD_FIXED]),
         CONF_ROOM_THRESHOLD_PERCENT: _bounded(room.get(CONF_ROOM_THRESHOLD_PERCENT), 5, 1, 30),
         CONF_ROOM_THRESHOLD_ML: _bounded(room.get(CONF_ROOM_THRESHOLD_ML), 100, 10, 1000),
+        CONF_ROOM_CLOSE_STRATEGY: close_strategy(room),
         CONF_ROOM_SORT_ORDER: _safe_int(previous.get(CONF_ROOM_SORT_ORDER), len(existing_rooms), minimum=0),
         CONF_CONTACT_DELAYS: dict(previous.get(CONF_CONTACT_DELAYS, {})),
         CONF_CONTACT_ORIENTATIONS: dict(previous.get(CONF_CONTACT_ORIENTATIONS, {})),
@@ -585,6 +597,10 @@ def _normalise_room(user_input: dict[str, Any], existing_rooms: list[dict[str, A
         CONF_CONTACT_SIDES: dict(previous.get(CONF_CONTACT_SIDES, {})),
         CONF_CONTACT_CONNECTED_ROOMS: dict(previous.get(CONF_CONTACT_CONNECTED_ROOMS, {})),
     })
+    if room_temperature_limit(room) is None:
+        room.pop(CONF_ROOM_AIRING_MIN_TEMP, None)   # K02: empty or invalid = inherit the global limit
+    else:
+        room[CONF_ROOM_AIRING_MIN_TEMP] = room_temperature_limit(room)
     _normalise_room_control(room, previous)
     # If all dimensions are present they are the source of truth; otherwise use
     # the direct m³ value. This keeps dimension-based rooms editable without a

@@ -207,7 +207,7 @@ export function houseBody(c, H, layout) {
   const hz = num(p.forecast_horizon_min), fcm = num(p.forecast_moisture_effect_ml), night = num(p.overnight_forecast_ml);
   const sign = v => `${v > 0 ? "−" : v < 0 ? "+" : "±"}${Math.abs(Math.round(v))} ml`;
   const now = grid([
-    f ? tile(c._t(f.live ? "moist_so_far" : "moist_now"), f.amount <= -1 ? `+${Math.abs(f.amount)} ml` : `≈ ${Math.max(f.amount, 0)} ml`, f.minutes != null ? `⏱ ${f.minutes} ${esc(c._t("min_short"))}` : "") : "",
+    f ? tile(c._t(f.live ? "moist_so_far" : "moist_now"), f.amount <= -1 ? `+${Math.abs(f.amount)} ml` : `≈ ${Math.max(f.amount, 0)} ml`, f.minutes != null ? `⏱ ${f.minutes} ${esc(c._t("min_short"))}` : f.reassessing ? `⏱ ${esc(f.why || c._t("moist_room_reassess"))}` : "") : "",
     Number.isFinite(fcm) ? tile(t.forecast.replace("{m}", Number.isFinite(hz) ? Math.round(hz) : 5), sign(fcm), fin(p.forecast_temperature_change_c) ? `${num(p.forecast_temperature_change_c) > 0 ? "+" : ""}${n(c, p.forecast_temperature_change_c, 1)} °C` : "") : "",
     tile(t.water_air, fin(p.total_water_ml) ? `${Math.round(num(p.total_water_ml))} ml` : null),
     tile(t.threshold, fin(p.ventilation_threshold_ml) ? `${Math.round(num(p.ventilation_threshold_ml))} ml` : null),

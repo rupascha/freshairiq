@@ -209,6 +209,41 @@ def record_room_push(mem: dict[str, Any], message: dict[str, Any], accepted: boo
     return True
 
 
+NOTIFY_TARGET_ATTEMPTS = 3
+
+
+def delivery_ledger(store_data: dict[str, Any], key: str, signature: str) -> dict[str, Any]:
+    """F14: the recipients that already accepted one message, and the failed attempts per recipient.
+
+    A new message (another signature) under the same key starts a new ledger, so every recipient gets it.
+    """
+    deliveries = store_data.get("notification_deliveries")
+    if not isinstance(deliveries, dict):
+        deliveries = store_data["notification_deliveries"] = {}
+    entry = deliveries.get(key)
+    if not isinstance(entry, dict) or entry.get("signature") != signature:
+        entry = deliveries[key] = {"signature": signature, "accepted": [], "failed": {}}
+    return entry
+
+
+def settle_delivery(store_data: dict[str, Any], key: str, accepted: list[str], failed: dict[str, Any]) -> bool:
+    """F14: one sending round of a message – True when it is done (no recipient left to try again).
+
+    A recipient whose service failed is tried again with the next rounds, at most ``NOTIFY_TARGET_ATTEMPTS`` times.
+    A finished message leaves no ledger behind.
+    """
+    entry = store_data["notification_deliveries"][key]
+    entry["accepted"] = sorted({*entry["accepted"], *accepted})
+    counts = {target: count for target, count in entry["failed"].items() if target not in accepted}
+    for target in failed:
+        counts[target] = int(counts.get(target) or 0) + 1
+    entry["failed"] = counts
+    done = all(count >= NOTIFY_TARGET_ATTEMPTS for count in counts.values())
+    if done:
+        store_data["notification_deliveries"].pop(key, None)
+    return done
+
+
 def _reopen_held(action: Any, room: dict[str, Any], mem: dict[str, Any], now: datetime, options: dict[str, Any]) -> bool:
     """0.26.5.3 (GitHub #15): no "ventilate" right after "close" for the same room.
 

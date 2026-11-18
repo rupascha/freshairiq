@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .close_wording import airing_running, close_instruction, fan_only, keep_instruction
+from .close_wording import airing_running, close_instruction, fan_only, keep_instruction, protective_close  # noqa: F401 (R01, re-exported)
 
 
 def _f(value: Any, default: float = 0.0) -> float:
@@ -159,6 +159,8 @@ def enrich_opening_recommendation(
         room = rooms.get(key)
         if not isinstance(room, dict):
             continue
+        if protective_close(room):
+            continue  # B1 (0.26.7.1): a released temperature limit gets no "keep this opening open" route
         close_delta = _f(options.get("close_delta"), 0.4)
         plan = _room_opening_plan(
             room, profile,
@@ -340,6 +342,7 @@ def keep_moisture_sources_open(
         and rooms[key].get("moisture_source_active")
         and str(rooms[key].get("action") or "") == "Continue ventilating"
         and _f(rooms[key].get("delta_g_m3")) > close_delta
+        and not protective_close(rooms[key])   # R01: a released temperature close is never kept open by a source
     ]
     if not sources:
         return
@@ -419,12 +422,13 @@ def synchronize_room_presentation_actions(
         current = str(room.get("action") or "")
         final_action: str | None = None
         if kind == "close":
-            final_action = "Continue ventilating" if _close_before_own_gate(room, min_duration_min) else "Close"
+            final_action = "Continue ventilating" if _close_before_own_gate(room, min_duration_min) and not protective_close(room) else "Close"
         elif kind == "continue" and airing_running(room):
-            final_action = "Continue ventilating"
+            # R01: a house/floor "keep ventilating" never rewrites a room's released temperature close
+            final_action = "Close" if protective_close(room) else "Continue ventilating"
         elif kind == "ventilate" and not airing_running(room):
             final_action = "Ventilate"
-        if key in guidance and str(guidance[key].get("mode") or "") == "adjust_running":
+        if key in guidance and str(guidance[key].get("mode") or "") == "adjust_running" and not protective_close(room):
             final_action = "Continue ventilating"
         if final_action and current != final_action:
             room["canonical_action"] = current

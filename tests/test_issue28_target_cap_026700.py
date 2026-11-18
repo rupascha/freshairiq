@@ -138,4 +138,6 @@ def test_shadow_candidate_keeps_its_calibrated_target_limited_input():
                                     is_cross_ventilated=False, legacy_start_forecast_ml=limited)
     assert record["candidate_predicted_removed_ml"] == round(expected, 1)
     assert record["production_predicted_removed_ml"] == round(physical, 1)
-    assert record["production_formula_id"] == "start-curve-v3-horizon-forecast-r2"  # Testvermerk final hotfix F11-C
+    # Testvermerk 0.26.7.1 (IQ2): forecast.py changed -> production revision r3 (r2 was the final hotfix F11-C)
+    # Testvermerk 0.26.7.1 (Stabilitätsaudit I01/F12): forecast.py changed again -> r4
+    assert record["production_formula_id"] == "start-curve-v3-horizon-forecast-r4"

@@ -59,6 +59,8 @@
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
           "ventilation_threshold_ml": "Feste Raumgrenze",
+          "close_strategy": "Abschluss beim Lüften",
+          "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
           "goal_priorities": "Lüftungsziele priorisieren",
           "target_temperature_mode": "Komfort-Zieltemperatur",
           "target_temperature": "Manuelle Zieltemperatur",
@@ -101,6 +103,8 @@
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
           "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+          "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
           "target_temperature_mode": "Automatisch nutzt den letzten plausiblen Thermostat-Sollwert vor Lüftungsbeginn. Fensterautomationen mit Frostschutz oder Aus verfälschen die laufende Session nicht.",
           "target_temperature": "Optionaler manueller Komfort-Sollwert von 12–30 °C.",
@@ -409,6 +413,12 @@
         "moisture_source": "Nach Feuchtequelle (z. B. Duschen)",
         "recommendation": "Nach Lüftungsempfehlung"
       }
+    },
+    "close_strategy": {
+      "options": {
+        "goals_reached": "Schließen, wenn die Ziele erreicht sind (Standard)",
+        "keep_drying": "Weiterentfeuchten, solange die Außenluft Feuchte abführt"
+      }
     }
   },
   "options": {
@@ -521,6 +531,8 @@
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
           "ventilation_threshold_ml": "Feste Raumgrenze",
+          "close_strategy": "Abschluss beim Lüften",
+          "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
           "temperature_aggregation": "Temperatur-Auswertung",
           "humidity_aggregation": "Feuchte-Auswertung",
           "goal_priorities": "Lüftungsziele priorisieren",
@@ -565,6 +577,8 @@
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
           "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+          "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
           "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
           "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
@@ -598,14 +612,18 @@
               "dishwasher_signal": "Geschirrspüler-Signal (optional)",
               "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
               "ventilation_threshold_percent": "Raumgrenze in Prozent",
-              "ventilation_threshold_ml": "Feste Raumgrenze"
+              "ventilation_threshold_ml": "Feste Raumgrenze",
+              "close_strategy": "Abschluss beim Lüften",
+              "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)"
             },
             "data_description": {
               "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
               "dishwasher_signal": "Optional: ein Signal des Geschirrspülers – ein Binärsensor „trocknet / Tür offen“ (z. B. Eco-Trocknen, AutoOpen) oder ein Programm-/Phasensensor. Beim Trocknen rechnet FreshAirIQ sofort mit zusätzlicher Feuchte; nach Programmende wird ein Feuchteanstieg dem Geschirrspüler zugeordnet. Leer lassen: Erkennung nur aus dem Raumklima (Quelle „Geschirrspüler“ auswählen).",
               "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
               "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-              "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+              "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+              "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+              "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund."
             }
           },
           "sensors": {
@@ -800,6 +818,8 @@
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
           "ventilation_threshold_ml": "Feste Raumgrenze",
+          "close_strategy": "Abschluss beim Lüften",
+          "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
           "temperature_aggregation": "Temperatur-Auswertung",
           "humidity_aggregation": "Feuchte-Auswertung",
           "goal_priorities": "Lüftungsziele priorisieren",
@@ -844,6 +864,8 @@
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
           "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+          "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
           "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
           "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
@@ -877,14 +899,18 @@
               "dishwasher_signal": "Geschirrspüler-Signal (optional)",
               "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
               "ventilation_threshold_percent": "Raumgrenze in Prozent",
-              "ventilation_threshold_ml": "Feste Raumgrenze"
+              "ventilation_threshold_ml": "Feste Raumgrenze",
+              "close_strategy": "Abschluss beim Lüften",
+              "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)"
             },
             "data_description": {
               "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
               "dishwasher_signal": "Optional: ein Signal des Geschirrspülers – ein Binärsensor „trocknet / Tür offen“ (z. B. Eco-Trocknen, AutoOpen) oder ein Programm-/Phasensensor. Beim Trocknen rechnet FreshAirIQ sofort mit zusätzlicher Feuchte; nach Programmende wird ein Feuchteanstieg dem Geschirrspüler zugeordnet. Leer lassen: Erkennung nur aus dem Raumklima (Quelle „Geschirrspüler“ auswählen).",
               "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
               "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-              "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+              "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+              "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+              "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund."
             }
           },
           "sensors": {
@@ -2065,6 +2091,8 @@
           "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
           "ventilation_threshold_percent": "Raumgrenze in Prozent",
           "ventilation_threshold_ml": "Feste Raumgrenze",
+          "close_strategy": "Abschluss beim Lüften",
+          "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
           "temperature_aggregation": "Temperatur-Auswertung",
           "humidity_aggregation": "Feuchte-Auswertung",
           "goal_priorities": "Lüftungsziele priorisieren",
@@ -2109,6 +2137,8 @@
           "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
           "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
           "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+          "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+          "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
           "temperature_aggregation": "Legt fest, wie mehrere gültige Temperatursensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = niedrigste gemessene Temperatur; Maximalwert = höchste gemessene Temperatur.",
           "humidity_aggregation": "Legt fest, wie mehrere gültige Feuchtigkeitssensoren zusammengeführt werden: Mittelwert (empfohlen) = Durchschnitt aller gültigen Werte; Median = mittlerer Wert und robuster gegen einzelne Ausreißer, besonders ab drei Sensoren; Minimalwert = trockenste Messstelle; Maximalwert = feuchteste Messstelle.",
           "goal_priorities": "Ordne Entfeuchtung, CO₂/Luftqualität und Temperaturkomfort nach deiner Raum-Priorität. Alle Ziele werden parallel bewertet; Schutzgrenzen haben immer Vorrang.",
@@ -2142,14 +2172,18 @@
               "dishwasher_signal": "Geschirrspüler-Signal (optional)",
               "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
               "ventilation_threshold_percent": "Raumgrenze in Prozent",
-              "ventilation_threshold_ml": "Feste Raumgrenze"
+              "ventilation_threshold_ml": "Feste Raumgrenze",
+              "close_strategy": "Abschluss beim Lüften",
+              "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)"
             },
             "data_description": {
               "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
               "dishwasher_signal": "Optional: ein Signal des Geschirrspülers – ein Binärsensor „trocknet / Tür offen“ (z. B. Eco-Trocknen, AutoOpen) oder ein Programm-/Phasensensor. Beim Trocknen rechnet FreshAirIQ sofort mit zusätzlicher Feuchte; nach Programmende wird ein Feuchteanstieg dem Geschirrspüler zugeordnet. Leer lassen: Erkennung nur aus dem Raumklima (Quelle „Geschirrspüler“ auswählen).",
               "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
               "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-              "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+              "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+              "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+              "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund."
             }
           },
           "sensors": {
@@ -2801,6 +2835,8 @@
             "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
             "ventilation_threshold_percent": "Raumgrenze in Prozent",
             "ventilation_threshold_ml": "Feste Raumgrenze",
+            "close_strategy": "Abschluss beim Lüften",
+            "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
             "voc": "VOC-/TVOC-Sensor (optional)",
             "pm25": "PM2.5-Sensor (optional)",
             "illuminance": "Helligkeitssensor (optional)",
@@ -2845,14 +2881,18 @@
                 "dishwasher_signal": "Geschirrspüler-Signal (optional)",
                 "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
                 "ventilation_threshold_percent": "Raumgrenze in Prozent",
-                "ventilation_threshold_ml": "Feste Raumgrenze"
+                "ventilation_threshold_ml": "Feste Raumgrenze",
+                "close_strategy": "Abschluss beim Lüften",
+                "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)"
               },
               "data_description": {
                 "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
                 "dishwasher_signal": "Optional: ein Signal des Geschirrspülers – ein Binärsensor „trocknet / Tür offen“ (z. B. Eco-Trocknen, AutoOpen) oder ein Programm-/Phasensensor. Beim Trocknen rechnet FreshAirIQ sofort mit zusätzlicher Feuchte; nach Programmende wird ein Feuchteanstieg dem Geschirrspüler zugeordnet. Leer lassen: Erkennung nur aus dem Raumklima (Quelle „Geschirrspüler“ auswählen).",
                 "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
                 "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+                "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+                "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund."
               }
             },
             "sensors": {
@@ -3017,6 +3057,8 @@
             "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
             "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
             "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+            "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+            "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
             "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
             "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
             "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -3159,6 +3201,8 @@
             "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
             "ventilation_threshold_percent": "Raumgrenze in Prozent",
             "ventilation_threshold_ml": "Feste Raumgrenze",
+            "close_strategy": "Abschluss beim Lüften",
+            "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
             "voc": "VOC-/TVOC-Sensor (optional)",
             "pm25": "PM2.5-Sensor (optional)",
             "illuminance": "Helligkeitssensor (optional)",
@@ -3203,14 +3247,18 @@
                 "dishwasher_signal": "Geschirrspüler-Signal (optional)",
                 "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
                 "ventilation_threshold_percent": "Raumgrenze in Prozent",
-                "ventilation_threshold_ml": "Feste Raumgrenze"
+                "ventilation_threshold_ml": "Feste Raumgrenze",
+                "close_strategy": "Abschluss beim Lüften",
+                "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)"
               },
               "data_description": {
                 "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
                 "dishwasher_signal": "Optional: ein Signal des Geschirrspülers – ein Binärsensor „trocknet / Tür offen“ (z. B. Eco-Trocknen, AutoOpen) oder ein Programm-/Phasensensor. Beim Trocknen rechnet FreshAirIQ sofort mit zusätzlicher Feuchte; nach Programmende wird ein Feuchteanstieg dem Geschirrspüler zugeordnet. Leer lassen: Erkennung nur aus dem Raumklima (Quelle „Geschirrspüler“ auswählen).",
                 "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
                 "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+                "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+                "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund."
               }
             },
             "sensors": {
@@ -3375,6 +3423,8 @@
             "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
             "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
             "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+            "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+            "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
             "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
             "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
             "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",
@@ -3429,6 +3479,8 @@
             "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
             "ventilation_threshold_percent": "Raumgrenze in Prozent",
             "ventilation_threshold_ml": "Feste Raumgrenze",
+            "close_strategy": "Abschluss beim Lüften",
+            "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)",
             "voc": "VOC-/TVOC-Sensor (optional)",
             "pm25": "PM2.5-Sensor (optional)",
             "illuminance": "Helligkeitssensor (optional)",
@@ -3473,14 +3525,18 @@
                 "dishwasher_signal": "Geschirrspüler-Signal (optional)",
                 "ventilation_threshold_mode": "Individuelle Lüftungsgrenze",
                 "ventilation_threshold_percent": "Raumgrenze in Prozent",
-                "ventilation_threshold_ml": "Feste Raumgrenze"
+                "ventilation_threshold_ml": "Feste Raumgrenze",
+                "close_strategy": "Abschluss beim Lüften",
+                "room_airing_min_temp_c": "Eigene Temperaturgrenze beim Lüften (°C)"
               },
               "data_description": {
                 "moisture_sources": "Mehrfachauswahl möglich: Dusche, Badewanne, Sauna, Kochen, Waschmaschine, Trockner, Bügelstation und/oder Wäsche aufhängen. Diese Angabe ist nur Kontext für die Erkennung; FreshAirIQ aktiviert eine Feuchtequelle erst, wenn die Messdaten dazu passen.",
                 "dishwasher_signal": "Optional: ein Signal des Geschirrspülers – ein Binärsensor „trocknet / Tür offen“ (z. B. Eco-Trocknen, AutoOpen) oder ein Programm-/Phasensensor. Beim Trocknen rechnet FreshAirIQ sofort mit zusätzlicher Feuchte; nach Programmende wird ein Feuchteanstieg dem Geschirrspüler zugeordnet. Leer lassen: Erkennung nur aus dem Raumklima (Quelle „Geschirrspüler“ auswählen).",
                 "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
                 "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
-                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf."
+                "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+                "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+                "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund."
               }
             },
             "sensors": {
@@ -3645,6 +3701,8 @@
             "ventilation_threshold_mode": "Automatisch verwendet die bewährte Standard-Raumgrenze. Prozent und Festwert überschreiben sie nur für diesen Raum; Gesundheits- und Sicherheitsregeln haben Vorrang.",
             "ventilation_threshold_percent": "Nur im Prozentmodus: Anteil der aktuellen Wassermenge in der Luft dieses Raums.",
             "ventilation_threshold_ml": "Nur im Festwertmodus: entfernbares Feuchtepotenzial, ab dem dieser Raum eigenständig priorisiert werden darf.",
+            "close_strategy": "„Schließen, wenn die Ziele erreicht sind“ (Standard) empfiehlt das Schließen, sobald die aktiven Ziele dieses Raums belastbar erreicht sind (Luftfeuchte höchstens Zielwert, kein CO₂-Bedarf, kein sinnvolles Kühlen) – nur mit frischen Messungen, nach der Mindestdauer und nie während einer aktiven Feuchtequelle. „Weiterentfeuchten, solange die Außenluft Feuchte abführt“ lüftet bewusst über das Ziel hinaus weiter, solange trockenere Außenluft noch Feuchte abführt.",
+            "room_airing_min_temp_c": "Leer = die globale Temperaturgrenze gilt. 0 = keine Grenze für diesen Raum. Kühlt der Raum beim Lüften bis auf diesen Wert ab, empfiehlt FreshAirIQ das Schließen und nennt die Temperatur als Grund.",
             "voc": "Optional. VOC/TVOC-Sensoren messen flüchtige organische Verbindungen, zum Beispiel aus Reinigungsmitteln, Möbeln oder Kochdämpfen. VOC/TVOC ist kein CO₂-Ersatz und kein Lüftungsziel der Mehrziel-Entscheidung. Die Feuchtephysik und ml-Prognose bleiben unverändert; Werte können Luftqualitäts-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen. Auch VOC-Index-Sensoren ohne Einheit (Skala 1–500, 100 = Durchschnitt, z. B. IKEA VINDSTYRKA) sind möglich; sie werden mit einer eigenen Index-Schwelle von 250 bewertet.",
             "pm25": "Optional. PM2.5 misst Feinstaub bis 2,5 µm, typischerweise in µg/m³. PM2.5 ist kein Feuchte- oder CO₂-Lüftungsziel und verändert die ml-Prognose nicht; der Wert kann Feinstaub-/Luftreiniger-Hinweise und die 30-Tage-Diagnostik unterstützen.",
             "illuminance": "Optional. Helligkeit wird in Lux (lx) gemessen. Sie verändert Feuchte-, CO₂- oder Temperatur-Lüftungsziele und die ml-Prognose nicht; sie kann Verschattungs-/Komfortfunktionen und die 30-Tage-Diagnostik unterstützen.",

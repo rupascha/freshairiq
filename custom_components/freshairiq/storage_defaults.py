@@ -56,6 +56,7 @@ def _room_session_defaults() -> dict[str, Any]:
         "session_result_base_ml": 0.0,
         "session_result_ml": 0.0,
         "close_notified": False,
+        "close_notified_kind": None,
         "session_fresh_measurements": 0,
         "session_target_min": None,
         "session_target_fan_start": False,
@@ -99,6 +100,13 @@ def _room_session_defaults() -> dict[str, Any]:
         "session_cross_active": False,
         "session_cross_seconds": 0.0,
         "session_cross_last_update": None,
+        # IQ2: the shared house episode this airing joined, the model frozen with its start forecast, and the time a
+        # learning reset happened while it was running (such an airing teaches nothing)
+        "session_iq2_episode": None,
+        "session_iq2_start": None,
+        "session_learning_reset_at": None,
+        # confirmation of an exhausted airing benefit (room_close_strategy.apply_benefit_close)
+        "session_benefit_check": None,
     }
 
 
@@ -106,6 +114,11 @@ def _room_model_defaults() -> dict[str, Any]:
     """Forecast observations, moisture source, measurements, post-close, history and prediction."""
     return {
         "thermal_rate_samples": 0,
+        # IQ2 (0.26.7.1): room posteriors (rate per way of airing, moisture/thermal air share) and the forecast score;
+        # None until the room is evaluated the first time (then seeded from the earlier learning, see iq2.room_state)
+        "iq2": None,
+        # IQ2: the goals of the running airing were reliably reached (kept beside another close cause)
+        "session_goals_reached": False,
         # Short-term forecast learning. These values deliberately persist so a
         # restart does not throw away the recent room behaviour.
         "forecast_observation_at": None,

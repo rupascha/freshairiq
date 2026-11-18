@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.7.0";
+const FAIQ_VERSION = "0.26.7.1";
 // FreshAirIQ house map card (optional, custom:freshairiq-house-card).
 // Shows the canonical room decisions of FreshAirIQ on a free floor plan, the
 // wind and a clearly marked air-path *hypothesis*. It never decides anything
@@ -12,10 +12,10 @@ const V = await import(new URL(`./freshairiq-house-view.js${Q}`, import.meta.url
 const A = await import(new URL(`./freshairiq-house-atmos.js${Q}`, import.meta.url).href);  // 0.26.6.1(7): sky, weather, climate, air
 const F = await import(new URL(`./freshairiq-house-flow.js${Q}`, import.meta.url).href);  // order 8: the modelled wind field
 const FL = await import(new URL(`./freshairiq-house-flowlayer.js${Q}`, import.meta.url).href);  // order 8: the visible air (canvas)
-const W = await import(new URL(`./freshairiq-house-weather.js${Q}`, import.meta.url).href);  // 0.26.7.0: the weather world and overview
-const M = await import(new URL(`./freshairiq-house-motion.js${Q}`, import.meta.url).href);  // 0.26.7.0(2): animation levels, the shared loop
-const P = await import(new URL(`./freshairiq-house-panels.js${Q}`, import.meta.url).href);  // 0.26.7.0(2): rooms, room details, house details, menu
-const D = await import(new URL(`./freshairiq-house-design.js${Q}`, import.meta.url).href);  // 0.26.7.0 UI order: FreshAirIQ / Home Assistant / own design
+const W = await import(new URL(`./freshairiq-house-weather.js${Q}`, import.meta.url).href);  // 0.26.7.1: the weather world and overview
+const M = await import(new URL(`./freshairiq-house-motion.js${Q}`, import.meta.url).href);  // 0.26.7.1(2): animation levels, the shared loop
+const P = await import(new URL(`./freshairiq-house-panels.js${Q}`, import.meta.url).href);  // 0.26.7.1(2): rooms, room details, house details, menu
+const D = await import(new URL(`./freshairiq-house-design.js${Q}`, import.meta.url).href);  // 0.26.7.1 UI order: FreshAirIQ / Home Assistant / own design
 // Order 9: the FreshAirIQ dashboard card module (loaded in the background) – the house map takes "removable now" and
 // its time from the card's own function, so both cards always show the same value.
 let CARD = null;
@@ -61,7 +61,7 @@ const T = {
       do_not_ventilate: "Nicht lüften", wait: "Warten", okay: "In Ordnung", check_sensor: "Sensor prüfen", monitor_only: "Nur Beobachtung",
       open_fully: "Ganz öffnen", ventilate_indirectly: "Über Nachbarraum lüften", ventilate_later: "Lüften möglich · noch warten",
       monitor_open: "Daueröffnung überwachen", unknown: "Unbekannt",
-      // 0.26.7.0: a room aired only by its exhaust fan has no window to close – the fan's real state decides the word
+      // 0.26.7.1: a room aired only by its exhaust fan has no window to close – the fan's real state decides the word
       fan_off: "Lüfter ausschalten", fan_auto_off: "Lüfter stoppt automatisch", fan_follow_up: "Lüfter-Nachlauf", fan_source: "Lüfter wegen Feuchtequelle",
       fan_completed: "Lüftung beendet", fan_shared: "Gemeinsamer Lüfter läuft", fan_external: "Lüfter extern gesteuert", fan_block: "Lüfter-Sperrzeit" },
     critical: "Kritisch", no_room_data: "keine Raumdaten",
@@ -74,7 +74,8 @@ const T = {
     moist_chip: "Entfernbare Feuchtigkeit und Lüftungszeit wie auf der FreshAirIQ-Karte – antippen für die Erklärung", moist_title: "Entfernbare Feuchtigkeit",
     moist_now: "Jetzt entfernbar", moist_now_sub: "in der empfohlenen Lüftungszeit – derselbe Wert wie auf der FreshAirIQ-Karte",
     moist_so_far: "Bisher entfernt", moist_so_far_sub: "seit Beginn der laufenden Lüftung",
-    moist_duration: "Empfohlene Lüftungszeit", moist_remaining: "Restzeit", moist_confidence: "Prognosesicherheit", min_short: "Min.", about: "ca.",
+    moist_duration: "Empfohlene Lüftungszeit", moist_remaining: "Restzeit", moist_confidence: "Lernreife", moist_quality: "Prognosegüte", moist_quality_collecting: "wird kalibriert · {n} Vergleiche", moist_quality_interval: "{a} bis {b} ml in {h} Min. erwartet", moist_title_live: "Feuchtebilanz der laufenden Lüftung",
+    moist_room_reassess: "wird neu bewertet", moist_room_close: "jetzt schließen", moist_room_min: "Mindestdauer noch {m} Min.", min_short: "Min.", about: "ca.",
     moist_in: "in", moist_left: "noch", moist_possible: "möglich", moist_so_far_chip: "bisher",
     moist_over: "über Ziel", moist_over_tile: "Über Ziel", moist_added: "eingetragen", moist_would_add: "würde eingetragen",
     moist_added_sub: "seit Beginn der Lüftung ist Feuchte hinzugekommen – wie auf der FreshAirIQ-Karte", moist_would_add_sub: "die Außenluft ist feuchter – Lüften würde Feuchte eintragen",
@@ -97,7 +98,7 @@ const T = {
     feedback_text: "Beschreibung", feedback_secret: "Bitte keine Passwörter, Tokens oder persönlichen Geheimnisse eintragen.", feedback_send: "Meldung senden",
     support_mail: "Support per E-Mail", support_auto: "Automatische Diagnoseübertragung",
     upload_off: "Aus", upload_errors: "Nur bei erkannten Problemen", upload_daily: "Täglich nachts", upload_weekly: "Wöchentlich",
-    // 0.26.7.0: rooms overview, moisture by room, weather overview
+    // 0.26.7.1: rooms overview, moisture by room, weather overview
     rooms_btn: "Räume", rooms_title: "Räume", rooms_jump: "Im Grundriss zeigen", rooms_none: "Noch keine Raumdaten.", mould: "Schimmelrisiko",
     moist_by_room: "Nach Räumen", moist_rounding: "Rundung der Einzelwerte: {d} ml Unterschied zur Summe", moist_room_left: "noch {m} Min.", moist_room_for: "für {m} Min.",
     moist_room_live: "lüftet", moist_room_final: "Endmessung", moist_total: "Summe wie auf der FreshAirIQ-Karte",
@@ -151,7 +152,8 @@ const T = {
     moist_chip: "Removable moisture and airing time as on the FreshAirIQ card – tap for the explanation", moist_title: "Removable moisture",
     moist_now: "Removable now", moist_now_sub: "within the recommended airing time – the same value as on the FreshAirIQ card",
     moist_so_far: "Removed so far", moist_so_far_sub: "since the current airing started",
-    moist_duration: "Recommended airing time", moist_remaining: "Time left", moist_confidence: "Forecast confidence", min_short: "min", about: "approx.",
+    moist_duration: "Recommended airing time", moist_remaining: "Time left", moist_confidence: "Learning maturity", moist_quality: "Forecast quality", moist_quality_collecting: "being calibrated · {n} comparisons", moist_quality_interval: "{a} to {b} ml expected in {h} min", moist_title_live: "Moisture balance of the running airing",
+    moist_room_reassess: "being reassessed", moist_room_close: "close now", moist_room_min: "minimum time {m} min left", min_short: "min", about: "approx.",
     moist_in: "in", moist_left: "left", moist_possible: "possible", moist_so_far_chip: "so far",
     moist_over: "over target", moist_over_tile: "Over target", moist_added: "added", moist_would_add: "would be added",
     moist_added_sub: "moisture was added since the airing started – as on the FreshAirIQ card", moist_would_add_sub: "the outdoor air is more humid – airing would add moisture",
@@ -202,7 +204,7 @@ export const heroTone = rec => {
   return tone === "ok" && ["warning", "danger"].includes(String((rec && rec.severity) || "")) ? "wait" : tone;
 };
 // A selector for the focused control that survives a re-render (its data attribute and value).
-const FOCUS_ATTRS = ["data-floor", "data-layer", "data-room", "data-opening", "data-path", "data-edit", "data-resume", "data-close-detail", "data-motion-level", "data-nav-back"];  // 0.26.7.0 UI hotfix: the Animation buttons and Back keep the focus too
+const FOCUS_ATTRS = ["data-floor", "data-layer", "data-room", "data-opening", "data-path", "data-edit", "data-resume", "data-close-detail", "data-motion-level", "data-nav-back"];  // 0.26.7.1 UI hotfix: the Animation buttons and Back keep the focus too
 export const focusKey = el => {
   if (!el || !el.getAttribute) return "";
   const attr = FOCUS_ATTRS.find(a => el.hasAttribute(a));
@@ -215,7 +217,7 @@ export const known = value => (value == null || value === "" || typeof value ===
 // Unsubscribe callbacks of home-assistant-js-websocket may return a promise (rejected on a closed socket).
 const release = unsubs => { for (const unsub of unsubs) { try { Promise.resolve(unsub()).catch(() => {}); } catch (_) { /* gone */ } } };
 const PRIORITY = { critical: 3, close: 3, sensor: 2, act: 2, run: 1, wait: 1, ok: 0 };
-// 0.26.7.0: what a room shows on the plan (card option room_info, per room room_overrides) – any combination
+// 0.26.7.1: what a room shows on the plan (card option room_info, per room room_overrides) – any combination
 export const ROOM_INFO = ["name", "temperature", "humidity", "absolute_humidity", "action", "co2", "mould"];
 const list = value => (Array.isArray(value) ? value : String(value == null ? "" : value).split(",")).map(x => String(x).trim()).filter(Boolean);
 export const roomInfo = (config, roomKey) => {
@@ -223,7 +225,7 @@ export const roomInfo = (config, roomKey) => {
   const chosen = own != null ? list(own) : config && config.room_info != null ? list(config.room_info) : null;
   return chosen == null ? null : ROOM_INFO.filter(k => chosen.includes(k));   // null: the classic label (name, state, layer readings)
 };
-// 0.26.7.0: the floors a card shows (floors_visible: ids, level keys or names) – never none
+// 0.26.7.1: the floors a card shows (floors_visible: ids, level keys or names) – never none
 export const visibleFloors = (floors, wanted) => {
   const keys = list(wanted).map(x => x.toLowerCase());
   if (!keys.length) return floors;
@@ -253,7 +255,7 @@ export const splitName = name => {
   return word ? [`${n.slice(0, n.length - word.length)}-`, n.slice(n.length - word.length)] : null;
 };
 export const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-// 0.26.7.0: the room is aired by its exhaust fan alone (no window open) – the same rule as the integration
+// 0.26.7.1: the room is aired by its exhaust fan alone (no window open) – the same rule as the integration
 // (close_wording.fan_only) and the FreshAirIQ dashboard card (fanOnlyRoom)
 export const fanOnlyRoom = r => { const a = (r && r.configured_actuators) || {}; return !!r && !a.window_open && (Boolean(a.mechanical_exhaust_active) || a.ventilation_type === "mechanical_exhaust"); };
 // States in which FreshAirIQ stops the fan itself (fan_automation.AUTO_STOP_STATES): a status, no task for the user
@@ -314,7 +316,7 @@ export const focusDecision = ({ mode, current, priorities, previous, lockUntil, 
 };
 
 
-// 0.26.7.0(2): what the windows module (freshairiq-house-panels.js) needs from the card – the same words, tones and rules
+// 0.26.7.1(2): what the windows module (freshairiq-house-panels.js) needs from the card – the same words, tones and rules
 const H = { T, roomTone, actionCode, fanClose, fanCountdown, mouldWarning, known, heroTone, chosenLevel: M.chosenLevel };
 class FreshAirIQHouseCard extends HTMLElement {
   constructor() {
@@ -332,7 +334,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     // button let go, the page hidden or the window blurred, and – only for a release that never arrived – a
     // minute without any pointer or touch event.
     this._pointers = new Set(); this._touching = false; this._gestureSeen = 0; this._pending = false;
-    this._lastActive = Date.now();   // 0.26.7.0(2): the last touch, click or key – a long untouched card calms its motion
+    this._lastActive = Date.now();   // 0.26.7.1(2): the last touch, click or key – a long untouched card calms its motion
     this._onKey = () => this._touched();
     this._onDown = ev => {
       this._gestureSeen = Date.now(); this._touched();
@@ -355,7 +357,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     this._onVisibility = () => { if (document.hidden) this._onUp(null); else this._touched(); this._syncPaused(); };
   }
   static getConfigElement() { return document.createElement("freshairiq-house-card-editor"); }
-  static get weatherModule() { return W; }   // 0.26.7.0: for the tests (shared forecast subscriptions)
+  static get weatherModule() { return W; }   // 0.26.7.1: for the tests (shared forecast subscriptions)
   static getStubConfig() { return { auto_focus: "hint" }; }
   setConfig(config) {
     if (config && config.auto_focus && !FOCUS_MODES.includes(config.auto_focus)) throw new Error("auto_focus: off | hint | auto");
@@ -374,13 +376,13 @@ class FreshAirIQHouseCard extends HTMLElement {
     }
     this._restore();
     this._queue();
-    this._applyMotion();  // 0.26.7.0(2): the animation level – "animation: false" (still) as before, now also off/minimal/normal/intense/auto
+    this._applyMotion();  // 0.26.7.1(2): the animation level – "animation: false" (still) as before, now also off/minimal/normal/intense/auto
     this._windSync();  // hotfix F04: "animation: false" stops a running wind loop at once
-    this.setAttribute("data-fx", this._fx());  // 0.26.7.0: the weather effect level (CSS)
-    this._applyDesign();  // 0.26.7.0 UI order: the card's design (FreshAirIQ unless chosen otherwise)
+    this.setAttribute("data-fx", this._fx());  // 0.26.7.1: the weather effect level (CSS)
+    this._applyDesign();  // 0.26.7.1 UI order: the card's design (FreshAirIQ unless chosen otherwise)
     this._syncForecast();  // a changed weather entity: the old forecast subscription ends
   }
-  // ---- 0.26.7.0 UI order: the design of this card (custom properties on this card only – never global, never another card)
+  // ---- 0.26.7.1 UI order: the design of this card (custom properties on this card only – never global, never another card)
   _applyDesign() {
     const mode = D.designMode(this._config), style = this.style;
     for (const k of this._designKeys || []) style.removeProperty(k);
@@ -421,11 +423,11 @@ class FreshAirIQHouseCard extends HTMLElement {
       secondary: read("var(--secondary-text-color,#727272)"), accent: read("var(--primary-color,#03a9f4)"), onAccent: read("var(--text-primary-color,#ffffff)"),
       page: read("var(--primary-background-color,#fafafa)") };
   }
-  // ---- 0.26.7.0: weather world settings
+  // ---- 0.26.7.1: weather world settings
   _fx() { return W.EFFECT_LEVELS.includes(this._config.weather_effects) ? this._config.weather_effects : "dynamic"; }   // "dynamic" = the look until now
   _info() { return this._config.weather_info == null ? W.DEFAULT_WEATHER_INFO : list(this._config.weather_info).filter(k => W.WEATHER_INFO.includes(k)); }
-  _details() { return W.detailsFor(this._config); }   // 0.26.7.0(2) error A: the values the card shows, never brought back by themselves
-  // ---- 0.26.7.0(2): how much moves – the level the user chose, the device, reduced motion, how long the card was untouched
+  _details() { return W.detailsFor(this._config); }   // 0.26.7.1(2) error A: the values the card shows, never brought back by themselves
+  // ---- 0.26.7.1(2): how much moves – the level the user chose, the device, reduced motion, how long the card was untouched
   _reduced() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
   _motion() { return M.motionProfile({ config: this._config, reduced: this._reduced(), small: M.isSmallDevice(this._lastWidth), idleMs: Date.now() - this._lastActive }); }
   _applyMotion() {
@@ -463,7 +465,7 @@ class FreshAirIQHouseCard extends HTMLElement {
       wind: hw && (hw.available || hw.calm) && !hw.stale ? hw : null, hourly: fc.hourly, daily: fc.daily, moon: this._moonState(), own: !!String(this._config.weather_entity || "").trim(),
       outdoor: this._payload ? { temperature: this._payload.outdoor_temperature, humidity: this._payload.outdoor_humidity, absolute_humidity: this._payload.outdoor_absolute_humidity } : null });
   }
-  // 0.26.7.0: the outdoor wind of the picture (streams, air field, mood, wind tile). With a weather entity chosen in the card
+  // 0.26.7.1: the outdoor wind of the picture (streams, air field, mood, wind tile). With a weather entity chosen in the card
   // its speed, gusts and direction are used; a value it lacks comes from FreshAirIQ (weatherModel.windSource says which).
   // Without an own entity: FreshAirIQ's wind as until now. The indoor air paths stay FreshAirIQ's ventilation model.
   _outdoorWind() {
@@ -497,13 +499,13 @@ class FreshAirIQHouseCard extends HTMLElement {
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
-    // 0.26.7.0 UI order: a theme switched in Home Assistant (light/dark, another theme) is taken over at once
+    // 0.26.7.1 UI order: a theme switched in Home Assistant (light/dark, another theme) is taken over at once
     const theme = hass && hass.themes;
     if (theme !== this._themeSeen) { this._themeSeen = theme; if (D.designMode(this._config) === "ha") requestAnimationFrame(() => this._applyDesign()); }
     if (this._editing) this._editing.hass = hass; // the editor keeps its own state; no re-render on hass
     // re-audit F01: a new Home Assistant connection – subscribe there once and release the old ones
     const conn = hass && hass.connection;
-    // 0.26.7.0 CI fix: the forecasts move with it at once (they followed only with the next drawing – none in a hidden tab)
+    // 0.26.7.1 CI fix: the forecasts move with it at once (they followed only with the next drawing – none in a hidden tab)
     if (this._subConn && conn !== this._subConn) { this._stop(); this._start(); this._syncForecast(); return; }
     if (first || (!this._subs.length && !this._failed)) this._start();
     // 0.26.6.1(7): day, twilight and night follow sun.sun – redraw when the phase changes, not on every state
@@ -513,7 +515,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     const sunKey = `${sunNow.phase}|${sunNow.azimuth == null ? "-" : Math.round(sunNow.azimuth / 2)}|${sunNow.elevation == null ? "-" : Math.round(sunNow.elevation / 2)}`;
     if (!first && sunKey !== this._sunKey && this._layoutInfo) this._queue();
     this._sunKey = sunKey; this._sunPhase = sunNow.phase;
-    // 0.26.7.0: a new reading of the weather entity redraws the weather world (not every other state change)
+    // 0.26.7.1: a new reading of the weather entity redraws the weather world (not every other state change)
     const wid = this._weatherEntity(), wst = wid && hass && hass.states ? hass.states[wid] : null, wKey = wst ? `${wst.state}|${wst.last_updated}` : "";
     if (!first && wKey !== this._wxKey && this._layoutInfo) this._queue();
     this._wxKey = wKey;
@@ -524,7 +526,7 @@ class FreshAirIQHouseCard extends HTMLElement {
   connectedCallback() {
     document.addEventListener("visibilitychange", this._onVisibility);
     if (D.designMode(this._config) === "ha") requestAnimationFrame(() => this._applyDesign());   // the theme is known once connected
-    // 0.26.7.0(2): the FreshAirIQ card's English texts arrive later on an English dashboard – its views are drawn again then
+    // 0.26.7.1(2): the FreshAirIQ card's English texts arrive later on an English dashboard – its views are drawn again then
     this._onEnglish = this._onEnglish || (() => { if (this._lang() === "en") this._queue(); });
     window.addEventListener("freshairiq-i18n-en-ready", this._onEnglish);
     for (const type of ["touchstart", "pointerdown"]) this.addEventListener(type, this._onDown, { passive: true });
@@ -543,18 +545,18 @@ class FreshAirIQHouseCard extends HTMLElement {
       this._resize = new ResizeObserver(entries => { const w = Math.round(entries[0].contentRect.width); if (w && Math.abs(w - (this._observedWidth || 0)) > 24) { this._observedWidth = w; this._queue(); } });
       this._resize.observe(this);
     }
-    // 0.26.7.0: a card scrolled out of view pauses its animations (like a hidden page)
+    // 0.26.7.1: a card scrolled out of view pauses its animations (like a hidden page)
     if (!this._io && typeof IntersectionObserver === "function") {
       this._io = new IntersectionObserver(entries => { const off = !entries[entries.length - 1].isIntersecting; if (this._offscreen && !off) this._touched(); this._offscreen = off; this._syncPaused(); });
       this._io.observe(this);
     }
-    if (this._config.default_floor) this._floor = null;   // 0.26.7.0: this floor whenever the card is opened
+    if (this._config.default_floor) this._floor = null;   // 0.26.7.1: this floor whenever the card is opened
     if (this._hass && !this._subs.length) this._start();
     this._syncForecast();
     this._queue();
   }
   _syncPaused() {
-    // 0.26.7.0(2): also while a window of the card covers the plan (room, rooms, weather, menu, support) – nobody sees it move
+    // 0.26.7.1(2): also while a window of the card covers the plan (room, rooms, weather, menu, support) – nobody sees it move
     const paused = document.hidden || !!this._offscreen || !!this._covered;
     this.toggleAttribute("data-paused", paused);
     if (paused) this._windStop(); else this._windSync();
@@ -597,10 +599,10 @@ class FreshAirIQHouseCard extends HTMLElement {
       const saved = JSON.parse(localStorage.getItem(this._storeKey()) || "{}");
       if (saved.floor) this._floor = saved.floor;
       if (saved.lockUntil > Date.now()) this._lockUntil = saved.lockUntil;
-      // 0.26.7.0 UI hotfix: the view on the plan is set in the card's settings; a view chosen earlier in the menu stays as long
+      // 0.26.7.1 UI hotfix: the view on the plan is set in the card's settings; a view chosen earlier in the menu stays as long
       // as the card's setting is still the one it was chosen against – a new setting wins
       if (LAYERS.includes(saved.layer) && (saved.layerBase == null || saved.layerBase === (this._config.layer || "action"))) this._layer = saved.layer;
-      // 0.26.7.0(2): the animation level chosen in the menu, as long as the card's own setting is the one it replaced
+      // 0.26.7.1(2): the animation level chosen in the menu, as long as the card's own setting is the one it replaced
       const motion = JSON.parse(localStorage.getItem(`${this._storeKey()}:motion`) || "null"), base = M.chosenLevel(this._config);
       this._baseLevel = null;
       if (motion && M.ANIMATION_LEVELS.includes(motion.level) && motion.base === base) { this._baseLevel = base; this._config = { ...this._config, animation_level: motion.level }; if (motion.level !== "off" && this._config.animation === false) this._config.animation = true; }
@@ -711,7 +713,7 @@ class FreshAirIQHouseCard extends HTMLElement {
   }
   _floors(layout) {
     const used = new Set(layout.rooms.map(r => r.floor_id));
-    // 0.26.7.0: only the floors this card shows (display only – the plan and every calculation keep all floors)
+    // 0.26.7.1: only the floors this card shows (display only – the plan and every calculation keep all floors)
     return visibleFloors((layout.floors || []).filter(f => used.has(f.id)).sort((a, b) => (a.order || 0) - (b.order || 0)), this._config.floors_visible);
   }
   _updateFocus() {
@@ -764,7 +766,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     const fmt = v => (Number.isFinite(v) ? (Math.abs(v) >= 100 ? Math.round(v) : v.toFixed(1)).toString().replace(".", this._lang() === "de" ? "," : ".") : null);
     const own = (Array.isArray(this._config.weather_sensors) ? this._config.weather_sensors : String(this._config.weather_sensors || "").split(","))
       .map(x => String(x).trim()).filter(Boolean);
-    // 0.26.7.0(2) correction: an explicit new choice (weather_chip) wins over the older own sensors; a card with only
+    // 0.26.7.1(2) correction: an explicit new choice (weather_chip) wins over the older own sensors; a card with only
     // weather_sensors keeps showing them exactly as before
     if (own.length && this._config.weather_chip == null) {
       for (const id of own) {
@@ -775,14 +777,14 @@ class FreshAirIQHouseCard extends HTMLElement {
         parts.push([`${icon} ${shown}${a.unit_of_measurement ? ` ${a.unit_of_measurement}` : ""}`, a.friendly_name || id]);
       }
     } else {
-      // 0.26.7.0(2): what the chip shows is the card's choice (weather_chip, in its order); without one as before – outdoor
+      // 0.26.7.1(2): what the chip shows is the card's choice (weather_chip, in its order); without one as before – outdoor
       // temperature and humidity. A narrow card shows the first ones of the choice; everything is in the weather window.
       const own2 = !!String(this._config.weather_entity || "").trim();
       const items = W.chipFor(this._config).slice(0, W.chipRoom(this._lastWidth));
       for (const [, html, title] of W.chipItems(this._weatherModel(), { items, lang: this._lang(), tz: this._tz(), own: own2,
         outdoor: { temperature: known(p.outdoor_temperature ?? (p.weather_now || {}).outdoor_temperature), humidity: known(p.outdoor_humidity) } })) parts.push([html, title, true]);
     }
-    // 0.26.7.0: the chip looks as before (weather_info: compact). 0.26.7.0(2) correction: whatever it shows, a tap always
+    // 0.26.7.1: the chip looks as before (weather_info: compact). 0.26.7.1(2) correction: whatever it shows, a tap always
     // opens the weather window – which parts the window shows is still the card's choice (weather_info, weather_details)
     const info = this._info();
     if (!info.includes("compact")) return "";
@@ -803,7 +805,10 @@ class FreshAirIQHouseCard extends HTMLElement {
     const f = host._iqFacts(p, Object.values(this._rooms || {}).filter(r => r && typeof r === "object"));
     // the same visibility as the card: a time only when it is shown there; a live session: left (≥ 0) or over (< 0)
     const minutes = !f.houseHolds && Number.isFinite(f.duration) && Math.abs(f.duration) >= 0.5 ? (f.live ? Math.ceil(Math.abs(f.duration)) : Math.max(1, Math.round(f.duration))) : null;
-    return { live: !!f.live, amount: Math.round(f.amount), minutes, over: !!f.live && f.duration < 0, waits: !!f.houseHolds, confidence: known(p.prognosis_confidence) };
+    return { live: !!f.live, amount: Math.round(f.amount), minutes, over: !!f.live && f.duration < 0, waits: !!f.houseHolds, confidence: known(p.prognosis_confidence),
+      // IQ2 (0.26.7.1): the integration's own time meaning and forecast quality (no second calculation here)
+      reassessing: !!f.live && p.remaining_duration_state === "reassessing", why: p.remaining_duration_reason || null, quality: p.forecast_quality_state || null, scored: known(p.forecast_scored_airings),
+      interval: Array.isArray(p.forecast_interval_ml) ? p.forecast_interval_ml : null, horizon: known(p.forecast_horizon_min) };
   }
   _moistureChip() {
     const f = this._moistureFacts();
@@ -902,7 +907,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (!room) return { name: esc(layoutRoom.room_key), action: t("no_room_data"), extra: "", tone: "sensor" };
     const name = esc(room.name || layoutRoom.room_key);
     const tone = roomTone(room);
-    const fan = fanClose(room);  // 0.26.7.0: a fan-only room never reads "Close"
+    const fan = fanClose(room);  // 0.26.7.1: a fan-only room never reads "Close"
     const action = `${V.TONE_EMOJI[tone] || ""} ${esc(T[lang].actions[fan ? fan.word : actionCode(room)] || T[lang].actions.unknown)}`;  // canonical action word
     const num = (v, d = 1) => (v == null || !Number.isFinite(Number(v)) ? "–" : Number(v).toFixed(d));
     const climate = A.roomClimate(room), rise = climate.rising ? " ↑" : climate.falling ? " ↓" : "";  // measured trend ≥ 3 %/h up or down
@@ -912,7 +917,7 @@ class FreshAirIQHouseCard extends HTMLElement {
       co2: room.co2 != null ? `${Math.round(room.co2)} ppm CO₂` : t("not_measured"),
       quality: `${room.data_quality === "ok" ? t("quality_ok") : t("quality_bad")} · ${t("learning")} ${room.learning_samples ?? "–"}`,
     }[this._layer] || `${num(room.temperature)} °C · ${num(room.humidity, 0)} %${rise}`;
-    // 0.26.7.0: the card's own choice of what a room shows (room_info, room_overrides) – on the action layer; another
+    // 0.26.7.1: the card's own choice of what a room shows (room_info, room_overrides) – on the action layer; another
     // layer chosen in the menu still shows its reading. Hidden values stay one tap away in the room window.
     const show = roomInfo(this._config, layoutRoom.room_key);
     if (!show || this._layer !== "action") return { name, action, extra, tone };
@@ -942,7 +947,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     const vb = [box.minX - margin, -box.maxY - margin, box.maxX - box.minX + 2 * margin, box.maxY - box.minY + 2 * margin];
     const u = this._unitPx(vb[2]);
     const px = n => G.round3(n * u);
-    // 0.26.7.0 UI hotfix: one continuous surface – the drawing reaches under the slim control bars at the top and the bottom
+    // 0.26.7.1 UI hotfix: one continuous surface – the drawing reaches under the slim control bars at the top and the bottom
     // (their measured height, see _render), so sky, weather and wind run on under them in the same coordinates; the rooms keep
     // their own margin and are never under a bar. The stored geometry is untouched (only the visible window grows).
     const bars = this._bars || { top: 0, bottom: 0 };
@@ -958,24 +963,24 @@ class FreshAirIQHouseCard extends HTMLElement {
     const ids = new Set(rooms.map(r => r.id));
     const air = this._house && this._house.airflow;
     const opState = air ? air.openings : {};
-    const ow = this._outdoorWind(), w = ow.wind, smooth = ow.smooth;   // 0.26.7.0: the card's weather source
-    const dur = V.streamSeconds(w && w.speed_ms) * 1.6;   // 0.26.7.0(2): calmer – the same order (stronger wind, faster air), slower overall
+    const ow = this._outdoorWind(), w = ow.wind, smooth = ow.smooth;   // 0.26.7.1: the card's weather source
+    const dur = V.streamSeconds(w && w.speed_ms) * 1.6;   // 0.26.7.1(2): calmer – the same order (stronger wind, faster air), slower overall
     // 0.26.6.1(7): no technical grid – a sky that follows the real weather (FreshAirIQ weather summary, sun.sun)
     // sky and weather cover the whole surface (the moving weather lies in the composed layer under the plan, see atmos weatherSvg
     // under – its area costs nearly nothing); the wind ribbons from "normal" up, "minimal" (phones, energy saving) keeps them
     // around the house
     const lvl = (this._motionNow || this._motion()).level, wxFrame = { minX: vb[0], minY: -(vb[1] + vb[3]), maxX: vb[0] + vb[2], maxY: -vb[1] };
     const frame = lvl === "minimal" ? planFrame : wxFrame;
-    // 0.26.7.0: a chosen weather entity that reports a state decides the sky (one source for the picture and the overview)
+    // 0.26.7.1: a chosen weather entity that reports a state decides the sky (one source for the picture and the overview)
     const wnRaw = (this._payload && this._payload.weather_now) || {}, wxm = this._weatherModel(), own = String(this._config.weather_entity || "").trim();
     const wnSky = own && wxm.available && wxm.condition ? { ...wnRaw, condition: wxm.condition, raining: ["rainy", "pouring", "lightning-rainy"].includes(wxm.condition),
       snowing: ["snowy", "snowy-rainy"].includes(wxm.condition), thunder: ["lightning", "lightning-rainy"].includes(wxm.condition) } : wnRaw;
     const sky = { ...A.skyState(wnSky, this._hass && this._hass.states && this._hass.states["sun.sun"]), directional: layout.building.north_confirmed !== false };
     // order 9: the wind's character from the real weather (speed, measured gust, HA condition, rain/thunder, sun.sun)
-    const wn = wnSky;   // 0.26.7.0: the same weather source as the sky
+    const wn = wnSky;   // 0.26.7.1: the same weather source as the sky
     const mood = F.windMood({ speed: Number(w && w.speed_ms) || 0, gust: w && w.gust_ms, condition: wn.condition, raining: wn.raining === true, thunder: wn.thunder === true, phase: sky.phase });
     this._windMood = mood.name;
-    // 0.26.7.0: the weather world – "dynamic" is the look until now, "subtle" calmer, "off" without weather effects,
+    // 0.26.7.1: the weather world – "dynamic" is the look until now, "subtle" calmer, "off" without weather effects,
     // "full" adds the light of the real sun (colour, strength, the house's shadow), the sky's colour by the sun's
     // elevation and the clouds, darker storms, rain on the ground, fog, frost and the moon's phase
     const fx = this._fx(), model = this._weatherModel(), small = this._lastWidth > 0 && this._lastWidth < 520;
@@ -983,9 +988,9 @@ class FreshAirIQHouseCard extends HTMLElement {
     const skyColors = fx === "full" && sky.elevation != null ? W.skyColors(sky.elevation, model.cover) : null;
     this._skyColors = skyColors || A.skyPalette(sky.phase);
     const fxVars = fx === "full" ? `;--cloud-dur:${({ calm: 90, light: 70, fresh: 45, strong: 26, storm: 14 })[model.level] || 60}s;--fall-dur:${model.precip.level >= 3 ? 0.35 : model.precip.level === 1 ? 0.8 : 0.55}s;--ray-o:${light ? G.round3(0.03 + 0.09 * light.strength) : 0.07}` : "";
-    // 0.26.7.0(2): a room chosen (its window open): its outline drawn clearly, the other rooms of the floor quieter
+    // 0.26.7.1(2): a room chosen (its window open): its outline drawn clearly, the other rooms of the floor quieter
     const chosen = this._selected && this._selected.type === "room" ? rooms.find(r => r.id === this._selected.id) : null;
-    // 0.26.7.0 UI hotfix: the sky and the large moving weather layers lie under the plan (see atmos weatherSvg ``under``)
+    // 0.26.7.1 UI hotfix: the sky and the large moving weather layers lie under the plan (see atmos weatherSvg ``under``)
     const under = { html: "", vb: vb.slice(), ppu: 1 / scale };
     let out = `<svg class="plan${chosen ? " focus" : ""}" data-mood="${esc(this._windMood || "neutral")}" data-fx="${fx}" viewBox="${vb.map(G.round3).join(" ")}" role="group" aria-label="${esc(this._t("title"))}" style="--dash:${px(10)} ${px(8)};--dot:${px(3)} ${px(7)};--dashlen:${px(54)};--dur:${G.round3(dur)}s${fxVars}">`;
     const marker = (id, color) => `<marker id="${id}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10z" fill="${color}" stroke="${V.BRAND.ink}" stroke-width="1"/></marker>`;
@@ -1000,7 +1005,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     const openings = (layout.openings || []).map(o => ({ ...o, ...(opState[o.id] || {}) }));
     // 0.26.6: the air runs only through openings and connections between rooms and streams out of the outlet
     const pathPts = (air && air.paths ? air.paths : []).map(p => { const r = G.airRoute(layout, p, { outside: span * 0.14, strict: true }); return { ...p, points: r.points, exits: r.exits }; });
-    // 0.26.7.0(2): fewer, calmer streams that never look alike – their number by the animation level, each its own lane, length,
+    // 0.26.7.1(2): fewer, calmer streams that never look alike – their number by the animation level, each its own lane, length,
     // wave, pace and brightness (the same for the same floor, so a redraw does not shuffle them)
     const motion = this._motionNow || this._motion();
     // the wind's strength stays readable: a breath of air – a few faint ribbons; a storm – more, livelier, brighter ones
@@ -1028,7 +1033,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     // the layers of each ribbon: the stream itself, and – from "normal" on – a broad, nearly transparent air mass around it
     const strands = motion.strands >= 3 ? V.WAVE_STRANDS : motion.strands >= 2 ? [V.WAVE_STRANDS[0], V.WAVE_STRANDS[2]] : [V.WAVE_STRANDS[0]];
     streams.forEach(s => {
-      const frame = V.waveFrame(V.streamLine(s), px(9));   // 0.26.7.0(2): fewer points per ribbon (the curve stays smooth)
+      const frame = V.waveFrame(V.streamLine(s), px(9));   // 0.26.7.1(2): fewer points per ribbon (the curve stays smooth)
       if (frame.samples.length < 2) return;
       const first = frame.samples[0].p, last = frame.samples[frame.samples.length - 1].p;
       const vr = s.variety != null && variety[s.variety] ? variety[s.variety] : { amp: 1, wave: 1, pace: 1, offset: 0, opacity: 0.85, width: 1 };
@@ -1050,7 +1055,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     // 0.26.6.1(2): one comic shadow under the whole house (not one per room – that drew every shared wall thick);
     // the rooms have no outline of their own, the walls come from G.wallSegments exactly as in the editor
     // 0.26.6.1(7): a soft shadow that lifts the house off the ground instead of the hard comic offset
-    // 0.26.7.0 ("full"): the shadow falls away from the real sun, longer when it stands low
+    // 0.26.7.1 ("full"): the shadow falls away from the real sun, longer when it stands low
     const cast = W.shadowOffset(light, px, span);
     out += `<g class="house-shadow" transform="translate(${cast ? `${cast[0]} ${cast[1]}` : `${px(3)} ${px(7)}`})" fill="#000814" fill-opacity="${cast ? G.round3(cast[2] + 0.12) : ".5"}" filter="url(#soft)">${rooms.map(r => `<polygon points="${r.polygon.map(S).join(" ")}"/>`).join("")}</g>`;
     for (const r of rooms) {
@@ -1065,7 +1070,7 @@ class FreshAirIQHouseCard extends HTMLElement {
       out += A.climateSvg(A.roomClimate(live), r.polygon, `rc-${esc(r.id)}`, px, live && live.moisture_source_active ? this._sourceAt(r, px) : null);
     }
     out += A.nightVeil(sky, rooms);  // 0.26.6.1(8): night and twilight over the house (sun.sun), under walls and labels
-    out += V.wallsSvg(G.wallSegments(rooms, openings), px);
+    out += V.partitionSvg(G.partitionFills(rooms)) + V.wallsSvg(G.wallSegments(rooms, openings), px);
     // the outline of the chosen room over its walls – its windows and doors are drawn after it and stay visible
     if (chosen) { const pts = chosen.polygon.map(S).join(" "); out += `<polygon class="sel-glow" points="${pts}" stroke-width="${px(9)}"/><polygon class="sel-outline" data-outline="${esc(chosen.id)}" points="${pts}" stroke-width="${px(3.5)}"/>`; }
     let plumes = "";
@@ -1122,7 +1127,7 @@ class FreshAirIQHouseCard extends HTMLElement {
         out += `<g class="source" role="img" aria-label="${esc(String(live.moisture_source_label || this._t("source_on")))}"><circle cx="${G.round3(x)}" cy="${G.round3(-y)}" r="${px(13)}" stroke-width="${px(2)}"/><text x="${G.round3(x)}" y="${G.round3(-y + px(5))}" text-anchor="middle" font-size="${px(14)}">💧</text></g>`;
       }
     }
-    // 0.26.7.0: a compass rose in the corner when the card asks for one (north as drawn on this plan)
+    // 0.26.7.1: a compass rose in the corner when the card asks for one (north as drawn on this plan)
     if (this._info().includes("compass") && layout.building.north_confirmed !== false) out += W.compassSvg(north, [planFrame.maxX - px(30), planFrame.minY + px(30)], px, this._lang());
     const underlay = `<div class="wxu" aria-hidden="true" style="${fxVars.replace(/^;/, "")}"><svg class="wxsky" viewBox="${vb.map(G.round3).join(" ")}" focusable="false">${A.skyBackground(vb)}</svg>${under.html}</div>`;
     return underlay + out + markers + "</svg>";
@@ -1183,7 +1188,7 @@ class FreshAirIQHouseCard extends HTMLElement {
       // compact: the state symbol in front of the name, the readings below (a low room keeps its values)
       ...names.slice(1).flatMap(n => (extra ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), metricRow],
         ...(parts.length > 1 ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), ...metricRows]] : [])] : [])),
-      // 0.26.7.0 CI fix: before the readings are dropped they may shrink to the 12 px of the smallest name (a wider system font
+      // 0.26.7.1 CI fix: before the readings are dropped they may shrink to the 12 px of the smallest name (a wider system font
       // – e.g. DejaVu Sans – left a small room 1 px short of its readings)
       ...names.slice(1).flatMap(n => (extra ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), metricAt(extra, 12)],
         ...(parts.length > 1 ? [[{ ...n[0], text: `${icon} ${n[0].text}`, w: n[0].w + measure(`${icon} `, n[0].f, 900) }, ...n.slice(1), ...parts.map(text => metricAt(text, 12))]] : [])] : [])),
@@ -1192,7 +1197,7 @@ class FreshAirIQHouseCard extends HTMLElement {
       // a small room with a long name ("Gäste-WC"): at last its short name alone – the surface shows its state
       ...(short !== name ? [[nameRow(12, short)]] : []),
     ];
-    // 0.26.7.0: only what the card shows – without the state its capsule (and the symbol in front of the name) is left
+    // 0.26.7.1: only what the card shows – without the state its capsule (and the symbol in front of the name) is left
     // out, without the name its rows; the fitting below is the same for every combination
     const showName = lines.showName !== false, showAction = lines.showAction !== false;
     const adapt = rows => rows.filter(row => (row.kind !== "pill" || showAction) && (row.kind !== "n" || showName))
@@ -1258,7 +1263,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     const exp = st.exposure && st.exposure !== "interior" ? ` · ${this._t("wall")}: ${this._t(st.exposure)}` : "";
     return `${this._t("opening")}: ${state}${exp}`;
   }
-  // 0.26.7.0: the room's floor name in the layout (or "–")
+  // 0.26.7.1: the room's floor name in the layout (or "–")
   _roomFloor(layout, lr) { const f = lr && (layout.floors || []).find(x => x.id === lr.floor_id); return f ? this._floorName(f) : "–"; }
   _actionWord(room) {
     const fan = fanClose(room), lang = this._lang();
@@ -1266,7 +1271,7 @@ class FreshAirIQHouseCard extends HTMLElement {
   }
   // The rooms overview: every room of the shown floors with what FreshAirIQ publishes for it; a tap opens its details,
   // "show on the plan" switches to its floor and highlights it
-  _roomsBody(layout) { return P.roomsBody(this, H, layout); }   // 0.26.7.0(2): the whole room card is the button
+  _roomsBody(layout) { return P.roomsBody(this, H, layout); }   // 0.26.7.1(2): the whole room card is the button
   // The removable moisture by room – the very values FreshAirIQ publishes for each room (no second calculation): during an
   // airing the rooms that air (their result so far, their time left), otherwise every valid room's realistic amount for the
   // recommended time. The total is the card's own; a difference from rounding the room values is said, never hidden.
@@ -1277,8 +1282,13 @@ class FreshAirIQHouseCard extends HTMLElement {
       const ml = known(f.live ? r.result_ml : r.realistic_potential_ml);
       if (!Number.isFinite(ml)) return null;
       const lr = layout.rooms.find(x => x.room_key === r.key) || null;
-      const target = known(r.session_target_min ?? r.session_recommended_duration_min), elapsed = known(r.session_elapsed_min), horizon = known(r.potential_horizon_min);
-      const time = f.live ? (Number.isFinite(target) && Number.isFinite(elapsed) ? t("moist_room_left").replace("{m}", Math.max(0, Math.ceil(target - elapsed))) : "")
+      const horizon = known(r.potential_horizon_min);
+      // IQ2 (0.26.7.1): a running room shows the time meaning the integration decided (time_state) – never "0 min left"
+      // from an old plan; an older payload without the field shows no time instead of an invented one
+      const left = known(r.time_remaining_min);
+      const time = f.live ? (r.time_state === "close" ? t("moist_room_close") : r.time_state === "reassessing" ? t("moist_room_reassess")
+          : r.time_state === "minimum" && Number.isFinite(left) ? t("moist_room_min").replace("{m}", Math.max(1, Math.ceil(left)))
+          : r.time_state === "countdown" && Number.isFinite(left) ? t("moist_room_left").replace("{m}", Math.max(1, Math.ceil(left))) : "")
         : Number.isFinite(horizon) && horizon > 0 ? t("moist_room_for").replace("{m}", Math.round(horizon)) : "";
       const state = f.live ? t(r.session_finalization_pending ? "moist_room_final" : "moist_room_live") : this._actionWord(r);
       return { ml, html: `<div class="rrow t-${roomTone(r)}" style="--tone:${V.TONE_COLOR[roomTone(r)]}"><button class="rmain" ${lr ? `data-room-open="${esc(lr.id)}"` : "disabled"}><b>${esc(r.name || r.key)}</b><span class="rsub">${lr ? this._roomFloor(layout, lr) : "–"}</span>`
@@ -1297,33 +1307,35 @@ class FreshAirIQHouseCard extends HTMLElement {
     const t = k => this._t(k), lang = this._lang();
     const air = this._house && this._house.airflow;
     const n = (v, d = 1, unit = "") => (v == null || !Number.isFinite(Number(v)) ? "–" : `${Number(v).toFixed(d)}${unit}`);
-    // UI order (0.26.7.0): every window in the house map's style (the moisture, opening and air-path windows were white);
+    // UI order (0.26.7.1): every window in the house map's style (the moisture, opening and air-path windows were white);
     // the head's text is ink or white, whichever is readable on its colour
     const wrap = (headColor, emo, title, act, body, cls = " dark world") => `<dialog class="roomdlg" aria-label="${esc(title)}"><div class="dlg${cls}">
       <header style="background:${headColor};color:${D.onColor(headColor)}">${this._nav && this._nav.length ? `<button class="navback" data-nav-back aria-label="${esc(P.TXT[lang].back)}">‹ ${esc(P.TXT[lang].back)}</button>` : ""}<span class="emo">${emo}</span><div><h3>${esc(title)}</h3>${act ? `<div class="act">${act}</div>` : ""}</div></header>
       <div class="body">${body}</div><div class="foot"><button data-close-detail>${esc(t("close"))}</button></div></div></dialog>`;
     if (sel.type === "support") return wrap(V.BRAND.cyan, "🛟", t("support_title"), "", this._supportBody(), " dark world support");
-    // 0.26.7.0: the overviews belong to the house map's world – its sky as background, its colours and symbols
+    // 0.26.7.1: the overviews belong to the house map's world – its sky as background, its colours and symbols
     if (sel.type === "rooms") return wrap(V.BRAND.cyan, "▦", t("rooms_title"), "", this._roomsBody(layout), " dark world");
     if (sel.type === "weather") {
-      // 0.26.7.0(2) error B: the condition switched off shows no symbol – also not in the window's head
+      // 0.26.7.1(2) error B: the condition switched off shows no symbol – also not in the window's head
       const m = this._weatherModel(), fc = this._forecast || {}, details = this._details();
       const emo = details.includes("condition") && W.hasSymbol(m.condition) ? W.weatherSvg(m.condition, { size: 30, night: m.sun.phase === "night" }) : "";
       return wrap(V.BRAND.sky, emo, t("weather_title"), "", W.overviewHtml(m, { lang, info: this._info(), details, geo: this._geo(), forecastFailed: !!(fc.hourlyFailed || fc.dailyFailed), tz: this._tz() }), " dark world wxdlg");
     }
-    // 0.26.7.0(2): more about the house's decision, the airing log – in the map's world
+    // 0.26.7.1(2): more about the house's decision, the airing log – in the map's world
     if (sel.type === "house") return wrap(V.BRAND.cyan, "📊", P.TXT[lang].details_title, "", P.houseBody(this, H, layout), " dark world");
     if (sel.type === "ventlog") return wrap(V.BRAND.cyan, "📄", P.TXT[lang].log_title, "", P.ventLogBody(this), " dark world");
-    // 0.26.7.0(2): a view of the FreshAirIQ card's details (learning, forecast quality with the formula comparison, water, …)
+    // 0.26.7.1(2): a view of the FreshAirIQ card's details (learning, forecast quality with the formula comparison, water, …)
     if (sel.type === "classic") { const v = this._classicView(sel.id); return wrap(V.BRAND.cyan, P.classicIcon(sel.id), v.title || P.TXT[lang].learn_title, "", P.classicBody(this, v.html, sel.id), " dark world classicview"); }
     if (sel.type === "moisture") {
       const f = this._moistureFacts() || { amount: 0, minutes: null, live: false, waits: false, over: false };
       const value = f.amount <= -1 ? `+${Math.abs(f.amount)} ml` : `≈ ${Math.max(f.amount, 0)} ml`, sub = f.amount <= -1 ? t(f.live ? "moist_added_sub" : "moist_would_add_sub") : t(f.live ? "moist_so_far_sub" : "moist_now_sub");
-      const time = f.minutes != null ? (f.over ? `+${f.minutes} ${esc(t("min_short"))}` : `${f.minutes} ${esc(t("min_short"))}`) : "–";
-      return wrap(V.BRAND.sky, "💧", t("moist_title"), "", `<p class="lead" data-moist-intro>${esc(t(f.live ? "moist_intro_live" : "moist_intro_now"))} ${esc(t(f.live ? "moist_rooms_live" : "moist_rooms_now"))}</p><div class="tiles">${this._tile(t(f.live ? "moist_so_far" : "moist_now"), value, esc(sub))}`
-        + `${this._tile(t(f.live ? (f.over ? "moist_over_tile" : "moist_remaining") : "moist_duration"), time, "")}${this._tile(t("moist_confidence"), Number.isFinite(f.confidence) ? `${Math.round(f.confidence)} %` : "–", "")}</div>`
+      const time = f.minutes != null ? (f.over ? `+${f.minutes} ${esc(t("min_short"))}` : `${f.minutes} ${esc(t("min_short"))}`) : f.reassessing ? esc(t("moist_room_reassess")) : "–";
+      const quality = f.interval ? esc(t("moist_quality_interval").replace("{a}", Math.round(f.interval[0])).replace("{b}", Math.round(f.interval[1])).replace("{h}", Number.isFinite(f.horizon) ? Math.round(f.horizon) : 15))
+        : f.quality ? esc(t("moist_quality_collecting").replace("{n}", Number.isFinite(f.scored) ? f.scored : 0)) : "–";
+      return wrap(V.BRAND.sky, "💧", t(f.live ? "moist_title_live" : "moist_title"), "", `<p class="lead" data-moist-intro>${esc(t(f.live ? "moist_intro_live" : "moist_intro_now"))} ${esc(t(f.live ? "moist_rooms_live" : "moist_rooms_now"))}</p><div class="tiles">${this._tile(t(f.live ? "moist_so_far" : "moist_now"), value, esc(sub))}`
+        + `${this._tile(t(f.live ? (f.over ? "moist_over_tile" : "moist_remaining") : "moist_duration"), time, f.minutes == null && f.reassessing && f.why ? esc(f.why) : "")}${this._tile(t("moist_confidence"), Number.isFinite(f.confidence) ? `${Math.round(f.confidence)} %` : "–", "")}${f.live ? this._tile(t("moist_quality"), quality, "") : ""}</div>`
         + `${f.amount >= 1 || f.live ? "" : `<p>${esc(t("moist_none"))}</p>`}${f.waits ? `<p>${esc(t("moist_wait"))}</p>` : ""}${f.live && Math.abs(f.amount) < 1 ? `<p class="hint" data-moist-zero>${esc(t("moist_zero"))}</p>` : ""}${this._moistureRooms(layout, f)}`
-        // UI order (0.26.7.0): a short answer first, the full explanation folded away – nothing of it is lost
+        // UI order (0.26.7.1): a short answer first, the full explanation folded away – nothing of it is lost
         + `<details class="more"><summary>${esc(t("moist_more"))}</summary><p class="hint">${esc(t("moist_explain"))}</p>${f.live && Math.abs(f.amount) >= 1 ? `<p class="hint">${esc(t("moist_zero"))}</p>` : ""}</details>`);
     }
     if (sel.type === "room") {
@@ -1332,7 +1344,7 @@ class FreshAirIQHouseCard extends HTMLElement {
       if (!room) return wrap(V.BRAND.slate, "🔧", lr ? lr.room_key : "–", "", `<p>${esc(t("no_room_data"))}</p>`);
       const tone = roomTone(room);
       const fan = fanClose(room);
-      // 0.26.7.0(2): everything the FreshAirIQ card tells about the room, in the house map's style (freshairiq-house-panels.js)
+      // 0.26.7.1(2): everything the FreshAirIQ card tells about the room, in the house map's style (freshairiq-house-panels.js)
       return wrap(V.TONE_COLOR[tone], V.TONE_EMOJI[tone], room.name || lr.room_key, esc(T[lang].actions[fan ? fan.word : actionCode(room)] || actionCode(room)),
         P.roomBody(this, H, layout, lr, room), " dark world roomview");
     }
@@ -1367,7 +1379,7 @@ class FreshAirIQHouseCard extends HTMLElement {
   // map. Positioned exactly over the drawing; labels are kept clear on it.
   _bindFlow() {
     const map = this.shadowRoot.querySelector(".map"), svg = map && map.querySelector("svg.plan"), scene = this._flowScene;
-    // 0.26.7.0 UI hotfix: the sky and weather layer under the plan lies exactly under the drawing (same box, same viewBox)
+    // 0.26.7.1 UI hotfix: the sky and weather layer under the plan lies exactly under the drawing (same box, same viewBox)
     const under = map && map.querySelector(":scope > .wxu");
     if (under && svg) { const mr = map.getBoundingClientRect(), sr = svg.getBoundingClientRect(); Object.assign(under.style, { left: `${sr.left - mr.left + map.scrollLeft}px`, top: `${sr.top - mr.top + map.scrollTop}px`, width: `${sr.width}px`, height: `${sr.height}px` }); }
     if (!svg || !scene || (!scene.field && !scene.routes.length)) { if (this._flowCanvas) this._flowCanvas.remove(); if (this._flowLayer) this._flowLayer.field = null; return; }
@@ -1377,9 +1389,9 @@ class FreshAirIQHouseCard extends HTMLElement {
     map.appendChild(cv);
     if (!this._flowLayer) this._flowLayer = new FL.FlowLayer(cv, F);
     const clear = [...svg.querySelectorAll(".tag, g.source, g.fan, g.conn-mark")].map(g => { try { const b = g.getBBox(); return { x: b.x, y: b.y, w: b.width, h: b.height }; } catch (_) { return null; } }).filter(Boolean);
-    // 0.26.7.0(2): the share of threads and their pace from the animation level (a still picture keeps a few to draw)
+    // 0.26.7.1(2): the share of threads and their pace from the animation level (a still picture keeps a few to draw)
     const m = this._motionNow || this._motion();
-    // 0.26.7.0(2) (owner: "remove the small white strokes completely"): no threads around the house any more – the wind there is
+    // 0.26.7.1(2) (owner: "remove the small white strokes completely"): no threads around the house any more – the wind there is
     // the calm ribbons; the canvas carries only the air that flows in through an open window (its share by the level)
     this._flowLayer.setScene({ ...scene, clear, budget: { particles: 0, routeParts: m.still || !m.parts.wind ? 0.4 : m.routeParts, pace: m.pace || 0.7, dpr: m.dpr || 2 } });
     this._flowSceneKey = scene.key;
@@ -1387,10 +1399,10 @@ class FreshAirIQHouseCard extends HTMLElement {
   }
   // Hotfix F04: animation off or "reduce motion" stops a running loop at once; switching back continues the
   // same phase. Never two loops per card.
-  // 0.26.7.0(2): still with reduced motion, the animation off, the level off or resting, or the wind part switched off
+  // 0.26.7.1(2): still with reduced motion, the animation off, the level off or resting, or the wind part switched off
   _windStill() { if (this._config.animation === false || this._reduced()) return true; const m = this._motionNow || this._motion(); return m.still || !m.parts.wind; }
   _windSync() {
-    if (this._windStill() || !this.isConnected || !this._waves || !this._waves.length || this.hasAttribute("data-paused")) { this._windStop(); return; }  // 0.26.7.0: no loop while paused
+    if (this._windStill() || !this.isConnected || !this._waves || !this._waves.length || this.hasAttribute("data-paused")) { this._windStop(); return; }  // 0.26.7.1: no loop while paused
     // one loop for every house map on the page (freshairiq-house-motion.js), at this card's frame rate – never two per card
     const fps = (this._motionNow && this._motionNow.fps) || 20;
     if (!this._windRaf || this._windRaf.fps !== fps) { if (this._windRaf) M.untick(this); this._windRaf = M.tick(this, (now, dt) => this._windFrame(now, dt), fps); }
@@ -1436,13 +1448,13 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (old && old.dataset.key === key && old.open) { if (key !== "support:" && key !== "ventlog:") old.innerHTML = next.innerHTML; return; }
     if (old) { try { old.close(); } catch (_) { /* closed */ } old.remove(); }
     next.dataset.key = key;
-    next.addEventListener("cancel", ev => { ev.preventDefault(); this._back(); });   // 0.26.7.0 UI hotfix: Escape = one level back
+    next.addEventListener("cancel", ev => { ev.preventDefault(); this._back(); });   // 0.26.7.1 UI hotfix: Escape = one level back
     next.addEventListener("click", ev => { if (ev.target === next) this._closeDialog(); });  // backdrop
     card.insertBefore(next, card.querySelector(":scope > dialog.menudlg"));  // the room window first, then the menu
     try { next.showModal(); } catch (_) { next.setAttribute("open", ""); }
   }
   _closeDialog() { this._nav = []; this._selected = null; this._menuOpen = false; this._render(); }
-  // ---- 0.26.7.0 UI hotfix: one history for every window of the house map. A window opened from the menu or from another window
+  // ---- 0.26.7.1 UI hotfix: one history for every window of the house map. A window opened from the menu or from another window
   // remembers where it came from (and its scroll); "Back" returns exactly one level, "Close" and the backdrop close them all; a
   // window opened right from the map starts a new history (no menu as a made-up step in between). Only one window is open.
   _go(type, id) {
@@ -1462,7 +1474,7 @@ class FreshAirIQHouseCard extends HTMLElement {
   }
   _render() {
     if (this._editing) return;
-    this._applyMotion();   // 0.26.7.0(2): the level in effect now (device, reduced motion, untouched time)
+    this._applyMotion();   // 0.26.7.1(2): the level in effect now (device, reduced motion, untouched time)
     this._wavesNext = [];
     const root = this.shadowRoot;
     const isAdmin = !!(this._hass && this._hass.user && this._hass.user.is_admin);
@@ -1491,12 +1503,12 @@ class FreshAirIQHouseCard extends HTMLElement {
       // own sensors) on the right; like the bottom bar it never covers the plan
       const weather = this._weatherChip(), moist = this._moistureChip();
       const top = warn.length || weather || moist ? `<div class="topbar">${moist || warn.length ? `<div class="warns">${moist}${warn.join("")}</div>` : ""}${weather}</div>` : "";
-      // 0.26.7.0: an optional "Rooms" button next to the menu; a wide card uses its free sides for weather and status
+      // 0.26.7.1: an optional "Rooms" button next to the menu; a wide card uses its free sides for weather and status
       const roomsBtn = this._config.rooms_button ? `<button class="rooms-btn fab" data-rooms aria-haspopup="dialog">▦ ${esc(this._t("rooms_btn"))}</button>` : "";
       const side = this._sideWidth(layout);
       this._sideShown = side > 0;
       const mapPart = side ? `<div class="duo" style="--side:${side}px">${this._maps(layout)}<aside class="wxside" aria-label="${esc(this._t("weather_title"))}">${this._sidePanel()}</aside></div>` : this._maps(layout);
-      // 0.26.7.0 UI hotfix: with a drawing the bars lie over it (``over``) – the drawing reaches under them (see _svg)
+      // 0.26.7.1 UI hotfix: with a drawing the bars lie over it (``over``) – the drawing reaches under them (see _svg)
       const over = mapPart.includes("<svg");
       body = `<div class="stage${side ? " side" : ""}${over ? " over" : ""}" style="--bar-top:${(this._bars && this._bars.top) || 0}px;--bar-bottom:${(this._bars && this._bars.bottom) || 0}px">${top}${mapPart}<div class="mapbar">${this._floorButtons(layout, floors)}`
         + `${roomsBtn}<button class="menu-btn fab" data-menu aria-haspopup="dialog" aria-expanded="${menuOpen}">☰ ${esc(this._t("menu"))}</button></div></div>`;
@@ -1505,6 +1517,10 @@ class FreshAirIQHouseCard extends HTMLElement {
     // Community hotfix: a live update keeps where the user scrolled (map, room window)
     const scroll = [...root.querySelectorAll(".map, dialog.roomdlg .dlg .body")].map(el => [el.scrollLeft, el.scrollTop]);
     const scrollKey = ((root.querySelector("dialog.roomdlg") || {}).dataset || {}).key;
+    // U02 (0.26.7.1): the weather/status column keeps its scroll per view (floor and layer) across live updates
+    this._wxScroll = this._wxScroll || {};
+    const asideBefore = root.querySelector(".wxside");
+    if (asideBefore && this._asideViewKey != null) this._wxScroll[this._asideViewKey] = asideBefore.scrollTop;
     // Hotfix F02 ("the house map keeps jumping up"): <ha-card> and the open room window stay the same elements.
     // A new <ha-card> has no content until Home Assistant has drawn it (a microtask later); the scroll
     // restore below measured the page in that moment, the card was a few pixels high and the browser cut the
@@ -1513,10 +1529,10 @@ class FreshAirIQHouseCard extends HTMLElement {
     const { card, main } = this._frameElements();
     main.innerHTML = current ? body : `${this._hero(null)}${body}`;
     card.classList.toggle("plan-first", !!current);
-    // 0.26.7.0: the weather column changed the plan's width – the labels are fitted again for the new width (once)
+    // 0.26.7.1: the weather column changed the plan's width – the labels are fitted again for the new width (once)
     const mapNow = main.querySelector(".map"), mapW = mapNow ? mapNow.getBoundingClientRect().width : 0;
     if (mapW && this._lastWidth && Math.abs(mapW - this._lastWidth) > 24) requestAnimationFrame(() => this._queue());
-    // 0.26.7.0 UI hotfix: the bars' real height decides how far the drawing reaches under them – measured after drawing; a
+    // 0.26.7.1 UI hotfix: the bars' real height decides how far the drawing reaches under them – measured after drawing; a
     // changed height (another width, a warning more) draws once more (the bars never depend on the drawing: no loop)
     const stageNow = main.querySelector(".stage.over");
     if (stageNow) {
@@ -1526,6 +1542,14 @@ class FreshAirIQHouseCard extends HTMLElement {
       // the side column is never taller than the drawing (it scrolls inside), so the bars lie over the drawing on both sides
       const aside = stageNow.querySelector(".wxside"), drawn = stageNow.querySelector("svg.plan");
       if (aside && drawn) aside.style.maxHeight = `${Math.max(Math.round(drawn.getBoundingClientRect().height) - bars.top - bars.bottom, 160)}px`;
+    }
+    const asideNow = main.querySelector(".wxside");
+    this._asideViewKey = asideNow ? `${this._floor == null ? "" : this._floor}|${this._layer == null ? "" : this._layer}` : null;
+    if (asideNow) {
+      const key = this._asideViewKey;
+      const saved = this._wxScroll[key] || 0;   // only a real stored position is restored (no scroll event otherwise)
+      if (saved && Math.abs(asideNow.scrollTop - saved) > 1) asideNow.scrollTop = saved;
+      asideNow.addEventListener("scroll", () => { this._wxScroll[key] = asideNow.scrollTop; }, { passive: true });
     }
     this._bindFlow();
     this._bindWaves();
@@ -1559,8 +1583,8 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (closeMenu) closeMenu.addEventListener("click", () => this._closeMenu());
     if (this._selected && this._selected.type === "support" && this._support) this._bindSupport(root);
     root.querySelectorAll("[data-guest]").forEach(b => b.addEventListener("click", () => this._setGuests(b.dataset.guest, Number(b.dataset.delta))));
-    // 0.26.7.0: rooms overview, weather overview, a room chosen in an overview (its details) or shown on the plan
-    // 0.26.7.0(2): the same windows also from the menu (the menu closes first); more about the decision; the airing log
+    // 0.26.7.1: rooms overview, weather overview, a room chosen in an overview (its details) or shown on the plan
+    // 0.26.7.1(2): the same windows also from the menu (the menu closes first); more about the decision; the airing log
     const fromMenu = (selector, type) => root.querySelectorAll(selector).forEach(b => b.addEventListener("click", () => this._go(type, "")));
     fromMenu("[data-moisture]", "moisture"); fromMenu("[data-rooms]", "rooms"); fromMenu("[data-weather-open]", "weather");
     fromMenu("[data-house-details]", "house"); fromMenu("[data-moisture-side]", "moisture");
@@ -1569,7 +1593,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     root.querySelectorAll("[data-room-open]").forEach(b => b.addEventListener("click", () => this._openRoom(b.dataset.roomOpen)));
     root.querySelectorAll("[data-room-jump]").forEach(b => b.addEventListener("click", () => this._jumpTo(b.dataset.roomJump)));
     root.querySelectorAll("[data-motion-level]").forEach(b => b.addEventListener("click", () => this._setMotionLevel(b.dataset.motionLevel)));
-    // 0.26.7.0(2): the FreshAirIQ card's views and the links inside them (another view, a room by its key)
+    // 0.26.7.1(2): the FreshAirIQ card's views and the links inside them (another view, a room by its key)
     root.querySelectorAll("[data-classic-info]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); this._go("classic", b.dataset.classicInfo); }));
     root.querySelectorAll("[data-nav-back]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); this._back(); }));
     root.querySelectorAll("[data-classic-room]").forEach(b => b.addEventListener("click", () => {
@@ -1582,12 +1606,12 @@ class FreshAirIQHouseCard extends HTMLElement {
       if (this._skyColors) { this.style.setProperty("--sky-top", this._skyColors[0]); this.style.setProperty("--sky-bottom", this._skyColors[1]); }
       else { this.style.removeProperty("--sky-top"); this.style.removeProperty("--sky-bottom"); }
     }
-    // 0.26.7.0(2): a window over the plan (room, rooms, weather, menu, support) pauses the plan's motion while it is open
+    // 0.26.7.1(2): a window over the plan (room, rooms, weather, menu, support) pauses the plan's motion while it is open
     const covered = !!card.querySelector(":scope > dialog[open]");
     if (covered !== !!this._covered) { this._covered = covered; this._syncPaused(); }
     this._syncForecast();
   }
-  // 0.26.7.0(2): a room from the overview – its details, with its floor shown behind (the room outlined there)
+  // 0.26.7.1(2): a room from the overview – its details, with its floor shown behind (the room outlined there)
   _openRoom(id) {
     const current = this._layout(), lr = current && current.layout.rooms.find(r => r.id === id);
     if (lr && lr.floor_id !== this._floor && this._floors(current.layout).some(f => f.id === lr.floor_id)) { this._floor = lr.floor_id; this._lockUntil = Date.now() + Number(this._config.manual_lock_min || 10) * 60000; this._persist(); }
@@ -1621,14 +1645,14 @@ class FreshAirIQHouseCard extends HTMLElement {
     tpl.content.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
     const head = tpl.content.querySelector("h2, h3");
     let out = tpl.innerHTML;
-    // the passive formula comparison belongs to "Wie gut FreshAirIQ aktuell vorhersagt": the FreshAirIQ card's own section
+    // the section "Experimentell" belongs to "Wie gut FreshAirIQ aktuell vorhersagt": the FreshAirIQ card's own renderer
     // (freshairiq-card-shadow.js shadowSection), added here when the card class this host comes from carries no patch yet
     if (id === "learning:quality" && !out.includes("faiq-shadow-test")) {
       const en = this._lang() === "en", end = out.lastIndexOf("</section>");
       if (this._shadow && this._shadow.shadowSection) out = out.slice(0, end < 0 ? out.length : end) + this._shadow.shadowSection(st.forecast_shadow_comparison, en) + (end < 0 ? "" : out.slice(end));
-      else if (this._shadow && this._shadow.failed) out += `<div class="learning-overview-note faiq-shadow-test" role="alert"><span><b>${esc(en ? "Experiment: new moisture formula (passive test)" : "Experiment: Neue Feuchteformel (passiver Test)")}</b><br>${esc(en ? "This section could not be loaded on this device. Please reload the page." : "Dieser Abschnitt konnte auf diesem Gerät nicht geladen werden. Bitte die Seite neu laden.")}<br><small>FAIQ-UI-SHADOW-001</small></span></div>`;
+      else if (this._shadow && this._shadow.failed) out += `<div class="learning-overview-note faiq-shadow-test" role="alert"><span><b>${esc(en ? "Experimental" : "Experimentell")}</b><br>${esc(en ? "The note on the adopted base formula could not be loaded on this device. Please reload the page." : "Der Hinweis zur übernommenen Grundformel konnte auf diesem Gerät nicht geladen werden. Bitte die Seite neu laden.")}<br><small>FAIQ-UI-SHADOW-001</small></span></div>`;
       else if (!this._shadowWait) this._shadowWait = import(new URL(`./freshairiq-card-shadow.js${Q}`, import.meta.url).href)
-        .then(m => { this._shadow = m; }, err => { console.error("FreshAirIQ formula test section failed", err); this._shadow = { failed: true }; }).then(() => this._queue());
+        .then(m => { this._shadow = m; }, err => { console.error("FreshAirIQ section \"Experimentell\" failed", err); this._shadow = { failed: true }; }).then(() => this._queue());
     }
     return { html: out, title: head ? head.textContent.trim() : "" };
   }
@@ -1639,7 +1663,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     const h = this._support;
     for (const [id, fmt] of [["ventlog-export", "pdf"], ["ventlog-csv", "csv"]]) { const el = root.getElementById(id); if (el) el.addEventListener("click", ev => { ev.stopPropagation(); h._exportVentilationLog(fmt); }); }
   }
-  // 0.26.7.0: from an overview to the room on the plan – its floor, a short highlight, no window over it
+  // 0.26.7.1: from an overview to the room on the plan – its floor, a short highlight, no window over it
   _jumpTo(id) {
     const current = this._layout(), lr = current && current.layout.rooms.find(r => r.id === id);
     if (!lr) return;
@@ -1707,7 +1731,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (!layout.building.north_confirmed) notes.push(t("north_unconfirmed"));
     notes.push(t("streams_note"));
     if (this._layer === "airflow") notes.push(`${t("model")}: ${air ? t(air.model_level) : "–"} · ${t("hypothesis")}${air && !air.paths.length ? ` · ${t("no_paths")}` : ""}`);
-    // 0.26.7.0(2): grouped – information, control and modes, tools, notes (freshairiq-house-panels.js)
+    // 0.26.7.1(2): grouped – information, control and modes, tools, notes (freshairiq-house-panels.js)
     return P.menuBody(this, H, layout, notes);
   }
   // 0.26.6.1(2): support in its own window over the house map – the very support functions of the FreshAirIQ
@@ -1738,16 +1762,18 @@ class FreshAirIQHouseCard extends HTMLElement {
     const until = Date.parse(h._supportCooldownUntil || up.support_cooldown_until || "");
     const mins = until > Date.now() ? Math.max(1, Math.ceil((until - Date.now()) / 60000)) : 0;
     const feedbackMins = h._feedbackCooldownMinutes(st);
+    // R04 (0.26.7.1): the feedback fields show the shared draft of this entry (same store as the dashboard card)
+    const draft = h._feedbackDraft(), opt = (v, k) => `<option value="${v}"${draft.type === v ? " selected" : ""}>${esc(t(k))}</option>`;
     const mode = t(`upload_${String(up.configured_reporting_mode || "daily")}`);
     return `<p>${esc(t("support_intro"))}</p>
       <h4>${esc(t("support_diag"))}</h4><label class="field"><b>${esc(t("support_message"))}</b><span class="hint2">${esc(t("support_privacy"))}</span>
       <textarea id="diagnostics-message" rows="4" minlength="10" maxlength="4000" required placeholder="${esc(t("support_placeholder"))}"></textarea></label>
       <div class="diag-actions"><button id="diagnostics-export"><span class="ico" aria-hidden="true">⬇️</span><b>${esc(t("support_export"))}</b></button>
       <button id="diagnostics-send"><span class="ico" aria-hidden="true">🔒</span><b>${mins ? esc(h._t("support.cooldown_button", { mins })) : esc(t("support_send"))}</b></button></div>
-      <h4>${esc(t("feedback"))}</h4><label class="field"><b>${esc(t("feedback_kind"))}</b><select id="feedback-type"><option value="bug">${esc(t("feedback_bug"))}</option><option value="improvement">${esc(t("feedback_idea"))}</option><option value="other">${esc(t("feedback_other"))}</option></select></label>
-      <label class="field"><b>${esc(t("feedback_text"))}</b><span class="hint2">${esc(t("feedback_secret"))}</span><textarea id="feedback-message" rows="5" maxlength="10000"></textarea></label>
+      <h4>${esc(t("feedback"))}</h4><label class="field"><b>${esc(t("feedback_kind"))}</b><select id="feedback-type">${opt("bug", "feedback_bug")}${opt("improvement", "feedback_idea")}${opt("other", "feedback_other")}</select></label>
+      <label class="field"><b>${esc(t("feedback_text"))}</b><span class="hint2">${esc(t("feedback_secret"))}</span><textarea id="feedback-message" rows="5" maxlength="10000">${esc(draft.text)}</textarea></label>
       <div class="row"><button id="feedback-send"${feedbackMins ? " disabled" : ""}>${feedbackMins ? esc(h._t("feedback.cooldown_button", { mins: feedbackMins })) : `✉️ ${esc(t("feedback_send"))}`}</button></div>
-      <div id="feedback-result" class="hint2">${esc(feedbackMins ? h._t("feedback.cooldown_next", { mins: feedbackMins }) : h._t("feedback.cooldown_hint"))}</div>
+      <div id="feedback-result" class="hint2">${esc(h._feedbackResultText(draft, feedbackMins))}</div>
       <h4>${esc(t("support_mail"))}</h4><div>support@freshairiq.com</div><div class="hint2">${esc(t("support_auto"))}: ${esc(mode)}</div>`;
   }
   _bindSupport(root) {
@@ -1758,6 +1784,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     on("diagnostics-export", () => h._exportDiagnostics());
     on("diagnostics-send", () => h._sendDiagnosticsToDeveloper());
     on("feedback-send", el => h._sendFeedback(el));
+    h._bindFeedbackDraft();   // R04: typing, type switch and scroll go into the shared draft store
   }
   async _openEditor() {
     const mod = await import(new URL(`./freshairiq-house-editor.js${Q}`, import.meta.url).href);
@@ -1804,7 +1831,7 @@ box-sizing:border-box;overflow:hidden;overscroll-behavior:contain;z-index:10050;
 .faiq-editor-workspace:popover-open{display:block}.faiq-editor-workspace::backdrop{background:rgba(0,0,0,.45)}
 .faiq-editor-workspace>freshairiq-house-layout-editor{max-width:1800px;margin:0 auto;height:100%;min-height:0}`;
 
-// 0.26.7.0: rooms button, rooms/moisture lists, the side column of a wide card, the weather effect levels
+// 0.26.7.1: rooms button, rooms/moisture lists, the side column of a wide card, the weather effect levels
 const PLUS_STYLE = `
 dialog.roomdlg .dlg,dialog.menudlg .dlg{max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px)}
 .rooms-btn{margin-left:auto}.rooms-btn+.menu-btn{margin-left:0}
@@ -1836,7 +1863,7 @@ button.weather:focus-visible{outline:3px solid #ffd27a;outline-offset:2px}
 class FreshAirIQHouseCardEditor extends HTMLElement {
   setConfig(config) { this._config = Object.assign({}, config || {}); this._render(); }
   set hass(hass) { this._hass = hass; if (!this._rendered) this._render(); this._loadPlan(); }
-  // 0.26.7.0: floors and rooms of the saved plan for the floor and per-room choices (read only)
+  // 0.26.7.1: floors and rooms of the saved plan for the floor and per-room choices (read only)
   async _loadPlan() {
     if (this._plan !== undefined || !this._hass || typeof this._hass.callWS !== "function") return;
     this._plan = null;
@@ -1848,7 +1875,7 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
     } catch (_) { this._plan = null; }
     if (this._plan) this._render();
   }
-  // 0.26.7.0 UI order: "Design & colours" – the three designs; own colours only where they stay readable
+  // 0.26.7.1 UI order: "Design & colours" – the three designs; own colours only where they stay readable
   _designGroup(c, de, note) {
     const L = de
       ? { mode: "Design", modes: { freshairiq: "FreshAirIQ-Design (Standard)", ha: "Home-Assistant-Theme übernehmen", custom: "Benutzerdefiniert" },
@@ -1927,7 +1954,7 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
       return `<details style="margin:4px 0"${own ? " open" : ""}><summary>${esc(plan.names[r.room_key] || r.room_key)} · ${own ? L.own : L.same}</summary><div>
         <label><input type="checkbox" data-own="${esc(r.room_key)}"${own ? " checked" : ""}> ${L.own}</label><div>${ROOM_INFO.map(k => box(`ov:${r.room_key}`, k, L.ri[k], sel.includes(k))).join("")}</div></div></details>`;
     }).join("") : "";
-    // 0.26.7.0 (order "Logikprüfung, Innentüren und UX", point 4): seven groups with a short explanation each – every key,
+    // 0.26.7.1 (order "Logikprüfung, Innentüren und UX", point 4): seven groups with a short explanation each – every key,
     // stored value and default as before; a group's open state survives a redraw, and nothing typed is lost by opening another
     const S = de
       ? { general: ["Allgemein", "Titel, Integration und was die Karte beim Öffnen zeigt."], floors: ["Etagen & Navigation", "Welche Etagen die Karte zeigt und wie sie zwischen ihnen wechselt."],
@@ -1997,7 +2024,7 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
       const value = el.type === "checkbox" ? el.checked : el.type === "number" ? Number(el.value) : el.value;
       const next = Object.assign({}, this._config);
       if (value === "" || value == null || (k === "rooms_button" && value === false) || (k === "design" && value === "freshairiq") || (k === "design_text" && value === "auto")) delete next[k]; else next[k] = value;
-      // 0.26.7.0(2): the level replaces the older on/off switch – "off" is said by the level, the switch stays as it was
+      // 0.26.7.1(2): the level replaces the older on/off switch – "off" is said by the level, the switch stays as it was
       if (k === "animation_level") { if (value === "auto") delete next.animation_level; if (value !== "off" && next.animation === false) delete next.animation; }
       this._emit(next);
       // another integration entry: its plan decides which stored floors and rooms are still valid
@@ -2016,7 +2043,7 @@ class FreshAirIQHouseCardEditor extends HTMLElement {
         const key = k.slice(3), ov = Object.assign({}, next.room_overrides || {});
         ov[key] = values; next.room_overrides = ov;
       } else if (k === "weather_info") {
-        // 0.26.7.0(2): the parts only; the single values are their own choice (weather_details), so switching parts never
+        // 0.26.7.1(2): the parts only; the single values are their own choice (weather_details), so switching parts never
         // brings a value back – an older card's values listed here move over once
         const legacy = list(next.weather_info).filter(x => W.WEATHER_DETAILS.includes(x));
         if (legacy.length && next.weather_details == null) next.weather_details = legacy;

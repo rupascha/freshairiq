@@ -79,3 +79,20 @@ export const faiqDesignChoice = (config, value) => {
     const named = config.theme && !["auto", "native", "freshairiq"].includes(String(config.theme).toLowerCase());
     return named ? { freshairiq_design: design } : { freshairiq_design: design, theme: design };
 };
+// U01 (0.26.7.1): the detail and info windows follow their own width, not only the viewport. Every
+// "@media (max-width:N px)" block is repeated as a container query on the window (.dialog / .subdialog), so a
+// narrow window inside a wide browser (side panel, narrow dashboard column, zoomed text) gets the same layout as
+// a narrow screen. Rules outside the windows are unaffected (no container around them); no data is hidden.
+export const faiqContainerCss = css => {
+  const out = [".dialog,.subdialog{container:faiqdlg/inline-size}"];
+  const head = /@media\s*\(max-width:\s*(\d+(?:\.\d+)?)px\)\s*\{/g;
+  let match;
+  while ((match = head.exec(css))) {
+    let depth = 1, i = head.lastIndex;
+    while (depth && i < css.length) { const c = css[i++]; if (c === "{") depth += 1; else if (c === "}") depth -= 1; }
+    out.push(`@container faiqdlg (max-width:${match[1]}px){${css.slice(head.lastIndex, i - 1)}}`);
+    head.lastIndex = i;
+  }
+  out.push("@container faiqdlg (max-width:360px){.overview{grid-template-columns:minmax(0,1fr)}}");   // last: wins over the copied rules
+  return css + out.join("");
+};

@@ -38,11 +38,14 @@ from .const import (
 )
 from .contact_sides import inside_contacts
 from .coordinator_contacts import _contact_ids, _opening_assessments
+from . import iq2
 from .goals import evaluate_goals, room_comfort_target
 from .humidity_plateau import equilibrium_rh
-from .measurement_frame import session_measurement_quality
+from .measurement_frame import room_session_measurement_quality
+from .model import co2_lead, co2_release_ppm
 from .outdoor_air import outdoor_pm25_blocked
 from .repeat_cooldown import remember_close_surface_rh, repeat_cooldown_urgent
+from .room_close_strategy import benefit_close_state
 from .robustness import finite_float
 from .routines import expected_source_rate, learn_source_pattern, response_pattern, routine_maturity
 from .seasonality import learn_seasonal_source, seasonal_context
@@ -131,6 +134,7 @@ class RoomResultMixin:
             include and result.data_quality == "ok" and not is_open and not mem.get("session_active")
             and not moisture_source.get("active") and not moisture_source.get("recovery")
             and not stabilizing and mem.get("forecast_source_ml_min") is not None
+            and bool(options.get("learning_enabled", True))  # F16: no new routine/season samples while learning is off
         ):
             source_value = float(mem.get("forecast_source_ml_min") or 0.0)
             if learn_source_pattern(mem, now, source_value):
@@ -187,6 +191,7 @@ class RoomResultMixin:
             hard_close=bool(result.close_recommended),
             disabled_goals=disabled_goals,
             humidity_floor_rh=equilibrium_rh(t, result.reference_humidity) if (is_open or mem.get("session_active")) else None,
+            co2_release=co2_release_ppm(options), co2_latched=bool(mem.get("co2_lead_latched")),
         )
         for goal in goal_state.get("goals", []):
             if goal.get("id") == "humidity":
@@ -194,7 +199,7 @@ class RoomResultMixin:
             elif goal.get("id") == "temperature":
                 goal["achievable_now"] = bool(result.cooling_candidate or (result.active and ref_t < t))
             elif goal.get("id") == "co2":
-                goal["achievable_now"] = bool(co2_available and co2 >= float(options.get("co2_warn", 1000.0)) and not (options.get("pollen_enabled", False) and options.get("pollen_strict_veto", True) and pollen > float(options.get("pollen_max", 4.0))) and not outdoor_pm25_blocked(options, outdoor_pm25))
+                goal["achievable_now"] = bool(co2_available and co2_lead(co2, options, bool(mem.get("co2_lead_latched"))) and not (options.get("pollen_enabled", False) and options.get("pollen_strict_veto", True) and pollen > float(options.get("pollen_max", 4.0))) and not outdoor_pm25_blocked(options, outdoor_pm25))
         mem["goal_trend_sample"] = {"at": now.isoformat(), "rh": rh, "co2": co2, "temp": t}
         return (
             changed, comfort_target, comfort_target_source, cooldown_demoted, cooldown_override, goal_state,
@@ -272,12 +277,14 @@ class RoomResultMixin:
             "contact_mode": cfg.get(CONF_CONTACT_MODE, CONTACT_MODE_ANY), "contact_count": len(_contact_ids(cfg)), "contact_entities": _contact_ids(cfg), "inside_contact_entities": inside_contacts(cfg), "contact_delays": dict(cfg.get(CONF_CONTACT_DELAYS, {})), "contact_orientations": dict(cfg.get(CONF_CONTACT_ORIENTATIONS, {})), **({"contact_kinds": dict(cfg[CONF_CONTACT_KINDS])} if cfg.get(CONF_CONTACT_KINDS) else {}), "contact_reference_temperatures": dict(cfg.get(CONF_CONTACT_REFERENCE_TEMPERATURES, {})), "contact_reference_humidities": dict(cfg.get(CONF_CONTACT_REFERENCE_HUMIDITIES, {})), "active_reference_temperature_entity": reference_temperature_entity, "active_reference_humidity_entity": reference_humidity_entity, "opening_assessments": opening_assessments,
             "next_5_min_heat_kwh": delivered, "next_5_min_purchased_kwh": purchased, "next_5_min_cost": cost, "next_5_min_energy_amount": fuel["amount"], "next_5_min_energy_unit": fuel["unit"],
             "forecast_horizon_min": forecast_horizon, "forecast_moisture_effect_ml": int(dynamic["moisture_effect_ml"]),
+            **iq2.room_fields(self.__dict__.get("_iq2_params", {}).get(str(key)), mem.get("iq2"), dynamic),
             "forecast_physical_moisture_effect_ml": int(dynamic["physical_moisture_effect_ml"]), "forecast_uncapped_moisture_effect_ml": int(dynamic.get("uncapped_physical_moisture_effect_ml", dynamic["physical_moisture_effect_ml"])), "forecast_target_limited": bool(dynamic.get("target_limited", False)), "forecast_target_cap_ml": dynamic.get("target_cap_ml"), "forecast_live_adapted": bool(dynamic.get("live_adapted", False)), "forecast_live_observation_weight": float(dynamic.get("live_observation_weight", 0.0) or 0.0), "forecast_observed_projection_ml": dynamic.get("observed_projection_ml"), "forecast_internal_moisture_effect_ml": int(dynamic["internal_moisture_effect_ml"]),
             "forecast_net_moisture_change_ml": int(dynamic.get("net_moisture_change_ml", dynamic["moisture_effect_ml"])),
             "forecast_5_min_moisture_effect_ml": int(dynamic5["moisture_effect_ml"]),
             "forecast_5_min_net_moisture_change_ml": int(dynamic5.get("net_moisture_change_ml", dynamic5["moisture_effect_ml"])),
             "forecast_5_min_temperature_change_c": round(float(dynamic5["temperature_change_c"]), 2),
             "forecast_5_min_confidence": int(dynamic5["confidence"]),
+            **benefit_close_state(mem, dynamic5, options, cfg[CONF_ROOM_VOLUME]),
             "forecast_temperature_change_c": round(float(dynamic["temperature_change_c"]), 2), "forecast_confidence": int(dynamic["confidence"]),
             "forecast_source_rate_ml_min": float(dynamic["source_rate_ml_min"]), "forecast_method": dynamic["method"],
             "forecast_simulation_steps": int(dynamic.get("simulation_steps", 1)), "forecast_simulated_final_ah": dynamic.get("simulated_final_ah"),
@@ -334,13 +341,7 @@ class RoomResultMixin:
             "session_finalization_deadline_at": mem.get("session_close_deadline_at"),
             "session_final_temperature_feedback": bool(mem.get("session_close_temperature_feedback")),
             "session_final_humidity_feedback": bool(mem.get("session_close_humidity_feedback")),
-            "session_measurement_quality": session_measurement_quality(
-                int(mem.get("session_fresh_measurements", 0)),
-                temperature_reports=int(mem.get("session_temperature_reports", 0)),
-                humidity_reports=int(mem.get("session_humidity_reports", 0)),
-                final_temperature_feedback=bool(mem.get("session_close_temperature_feedback")),
-                final_humidity_feedback=bool(mem.get("session_close_humidity_feedback")),
-            ),
+            "session_measurement_quality": room_session_measurement_quality(mem),
             "close_decision_ready": bool(result.close_decision_ready),
             "last_learning_at": mem.get("last_learning_at"), "last_learning_valid": mem.get("last_learning_valid"),
             "stabilizing": stabilizing, "recently_ventilated": recently_ventilated, "repeat_cooldown_demoted": cooldown_demoted, "repeat_cooldown_override": cooldown_override,

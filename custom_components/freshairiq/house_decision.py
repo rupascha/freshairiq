@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from .close_wording import area_close_instruction
+from .close_wording import area_close_instruction, close_cause
 from .consolidation import aggregate_close_allowed, aggregate_close_gate_ready, opening_phase_protected, planned_target_min
 from .model import min_return_volume_factor
 
@@ -271,7 +271,8 @@ def _house_presentation(
         intelligent_recommendation["status"] = "close_windows"
         intelligent_recommendation["title"] = "Der sinnvolle Lüftungspunkt ist erreicht"
         intelligent_recommendation["instruction"] = "Hauslüftung beenden"
-        intelligent_recommendation["summary"] = "Der zusätzliche Gesamtnutzen der Hauslüftung ist gegenüber Feuchteziel und Temperaturverlust nicht mehr ausreichend."
+        # the rooms' own close cause (temperature limit, goals, exhausted benefit) is named instead of the generic one
+        intelligent_recommendation["summary"] = close_cause(active)[1] or "Der zusätzliche Gesamtnutzen der Hauslüftung ist gegenüber Feuchteziel und Temperaturverlust nicht mehr ausreichend."
         intelligent_recommendation["reasons"] = [
             f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {round(house_next5_removed)} ml Feuchteabbau" if house_next5_removed >= 0 else f"Hausweiter Nettoeffekt der nächsten 5 Minuten: {abs(round(house_next5_removed))} ml Feuchtezunahme",
             f"Gemeinsamer Schwellwert für diese Hauslüftung: etwa {round(house_min_return)} ml in 5 Minuten",

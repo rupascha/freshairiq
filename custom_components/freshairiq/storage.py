@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from . import iq2
 from .const import LEGACY_DOMAIN, STORAGE_KEY, STORAGE_VERSION
 from .robustness import sanitize_runtime_session
 from .storage_defaults import _room_defaults  # noqa: F401 - re-exported
@@ -431,7 +432,7 @@ class LearningStore:
                     "session_active", "session_started", "session_physical_started", "session_start_ah",
                     "session_start_source_ah", "session_learning_start_ah", "session_learning_source_ah",
                     "session_start_temp", "session_result_base_ml",
-                    "session_result_ml", "close_notified",
+                    "session_result_ml", "close_notified", "close_notified_kind", "session_goals_reached",
                     "session_fresh_measurements", "session_temperature_reports", "session_humidity_reports",
                     "session_last_temperature_update", "session_last_humidity_update",
                     "session_open_temperature_reported_at", "session_open_humidity_reported_at",
@@ -461,6 +462,10 @@ class LearningStore:
                     "session_prediction_snapshot_frame_max_age_s",
                 ):
                     fresh[field] = old.get(field)
+                # I04: everything else the running airing carries (quarantine and its code, the way of opening,
+                # validation start, climate report state) stays with it; it no longer teaches the reset models
+                fresh.update({field: value for field, value in old.items() if field.startswith("session_")})
+                fresh["session_learning_reset_at"] = dt_util.now().isoformat()
             self.data["rooms"][key] = fresh
         self.data["last_diagnosis"] = "Learning data reset manually"
         self.data["night_model_ml_h"] = None
@@ -473,6 +478,7 @@ class LearningStore:
         self.data["house_strategy_successes"] = 0
         self.data["house_strategy_total_removed_ml"] = 0.0
         self.data["house_strategy_total_minutes"] = 0.0
+        self.data["iq2_house"] = iq2.new_house_state()
         await self.async_save()
 
     async def async_reset_statistics(self) -> None:

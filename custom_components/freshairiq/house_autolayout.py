@@ -25,6 +25,8 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable
 
+from .const import CONTACT_SIDE_INSIDE
+from .contact_sides import door_links, side
 from .house_layout import (
     SCHEMA_VERSION, edge_bearing, empty_layout, polygons_overlap, shared_length,
 )
@@ -109,6 +111,14 @@ def adjacency(rooms: list[dict[str, Any]], open_connections: dict[str, Iterable[
         for i, a in enumerate(sorted(set(keys))):
             for b in sorted(set(keys))[i + 1:]:
                 pairs.setdefault((a, b), {"kind": "door", "contacts": []})["contacts"].append(contact)
+    # an inside door the setup links to a room (named connected room or the same inside contact in two rooms) is a
+    # door between those two rooms – never an opening in an outside wall
+    keys = {str(room["key"]) for room in rooms}
+    for pair, contacts in sorted(door_links(rooms).items(), key=lambda item: sorted(item[0])):
+        a, b = sorted(pair)
+        if a in keys and b in keys:
+            info = pairs.setdefault((a, b), {"kind": "door", "contacts": []})
+            info["contacts"].extend(c for c in sorted(contacts) if c not in info["contacts"])
     for key, others in sorted((open_connections or {}).items()):
         for other in sorted(others):
             a, b = sorted((str(key), str(other)))
@@ -281,7 +291,8 @@ def _openings(rooms: list[dict[str, Any]], placed: dict[str, list[list[float]]],
         orientations = room.get("contact_orientations") if isinstance(room.get("contact_orientations"), dict) else {}
         kinds = room.get("contact_kinds") if isinstance(room.get("contact_kinds"), dict) else {}  # 0.26.5.5
         for contact in _contacts(room):
-            if contact in shared or (homes or {}).get(contact, key) != key:
+            # an inside door is drawn on a shared wall only; without one it is left for placing in the editor
+            if contact in shared or (homes or {}).get(contact, key) != key or side(room, contact) == CONTACT_SIDE_INSIDE:
                 continue
             orientation = orientations.get(contact) or room.get("window_orientation")
             index, offset, provenance = _best_edge(key, placed, orientation if orientation in ORIENTATION_DEG else None)

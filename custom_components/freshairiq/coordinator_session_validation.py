@@ -159,9 +159,9 @@ class SessionValidationMixin:
             prediction_comparable = False
 
         # Objective validation and adaptive forecast learning share the same
-        # mandatory timestamp-activity gate. Legacy frame classes remain
-        # diagnostic metadata only; neither ``held`` nor ``excellent`` may
-        # bypass a missing in-session report from temperature or humidity.
+        # mandatory activity gate (two value changes in any T/RH combination).
+        # Frame classes and the age of the frozen start values remain
+        # diagnostic metadata only and can neither bypass nor block it.
         start_learning_valid = session_activity_eligible
         end_learning_valid = session_activity_eligible
         prediction_learning_eligible = bool(
@@ -174,7 +174,8 @@ class SessionValidationMixin:
         mem["session_prediction_snapshot_valid"] = bool(prediction_learning_eligible)
         activity_weight = float(session_quality.get("learning_weight", 0.0) or 0.0)
         mem["session_prediction_learning_weight"] = activity_weight if session_activity_eligible else 0.0
-        feedback_processed = False if learning_contaminated else learn_outcome_feedback(mem, session_removed, temp_delta)
+        reset_during_airing = bool(mem.get("session_learning_reset_at"))
+        feedback_processed = False if learning_contaminated else learn_outcome_feedback(mem, session_removed, temp_delta) if not reset_during_airing else False
         feedback_learned = bool(feedback_processed and mem.get("last_outcome_feedback_applied", False))
         mem["session_prediction_snapshot_valid"] = bool(original_snapshot_valid)
         if learning_contaminated:
@@ -187,8 +188,10 @@ class SessionValidationMixin:
             feedback_accuracy = mem.get("last_outcome_feedback_accuracy")
         else:
             feedback_action = "skipped"
-            if prediction_time_aligned and (not snapshot_frame_valid or not end_frame_valid):
-                feedback_reason = "Die Startprognose wurde auf exakt dieselbe Messdauer abgeglichen, aber Temperatur und Luftfeuchtigkeit haben während dieser Lüftung nicht beide mindestens einen neueren Sensor-Zeitstempel geliefert. Deshalb werden weder Prognosegenauigkeit noch Lernmodell aus diesem Vergleich angepasst. Die Lern-Auswertung kann deshalb verzögert erscheinen."
+            if reset_during_airing:
+                feedback_reason = "Das Lernwissen wurde während dieser Lüftung zurückgesetzt; ihre Startprognose passt Prognose und Lernmodell nicht mehr an."
+            elif prediction_time_aligned and (not snapshot_frame_valid or not end_frame_valid):
+                feedback_reason = "Die Startprognose wurde auf exakt dieselbe Messdauer abgeglichen, aber während dieser Lüftung wurden weniger als zwei Messänderungen von Temperatur oder Luftfeuchtigkeit mit neuem Sensor-Zeitstempel gemeldet. Deshalb werden weder Prognosegenauigkeit noch Lernmodell aus diesem Vergleich angepasst. Die Lern-Auswertung kann deshalb verzögert erscheinen."
             elif prediction_time_aligned:
                 feedback_reason = "Startprognose wurde mit exakt derselben Messdauer verglichen. Für diese Lüftung wurde daraus keine Modellanpassung abgeleitet."
             elif original_snapshot_valid and mem.get("session_prediction_horizon_min") is not None and not prediction_comparable:

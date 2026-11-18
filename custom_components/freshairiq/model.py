@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from math import exp, isfinite
 from typing import Any
 
+from .iq2 import SATURATION_LIMIT
 from .outdoor_air import outdoor_pm25_blocked as _outdoor_pm25_blocked
 
 
@@ -45,6 +46,13 @@ class RoomInput:
     session_result_base_ml: float = 0.0
     session_result_ml: float = 0.0
     close_notified: bool = False
+    # B3 (0.26.7.1): why the stored close of this session was given (the room model's close kind); None = unknown
+    # (older stored data) – then no reached goal is claimed for it
+    close_notified_kind: str | None = None
+    # IQ2 (0.26.7.1): the goals of this airing were reliably reached at some point (kept beside another close cause)
+    session_goals_reached: bool = False
+    # IQ2: part of the outdoor temperature difference the room air follows (thermal mass keeps the rest); 1 = plain mixing
+    thermal_air_share: float = 1.0
     airflow_factor: float = 1.0
     pollen_index: float = 0.0
     session_fresh_measurements: int = 0
@@ -131,6 +139,18 @@ class RoomResult:
     moisture_source_rate_ml_min: float = 0.0
     # 0.26.5.3: the open window still cools the room towards its comfort target
     comfort_cooling_active: bool = False
+    # R01/R02 (0.26.7.2): why a running airing closes – "temperature_limit", "goals_reached", "goals_held",
+    # "summer_warming", "air_no_longer_helps", "benefit_exhausted", "model_fallback"; None when there is no close.
+    # Later layers (room text, moisture-source and house presentation) use it so a protective close is never
+    # rewritten without notice.
+    close_kind: str | None = None
+    # IQ2 (0.26.7.1, C1): the goals of the airing are reliably reached in this evaluation / still inside the humidity
+    # hysteresis – independent of which close cause has priority (kept as the session's goal history by the coordinator)
+    goals_reached_now: bool = False
+    goals_in_band: bool = False
+    # nothing but the remaining moisture benefit keeps this running airing open (no source, CO2, cooling, protection,
+    # minimum duration); the coordinator may then close it on confirmed IQ2 forecasts (room_close_strategy)
+    benefit_close_ready: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -154,6 +174,14 @@ MIN_RETURN_MIN_VOLUME_FACTOR = 0.25
 CLOSE_RELEASE_FACTOR = 1.25
 TEMPERATURE_LIMIT_CLOSE_REASON = "Configured temperature limit for airing reached; close because of the temperature, not because enough moisture was removed"
 AIR_NO_LONGER_HELPS_CLOSE_REASON = "Reference air no longer removes moisture"
+# K02 (0.26.7.1): the room chose to close once its goals are reliably reached (room_close_strategy.py)
+GOALS_REACHED_CLOSE_REASON = "Room goals reached; the room is set to close once its goals are reached"
+# R02 (0.26.7.2): the goal close of this airing is kept inside the existing humidity hysteresis
+GOAL_CLOSE_KINDS = frozenset({"goals_reached", "goals_held"})
+GOALS_HELD_CLOSE_REASON = "Room goals were reached; the close is kept while humidity stays inside the hysteresis band"
+# the humidity target is still open, but confirmed IQ2 forecasts show that further airing hardly removes moisture
+BENEFIT_CLOSE_KIND = "benefit_exhausted"
+BENEFIT_EXHAUSTED_CLOSE_REASON = "Further airing hardly removes moisture any more; the humidity target is not reached"
 ROOM_TOO_DRY_CLOSE_REASON = "Room air is already dry; further airing would dry it out too much"
 # 0.26.7.0 (F11): a close stored because the air no longer helped is lifted once it is clearly drier again
 CLOSE_RELEASE_DELTA_G_M3 = 0.3
@@ -308,13 +336,32 @@ def temperature_limit_reached(room: RoomInput, options: dict[str, Any]) -> bool:
     return limit > 0.0 and room.reference_temperature < room.temperature and room.temperature <= limit
 
 
+def _goals_reached_close(room: RoomInput, options: dict[str, Any], *, co2_held: bool, cooling_still_useful: bool,
+                         urgent: bool, hold: bool) -> bool:
+    """K02: the room's goals are reached (``hold``: still within the existing humidity hysteresis, for the latch).
+
+    Humidity at or below ``target_rh`` (the raw reading – rounding never fakes a reached goal), no CO2 hold, no useful
+    cooling left, no urgent protection. Only for rooms that chose ``goals_reached``; never on missing readings.
+    """
+    if not options.get("room_close_on_goals") or urgent or co2_held or cooling_still_useful or room.co2_sensor_missing:
+        return False
+    target = float(options.get("target_rh", 55.0))
+    return room.humidity <= target + (VENTILATION_HYSTERESIS_RH if hold else 0.0)
+
+
 def _running_close(
     room: RoomInput, options: dict[str, Any], *, delta: float, mins: float, profile: str, candidate: bool, urgent: bool,
     co2_held: bool, source_drying_useful: bool, outdoor_blocked: bool, low_return: bool, cooling_still_useful: bool,
     comfort_cooling: bool, thermal_bad: bool, moisture_effect_next5: float, next5: float, min_return: float,
     sensor_confirmed: bool, close_decision_ready: bool,
-) -> tuple[bool, bool, bool]:
-    """(source keeps the window open, summer warming, close signal) of a running airing.
+) -> tuple[bool, bool, bool, str | None, tuple[bool, bool]]:
+    """(source keeps the window open, summer warming, close signal, goal close kind, goal facts) of a running airing.
+
+    Goal facts (C1): (goals reliably reached now, goals still inside the hysteresis band) – true facts of this
+    evaluation, also when another close cause (temperature limit) has priority.
+
+    The goal close kind is "reached" (goals reliably reached now), "held" (a stored goal close kept inside the
+    existing humidity hysteresis, R02) or None.
 
     0.26.7.0 (F11, owner decision): an airing is not ended because of a time, a reached humidity target, a small
     predicted return, a forecast plateau or a hidden thermal rule while drier reference air still takes moisture
@@ -345,9 +392,13 @@ def _running_close(
         and air_no_longer_helps
     )
     ready = running and close_decision_ready
+    # K02: an explicitly chosen goal close needs fresh, confirmed readings and the room's own minimum duration; a
+    # running or following-up moisture source keeps the window open (``source_keep_open`` below)
+    goal_close = (_goals_reached_close(room, options, co2_held=co2_held, cooling_still_useful=cooling_still_useful, urgent=urgent, hold=False)
+                  and sensor_confirmed and not room.measurements_stale and mins >= float(options["min_duration_min"]))
     if room.mechanical_only:
         # audit N04: CO2 keeps a fan running; a fan may run for hours – only air that no longer helps stops it
-        should_close = ready and not source_keep_open and (not room.close_notified or co2_held) and air_no_longer_helps and not co2_held
+        should_close = ready and not source_keep_open and (not room.close_notified or co2_held) and (air_no_longer_helps or goal_close) and not co2_held
     else:
         should_close = ready and not source_keep_open and (not room.close_notified or co2_held) and (
             summer_warming
@@ -357,17 +408,29 @@ def _running_close(
                 and not cooling_still_useful
                 and not co2_held
             )
+            or goal_close
         )
     # a stored close is lifted once the air clearly helps again (hysteresis against flapping) or proven cooling runs
     # – proven by confirmed, fresh readings only (stale or unconfirmed values never lift a close)
     drying_again = (delta >= close_delta + CLOSE_RELEASE_DELTA_G_M3 and moisture_effect_next5 > 0.0
                     and sensor_confirmed and not room.measurements_stale)
-    close_released = _close_released(drying_again, comfort_cooling and sensor_confirmed and not room.measurements_stale,
-                                     still_closing=air_no_longer_helps or summer_warming, within_duration=True)
+    # K02: a close stored because the goals were reached is not lifted only because the air is still drier – only when a
+    # goal opens again (humidity above the existing hysteresis, CO2 hold, useful cooling)
+    # B3 (0.26.7.1): only a close that was stored because the goals were really reached in this session holds inside
+    # the humidity hysteresis – a stored temperature/physical close never turns into "goals reached"
+    # C1 (IQ2): … or the goals were really reached earlier in this airing while another cause had priority
+    goals_latched = room.close_notified_kind in GOAL_CLOSE_KINDS or room.session_goals_reached
+    goal_band = _goals_reached_close(room, options, co2_held=co2_held, cooling_still_useful=cooling_still_useful, urgent=urgent, hold=True)
+    goal_hold = goals_latched and goal_band
+    # a benefit close is lifted by the coordinator on confirmed IQ2 forecasts, not by the drier air alone
+    benefit_latched = room.close_notified_kind == BENEFIT_CLOSE_KIND
+    close_released = _close_released(drying_again and not goal_hold and not benefit_latched, comfort_cooling and sensor_confirmed and not room.measurements_stale,
+                                     still_closing=air_no_longer_helps or summer_warming or goal_close, within_duration=True)
     # audit S01: CO2 needing the air again lifts an earlier close – the close is decided anew (protection limits still apply)
     close_latched = room.close_notified and not close_released and not co2_held
     close_signal = ready and ((not source_keep_open and (close_latched or should_close)) or temperature_limit)
-    return source_keep_open, summer_warming, close_signal
+    goal_kind = None if source_keep_open else "reached" if goal_close else "held" if close_latched and goal_hold else None
+    return source_keep_open, summer_warming, close_signal, goal_kind, (bool(goal_close and not source_keep_open), bool(goal_band))
 
 
 def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: bool) -> RoomResult:
@@ -429,7 +492,14 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     candidate = candidate or source_drying_useful
     running = room.session_active and room.contact_open
     bonus = 1.25 if cross_ventilation else 1.0
-    exchange_fraction_5 = min(room.learning_rate * 5 * bonus * min(max(room.airflow_factor, 0.5), 1.5), 0.85)
+    # IQ2: the 5-minute decision value uses the same exponential replacement as the forecast and the learning
+    airflow_bonus_5 = bonus * min(max(room.airflow_factor, 0.5), 1.5)
+    # iq2.net_fraction / iq2.relax for 5 minutes, written out: this runs for every room in every cycle (performance
+    # gate); tests/test_iq2_model_02671 pins that both give the same values
+    rate_5 = room.learning_rate
+    effective_5 = (0.0 if rate_5 < 0.0 else 0.95 if rate_5 > 0.95 else rate_5) * airflow_bonus_5
+    effective_5 = effective_5 if effective_5 < 0.95 else 0.95
+    exchange_fraction_5 = min(1.0 - (1.0 - effective_5) ** 5.0, 0.85)
     # Positive = moisture removed, negative = moisture added.
     moisture_effect_next5 = delta * room.volume_m3 * exchange_fraction_5
     next5 = max(moisture_effect_next5, 0.0)
@@ -454,7 +524,10 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     else:
         # Before a window is opened, estimate the 5-minute temperature effect
         # from the same learned exchanged-air fraction used for moisture.
-        dt = (room.reference_temperature - room.temperature) * exchange_fraction_5
+        share = room.thermal_air_share
+        share = 1e-3 if share < 1e-3 else 1.0 if share > 1.0 else share
+        kept = (1.0 - effective_5) ** (5.0 / share)
+        dt = share * (room.reference_temperature - room.temperature) * (1.0 - (0.05 if share >= 1.0 and kept < 0.05 else kept))
     physical_limit = room.reference_temperature - room.temperature
     dt = max(dt, physical_limit) if physical_limit < 0 else min(dt, physical_limit)
     efficiency = 999.0 if dt >= -0.05 else next5 / (abs(dt) * 10)
@@ -525,25 +598,41 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
     close_decision_ready = sensor_confirmed or model_fallback
     # Close decision of a running airing (P01, 0.26.5.5: only evaluated while the airing runs; for any
     # other room all three are False by definition, as before).
-    source_keep_open, summer_warming, close_signal = _running_close(
+    source_keep_open, summer_warming, close_signal, goal_kind, goal_facts = _running_close(
         room, options, delta=delta, mins=mins, profile=profile, candidate=candidate, urgent=urgent, co2_held=co2_held,
         source_drying_useful=source_drying_useful, outdoor_blocked=outdoor_blocked, low_return=low_return,
         cooling_still_useful=cooling_still_useful, comfort_cooling=comfort_cooling, thermal_bad=thermal_bad,
         moisture_effect_next5=moisture_effect_next5, next5=next5, min_return=min_return, sensor_confirmed=sensor_confirmed,
         close_decision_ready=close_decision_ready,
-    ) if running else (False, False, False)
+    ) if running else (False, False, False, None, (False, False))
 
+    benefit_close_ready = bool(
+        running and options.get("room_close_on_goals") and not room.mechanical_only and not source_keep_open
+        and not room.moisture_source_active and not room.moisture_source_recovery and not co2_held and not urgent
+        and not cooling_still_useful and not comfort_cooling and mins >= float(options["min_duration_min"])
+        and delta > float(options.get("close_delta", 0.4)) and moisture_effect_next5 > 0
+        and not temperature_limit_reached(room, options) and not goal_facts[0]
+    )
+    close_kind = None
     if close_signal:
-        if model_fallback and future_moisture_risk_15:
-            action, reason = "Close", "Sensor updates are missing; forecast indicates the drying advantage will soon be lost"
+        # B1 (0.26.7.1): the user's explicit temperature limit is the protective cause whenever it is reached (and no
+        # critical CO2 keeps the window open) – independent of the delta of the opening the room model happened to use
+        if temperature_limit_reached(room, options) and not urgent:
+            action, reason, close_kind = "Close", TEMPERATURE_LIMIT_CLOSE_REASON, "temperature_limit"
+        elif model_fallback and future_moisture_risk_15:
+            action, reason, close_kind = "Close", "Sensor updates are missing; forecast indicates the drying advantage will soon be lost", "model_fallback"
         elif model_fallback:
-            action, reason = "Close", "Sensor updates are missing; model indicates additional ventilation benefit is too low"
+            action, reason, close_kind = "Close", "Sensor updates are missing; model indicates additional ventilation benefit is too low", "model_fallback"
         elif summer_warming:
-            action, reason = "Close", SUMMER_WARMING_CLOSE_REASON
-        elif temperature_limit_reached(room, options) and delta > float(options.get("close_delta", 0.4)):
-            action, reason = "Close", TEMPERATURE_LIMIT_CLOSE_REASON
+            action, reason, close_kind = "Close", SUMMER_WARMING_CLOSE_REASON, "summer_warming"
+        elif goal_kind == "reached" and delta > float(options.get("close_delta", 0.4)):
+            action, reason, close_kind = "Close", GOALS_REACHED_CLOSE_REASON, "goals_reached"
+        elif goal_kind == "held" and delta > float(options.get("close_delta", 0.4)):
+            action, reason, close_kind = "Close", GOALS_HELD_CLOSE_REASON, "goals_held"
+        elif room.close_notified_kind == BENEFIT_CLOSE_KIND and delta > float(options.get("close_delta", 0.4)) and next5 > 0:
+            action, reason, close_kind = "Close", BENEFIT_EXHAUSTED_CLOSE_REASON, BENEFIT_CLOSE_KIND
         else:
-            action, reason = "Close", AIR_NO_LONGER_HELPS_CLOSE_REASON
+            action, reason, close_kind = "Close", AIR_NO_LONGER_HELPS_CLOSE_REASON, "air_no_longer_helps"
     elif running:
         if source_keep_open:
             action, reason = "Continue ventilating", f"Active internal moisture source ({room.moisture_source_label}); ventilation is offsetting ongoing moisture generation"
@@ -595,7 +684,8 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
         close_recommended=bool(close_signal),
         result_ml=round(result_ml),
         water_in_air_ml=round(ah * room.volume_m3),
-        cooling_candidate=cooling_candidate, comfort_cooling_active=bool(comfort_cooling and action == "Continue ventilating"),
+        cooling_candidate=cooling_candidate, comfort_cooling_active=bool(comfort_cooling and action == "Continue ventilating"), close_kind=close_kind,
+        goals_reached_now=goal_facts[0], goals_in_band=goal_facts[1], benefit_close_ready=benefit_close_ready,
         moisture_effect_next_5_min_ml=round(moisture_effect_next5),
         ventilation_candidate=candidate, co2_airing=co2_airing, co2_sensor_missing=room.co2_sensor_missing,
         fresh_measurements=fresh_measurements,
@@ -672,7 +762,11 @@ def update_learning(
     """Port the V14.2.1 learning validation and smoothing rules."""
     start_delta = start_ah - source_ah
     reduction = start_ah - end_ah
-    raw = reduction / start_delta / elapsed_min if elapsed_min > 0 and start_delta != 0 else 0.0
+    # IQ2: exact inverse of the exponential forward model (was the linear short-time approximation
+    # reduction / start_delta / minutes, which made the same real rate look smaller the longer an airing lasted)
+    removed = reduction / start_delta if start_delta != 0 else 0.0
+    saturated = removed >= SATURATION_LIMIT
+    raw = 1.0 - (1.0 - removed) ** (1.0 / elapsed_min) if elapsed_min > 0 and 0.0 < removed < 1.0 else 0.0
 
     if not learning_enabled:
         return old_rate, old_samples, f"Paused: learning disabled · {elapsed_min:.1f} min", False
@@ -684,6 +778,8 @@ def update_learning(
         return old_rate, old_samples, f"Rejected: start delta {start_delta:.2f} g/m³ ≤ 0.50", False
     if reduction <= 0.05:
         return old_rate, old_samples, f"Rejected: humidity reduction {reduction:.2f} g/m³ ≤ 0.05", False
+    if saturated:
+        return old_rate, old_samples, f"Rejected: room reached {removed * 100:.0f} % of the reference difference; the exchange rate is not identifiable", False
     if raw < 0.002:
         return old_rate, old_samples, f"Rejected: learning rate {raw:.4f}/min < 0.002", False
     if raw > 0.25:

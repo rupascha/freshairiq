@@ -8,9 +8,9 @@ from __future__ import annotations
 from typing import Any
 from math import isfinite
 
-from .close_wording import airing_running, close_instruction, fan_only, keep_instruction
+from .close_wording import airing_running, close_cause, close_instruction, fan_only, keep_instruction
 from .consolidation import moisture_coming_in, opening_phase_protected, planned_target_min
-from .model import min_return_volume_factor
+from .model import co2_release_ppm, min_return_volume_factor
 
 
 def _f(value: Any, default: float = 0.0) -> float:
@@ -56,7 +56,7 @@ def refine_live_recommendation(
         out = dict(recommendation)
         out["live_coach"] = True
         out["live_coach_state"] = "close"
-        out["live_coach_reason"] = "Physikalisches Schließkriterium erreicht"
+        out["live_coach_reason"] = close_cause(active)[1] or "Physikalisches Schließkriterium erreicht"  # R07: the real cause
         # Hotfix 0.19.1.1: a close recommendation is an immediate action.  Do
         # not leave a stale positive remaining time from the previous house
         # target in the dashboard (e.g. "Jetzt schließen" and "1 min bis Ziel"
@@ -273,15 +273,17 @@ def _coach_close_or_extend(
         out["reasons"] = reasons[:6]
         return out
 
-    out = dict(recommendation)
+    reassessing = remaining <= 0.35 and not fans_only  # R07: target passed, air helps – no "0 min"; N1: the real reason
+    out, reason = dict(recommendation), (_reassess_reason(active, next5, options) if reassessing else reason)
     out.update({
         "instruction": keep_instruction(active, None if fans_only or remaining <= 0.35 else remaining),  # F11: no time-limit countdown
-        "duration_min": round(remaining, 1),
+        "duration_min": None if reassessing else round(remaining, 1),
         "estimated_removed_ml": round(next5),
         "live_coach": True, "live_coach_state": state,
         "live_coach_reason": reason, "live_coach_target_min": round(target, 1),
         "live_coach_baseline_target_min": round(baseline_target, 1),
-        "live_coach_remaining_min": round(remaining, 1),
+        "live_coach_remaining_min": None if reassessing else round(remaining, 1), "live_coach_time_state": "reassessing" if reassessing else "countdown",
+        "live_coach_time_reason": _open_time_reason(active, options) if reassessing else None,
         "live_coach_progress_ratio": round(progress_ratio, 2),
         "live_coach_actual_removed_ml": round(actual_removed),
         "live_coach_expected_now_ml": round(expected_now),
@@ -290,10 +292,67 @@ def _coach_close_or_extend(
         "live_coach_confidence": confidence,
         "live_coach_feedback_samples": feedback_samples,
     })
-    reasons = list(out.get("reasons") or [])
-    reasons.insert(0, reason)
-    out["reasons"] = reasons[:6]
+    out["reasons"] = [reason, *(out.get("reasons") or [])][:6]
     return out
+
+
+def _co2_reason(active: list[dict[str, Any]], options: dict[str, Any]) -> str | None:
+    """The CO2 clause when CO2 is what keeps a window open (critical, or the CO2 goal of a room is still open)."""
+    critical = _f(options.get("co2_critical"), 1400.0)
+    for room in active:
+        if not bool(room.get("co2_available", room.get("co2") is not None)):
+            continue
+        ppm = _f(room.get("co2"))
+        goals = (room.get("goal_state") or {}).get("goals") if isinstance(room.get("goal_state"), dict) else []
+        open_goal = any(isinstance(g, dict) and g.get("id") == "co2" and g.get("active") and not g.get("reached") for g in goals or [])
+        if ppm >= critical:
+            return f"weitergelüftet wird wegen CO₂ ({round(ppm)} ppm, kritisch ab {round(critical)} ppm)"
+        if open_goal:
+            return f"weitergelüftet wird wegen CO₂ ({round(ppm)} ppm, Freigabe unter {round(co2_release_ppm(options))} ppm)"
+    return None
+
+
+def _reassess_reason(active: list[dict[str, Any]], next5: float, options: dict[str, Any]) -> str:
+    """Why an airing past its planned time goes on – the goal that really keeps it open and the measured facts.
+
+    N1: no standing positive phrase. C2 (IQ2): CO2, cooling or a running moisture source is named as the reason; air
+    that is not drier is never described as "still drier".
+    """
+    delta = max((_f(r.get("delta_g_m3")) for r in active), default=0.0)
+    changes = [_f(r.get("temperature_change_c")) for r in active if r.get("temperature_change_c") is not None]
+    parts = ["Geplante Zeit erreicht"]
+    cause = _co2_reason(active, options)
+    if cause is None and any(r.get("comfort_cooling_active") for r in active):
+        cause = "weitergelüftet wird zum Kühlen"
+    if cause is None and any(r.get("moisture_source_active") for r in active):
+        cause = "eine Feuchtequelle ist noch aktiv"
+    if cause is not None:
+        parts.append(cause)
+    if delta > 0:
+        parts.append(f"die Außenluft ist noch {delta:.1f} g/m³ trockener (nächste 5 min etwa {max(round(next5), 0)} ml)")
+    else:
+        parts.append(f"die Außenluft ist {abs(delta):.1f} g/m³ feuchter als die Raumluft und entfeuchtet gerade nicht")
+    if changes:
+        parts.append(f"Raum {min(changes):+.1f} °C seit Start")
+    return " – ".join(("; ".join(parts), "FreshAirIQ bewertet jeden Zyklus neu"))
+
+
+def _open_time_reason(active: list[dict[str, Any]], options: dict[str, Any]) -> str:
+    """Why no remaining time can be given: what keeps the airing open and what ends it (no time is invented)."""
+    cause = _co2_reason(active, options)
+    if cause is None and any(r.get("comfort_cooling_active") for r in active):
+        cause = "weitergelüftet wird zum Kühlen"
+    if cause is None and any(r.get("moisture_source_active") for r in active):
+        cause = "eine Feuchtequelle ist noch aktiv"
+    if cause is None:
+        checked = [r for r in active if r.get("close_benefit_threshold_ml") is not None and r.get("forecast_5_min_benefit_ml") is not None]
+        if checked:
+            room = min(checked, key=lambda r: _f(r.get("forecast_5_min_benefit_ml")) - _f(r.get("close_benefit_threshold_ml")))
+            cause = (f"geschlossen wird, sobald zwei neue Messungen unter {round(_f(room.get('close_benefit_threshold_ml')))} ml "
+                     f"in 5 min liegen (jetzt etwa {max(round(_f(room.get('forecast_5_min_benefit_ml'))), 0)} ml)")
+        else:
+            cause = "geschlossen wird, sobald die Außenluft nicht mehr trocknet"
+    return f"Restzeit nicht bestimmbar – {cause}"
 
 
 _CLOSE_STATES = frozenset({"close", "protection_close"})
@@ -321,3 +380,56 @@ def align_live_coach_state(recommendation: dict[str, Any]) -> None:
     elif kind == "close" and state not in _CLOSE_STATES:
         recommendation["live_coach_state"] = "close"
         recommendation["live_coach_remaining_min"] = 0.0
+
+
+def r07_time_fields(recommendation: dict[str, Any], results: Any, *, active: bool, remaining: float | None,
+                    displayed_recommended: Any, max_elapsed: float) -> dict[str, Any]:
+    """R07 (0.26.7.2): initial estimate, remaining time, total session and close reason as separate, additive values.
+
+    ``remaining_duration_state``: ``plan`` (no airing runs), ``countdown`` (an honest remaining time), ``reassessing``
+    (target time passed, the air still helps – reassessed every cycle, no countdown), ``close`` / ``overrun`` (close
+    now; a negative remaining time is the intended overrun beyond the target, never a reason to close by itself).
+    """
+    kind = str(recommendation.get("kind") or "")
+    if not active:
+        state = "plan"
+    elif kind == "close":
+        state = "overrun" if remaining is not None and remaining < 0 else "close"
+    else:
+        state = "reassessing" if remaining is None else "countdown"
+    rooms = [results.get(k) for k in (recommendation.get("room_keys") or [])] if isinstance(results, dict) else []
+    return {
+        "remaining_duration_state": state,
+        "initial_duration_estimate_min": recommendation.get("live_coach_baseline_target_min") if active else displayed_recommended,
+        "session_total_min": round(float(max_elapsed), 1) if active else None,
+        "close_reason_kind": close_cause(rooms)[0] if kind == "close" else None,
+        "remaining_duration_reason": recommendation.get("live_coach_time_reason") if state == "reassessing" else None,
+    }
+
+
+def room_time_fields(rooms: Any, house_time: Any, min_duration_min: float) -> None:
+    """IQ2 (0.26.7.1): one time meaning per aired room, written by the integration and read by both cards.
+
+    ``time_state``: ``close`` (close now), ``countdown`` (``time_remaining_min`` minutes of the house plan are left),
+    ``minimum`` (the room's own minimum duration still runs – rooms opened later keep their own clock),
+    ``reassessing`` (the plan is over, the airing is reassessed every cycle; no remaining time). Rooms that are not
+    aired have no time state. A card never derives a remaining time from an old plan again.
+    """
+    house = house_time if isinstance(house_time, dict) else {}
+    countdown = _f(house.get("remaining_duration_min"), -1.0) if house.get("remaining_duration_state") == "countdown" else -1.0
+    for room in (rooms.values() if isinstance(rooms, dict) else []):
+        if not isinstance(room, dict):
+            continue
+        if not airing_running(room) or room.get("data_quality") != "ok":
+            room["time_state"], room["time_remaining_min"] = None, None
+            continue
+        own_left = max(float(min_duration_min) - _f(room.get("session_elapsed_min")), 0.0)
+        if str(room.get("action") or "") == "Close":
+            room["time_state"], room["time_remaining_min"] = "close", 0.0
+        elif countdown > 0.35:
+            room["time_state"], room["time_remaining_min"] = "countdown", round(max(countdown, own_left), 1)
+        elif own_left > 0.35:
+            room["time_state"], room["time_remaining_min"] = "minimum", round(own_left, 1)
+        else:
+            room["time_state"], room["time_remaining_min"] = "reassessing", None
+

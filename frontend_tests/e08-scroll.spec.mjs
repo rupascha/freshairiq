@@ -292,10 +292,17 @@ test('overlays Android WebView: a trusted touch swipe scrolls the room list insi
 const popoverOpen = (page, selector) => page.locator('#card').evaluate((card, s) => {
   const el = card.shadowRoot.querySelector(s); return !!el && el.hasAttribute('popover') && el.matches(':popover-open');
 }, selector);
+// Q01: a dialog whose whole content already fits has nothing to scroll (Chromium: scrollHeight 766 = clientHeight 766) –
+// it passes when its content is completely visible, or when the overflow it needs can be scrolled to its very end; in both
+// cases the dialog lies inside the viewport and its last content is not cut off
 const scrollsToEnd = (page, selector) => page.locator('#card').evaluate((card, s) => {
   const el = card.shadowRoot.querySelector(s); el.scrollTop = el.scrollHeight;
   const box = el.getBoundingClientRect();
-  return el.scrollHeight > el.clientHeight && Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1 && Math.round(box.bottom) <= innerHeight;
+  const fits = el.scrollHeight <= el.clientHeight + 1;
+  const scrollable = ['auto', 'scroll', 'overlay'].includes(getComputedStyle(el).overflowY);
+  const end = fits || (scrollable && Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1);
+  const last = el.lastElementChild ? el.lastElementChild.getBoundingClientRect() : box;
+  return end && Math.round(last.bottom) <= Math.round(box.bottom) + 1 && box.top >= 0 && Math.round(box.bottom) <= innerHeight;
 }, selector);
 for (const [label, width, height] of [['iPhone', 390, 844], ['Desktop', 1440, 900]]) {
   for (const theme of ['freshairiq', 'auto']) {
@@ -322,4 +329,85 @@ for (const [label, width, height] of [['iPhone', 390, 844], ['Desktop', 1440, 90
       expect(errors).toEqual([]);
     });
   }
+}
+
+// Q01 control: the end check accepts a dialog whose content fits completely and still fails for content that is really cut off
+test('#20 Q01 control: complete content passes without overflow, cut-off content fails', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1400 });   // tall enough that the support content fits without scrolling
+  const errors = await mountRooms(page, 30, { wrap: 'transform:translateZ(0);overflow:hidden;height:360px' });
+  await page.locator('#support').click();
+  await page.waitForTimeout(80);
+  const size = await page.locator('#card').evaluate(card => {
+    const el = card.shadowRoot.querySelector('.subdialog'); return { scroll: el.scrollHeight, client: el.clientHeight };
+  });
+  expect(size.scroll).toBeLessThanOrEqual(size.client + 1);
+  expect(await popoverOpen(page, '.submodal')).toBe(true);
+  expect(await coversScreen(page, '.submodal')).toBe(true);
+  expect(await scrollsToEnd(page, '.subdialog')).toBe(true);
+  await page.locator('#card').evaluate(card => {   // cut off: not scrollable any more and taller than its box
+    const el = card.shadowRoot.querySelector('.subdialog'); el.style.overflowY = 'hidden'; el.style.maxHeight = '120px';
+  });
+  expect(await scrollsToEnd(page, '.subdialog')).toBe(false);
+  await page.locator('#card').evaluate(card => {   // pushed below the viewport
+    const el = card.shadowRoot.querySelector('.subdialog'); el.style.overflowY = ''; el.style.maxHeight = ''; el.style.transform = 'translateY(900px)';
+  });
+  expect(await scrollsToEnd(page, '.subdialog')).toBe(false);
+  await page.locator('#card').evaluate(card => { card.shadowRoot.querySelector('.subdialog').style.transform = ''; });
+  await page.locator('#info-close').click();
+  expect(await openOverlays(page)).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+// Support case of installation 29 (0.26.7.0): the eight rooms of that home in their order and volumes; the door
+// geometry between bedroom and bathroom is not part of it (no floor plan was stored).
+const SUPPORT_29_ROOMS = [['badezimmer', 'Badezimmer', 20], ['schlafzimmer', 'Schlafzimmer', 36], ['buro', 'Büro', 62],
+  ['wohnzimmer_kuche', 'Wohnzimmer-Küche', 122], ['flur', 'Flur', 43], ['waschkuche', 'Waschküche', 9], ['abstellraum', 'Abstellraum', 9],
+  ['gaste_wc', 'Gäste-WC', 4]];
+
+async function mountSupport29(page) {
+  const errors = [];
+  page.on('pageerror', err => errors.push(String(err)));
+  await loadCard(page, '<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main><freshairiq-card id="card"></freshairiq-card><div style="height:1200px"></div></main></body></html>');
+  await page.evaluate(rows => {
+    const actions = { schlafzimmer: 'Continue ventilating', flur: 'Do not ventilate' };
+    const rooms = Object.fromEntries(rows.map(([key, name, volume], i) => [key, { key, name, floor: 'Wohnung', sort_order: i, volume_m3: volume,
+      calculation_enabled: true, data_quality: 'ok', temperature: 20.5, humidity: 55, absolute_humidity: 9.8, action: actions[key] || 'Wait',
+      potential_ml: 40 + i, surface_rh: 66, mould_level: 'Low', active: key === 'schlafzimmer' }]));
+    const status = { entity_id: 'sensor.freshairiq_status', state: 'ok', attributes: {
+      freshairiq_transport: 'status_v2', rooms, room_sort_order: rows.map(r => r[0]), diagnostics: { retention_days: 30 } } };
+    const card = document.getElementById('card');
+    card.setConfig({});
+    card.hass = { states: { [status.entity_id]: status } };
+  }, SUPPORT_29_ROOMS);
+  await page.waitForTimeout(80);
+  return errors;
+}
+
+for (const [label, width, height] of [['iPhone', 390, 844], ['iPhone SE', 375, 667], ['Desktop', 1440, 900]]) {
+  test(`E08 ${label}: support case 29 – Back from a room returns to the room list at the same place, also after live updates`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    const errors = await mountSupport29(page);
+    await page.locator('#rooms').click();
+    await expect(page.locator('.subdialog article.room')).toHaveCount(SUPPORT_29_ROOMS.length);
+    for (const key of ['gaste_wc', 'schlafzimmer', 'waschkuche']) {
+      const room = page.locator(`.subdialog article.room[data-room="${key}"]`);
+      await room.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(50);
+      const before = await listTop(page);
+      const offsetBefore = await roomOffset(page, key);
+      await room.click();
+      await expect(page.locator('.subdialog .room-detail h3')).toBeVisible();
+      await pushLiveUpdate(page);
+      await page.locator('#info-back').click();
+      await expect(page.locator('.subdialog article.room').first()).toBeVisible();   // Back leads to the list, not out of the dialog
+      await page.waitForTimeout(400);
+      expect(await listTop(page)).toBe(before);
+      expect(await roomOffset(page, key)).toBe(offsetBefore);
+      expect(await page.locator('.submodal').evaluate(el => el.matches(':popover-open'))).toBe(true);
+    }
+    const userTop = await listTop(page);
+    await pushLiveUpdate(page);
+    expect(await listTop(page)).toBe(userTop);                                         // a live update never moves the list
+    expect(errors).toEqual([]);
+  });
 }

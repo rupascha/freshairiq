@@ -20,6 +20,10 @@ async def test_regressing_learning_uses_the_base_rate_in_the_room_decision(hass,
 
     async def effect(rate: float) -> tuple[float, float]:
         mem.update(learning_rate=rate, learning_samples=40)
+        # Testvermerk 0.26.7.1 (IQ2): the room's rate in force comes from its IQ2 state, which is seeded once from the
+        # earlier learning. The test writes the "learned" rate straight into the stored room, so the state is dropped
+        # and seeded again from it (as on the first run after the update).
+        mem.pop("iq2", None)
         for model in (mem.get("opening_learning") or {}).values():
             model["samples"] = 0
         await d.step(10)

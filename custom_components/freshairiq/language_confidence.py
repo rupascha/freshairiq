@@ -320,7 +320,9 @@ def adapt_language_confidence(
     # the action summary there; for idle/start recommendations it can lead.
     confidence_text = (lead + qualifier).strip()
     if kind in {"continue", "close"}:
-        summary = (original_summary + " " + confidence_text).strip()
+        # IQ2 (0.26.7.1): two sentences are never glued without a full stop ("… erreicht FreshAirIQ arbeitet …")
+        ended = original_summary if not original_summary or not confidence_text or original_summary[-1] in ".!?…" else original_summary + "."
+        summary = (ended + " " + confidence_text).strip()
     else:
         summary = (confidence_text + " " + original_summary).strip()
 

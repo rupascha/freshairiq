@@ -8,7 +8,7 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any
 
-from .close_wording import airing_running, close_instruction, fan_only, keep_instruction
+from .close_wording import airing_running, benefit_close, close_instruction, fan_only, goal_close, keep_instruction, protective_close
 from .model import min_return_volume_factor
 
 
@@ -296,7 +296,8 @@ def stabilise_recommendation(
     calculated = [r for r in rooms.values() if r.get("calculation_enabled", True)]
     valid = [r for r in calculated if r.get("data_quality") == "ok"]
     active = [r for r in valid if airing_running(r)]  # not a room in its final measurement after closing
-    closing = [r for r in active if (r.get("close_recommended") or str(r.get("action")) == "Close") and not r.get("moisture_source_active")]
+    closing = [r for r in active if (r.get("close_recommended") or str(r.get("action")) == "Close")
+               and (not r.get("moisture_source_active") or protective_close(r))]  # R01: the limit closes beside a source
     max_duration = _f(options.get("max_duration_min"), 20.0)
     tolerated_long_open = [
         r for r in active
@@ -305,6 +306,7 @@ def stabilise_recommendation(
         and not fan_only(r)  # 0.26.4.10: a long-running fan is no tilted window
         # F11: only a room that itself says Close – a room that still dries keeps "continue" at any time
         and (bool(r.get("close_recommended")) or str(r.get("action")) == "Close")
+        and not protective_close(r)  # R09: a released temperature limit is never tolerated as a long opening
         and _f(r.get("session_elapsed_min")) >= max_duration + 10.0
         and _f(r.get("temperature_change_c")) > -1.5
         and _f(r.get("delta_g_m3")) >= -0.2
@@ -372,7 +374,8 @@ def _active_session_invariant(
     """An already running ventilation session (or moisture source) stays the authoritative action."""
     # Final real-time invariant: an already open ventilation session must never
     # be turned into a future wait/prepare/okay action by a later prediction layer.
-    source_running = [r for r in active if r.get("moisture_source_active") and _f(r.get("delta_g_m3")) > _f(options.get("close_delta"), 0.4)]
+    source_running = [r for r in active if r.get("moisture_source_active") and _f(r.get("delta_g_m3")) > _f(options.get("close_delta"), 0.4)
+                      and not protective_close(r)]  # R01: a source room whose temperature limit is released closes
     # 0.26.5.5 (audit F03): a source room never hides the close of another room; both are kept
     # (close the others, keep the source rooms open). ``closing`` holds no source room.
     if source_running and not closing:
@@ -413,7 +416,10 @@ def _active_session_invariant(
         # 0.26.7.0 (F11): no maximum duration – time never makes a close "hard"
         hard_closing = [
             r for r in closing
-            if (
+            # R09 (0.26.7.2): the user's released temperature limit is a protective close the aggregate keeps;
+            # IQ2 (0.26.7.1): so is a close on reliably reached goals – a still drier air is no reason against it – and
+            # the room's confirmed close on an exhausted benefit
+            if protective_close(r) or goal_close(r) or benefit_close(r) or (
                 profile != "summer_cooling"
                 and _f(r.get("forecast_5_min_temperature_change_c", r.get("temp_next_5_min_c"))) <= -max_temp_loss
                 and _f(r.get("efficiency_ml_per_01c"), 999.0) < min_efficiency

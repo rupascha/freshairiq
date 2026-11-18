@@ -25,7 +25,9 @@ def _clamp(value: float, low: float, high: float) -> float:
 
 
 def season_key(when: datetime) -> str:
-    """Meteorological season; simple and location-independent."""
+    """Meteorological season of the local calendar month (northern hemisphere: Dec–Feb winter, Mar–May spring,
+    Jun–Aug summer, Sep–Nov autumn). N2 (0.26.7.1): the month mapping is fixed – it is not location-dependent and does not
+    adapt to the southern hemisphere; ``when`` is Home Assistant's local time."""
     m = int(when.month)
     if m in (12, 1, 2):
         return "winter"

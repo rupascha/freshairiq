@@ -53,13 +53,18 @@ async def test_new_room_starts_from_the_start_model_and_learns_from_there(hass, 
     session = sessions[-1]
     observation = session["learning_observation"]
     assert observation["rate_before"] == 0.045 and observation["samples_before"] == 0
-    # learned from the start value (0.045 → 0.044 towards the measured 0.040), not from the old 0.03
-    assert mem["learning_samples"] == 1 and mem["learning_rate"] == 0.044
-    assert observation["usable"] is True and observation["observed_rate_per_min"] == 0.03996
+    # learned from the start value, not from the old 0.03.
+    # Testvermerk 0.26.7.1 (IQ2, cause 4.1 of the order): the observed rate is the exact inverse of the exponential
+    # model now. Same airing (16.574 → 11.715 g/m³ against 7.22 g/m³ in 13 min = 51.9 % of the difference):
+    # 1 − (1 − 0.5194)^(1/13) = 0.0548 per minute; the earlier linear 0.5194 / 13 = 0.03996 understated it. The learned
+    # value therefore moves from 0.045 up to 0.047 (was: down to 0.044).
+    assert mem["learning_samples"] == 1 and mem["learning_rate"] == 0.047
+    assert observation["usable"] is True and observation["observed_rate_per_min"] == 0.05481
+    assert observation["rate_inversion"] == "exponential"
     # a learned room keeps its own value when the start model is withdrawn; unlearned ways of airing go back
     monkeypatch.setattr(coordinator_room_model, "START_MODEL", validate(None))
     await d.step(60)
-    assert d.mem("bad")["learning_rate"] == 0.044 and d.mem("bad")["opening_learning"]["tilted"]["rate"] == 0.015
+    assert d.mem("bad")["learning_rate"] == 0.047 and d.mem("bad")["opening_learning"]["tilted"]["rate"] == 0.015
 
 
 async def test_without_a_start_model_nothing_changes(hass, freezer, monkeypatch) -> None:
@@ -68,8 +73,10 @@ async def test_without_a_start_model_nothing_changes(hass, freezer, monkeypatch)
     mem = d.mem("bad")
     assert mem["learning_rate"] == 0.03 and "start_model" not in mem
     await _bath_airing(d)
+    # Testvermerk 0.26.7.1 (IQ2): one additive key marks how the observed rate was computed ("exponential")
     assert set(sessions[-1]["learning_observation"]) == {
-        "observed_rate_per_min", "usable", "start_ah", "end_ah", "source_ah", "elapsed_min", "rate_before", "samples_before"}
+        "observed_rate_per_min", "usable", "start_ah", "end_ah", "source_ah", "elapsed_min", "rate_before", "samples_before",
+        "rate_inversion"}
 
 
 async def test_a_tilted_window_without_tilt_learning_uses_the_tilt_start_value(hass, freezer, monkeypatch) -> None:

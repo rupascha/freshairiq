@@ -40,7 +40,8 @@ def test_uncertain_and_stale_are_not_promoted_by_room_only_fallback():
 def test_frontend_does_not_claim_non_scored_comparison_is_learning_blocked():
     js = (COMP / "frontend" / "freshairiq-card.js").read_text(encoding="utf-8")
     assert "dieser Vergleich ist für Prognoselernen gesperrt" not in js
-    assert "Keine Genauigkeitswertung · Messdaten nicht streng genug synchronisiert" in js
+    assert "Keine Genauigkeitswertung · ${exclusionReason}" in js
+    assert "Messdaten nicht streng genug synchronisiert" not in js
     assert "für Genauigkeitswertung verwertbar" in js
 
 

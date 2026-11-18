@@ -1,3 +1,95 @@
+## 0.26.7.1
+
+Hotfix after 0.26.7.0. No change to entity IDs, services, events or the room action contract; new fields are optional
+and additive. This release contains the work packages delivered internally as 0.26.7.1 and 0.26.7.2 (never published);
+the public version number is 0.26.7.1.
+
+### IQ2 – forecast, learning and decision model (active)
+- Model: the exponential forward model and its inverse are consistent now. The earlier linear inversion made the same
+  real exchange rate look smaller the longer an airing lasted (0.0296 → 0.0279 / 0.0226 / 0.0139 at 5 / 20 / 60 min);
+  learning (`update_learning`), the start model (`observed_exchange_rate`, marker `rate_inversion: "exponential"`) and
+  the 5-minute decision value use the exact form. The room air relaxes towards an equilibrium between outdoor air and
+  the room's buffer (air share); the same form models the thermal mass. Details, parameters and limits: `docs/IQ2.md`.
+- Learning: shipped start value → house → room and way of airing, one bounded vote per valid airing, parallel rooms
+  count once for the house, a memory of 12 airings; the earlier learning stays as the reference and seeds IQ2 weakly.
+  A room whose scored forecasts are clearly worse than the reference falls back to it (`iq2.level = "rollback"`).
+  Fan-only airings keep their exhaust model.
+- Forecast quantities are separate and additive: `forecast_net_room_change_ml` (main value on the card),
+  `forecast_outdoor_transport_ml`, `forecast_to_target_ml`, `forecast_interval_ml`, `forecast_quality` /
+  `forecast_quality_state`, `forecast_scored_airings`, room `iq2`. The target-limited value stays available; a
+  target-limited 0 ml alone never closes. An interval is shown only after calibration – never a percentage from the
+  sample count ("Prognosesicherheit" is now "Lernreife").
+- Decision: the default close strategy is "close once the goals are reached" (owner decision of 15.11.2026); the room
+  option "keep drying while the outdoor air takes moisture out" (`keep_drying`) keeps the F11 behaviour. A stored
+  former default (`continue_while_drying`, written by test builds with every room save) counts as "nothing chosen".
+  The house aggregate keeps a goal close instead of "the combined return is still relevant" – rooms saying "goals
+  reached" beside a house saying "do not close yet" is fixed. The fan automation stops at the reached goal with the
+  default and at its maximum runtime with `keep_drying`.
+- C1: goals reached in the same cycle as the temperature limit are remembered for the airing
+  (`session_goals_reached`); after warming the close is held as "goals reached during this airing" inside the
+  hysteresis. A goal that was never reached is never claimed.
+- C2: past the planned time the live coach names what keeps the window open (CO₂ with its level, cooling, a running
+  moisture source); outdoor air that is more humid is never called "still drier".
+- Time: every aired room carries its own `time_state` (`close`, `countdown`, `minimum`, `reassessing`) and
+  `time_remaining_min`; the house card no longer derives a remaining time from an old plan.
+- The summary no longer glues the action sentence and the learning sentence together without a full stop.
+- Shadow production formula id: `start-curve-v3-horizon-forecast-r3`.
+- Comparison tool `tools/iq2_compare.py` (actual models of several source trees on identical synthetic houses).
+
+### Follow-up order (B1–B3, N1–N2)
+- B1: an explicit temperature limit while airing is the close kind whenever it is reached (no critical CO₂) – also when
+  the room model used a poor opening (two open paths). The opening overlay ("keep the good window open") and the
+  presentation alignment never turn such a close into "keep ventilating".
+- B3: a stored close keeps its cause for the session (`close_notified_kind`, additive room memory). Only a close stored
+  because the goals were really reached is held inside the humidity hysteresis; a temperature close is re-decided
+  after warming and never presented as "goals reached". Older stored data without a cause claims no reached goal.
+- B2: feedback – receipt, cooldown and button state belong to the entry that was sent; another entry shown when the
+  answer arrives keeps its own state. The cooldown is kept per entry (15-minute rule unchanged).
+- N1: the IQ time shows "0 min" only for a real close; a running airing at 0 or unknown time is "being reassessed".
+  A forecast limited at the humidity target also shows the physical value; "Forecast end point" is named as such.
+  Past the planned time the live coach names the measured reason (drier air, next 5 minutes, temperature change).
+- N2: season cards name observed days, the minimum amount and missing start/end coverage separately (additive
+  `covers_start`, `covers_end`, `min_days`); 60 days alone never complete or switch a season. Spacing of the long-term
+  learning texts fixed.
+
+### Stabilisation (R01–R09)
+- R01: a running moisture source no longer hides a close released by the user's explicit temperature limit while
+  airing (global or per room). The room model states the close kind (`close_kind`: `temperature_limit`,
+  `goals_reached`, `goals_held`, `air_no_longer_helps`, `summer_warming`, `model_fallback`); only the temperature limit
+  overrules the source – every other close keeps its behaviour, critical CO₂ keeps its priority.
+- R02: a goal close held inside the existing humidity hysteresis keeps its true reason ("goals reached during this
+  airing; the close stays until humidity rises above target + 2 %") instead of "the air is hardly drier".
+  Fan push texts name the real cause for temperature-limit and goal closes.
+- R03: feedback – a delayed confirmation clears only the draft that was sent and is unchanged (entry, type, text,
+  revision); text typed meanwhile, another type or another entry is kept. A second click on the same draft while it is
+  on its way sends nothing.
+- R04: the house map's support window uses the same feedback draft store as the dashboard card.
+- R07: times – past the target time with air that still helps the time is "being reassessed" (no "0 min" countdown,
+  never the coarse house table); a negative remaining time at a close is shown as time over target. New additive
+  fields `remaining_duration_state`, `initial_duration_estimate_min`, `session_total_min`, `close_reason_kind`. The
+  live coach and the explanation name a temperature-limit or goal close as such.
+- R08: the forecast backtest keeps records of the earlier validation basis (explicit `validation_version` < 3) out of
+  today's room reliability, like the validation summary (`previous_basis_record_count`, additive).
+- R09: the final house consolidation keeps a released temperature-limit close (aggregate return, long-opening
+  tolerance, running moisture source) – also beside a second source room that stays open.
+
+### Order of 15.11.2026 (K01, K02, U01–U05)
+
+- K01: the CO₂ goal follows the same entry/exit band as the CO₂ recommendation (`co2_lead`): during a started CO₂ airing
+  the goal stays open down to the release level (`co2_release`, automatic = warning − 50 ppm) and shows that level as
+  target. Goal rows gain `warn_ppm`, `release_ppm`, `latched` (additive).
+- K02: optional per-room close strategy. (Default changed with IQ2, see above; originally:) default "continue while
+  the air still dries" keeps the F11 behaviour.
+  "Close once the goals are reached" closes on reliably reached goals (humidity ≤ target RH on fresh readings, no CO₂
+  need, no useful cooling, own minimum duration, never during an active or following-up moisture source); the close is
+  not lifted only because the outdoor air is still drier. Optional own temperature limit while airing per room (empty =
+  global value, 0 = none). No new thresholds or durations.
+- U01: detail and info windows follow their own width (container queries), not only the viewport.
+- U02: house map – the weather/status column keeps its scroll position per view across live updates.
+- U03: feedback form keeps the unsent draft per entry and type (memory only), deletes it only after the Hub accepted
+  it, keeps the feedback ID visible; readable 16 px text box that scrolls on touch devices; user text is never translated.
+- U05: open plus tilted windows are explained as mixed ventilation (general model, the tilt model does not learn from it).
+
 ## 0.26.7.0
 The living house map: room information of your choice, a rooms overview, floors per card, the removable moisture by room and a weather world that joins house, sun, wind and weather – plus an honest fan wording on the map and an optional global automation lock.
 

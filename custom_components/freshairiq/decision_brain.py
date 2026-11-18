@@ -8,7 +8,7 @@ seasonality and house strategy into a single explainable output.
 from __future__ import annotations
 from typing import Any
 
-from .close_wording import close_instruction
+from .close_wording import close_cause, close_instruction
 
 
 def _f(v: Any, default: float = 0.0) -> float:
@@ -275,13 +275,17 @@ def _decision_wording(
         action_line = f"Ziel etwa {target:g} min"
         if remain > 0:
             action_line += f" · noch ca. {round(remain)} min"
+        elif out.get("live_coach_time_state") == "reassessing":
+            # the planned target is over: no outdated target, the reason why no remaining time can be given instead
+            action_line = str(out.get("live_coach_time_reason") or "Restzeit nicht bestimmbar – FreshAirIQ bewertet jeden Zyklus neu")
         summary = str(out.get("live_coach_reason") or out.get("summary") or "Die laufende Lüftung wird anhand der realen Wirkung weiter bewertet.")
 
     elif kind == "close":
         headline = "Der sinnvolle Lüftungspunkt ist erreicht"
         decision_label = "JETZT SCHLIESSEN"
         action_line = close_instruction(selected_rooms) if selected_rooms else "Geöffnete Fenster schließen"
-        summary = "Die zusätzliche Wirkung nimmt gegenüber Temperaturverlust und Feuchteziel nicht mehr ausreichend zu."
+        # R07 (0.26.7.2): a temperature limit or reached goals are named as such, not as "too little extra effect"
+        summary = close_cause(selected_rooms)[1] or "Die zusätzliche Wirkung nimmt gegenüber Temperaturverlust und Feuchteziel nicht mehr ausreichend zu."
 
     elif kind == "pollen_wait":
         cause = str(out.get("outdoor_veto_cause") or "pollen")

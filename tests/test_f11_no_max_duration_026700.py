@@ -270,9 +270,13 @@ def _golden():
     return golden
 
 
-def _chain(outdoor_after: tuple[float, float] | None = None) -> list[dict]:
+def _chain(outdoor_after: tuple[float, float] | None = None, strategy: str | None = "keep_drying") -> list[dict]:
     """Real coordinator chain: one bedroom aired 125 min against clearly drier outdoor air; the humidity falls and
-    then stays flat (plateau, small return). Optionally the outdoor air turns humid at the end."""
+    then stays flat (plateau, small return). Optionally the outdoor air turns humid at the end.
+
+    Testvermerk 0.26.7.1 (IQ2, owner decision of 15.11.2026): the default close strategy is now "close once the goals
+    are reached". The F11 behaviour protected by this chain is the explicit room strategy "keep_drying" (set here);
+    ``strategy=None`` runs the new default (see the goal test below)."""
     import asyncio
     from datetime import datetime
 
@@ -281,6 +285,8 @@ def _chain(outdoor_after: tuple[float, float] | None = None) -> list[dict]:
     hum = {"device_class": "humidity", "unit_of_measurement": "%"}
     rooms = [golden._room("s", "Schlafzimmer", "ground_floor", temp=["sensor.s_t"], hum=["sensor.s_h"],
                           contacts=["binary_sensor.s_f"], volume=40, sort=0)]
+    if strategy:
+        rooms[0]["close_strategy"] = strategy
     initial = {"sensor.aussen_t": (6.0, temp), "sensor.aussen_h": (80.0, hum), "sensor.s_t": (21.0, temp),
                "sensor.s_h": (68.0, hum), "binary_sensor.s_f": ("off", {"device_class": "window"})}
     steps = [{"advance": 60, "label": "idle"}, {"advance": 60, "set": {"binary_sensor.s_f": "on"}, "label": "open"}]
@@ -323,6 +329,26 @@ def test_end_to_end_no_close_by_time_from_sensor_to_dashboard_and_push():
         assert rec["kind"] == "continue", (_minutes(data), rec["kind"], rec.get("status"))
         assert effective_room_action(room, rec, data["rooms"]) != "Close"
         assert room.get("house_aligned_action") != "close"
+
+
+def test_end_to_end_default_closes_once_the_humidity_goal_is_reached_and_holds_it():
+    """IQ2 default: the only active goal (dehumidify to 58 %) is reached → close, although the outdoor air is still
+    clearly drier; not by a clock (the goal is reached after about 13 minutes) and held inside the hysteresis."""
+    from custom_components.freshairiq.notification_policy import effective_room_action
+
+    cycles = [c for c in _chain(strategy=None) if c["rooms"]["s"].get("active")]
+    before = [c for c in cycles if float(c["rooms"]["s"]["humidity"]) > 58.0 and not c["rooms"]["s"].get("session_goals_reached")]
+    assert before and all(c["rooms"]["s"]["action"] == "Continue ventilating" for c in before if _minutes(c) >= 3.0)
+    closed = [c for c in cycles if c["rooms"]["s"]["action"] == "Close"]
+    first = closed[0]["rooms"]["s"]
+    assert float(first["humidity"]) <= 58.0 and first["close_kind"] == "goals_reached" and first["delta_g_m3"] > 0.4
+    assert 3.0 <= _minutes(closed[0]) < 25.0
+    after = cycles[cycles.index(closed[0]):]
+    assert all(c["rooms"]["s"]["action"] == "Close" and c["rooms"]["s"]["close_kind"] in {"goals_reached", "goals_held"} for c in after)
+    final = after[-1]
+    assert final["intelligent_recommendation"]["kind"] == "close" and final["rooms"]["s"]["house_aligned_action"] == "close"
+    assert effective_room_action(final["rooms"]["s"], final["intelligent_recommendation"], final["rooms"]) == "Close"
+    assert final["rooms"]["s"]["time_state"] == "close" and final["remaining_duration_state"] in {"close", "overrun"}
 
 
 def test_end_to_end_close_comes_when_the_outdoor_air_no_longer_dries():

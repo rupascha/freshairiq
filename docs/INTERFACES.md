@@ -96,4 +96,20 @@ Gegenstücke: Diagnostics Hub 0.3.3.95, Diagnostics-HA 0.5.7. Ältere Gegenseite
 |---|---|
 | `forecast_optimal_close_in_min` / `_reason` | bei laufender Lüftung `null` (kein Prognose-Schließzeitpunkt); sonst wie bisher, nie mehr `max_duration` |
 | `forecast_physical_end_in_min` / `_reason` | physikalischer Endpunkt der Prognose (nur Diagnose), unverändert berechnet |
-| Shadow `production_formula_id` | `start-curve-v3-horizon-forecast-r2` (Revision wegen F11-C); Hub speichert die ID als Text, keine Änderung nötig |
+| Shadow `production_formula_id` | `start-curve-v3-horizon-forecast-r3` (Revision wegen IQ2: gepuffertes Exponentialmodell; r2 = F11-C bleibt für ältere Datensätze gültig); Hub speichert die ID als Text, keine Änderung nötig |
+
+## v0.26.7.1 – IQ2 (additiv)
+| Feld | Ort | Bedeutung |
+|---|---|---|
+| `forecast_net_room_change_ml`, `forecast_outdoor_transport_ml`, `forecast_to_target_ml`, `forecast_interval_ml` | Raum, Haus (Status-Attribute, Dashboard-Live, Diagnose-Allowlist) | getrennte Prognosegrößen im eingestellten Horizont; `null` = unbekannt (nie 0 als Ersatz) |
+| `forecast_quality` (Raum), `forecast_quality_state`, `forecast_scored_airings` (Haus) | wie oben | `collecting` / `calibrated`, Zahl der bewerteten Lüftungen, Zielabdeckung |
+| `iq2` | Raum | `{model, active, level, mode, rate_per_min, moisture_air_share, thermal_air_share, room_airings}` |
+| `time_state`, `time_remaining_min` | Raum | `close`, `countdown`, `minimum`, `reassessing`; `null` ohne laufende Lüftung |
+| `goals_reached_now`, `goals_in_band` | Raum | Zielstand des Raummodells in diesem Zyklus |
+| Raumspeicher `iq2`, `session_goals_reached`; Hausspeicher `iq2_house` | Storage (Version unverändert) | IQ2-Lernstand (Schema 1), Zielhistorie der laufenden Lüftung |
+| Sitzung `iq2`, `learning_observation.rate_inversion` | Sitzungsdatensatz | Bericht der Lüftung; `"exponential"` = exakte Rückrechnung (Werte von `observed_rate_per_min` sind dadurch größer als zuvor bei gleicher Lüftung) |
+| Raumoption `close_strategy` | Konfiguration | `goals_reached` (Standard) oder `keep_drying`; ein gespeichertes `continue_while_drying` gilt als Standard |
+
+Gegenstücke unverändert: Diagnostics Hub 0.3.3.98 liest `observed_rate_per_min` tolerant (Zahl), Diagnostics HA 0.5.6
+liest keines der neuen Felder. Ältere Karten ohne die Felder zeigen die bisherige Darstellung; neuere Karten zeigen
+bei einem älteren Payload keine erfundene Restzeit und die bisherige zielbegrenzte Prognose.

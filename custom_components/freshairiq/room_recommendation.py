@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .model import CO2_HYSTERESIS_PPM, SUMMER_WARMING_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, ROOM_TOO_DRY_CLOSE_REASON, co2_release_configured, co2_release_ppm, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
+from .model import BENEFIT_EXHAUSTED_CLOSE_REASON, CO2_HYSTERESIS_PPM, GOALS_HELD_CLOSE_REASON, GOALS_REACHED_CLOSE_REASON, SUMMER_WARMING_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, ROOM_TOO_DRY_CLOSE_REASON, co2_release_configured, co2_release_ppm, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
 from .outdoor_air import outdoor_pm25_blocked, pm25_reason
 
 
@@ -25,6 +25,19 @@ def _close_reason(result: Any, options: dict[str, Any]) -> str:
         limit = float(options.get("airing_min_room_temp_c") or 0.0)
         return (f"Deine Temperaturgrenze beim Lüften ({limit:.1f} °C) ist erreicht – Schließen wegen der Temperatur, "
                 "nicht weil genug Feuchtigkeit entfernt wurde")
+    if reason == GOALS_HELD_CLOSE_REASON:
+        # R02 (0.26.7.2): the goal close of this airing stays inside the existing humidity hysteresis – the honest physics:
+        # the outdoor air could still dry the room, the goal is not reached right now, the close is held on purpose
+        target = float(options.get("target_rh", 55.0))
+        return (f"Die Ziele dieses Raums wurden in dieser Lüftung erreicht; die Schließempfehlung bleibt bestehen, bis die "
+                f"Luftfeuchte über {target + VENTILATION_HYSTERESIS_RH:.0f} % steigt (jetzt {round(float(getattr(result, 'humidity', 0) or 0))} %, "
+                f"Ziel {target:.0f} %) – die Außenluft könnte noch Feuchte abführen")
+    if reason == GOALS_REACHED_CLOSE_REASON:
+        return (f"Die Ziele dieses Raums sind erreicht (Luftfeuchte höchstens {float(options.get('target_rh', 55.0)):.0f} %) – "
+                "für diesen Raum ist „Schließen, wenn die Ziele erreicht sind“ eingestellt; die Außenluft könnte noch Feuchte abführen")
+    if reason == BENEFIT_EXHAUSTED_CLOSE_REASON:
+        return (f"Weiteres Lüften entfernt kaum noch Feuchtigkeit – Schließen, obwohl das Feuchteziel von "
+                f"{float(options.get('target_rh', 55.0)):.0f} % noch nicht erreicht ist")
     if reason == ROOM_TOO_DRY_CLOSE_REASON:
         return (f"Die Raumluft ist bereits trocken (höchstens {float(options.get('humidify_below_rh', 35.0) or 0.0):.0f} % rF); "
                 "weiteres Lüften würde sie zu stark austrocknen")
@@ -32,6 +45,17 @@ def _close_reason(result: Any, options: dict[str, Any]) -> str:
         return "Die Außenluft ist jetzt feuchter als die Raumluft; weiteres Lüften würde Feuchtigkeit hereinbringen"
     return (f"Die Außenluft ist kaum noch trockener als die Raumluft (höchstens {float(options.get('close_delta', 0.4)):.1f} g/m³); "
             "weiteres Lüften entfernt keine nennenswerte Feuchtigkeit mehr")
+
+def benefit_close_text(benefit_ml: float, threshold_ml: float, humidity: Any, options: dict[str, Any]) -> str:
+    """Why a running airing closes before its humidity target: the confirmed IQ2 benefit and the room's threshold."""
+    return (f"Weiteres Lüften entfernt kaum noch Feuchtigkeit (bestätigt etwa {max(round(benefit_ml), 0)} ml in 5 min, "
+            f"Schwelle für diesen Raum {round(threshold_ml)} ml) – Schließen, obwohl das Feuchteziel von "
+            f"{float(options.get('target_rh', 55.0)):.0f} % noch nicht erreicht ist (jetzt {round(float(humidity or 0.0))} %)")
+
+
+def running_check_text(benefit_ml: float) -> str:
+    return f"Kurzfristiger Schließcheck (5 min): voraussichtlich {max(round(benefit_ml), 0)} ml Feuchteabbau"
+
 
 def _running_reasons(result: Any) -> list[str]:
     """Why a running airing stays open."""
@@ -43,7 +67,7 @@ def _running_reasons(result: Any) -> list[str]:
     elif str(getattr(result, "reason", "")).startswith("Cooling remains useful"):
         reasons = ["Kühlen wirkt weiter: die Außenluft ist deutlich kühler als der Raum"]
     else:
-        reasons = [f"Kurzfristiger Schließcheck (5 min): voraussichtlich {max(round(result.moisture_effect_next_5_min_ml), 0)} ml Feuchteabbau"]
+        reasons = [running_check_text(result.moisture_effect_next_5_min_ml)]
     if getattr(result, "co2_sensor_missing", False):  # audit P1-04: never "CO2 reached" without a value
         reasons.append("Der CO₂-Sensor liefert keinen Wert; CO₂ wird nicht bewertet, die Lüftung folgt der geplanten Dauer")
     return reasons
@@ -131,7 +155,10 @@ def _recommendation(result: Any, options: dict[str, Any], *, pollen: float, co2:
 
     # the airing only runs while the window is open: after closing, the session lives on for its final measurement
     running = result.active and bool(getattr(result, "open", True))
-    if running and source_active and float(result.delta_g_m3) > float(options.get("close_delta", 0.4)) and not (pollen_blocked or pm25_blocked):
+    # R01 (0.26.7.2): a running source keeps the room open – but never against the explicit temperature limit the room
+    # model already released (``close_kind``); the source flag alone does not overrule a protective close
+    temperature_close = bool(result.close_recommended) and getattr(result, "close_kind", None) == "temperature_limit"
+    if running and source_active and not temperature_close and float(result.delta_g_m3) > float(options.get("close_delta", 0.4)) and not (pollen_blocked or pm25_blocked):
         action = "Continue ventilating"
         reasons.append("Die Referenzluft ist weiterhin trockener; die steigende Raumfeuchte stammt trotz wirksamer Lüftung aus der aktiven Feuchtequelle")
     elif running and result.close_recommended:

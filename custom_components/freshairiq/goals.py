@@ -58,9 +58,18 @@ def evaluate_goals(*, humidity: Any, target_rh: Any, co2: Any, co2_warn: Any,
                    temperature: Any, temperature_target: Any, temperature_rate_c_min: Any=None,
                    co2_rate_ppm_min: Any=None, humidity_rate_pct_min: Any=None,
                    priorities: Any=None, available_goals: Any=None, hard_close: bool=False,
-                   disabled_goals: Any=None, humidity_floor_rh: Any=None) -> dict[str,Any]:
+                   disabled_goals: Any=None, humidity_floor_rh: Any=None,
+                   co2_release: Any=None, co2_latched: bool=False) -> dict[str,Any]:
     rh=_f(humidity); rh_target=_f(target_rh,55.0) or 55.0
-    c=_f(co2); c_target=_f(co2_warn,1000.0) or 1000.0
+    c=_f(co2); c_warn=_f(co2_warn,1000.0) or 1000.0
+    # K01 (0.26.7.1): the CO2 goal follows the same entry/exit band as ``model.co2_lead``.
+    # A started CO2 airing (latched) only ends below the release level; before it is
+    # reached the goal is open and its target is the release level, not the warning value.
+    c_release=_f(co2_release)
+    c_release=c_release if c_release is not None and 0.0 < c_release < c_warn else None
+    c_hold=bool(co2_latched) and c_release is not None and c is not None and c >= c_release
+    c_target=c_release if c_hold else c_warn
+    c_reached=c is not None and not (c >= c_warn or c_hold)
     t=_f(temperature); tt=_f(temperature_target)
     rows=[]
     def eta(delta: float|None, rate: float|None) -> float|None:
@@ -74,8 +83,10 @@ def evaluate_goals(*, humidity: Any, target_rh: Any, co2: Any, co2_warn: Any,
     rows.append({"id":"humidity","active":rh is not None,"reached":rh is not None and rh <= rh_target,
                  "value":rh,"target":rh_target,"eta_min":humidity_eta(rh, rh_target, _f(humidity_rate_pct_min), floor),
                  "unreachable":goal_unreachable(rh, rh_target, floor),"floor_rh":None if floor is None else round(floor,1)})
-    rows.append({"id":"co2","active":c is not None,"reached":c is not None and c <= c_target,
-                 "value":c,"target":c_target,"eta_min":eta(None if c is None else c-c_target, co2_rate_ppm_min)})
+    rows.append({"id":"co2","active":c is not None,"reached":c_reached,
+                 "value":c,"target":c_target,
+                 "eta_min":0.0 if c_reached else eta(None if c is None else max(c-c_target,0.001), co2_rate_ppm_min),
+                 "warn_ppm":c_warn,"release_ppm":c_release,"latched":c_hold})
     rows.append({"id":"temperature","active":t is not None and tt is not None,"reached":t is not None and tt is not None and t <= tt+0.3,
                  "value":t,"target":tt,"eta_min":eta(None if t is None or tt is None else t-tt, temperature_rate_c_min)})
     disabled = normalise_disabled_goals(disabled_goals)

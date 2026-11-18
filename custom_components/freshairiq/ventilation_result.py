@@ -96,6 +96,30 @@ def _weighted_average(pairs: list[tuple[float, float]]) -> float | None:
     return sum(value * weight for value, weight in valid) / weight_sum
 
 
+def _prediction_exclusion_reason(event: dict[str, Any]) -> str:
+    """Actual reason why a time-aligned session was left out of the accuracy score."""
+    if event.get("moisture_source_contaminated"):
+        return "Aktive Feuchtequelle erkannt"
+    if event.get("reference_moisture_reversal"):
+        return "Referenzluft wurde während der Lüftung zu feucht"
+    if event.get("session_timestamp_activity_gate_passed") is False:
+        return "Weniger als zwei Messänderungen während der Lüftung"
+    return str(event.get("outcome_feedback_reason") or "Messung nicht für die Genauigkeitswertung verwertbar")
+
+
+def _measurement_exclusion_reason(event: dict[str, Any]) -> str:
+    """Actual reason why a session has no trusted moisture result."""
+    if event.get("session_timestamp_activity_gate_passed") is False:
+        return "Weniger als zwei Messänderungen während der Lüftung"
+    if event.get("final_measurement_available") is False:
+        return "Keine verwertbare Abschlussmessung nach dem Schließen"
+    return "Messung nicht verwertbar"
+
+
+def _unique_reasons(reasons: list[str]) -> str | None:
+    return "; ".join(dict.fromkeys(reason for reason in reasons if reason)) or None
+
+
 def finalise_ventilation_group(
     group: dict[str, Any],
     ended_at: datetime,
@@ -249,6 +273,8 @@ def _merge_room_sessions(
                 "cross_ventilation_minutes": 0.0,
                 "outcome_feedback_actions": [],
                 "outcome_feedback_reasons": [],
+                "prediction_exclusion_reasons": [],
+                "measurement_exclusion_reasons": [],
             },
         )
         volume = max(_number(event.get("volume_m3")) or 0.0, 0.0)
@@ -256,6 +282,7 @@ def _merge_room_sessions(
         measured_removed = _number(event.get("removed_ml")) if bool(event.get("moisture_measurement_valid", event.get("removed_ml") is not None)) else None
         if measured_removed is None:
             room["moisture_unmeasured_sessions"] += 1
+            room["measurement_exclusion_reasons"].append(_measurement_exclusion_reason(event))
         else:
             room["removed_ml"] += measured_removed
             room["moisture_measured_sessions"] += 1
@@ -277,6 +304,8 @@ def _merge_room_sessions(
             room["predicted_removed_samples"] += 1
             room["prediction_actual_removed_ml"] += actual_removed
             room["prediction_comparable_sessions"] += 1
+        elif predicted_removed is not None and actual_removed is not None and bool(event.get("prediction_time_aligned")):
+            room["prediction_exclusion_reasons"].append(_prediction_exclusion_reason(event))
         predicted_temp = _number(event.get("predicted_temperature_change_c"))
         if predicted_temp is not None:
             room["predicted_temp_pairs"].append((predicted_temp, weight))
@@ -332,6 +361,8 @@ def _room_session_results(
         else:
             room["prediction_validation_status"] = "not_comparable"
         room["predicted_temperature_change_c"] = round(predicted_temp, 2) if predicted_temp is not None else None
+        room["prediction_exclusion_reason"] = _unique_reasons(room.pop("prediction_exclusion_reasons"))
+        room["measurement_exclusion_reason"] = _unique_reasons(room.pop("measurement_exclusion_reasons"))
         actions = room.pop("outcome_feedback_actions", [])
         reasons = room.pop("outcome_feedback_reasons", [])
         priority = {"guarded_observation": 6, "cautious_confirmation": 5, "confirmed_outlier": 4, "guarded": 4, "cautious": 3, "applied": 2, "skipped": 1}
@@ -377,6 +408,8 @@ def _group_result_payload(
     else:
         feedback_text = None
 
+    prediction_exclusion_reason = _unique_reasons([part for item in room_results for part in str(item.get("prediction_exclusion_reason") or "").split("; ")])
+    measurement_exclusion_reason = _unique_reasons([part for item in room_results for part in str(item.get("measurement_exclusion_reason") or "").split("; ")])
     if prediction_time_aligned_sessions > 0:
         if prediction_comparable_sessions == prediction_time_aligned_sessions:
             prediction_status_text = "Startprognose mit exakt derselben Messdauer verglichen"
@@ -388,7 +421,7 @@ def _group_result_payload(
             )
             prediction_alignment_quality = "partial_validated"
         else:
-            prediction_status_text = "Startprognose auf die tatsächliche Messdauer abgeglichen · Sensordaten nicht ausreichend synchron – keine Genauigkeitswertung"
+            prediction_status_text = f"Startprognose auf die tatsächliche Messdauer abgeglichen · keine Genauigkeitswertung: {prediction_exclusion_reason or 'Messung nicht für die Genauigkeitswertung verwertbar'}"
             prediction_alignment_quality = "informational"
     elif prediction_comparable_rooms > 0:
         prediction_status_text = "Startprognose mit vergleichbarer Zeitbasis ausgewertet"
@@ -436,6 +469,8 @@ def _group_result_payload(
         "prediction_excluded_sessions": prediction_excluded_sessions,
         "prediction_excluded_rooms": prediction_excluded_rooms,
         "prediction_status_text": prediction_status_text,
+        "prediction_exclusion_reason": prediction_exclusion_reason,
+        "measurement_exclusion_reason": measurement_exclusion_reason,
         "prediction_alignment_quality": prediction_alignment_quality,
         "learning_feedback_action": feedback_action,
         "learning_feedback_text": feedback_text,

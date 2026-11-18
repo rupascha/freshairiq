@@ -26,7 +26,7 @@ from .const import (
     ORIENTATION_UNKNOWN,
 )
 from .climate_sources import entity_ids
-from .coordinator_sources import _float_state, _humidity_percent
+from .coordinator_sources import _float_state, _humidity_percent, _humidity_value, _temperature_state
 from .model import RoomInput, absolute_humidity, evaluate_room
 from .opening_state import normalize_opening_state, stable_state_seconds
 
@@ -51,7 +51,7 @@ def _contact_specific_reference(
     hass: HomeAssistant, room: dict[str, Any], *,
     default_temp_entity: str | None, default_humidity_entity: str | None,
     default_temp: float | None, default_humidity: float | None,
-    contact_modes: dict[str, str] | None = None, humidity_reader: Any = None,
+    contact_modes: dict[str, str] | None = None, humidity_reader: Any = None, temperature_reader: Any = None,
 ) -> tuple[str | None, str | None, float | None, float | None]:
     """Return the conservative reference-air pair for the currently open contacts.
 
@@ -64,6 +64,7 @@ def _contact_specific_reference(
 
     F02 (0.26.5.5): ``humidity_reader`` checks every open source before the choice – one
     source in another unit than % hidden behind a valid one makes the incoming air unknown.
+    F09: ``temperature_reader`` returns a local temperature in °C from its own unit.
     """
     temp_map = room.get(CONF_CONTACT_REFERENCE_TEMPERATURES) or {}
     humidity_map = room.get(CONF_CONTACT_REFERENCE_HUMIDITIES) or {}
@@ -88,7 +89,7 @@ def _contact_specific_reference(
         # the combined incoming air unknown as well, so fail closed for the room.
         if contact_te and contact_he:
             te, he = contact_te, contact_he
-            tv, hv = _float_state(hass, te), (humidity_reader or _float_state)(hass, he)
+            tv, hv = (temperature_reader or _float_state)(hass, te), (humidity_reader or _float_state)(hass, he)
         elif local_configured:
             return contact_te, contact_he, None, None
         else:
@@ -133,7 +134,8 @@ def _opening_assessments(
         pair_complete = bool(local_te and local_he)
         if pair_complete:
             te, he = local_te, local_he
-            source_t, source_rh = _float_state(hass, te), _float_state(hass, he)
+            # F13: the same unit-checked reference as the room path – a humidity in another unit than % is no value
+            source_t, source_rh = _temperature_state(hass, te), _humidity_value(hass, he)
             source_label = "lokale Referenz"
         elif local_configured:
             # Existing malformed legacy data must never be mixed with outdoor

@@ -321,6 +321,9 @@ _TOP_LEVEL_KEYS = (
     "total_water_ml", "ventilation_threshold_ml", "ventilation_threshold_mode",
     "ventilation_threshold_reason", "cross_ventilation",
     "recommended_duration_min", "remaining_duration_min",
+    "remaining_duration_state", "initial_duration_estimate_min", "session_total_min", "close_reason_kind",
+    "forecast_net_room_change_ml", "forecast_outdoor_transport_ml", "forecast_to_target_ml", "forecast_interval_ml",
+    "forecast_quality_state", "forecast_scored_airings",
     "temperature_change_live_c", "operating_profile", "cooling_rooms",
     "overnight_forecast_ml", "overnight_forecast_base_ml",
     "overnight_weather_effect_ml", "overnight_trend_effect_ml",
@@ -377,7 +380,9 @@ _ROOM_KEYS = (
     "fan_automation", "reference_path", "air_exchange", "reference_unit_issue",
     # 0.26.5.4 (support case): temperature target and the action at each decision step
     "comfort_target_c", "comfort_target_source", "canonical_action", "house_aligned_action",
-    "close_recommended", "close_decision_ready", "contact_count", "action_hint",
+    "forecast_net_room_change_ml", "forecast_outdoor_transport_ml", "forecast_to_target_ml", "forecast_interval_ml",
+    "forecast_quality", "iq2", "time_state", "time_remaining_min",
+    "close_recommended", "close_kind", "close_decision_ready", "contact_count", "action_hint",
     # 0.26.7.0 (F09/F10, behaviour learning): how a moisture load was recognised, the dishwasher phase and the
     # counted behaviour evidence with its reminder adaptation – numbers, fixed codes and fixed reason texts only, no entity ids
     "moisture_source_active", "moisture_source_identified_source", "moisture_source_confidence",

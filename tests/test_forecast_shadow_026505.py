@@ -109,10 +109,14 @@ def test_formula_ids_are_stable_and_the_production_id_follows_the_forecast_code(
     assert fs.CANDIDATE_FORMULA_ID == "humidity-hybrid-2026-10-31-r1"
     # Testvermerk 0.26.7.0 (#28): Startkontext v3 (physikalischer Replay) -> neue Produktions-ID
     # Testvermerk 0.26.7.0 final hotfix F11-C: forecast.py changed (max-duration end point removed) -> revision r2
-    assert fs.PRODUCTION_FORMULA_ID == "start-curve-v3-horizon-forecast-r2"
+    # Testvermerk 0.26.7.1 (IQ2): forecast.py changed (buffered exponential model with air shares, separate net /
+    # transport / to-target quantities) -> revision r3. The earlier IDs stay valid for records written by older builds.
+    # Testvermerk 0.26.7.1 (Stabilitätsaudit I01/F12): forecast.py changed (one live relaxation for all horizons,
+    # night and rain durations in real minutes) -> revision r4.
+    assert fs.PRODUCTION_FORMULA_ID == "start-curve-v3-horizon-forecast-r4"
     # Any change of forecast.py (the active calculation) must bump PRODUCTION_FORMULA_ID and this pin.
     digest = hashlib.sha256((PKG / "forecast.py").read_bytes()).hexdigest()
-    assert digest == "f26d7a7f3746d5ec8dc4d91c2824d1e83947d20548fff0e75b8c5fd5e7213df8", digest
+    assert digest == "857525982523d5579c63f2fba2dff5073f13fc7b62ad452e3345ea2807491bcd", digest
 
 
 # --- pairing on the frozen start ---------------------------------------------------------------

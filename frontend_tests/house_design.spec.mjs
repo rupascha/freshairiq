@@ -355,7 +355,10 @@ test('UI06/UI07: removable moisture – short explanation before and while airin
   expect(r.title).toBe('Entfernbare Feuchtigkeit');                                   // the sensor's name (before: "Entfernbare Feuchte")
   expect(r.intro).toContain('Hier siehst du, wie viel Feuchtigkeit FreshAirIQ voraussichtlich in der empfohlenen Lüftungszeit aus den berechneten Räumen entfernen kann.');
   expect(r.intro).toContain('alle berechneten Räume mit gültigen Messwerten');
-  expect(r.tiles).toEqual(['Jetzt entfernbar', 'Empfohlene Lüftungszeit', 'Prognosesicherheit']);
+  // Testvermerk 0.26.7.1 (IQ2, cause 4.4 of the order): the tile showing prognosis_confidence (a sample-count score) is
+  // named "Lernreife" / "Learning maturity" – no longer "Prognosesicherheit". While airing a separate tile
+  // "Prognosegüte" / "Forecast quality" shows the calibrated interval or "–" when the payload carries none.
+  expect(r.tiles).toEqual(['Jetzt entfernbar', 'Empfohlene Lüftungszeit', 'Lernreife']);
   expect(r.more[0]).toBe('Mehr zur Berechnung'); expect(r.more[1]).toBe(false);          // folded, nothing lost
   expect(r.more[2]).toContain('Sensor „Entfernbare Feuchtigkeit“'); expect(r.more[2]).toContain('nicht für ein vollständiges Austrocknen');
   // right after the airing started: nothing measured yet – the reason is shown at once
@@ -365,7 +368,8 @@ test('UI06/UI07: removable moisture – short explanation before and while airin
   expect(r.intro).toContain('Hier siehst du die bisher geschätzte Feuchteabgabe der aktuell lüftenden Räume. Der Wert wird anhand neuer Messungen aktualisiert.');
   expect(r.intro).toContain('nur die Räume, die gerade gelüftet werden');
   expect(r.zero).toBe(true);
-  expect(r.tiles).toEqual(['Bisher entfernt', 'Restzeit', 'Prognosesicherheit']);
+  expect(r.title).toBe('Feuchtebilanz der laufenden Lüftung');
+  expect(r.tiles).toEqual(['Bisher entfernt', 'Restzeit', 'Lernreife', 'Prognosegüte']);
   expect(r.heading).toBe('Nach Räumen');
   // later in the airing the reason moves into the folded part
   await page.evaluate(() => { const r = window.__ROOMS; window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...r, bad: { ...r.bad, active: true, result_ml: 80, session_target_min: 12, session_elapsed_min: 4 } }, status: 'ventilate', potential_total_ml: 1500, live_balance_ml: 80, recommended_duration_min: 12, remaining_duration_min: 8 }); });
@@ -376,9 +380,11 @@ test('UI06/UI07: removable moisture – short explanation before and while airin
   await impl(page).evaluate(el => { el._hass = { ...el._hass, language: 'en', locale: { language: 'en' } }; el._roomsLang = null; el._render(); });
   await settle(page, 200);
   r = await read();
-  expect(r.title).toBe('Removable moisture');
+  // Testvermerk 0.26.7.1 (IQ2, photo B of the order): while an airing runs the window explains the moisture given off
+  // so far – its heading says so now instead of the sensor name "Removable moisture" (kept for the idle window above)
+  expect(r.title).toBe('Moisture balance of the running airing');
   expect(r.intro).toContain('This shows the estimated moisture given off so far by the rooms being aired right now.');
-  expect(r.tiles).toEqual(['Removed so far', 'Time left', 'Forecast confidence']);
+  expect(r.tiles).toEqual(['Removed so far', 'Time left', 'Learning maturity', 'Forecast quality']);
   expect(r.more[0]).toBe('More about the calculation');
 });
 
@@ -390,12 +396,12 @@ test('UI08: removable moisture – the values of the payload: removable, added, 
   const show = async payload => { await page.evaluate(p => window.__subs['freshairiq/dashboard/subscribe'](p), payload); await settle(page, 250);
     await impl(page).evaluate(el => { el._nav = []; el._selected = { type: 'moisture' }; el._render(); }); await settle(page, 150); return tiles(); };
   const rooms = await page.evaluate(() => window.__ROOMS);
-  expect(await show({ rooms, status: 'ventilate', potential_total_ml: 1947.4, recommended_duration_min: 12, prognosis_confidence: 70.4 })).toEqual(['Jetzt entfernbar=≈ 1947 ml', 'Empfohlene Lüftungszeit=12 Min.', 'Prognosesicherheit=70 %']);
-  expect(await show({ rooms, status: 'ok', potential_total_ml: -230, recommended_duration_min: 9 })).toEqual(['Jetzt entfernbar=+230 ml', 'Empfohlene Lüftungszeit=9 Min.', 'Prognosesicherheit=–']);
+  expect(await show({ rooms, status: 'ventilate', potential_total_ml: 1947.4, recommended_duration_min: 12, prognosis_confidence: 70.4 })).toEqual(['Jetzt entfernbar=≈ 1947 ml', 'Empfohlene Lüftungszeit=12 Min.', 'Lernreife=70 %']);   // Testvermerk 0.26.7.1 (IQ2): label, see UI06/UI07 above
+  expect(await show({ rooms, status: 'ok', potential_total_ml: -230, recommended_duration_min: 9 })).toEqual(['Jetzt entfernbar=+230 ml', 'Empfohlene Lüftungszeit=9 Min.', 'Lernreife=–']);
   const on = { ...rooms, bad: { ...rooms.bad, active: true, result_ml: 121.6 } };
-  expect(await show({ rooms: on, status: 'ventilate', potential_total_ml: 900, live_balance_ml: 321.6, recommended_duration_min: 12, remaining_duration_min: 4.2 })).toEqual(['Bisher entfernt=≈ 322 ml', 'Restzeit=5 Min.', 'Prognosesicherheit=–']);
-  expect(await show({ rooms: on, status: 'ventilate', potential_total_ml: 900, live_balance_ml: -40, recommended_duration_min: 12, remaining_duration_min: 4 })).toEqual(['Bisher entfernt=+40 ml', 'Restzeit=4 Min.', 'Prognosesicherheit=–']);
-  expect(await show({ rooms: on, status: 'ventilate', potential_total_ml: 900, live_balance_ml: 50, recommended_duration_min: 12, remaining_duration_min: -3.2 })).toEqual(['Bisher entfernt=≈ 50 ml', 'Über Ziel=+4 Min.', 'Prognosesicherheit=–']);
+  expect(await show({ rooms: on, status: 'ventilate', potential_total_ml: 900, live_balance_ml: 321.6, recommended_duration_min: 12, remaining_duration_min: 4.2 })).toEqual(['Bisher entfernt=≈ 322 ml', 'Restzeit=5 Min.', 'Lernreife=–', 'Prognosegüte=–']);
+  expect(await show({ rooms: on, status: 'ventilate', potential_total_ml: 900, live_balance_ml: -40, recommended_duration_min: 12, remaining_duration_min: 4 })).toEqual(['Bisher entfernt=+40 ml', 'Restzeit=4 Min.', 'Lernreife=–', 'Prognosegüte=–']);
+  expect(await show({ rooms: on, status: 'ventilate', potential_total_ml: 900, live_balance_ml: 50, recommended_duration_min: 12, remaining_duration_min: -3.2 })).toEqual(['Bisher entfernt=≈ 50 ml', 'Über Ziel=+4 Min.', 'Lernreife=–', 'Prognosegüte=–']);
   // room values as delivered; the house value is their sum (coordinator_house) – a rounding difference is named, never hidden
   const two = { ...rooms, bad: { ...rooms.bad, active: true, result_ml: 50.4 }, wohnen: { ...rooms.wohnen, active: true, result_ml: 30.3 } };
   await show({ rooms: two, status: 'ventilate', potential_total_ml: 900, live_balance_ml: 80.7, recommended_duration_min: 12, remaining_duration_min: 6 });

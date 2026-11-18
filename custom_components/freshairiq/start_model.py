@@ -58,8 +58,11 @@ def observed_exchange_rate(*, start_ah: Any, end_ah: Any, source_ah: Any, elapse
     start_delta, reduction = start - source, start - end
     if start_delta <= 0.5 or reduction <= 0.05:
         return None
-    raw = reduction / start_delta / elapsed
-    return round(raw, 5) if MIN_RATE <= raw <= MAX_RATE else None
+    # IQ2 (0.26.7.1): the exact inverse of the exponential forward model (``iq2.infer_rate``); before, the linear
+    # short-time approximation made the same real rate look smaller the longer an airing lasted
+    from .iq2 import infer_rate  # here, not at module level: tools/apply_start_model.py loads this file on its own
+    raw = infer_rate(start=start, end=end, source=source, minutes=elapsed, max_minutes=limit)
+    return None if raw is None else round(raw, 5)
 
 
 def learning_observation(
@@ -74,6 +77,7 @@ def learning_observation(
         "observed_rate_per_min": observed_exchange_rate(start_ah=start_ah, end_ah=end_ah, source_ah=source_ah,
                                                          elapsed_min=elapsed_min, max_duration_min=max_duration_min) if usable else None,
         "usable": bool(usable),
+        "rate_inversion": "exponential",   # additive marker: records without it used the linear approximation
         "start_ah": rounded(start_ah, 3), "end_ah": rounded(end_ah, 3), "source_ah": rounded(source_ah, 3),
         "elapsed_min": rounded(elapsed_min, 2), "rate_before": rounded(rate_before, 5),
         "samples_before": int(_number(samples_before) or 0),

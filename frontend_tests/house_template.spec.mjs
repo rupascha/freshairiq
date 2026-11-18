@@ -323,3 +323,45 @@ test('editor: a refused template upload is shown and nothing is kept', async ({ 
   expect(await editor.evaluate(el => el.shadowRoot.textContent)).toContain('Vorlage konnte nicht gespeichert werden');
   expect(await editor.evaluate(el => Object.keys(el._ul))).toEqual([]);
 });
+
+// Grundriss-Editor order "acht Probleme" (7): "Prüfen → Zeigen" on another floor loads that floor's template at
+// once (not only after a later change in the floor list) and keeps the marked spot in the middle of the drawing.
+test('editor: a jump from the check list to another floor loads its template and keeps the spot in view', async ({ page }) => {
+  const errors = await setup(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const data = (await pngOf(page, {})).toString('base64');
+  const stored = { floor_id: 'f_og', mime: 'image/png', data, width: 800, height: 600, scale_m_per_px: 0.02, calibration: null, walls: [], close_px: 2, opacity: 0.55 };
+  await page.evaluate(({ ROOMS, stored }) => {
+    window.__calls = []; window.__ul = { f_og: stored };
+    const callWS = async msg => {
+      window.__calls.push({ type: msg.type, floor_id: msg.floor_id });
+      if (msg.type === 'freshairiq/house_map/underlay_get') return { underlay: window.__ul[msg.floor_id] || null };
+      throw new Error('unexpected');
+    };
+    const el = document.createElement('freshairiq-house-layout-editor');
+    el.hass = { callWS, language: 'de' };
+    document.getElementById('m').appendChild(el);
+    const sq = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    el.setup({ entryId: 'e1', layout: { schema_version: 1, revision: 1, building: { north_deg: 0, units: 'm', north_confirmed: true },
+      floors: [{ id: 'f_eg', name: 'EG', level_key: 'eg', order: 0 }, { id: 'f_og', name: 'OG', level_key: 'og', order: 1 }],
+      rooms: [{ id: 'r_w', room_key: 'wohnen', floor_id: 'f_eg', polygon: sq(0, 0, 6, 5), provenance: 'user' },
+        { id: 'r_b', room_key: 'bad', floor_id: 'f_og', polygon: sq(2, 2, 6, 6), provenance: 'user' },
+        { id: 'r_o', room_key: 'buero', floor_id: 'f_og', polygon: sq(6.06, 2, 10, 6), provenance: 'user' }], openings: [], connections: [], shading: [] },
+      revision: 1, rooms: ROOMS, liveRooms: {}, language: 'de', floor: 'f_eg', underlays: { f_og: {} } });
+  }, { ROOMS, stored });
+  const editor = page.locator('freshairiq-house-layout-editor');
+  await settle(page, 150);
+  expect(await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/underlay_get').length)).toBe(0);
+  await editor.locator('.tools [data-a="check"]').click();
+  await editor.locator('.checkov [data-go^="fd|gap|"]').click();
+  await page.waitForFunction(() => window.__calls.some(c => c.type === 'freshairiq/house_map/underlay_get' && c.floor_id === 'f_og'));
+  await settle(page, 150);
+  const out = await editor.evaluate(el => {
+    const svg = el.shadowRoot.querySelector('svg'), box = svg.getBoundingClientRect(), m = el.shadowRoot.querySelector('g.fd.sel').getBoundingClientRect();
+    return { floor: el._floor, select: el.shadowRoot.querySelector('[data-f="view_floor"]').value, image: !!el.shadowRoot.querySelector('image.ul'),
+      dx: Math.abs(m.x + m.width / 2 - (box.x + box.width / 2)) / box.width, dy: Math.abs(m.y + m.height / 2 - (box.y + box.height / 2)) / box.height };
+  });
+  expect([out.floor, out.select, out.image]).toEqual(['f_og', 'f_og', true]);
+  expect(out.dx).toBeLessThan(0.05); expect(out.dy).toBeLessThan(0.05);   // the spot stays in the middle of the drawing
+  expect(errors).toEqual([]);
+});

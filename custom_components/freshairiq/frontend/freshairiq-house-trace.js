@@ -278,9 +278,13 @@ export const assignTraced = (layout, { key, floorId, plan }) => {
 // A door or passage belongs on an interior wall: its whole span must lie on another room's wall – the same
 // rule and tolerance as house_layout.opening_neighbour, so the editor and FreshAirIQ's air paths agree.
 // A shared corner or a wall a few centimetres away is no interior wall ({ error: "no_interior_wall" }).
+// A window or an outside door ("outer_door", stored as kind "door") belongs on the free part of an outside wall
+// ({ error: "no_exterior_wall" } where the tapped wall is shared with another room).
 export const INTERIOR_KINDS = new Set(["door", "passage"]);
+export const EXTERIOR_TOOLS = new Set(["window", "outer_door"]);
+export const PLACE_TOOLS = new Set([...EXTERIOR_TOOLS, ...INTERIOR_KINDS]);
 export const WALL_TOLERANCE = 0.05;  // = house_layout.WALL_TOLERANCE
-const DEFAULT_WIDTH = { window: null, door: 0.9, passage: 1.0 };
+const DEFAULT_WIDTH = { window: null, outer_door: 0.9, door: 0.9, passage: 1.0 };
 const MIN_INTERIOR_WIDTH = 0.3;
 const onSegment = (a, b, p, tol) => {  // = house_layout._on_segment
   const cross = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
@@ -295,26 +299,76 @@ export const openingSamples = (polygon, o, count = 5) => {
   const lo = Math.max(offset - half, 0), hi = Math.min(offset + half, 1);
   return Array.from({ length: count }, (_, k) => { const t = lo + (hi - lo) * k / (count - 1); return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; });
 };
+// A confirmed partition wall counts as one wall within its thickness – only between the two walls confirmed for it
+// (= geometry.partitionTol; ``ea`` this room's wall, ``eb`` the other room's wall).
+const partitionTol = (a, b, ea, eb) => {
+  let tol = WALL_TOLERANCE;
+  for (const [own, other, w, ow] of [[a, b, ea, eb], [b, a, eb, ea]]) for (const item of (own && own.partitions) || []) {
+    const t = Number(item && item.thickness_m);
+    if (item && item.room === (other && other.id) && t > 0 && t <= 0.5 && item.wall === w && item.other_wall === ow) tol = Math.max(tol, t + WALL_TOLERANCE);
+  }
+  return tol;
+};
+// the index of wall a→b in a polygon (null when it is none of its walls)
+const wallIndex = (polygon, a, b) => {
+  const i = polygon.findIndex((p, k) => Math.hypot(p[0] - a[0], p[1] - a[1]) < 1e-6 && Math.hypot(polygon[(k + 1) % polygon.length][0] - b[0], polygon[(k + 1) % polygon.length][1] - b[1]) < 1e-6);
+  return i < 0 ? null : i;
+};
 // The room on the other side of an opening, or null (= outside).
 export const openingTarget = (layout, room, o) => layout.rooms.find(other => other.id !== room.id && other.floor_id === room.floor_id
-  && other.polygon.length >= 3 && openingSamples(room.polygon, o).every(p => other.polygon.some((a, i) => onSegment(a, other.polygon[(i + 1) % other.polygon.length], p, WALL_TOLERANCE)))) || null;
+  && other.polygon.length >= 3 && openingSamples(room.polygon, o).every(p => other.polygon.some((a, i) => onSegment(a, other.polygon[(i + 1) % other.polygon.length], p, partitionTol(room, other, o.edge, i))))) || null;
 // Stretches (in m along wall a→b) where another room of the floor has a wall on the same line.
 const sharedStretches = (layout, room, a, b) => {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len;
   const off = p => Math.abs((p[0] - a[0]) * uy - (p[1] - a[1]) * ux), along = p => (p[0] - a[0]) * ux + (p[1] - a[1]) * uy;
-  const out = [];
+  const out = [], edge = wallIndex(room.polygon, a, b);
   for (const other of layout.rooms) {
     if (other.id === room.id || other.floor_id !== room.floor_id || other.polygon.length < 3) continue;
     other.polygon.forEach((c, i) => {
-      const d = other.polygon[(i + 1) % other.polygon.length];
-      if (off(c) > WALL_TOLERANCE || off(d) > WALL_TOLERANCE) return;
+      const d = other.polygon[(i + 1) % other.polygon.length], tol = partitionTol(room, other, edge, i);
+      if (off(c) > tol || off(d) > tol) return;
       const lo = Math.max(Math.min(along(c), along(d)), 0), hi = Math.min(Math.max(along(c), along(d)), len);
       if (hi - lo > 1e-6) out.push([lo, hi]);
     });
   }
   return out;
 };
+// The parts of wall a→b (in m along it) that no other room of the floor shares: the outside stretches.
+export const freeStretches = (layout, room, a, b) => {
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, out = [];
+  let pos = 0;
+  for (const [lo, hi] of sharedStretches(layout, room, a, b).sort((x, y) => x[0] - y[0])) {
+    if (lo - pos > 1e-6) out.push([pos, lo]);
+    pos = Math.max(pos, hi);
+  }
+  if (len - pos > 1e-6) out.push([pos, len]);
+  return out;
+};
+const exteriorAt = (layout, floorId, p, maxDist, kind) => {
+  let best = null, near = false;
+  for (const room of layout.rooms.filter(r => r.floor_id === floorId && r.polygon.length >= 3)) {
+    room.polygon.forEach((a, index) => {
+      const b = room.polygon[(index + 1) % room.polygon.length], hit = project(p, a, b);
+      if (hit.distance > maxDist) return;
+      near = true;
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, at = hit.t * len;
+      const stretch = freeStretches(layout, room, a, b).find(([lo, hi]) => at >= lo - WALL_TOLERANCE && at <= hi + WALL_TOLERANCE && hi - lo >= MIN_INTERIOR_WIDTH);
+      if (stretch && (!best || hit.distance < best.distance)) best = { room, index, len, at, stretch, distance: hit.distance };
+    });
+  }
+  if (!best) return near ? { error: "no_exterior_wall" } : null;
+  const { room, index, len, at, stretch } = best, span = stretch[1] - stretch[0];
+  // a window keeps its drawn width (no stored width) unless the free stretch is narrower
+  const drawn = DEFAULT_WIDTH[kind] == null ? Math.min(0.9, len * 0.4) : DEFAULT_WIDTH[kind];
+  const w = Math.min(drawn, span);
+  const width = DEFAULT_WIDTH[kind] == null && w >= drawn - 1e-9 ? null : r3(w);
+  const offset = r3(Math.min(Math.max(at, stretch[0] + w / 2), stretch[1] - w / 2) / len);
+  const door = kind === "outer_door";
+  return { id: `o_${room.room_key}_${Date.now().toString(36)}`, room_id: room.id, edge: index, offset, width_m: width,
+    kind: door ? "door" : "window", mechanics: door ? "door" : "unknown", contacts: [], provenance: "user" };
+};
 export const openingAt = (layout, floorId, p, maxDist = 0.6, kind = "window") => {
+  if (EXTERIOR_TOOLS.has(kind)) return exteriorAt(layout, floorId, p, maxDist, kind);
   let best = null;
   for (const room of layout.rooms.filter(r => r.floor_id === floorId && r.polygon.length >= 3)) {
     const hit = nearestWall(room.polygon, p);

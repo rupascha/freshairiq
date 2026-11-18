@@ -1,7 +1,11 @@
 """Night moisture forecast and adaptive whole-house learning."""
 from __future__ import annotations
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from functools import partial
+from math import log1p
 from typing import Any
+
+from .iq2 import effective_rate, relax
 
 
 def _minute_of_day(value: Any, default_hour: int) -> int:
@@ -30,8 +34,22 @@ def night_window_hours(start_hour: Any, end_hour: Any) -> float:
     return float(((end - start) % 1440) / 60.0)
 
 
+def elapsed_minutes(start: datetime, end: datetime) -> float:
+    """F12: real minutes between two times – through UTC, so a clock change and its repeated hour count as they last.
+
+    Datetimes of one zone subtract as wall clock times in Python; naive values (no zone) keep that plain difference.
+    """
+    if start.tzinfo is None or end.tzinfo is None:
+        return (end - start).total_seconds() / 60.0
+    return (end.astimezone(timezone.utc) - start.astimezone(timezone.utc)).total_seconds() / 60.0
+
+
 def night_interval_bounds(now: datetime, start_hour: Any, end_hour: Any) -> tuple[datetime, datetime]:
-    """Return the remaining current night or the next complete night interval."""
+    """Return the remaining current night or the next complete night interval.
+
+    The bounds are local wall-clock times (the night is configured by the clock); its length is
+    ``elapsed_minutes`` between them, never the wall-clock difference (F12).
+    """
     start = _minute_of_day(start_hour, 22)
     end = _minute_of_day(end_hour, 7)
     if start == end:
@@ -159,6 +177,50 @@ def in_night_window(now: datetime, start_hour: Any, end_hour: Any) -> bool:
     return start <= current < end
 
 
+def _boundary_at(boundaries: dict[int, dict[str, Any]] | None, source_ah: float, source_temp_c: float, minute: float) -> tuple[float, float, int | None]:
+    """Future reference boundary nearest to a step end (absolute humidity, temperature, weather confidence).
+
+    The coordinator supplies 5-minute weather-interpolated points when the room uses the outdoor weather entity as
+    its reference. Rooms with a custom reference sensor keep the current reference state.
+    """
+    point = (boundaries or {}).get(int(round(minute)))
+    if not isinstance(point, dict):
+        return source_ah, source_temp_c, None
+    try:
+        ah = float(point.get("absolute_humidity", source_ah))
+        temp = float(point.get("temperature_c", source_temp_c))
+    except (TypeError, ValueError):
+        return source_ah, source_temp_c, None
+    if not (0.0 <= ah <= 40.0 and -40.0 <= temp <= 60.0):
+        return source_ah, source_temp_c, None
+    try:
+        confidence = int(point.get("confidence")) if point.get("confidence") is not None else None
+    except (TypeError, ValueError):
+        confidence = None
+    return ah, temp, confidence
+
+
+def _observed_equilibrium_shift(
+    *, live_adapted: bool, recent_observed_removed_ml_min: Any, current_ah: Any, source_ah: Any, anchor_ah: float,
+    rate_per_min: Any, bonus: float, moisture_share: float, volume: float,
+) -> float | None:
+    """Equilibrium offset (g/m³) that makes the buffered model reproduce the measured net drying rate right now.
+
+    The model removes ``k/share * (A - A_eq) * V`` per minute at the current state. A measured rate that differs
+    states that the equilibrium the room is heading to differs; every horizon then relaxes from the same start state
+    towards that equilibrium instead of projecting the measured rate linearly. None = no usable live observation.
+    """
+    if not live_adapted or volume <= 0.0:
+        return None
+    decay = -log1p(-effective_rate(rate_per_min, bonus)) / moisture_share
+    if decay <= 0.0:
+        return None
+    model_gradient = float(current_ah) - (moisture_share * float(source_ah) + (1.0 - moisture_share) * anchor_ah)
+    bound = max(abs(model_gradient), abs(float(current_ah) - float(source_ah)))
+    observed_gradient = min(max(float(recent_observed_removed_ml_min) / (decay * volume), -bound), bound)
+    return model_gradient - observed_gradient
+
+
 def horizon_forecast(
     *,
     current_ah: float,
@@ -188,19 +250,27 @@ def horizon_forecast(
     operating_profile: str = "comfort",
     model_maturity_pct: float | None = None,
     measurement_frame_quality: str | None = None,
+    moisture_air_share: float = 1.0,
+    thermal_air_share: float = 1.0,
+    anchor_ah: float | None = None,
+    anchor_temp_c: float | None = None,
 ) -> dict[str, Any]:
     """Hybrid short-term forecast for moisture and room-air temperature.
 
-    It combines the learned air-exchange model with a learned residual from
-    recent measurements.  The residual captures internal moisture generation,
-    sorption/desorption and heating/thermal-mass effects that a pure outdoor-
-    air mixing model cannot explain.
+    IQ2 (0.26.7.1): the room state advances with ``iq2.relax`` towards the equilibrium of reference air and moisture
+    buffer / thermal mass (``anchor_*``: room state when the airing started; shares of 1 = the earlier plain model).
+    Result quantities: ``net_room_change_ml`` (vapour change of the room air, not target-limited),
+    ``outdoor_transport_ml`` (modelled, not measured), ``to_target_ml`` and the target-limited ``moisture_effect_ml``.
 
-    Moisture result uses FreshAirIQ's established sign convention:
-    positive = moisture removed, negative = moisture added.
+    It combines the learned air-exchange model with a learned residual from recent measurements (internal moisture
+    generation, sorption/desorption, heating) that the mixing model cannot explain.
+
+    Sign convention: positive = moisture removed, negative = moisture added.
     """
     from .energy import exchanged_air_fraction
 
+    moisture_share, thermal_share = min(max(float(moisture_air_share), 0.05), 1.0), min(max(float(thermal_air_share), 0.01), 1.0)
+    anchor_ah, anchor_temp_c = float(current_ah if anchor_ah is None else anchor_ah), float(current_temp_c if anchor_temp_c is None else anchor_temp_c)
     horizon = min(max(float(horizon_min), 1.0), 120.0)
     bonus = min(max(float(airflow_bonus), 0.25), 2.5)
     volume = max(float(volume_m3), 0.0)
@@ -225,37 +295,18 @@ def horizon_forecast(
         elapsed_weight = min(max((float(session_elapsed_min) - 5.0) / 20.0, 0.0), 1.0)
         live_observation_weight = 0.94 * fresh_weight * elapsed_weight
         live_adapted = live_observation_weight > 0.0
+    observed_shift_ah = _observed_equilibrium_shift(
+        live_adapted=live_adapted, recent_observed_removed_ml_min=recent_observed_removed_ml_min, current_ah=current_ah,
+        source_ah=source_ah, anchor_ah=anchor_ah, rate_per_min=rate_per_min, bonus=bonus, moisture_share=moisture_share,
+        volume=volume,
+    )
 
     def _effective_residual_minutes(minutes: float) -> float:
         """Damped extrapolation of internal/thermal residuals."""
         minutes = max(float(minutes), 0.0)
         return minutes if minutes <= 20.0 else 20.0 + (minutes - 20.0) * 0.55
 
-    def _future_boundary(minute: float) -> tuple[float, float, int | None]:
-        """Return the future reference boundary nearest to this step end.
-
-        The coordinator supplies 5-minute weather-interpolated points when the
-        room uses the outdoor weather entity as its reference. Rooms with a
-        custom reference sensor intentionally keep the current reference state.
-        """
-        if not future_source_boundaries:
-            return float(source_ah), float(source_temp_c), None
-        key = int(round(minute))
-        point = future_source_boundaries.get(key)
-        if not isinstance(point, dict):
-            return float(source_ah), float(source_temp_c), None
-        try:
-            ah = float(point.get("absolute_humidity", source_ah))
-            temp = float(point.get("temperature_c", source_temp_c))
-        except (TypeError, ValueError):
-            return float(source_ah), float(source_temp_c), None
-        if not (0.0 <= ah <= 40.0 and -40.0 <= temp <= 60.0):
-            return float(source_ah), float(source_temp_c), None
-        try:
-            confidence = int(point.get("confidence")) if point.get("confidence") is not None else None
-        except (TypeError, ValueError):
-            confidence = None
-        return ah, temp, confidence
+    _future_boundary = partial(_boundary_at, future_source_boundaries, float(source_ah), float(source_temp_c))
 
     # Keep the established 5-minute control path bit-for-bit in spirit. This
     # hotfix only changes user-selected horizons above five minutes, so the
@@ -277,6 +328,7 @@ def horizon_forecast(
         fraction, internal_change_ml, net_removed_ml, observed_projection_ml, optimal_close_in_min,
         optimal_close_reason, physical_removed_ml, simulated_final_ah, simulation_steps, target_cap_ml,
         temp_delta, uncapped_physical_removed_ml, ventilation_effect_ml, weather_confidence,
+        net_uncapped_ml, outdoor_transport_ml,
     ) = _forecast_path(
         _effective_residual_minutes=_effective_residual_minutes, _future_boundary=_future_boundary,
         bonus=bonus, cap_positive_to_target=cap_positive_to_target, current_ah=current_ah,
@@ -288,13 +340,16 @@ def horizon_forecast(
         max_cumulative_temp_loss=max_cumulative_temp_loss, max_duration_min=max_duration_min,
         min_duration_min=min_duration_min, min_forecast_end_temp=min_forecast_end_temp,
         optimal_close_in_min=optimal_close_in_min, optimal_close_reason=optimal_close_reason, profile=profile,
-        rate_per_min=rate_per_min, recent_observed_removed_ml_min=recent_observed_removed_ml_min,
+        rate_per_min=rate_per_min, observed_shift_ah=observed_shift_ah,
         running=running, session_elapsed_min=session_elapsed_min, source_ah=source_ah,
         source_rate=source_rate, source_temp_c=source_temp_c, target_ah=target_ah,
         temperature_path=temperature_path, volume=volume,
+        anchor_ah=anchor_ah, anchor_temp_c=anchor_temp_c, moisture_share=moisture_share, thermal_share=thermal_share,
     )
 
     return _forecast_result(
+        to_target_ml=(max((float(current_ah) - float(target_ah)) * volume, 0.0) if target_ah is not None else None),
+        net_room_change_ml=net_uncapped_ml, outdoor_transport_ml=outdoor_transport_ml,
         fraction=fraction, horizon=horizon, internal_change_ml=internal_change_ml, live_adapted=live_adapted,
         live_observation_weight=live_observation_weight, max_cumulative_temp_loss=max_cumulative_temp_loss,
         measurement_frame_quality=measurement_frame_quality, min_forecast_end_temp=min_forecast_end_temp,
@@ -347,15 +402,18 @@ def _forecast_path(
     forecast_min_efficiency: Any, forecast_min_return: Any, horizon: Any, learned_thermal_residual_c_min: Any,
     learned_weight: Any, live_adapted: Any, live_observation_weight: Any, max_cumulative_temp_loss: Any,
     max_duration_min: Any, min_duration_min: Any, min_forecast_end_temp: Any, optimal_close_in_min: Any,
-    optimal_close_reason: Any, profile: Any, rate_per_min: Any, recent_observed_removed_ml_min: Any,
+    optimal_close_reason: Any, profile: Any, rate_per_min: Any, observed_shift_ah: Any,
     running: Any, session_elapsed_min: Any, source_ah: Any, source_rate: Any, source_temp_c: Any,
     target_ah: Any, temperature_path: Any, volume: Any,
+    anchor_ah: Any = None, anchor_temp_c: Any = None, moisture_share: Any = 1.0, thermal_share: Any = 1.0,
 ) -> Any:
     """Moisture and temperature path over the horizon (single slice or stepped simulation)."""
     if horizon <= 5.0:
         fraction = exchanged_air_fraction(rate_per_min, horizon, bonus)
-        physical_removed_ml = (float(current_ah) - float(source_ah)) * volume * fraction
+        # IQ2: net change of the room air (buffered) and, separately, the modelled transport through the opening
+        physical_removed_ml = (float(current_ah) - relax(float(current_ah), float(source_ah), anchor_ah, rate_per_min, horizon, bonus, moisture_share)) * volume
         uncapped_physical_removed_ml = physical_removed_ml
+        outdoor_transport_ml = (float(current_ah) - float(source_ah)) * volume * fraction
 
         target_cap_ml: float | None = None
         if cap_positive_to_target and target_ah is not None and physical_removed_ml > 0:
@@ -365,19 +423,21 @@ def _forecast_path(
         residual_minutes = _effective_residual_minutes(horizon)
         internal_change_ml = source_rate * residual_minutes
         net_removed_ml = physical_removed_ml - internal_change_ml
+        net_uncapped_ml = uncapped_physical_removed_ml - internal_change_ml
         ventilation_effect_ml = physical_removed_ml
         observed_projection_ml = None
-        if live_adapted:
-            observed_projection_ml = float(recent_observed_removed_ml_min) * horizon
-            scale = max(abs(float(uncapped_physical_removed_ml)), 20.0)
-            observed_projection_ml = min(max(observed_projection_ml, -scale), scale * 1.5)
-            blended = (float(uncapped_physical_removed_ml) * (1.0 - live_observation_weight)
-                       + observed_projection_ml * live_observation_weight)
-            if target_cap_ml is not None and blended > 0:
+        if observed_shift_ah is not None:
+            # same relaxation as the stepped path, towards the equilibrium the measured rate implies
+            observed_projection_ml = (float(current_ah) - relax(float(current_ah), float(source_ah) + observed_shift_ah / moisture_share, anchor_ah, rate_per_min, horizon, bonus, moisture_share)) * volume
+            blended = (float(current_ah) - relax(float(current_ah), float(source_ah) + live_observation_weight * observed_shift_ah / moisture_share, anchor_ah, rate_per_min, horizon, bonus, moisture_share)) * volume
+            net_uncapped_ml = blended - internal_change_ml
+            if cap_positive_to_target and target_ah is not None and blended > 0:
+                # the cap belongs to the positive effect, also when only the live correction makes it positive
+                target_cap_ml = max((float(current_ah) - float(target_ah)) * volume, 0.0)
                 blended = min(blended, target_cap_ml)
             ventilation_effect_ml = blended
 
-        physical_dt = (float(source_temp_c) - float(current_temp_c)) * fraction
+        physical_dt = relax(float(current_temp_c), float(source_temp_c), anchor_temp_c, rate_per_min, horizon, bonus, thermal_share) - float(current_temp_c)
         thermal_residual = 0.0
         if learned_thermal_residual_c_min is not None:
             thermal_residual = min(max(float(learned_thermal_residual_c_min), -0.20), 0.20) * learned_weight * residual_minutes
@@ -402,13 +462,12 @@ def _forecast_path(
         step_size = 5.0
         state_ah = float(current_ah)
         state_temp = float(current_temp_c)
-        initial_gradient = abs(float(current_ah) - float(source_ah))
         cumulative_min = 0.0
         uncapped_physical_removed_ml = 0.0
         ventilation_effect_uncapped_ml = 0.0
         internal_change_ml = 0.0
         exchange_remaining = 1.0
-        observed_projection_ml = 0.0 if live_adapted else None
+        observed_projection_ml = 0.0 if observed_shift_ah is not None else None
         weather_confidences: list[int] = []
         simulation_steps = 0
         total_min_duration = max(float(min_duration_min), 0.0)
@@ -419,38 +478,40 @@ def _forecast_path(
         (
             exchange_remaining, internal_change_ml, observed_projection_ml, optimal_close_in_min,
             optimal_close_reason, simulation_steps, state_ah, state_temp, uncapped_physical_removed_ml,
-            ventilation_effect_uncapped_ml,
+            ventilation_effect_uncapped_ml, outdoor_transport_ml,
         ) = _simulate_forecast_steps(
             _effective_residual_minutes=_effective_residual_minutes, _future_boundary=_future_boundary,
             bonus=bonus, cumulative_min=cumulative_min, current_temp_c=current_temp_c,
             elapsed_before_forecast=elapsed_before_forecast, exchange_remaining=exchange_remaining,
             exchanged_air_fraction=exchanged_air_fraction, forecast_max_temp_loss=forecast_max_temp_loss,
             forecast_min_efficiency=forecast_min_efficiency, forecast_min_return=forecast_min_return,
-            hard_max_in=hard_max_in, horizon=horizon, initial_gradient=initial_gradient,
+            hard_max_in=hard_max_in, horizon=horizon,
             internal_change_ml=internal_change_ml,
             learned_thermal_residual_c_min=learned_thermal_residual_c_min, learned_weight=learned_weight,
             live_adapted=live_adapted, live_observation_weight=live_observation_weight,
             max_cumulative_temp_loss=max_cumulative_temp_loss, min_forecast_end_temp=min_forecast_end_temp,
             observed_projection_ml=observed_projection_ml, optimal_close_in_min=optimal_close_in_min,
             optimal_close_reason=optimal_close_reason, profile=profile, rate_per_min=rate_per_min,
-            recent_observed_removed_ml_min=recent_observed_removed_ml_min, simulation_steps=simulation_steps,
+            observed_shift_ah=observed_shift_ah, simulation_steps=simulation_steps,
             source_rate=source_rate, state_ah=state_ah, state_temp=state_temp, step_size=step_size,
             target_ah=target_ah, temperature_path=temperature_path, total_min_duration=total_min_duration,
             uncapped_physical_removed_ml=uncapped_physical_removed_ml,
             ventilation_effect_uncapped_ml=ventilation_effect_uncapped_ml, volume=volume,
             weather_confidences=weather_confidences,
+            anchor_ah=anchor_ah, anchor_temp_c=anchor_temp_c, moisture_share=moisture_share, thermal_share=thermal_share,
         )
 
         target_cap_ml = None
         physical_removed_ml = uncapped_physical_removed_ml
         ventilation_effect_ml = ventilation_effect_uncapped_ml
-        if cap_positive_to_target and target_ah is not None and physical_removed_ml > 0:
+        if cap_positive_to_target and target_ah is not None and (physical_removed_ml > 0 or ventilation_effect_ml > 0):
             target_cap_ml = max((float(current_ah) - float(target_ah)) * volume, 0.0)
             physical_removed_ml = min(physical_removed_ml, target_cap_ml)
             if ventilation_effect_ml > 0:
                 ventilation_effect_ml = min(ventilation_effect_ml, target_cap_ml)
 
         net_removed_ml = ventilation_effect_ml - internal_change_ml
+        net_uncapped_ml = ventilation_effect_uncapped_ml - internal_change_ml
         fraction = 1.0 - exchange_remaining
         temp_delta = state_temp - float(current_temp_c)
         weather_confidence = min(weather_confidences) if weather_confidences else None
@@ -459,6 +520,7 @@ def _forecast_path(
         fraction, internal_change_ml, net_removed_ml, observed_projection_ml, optimal_close_in_min,
         optimal_close_reason, physical_removed_ml, simulated_final_ah, simulation_steps, target_cap_ml,
         temp_delta, uncapped_physical_removed_ml, ventilation_effect_ml, weather_confidence,
+        net_uncapped_ml, outdoor_transport_ml,
     )
 
 
@@ -470,7 +532,7 @@ def _forecast_result(
     optimal_close_reason: Any, physical_removed_ml: Any, running: Any, samples: Any, session_elapsed_min: Any,
     simulated_final_ah: Any, simulation_steps: Any, source_rate: Any, target_cap_ml: Any, temp_delta: Any,
     temperature_path: Any, uncapped_physical_removed_ml: Any, ventilation_effect_ml: Any,
-    weather_confidence: Any,
+    weather_confidence: Any, net_room_change_ml: Any = None, to_target_ml: Any = None, outdoor_transport_ml: Any = None,
 ) -> Any:
     """Confidence (model maturity and measurement frame caps) and the forecast payload."""
     base_confidence = 35.0 + min(samples, 6) * 8.0
@@ -512,6 +574,10 @@ def _forecast_result(
         "uncapped_physical_moisture_effect_ml": round(uncapped_physical_removed_ml),
         "internal_moisture_effect_ml": round(internal_change_ml),
         "net_moisture_change_ml": round(net_removed_ml),
+        # IQ2: separate, clearly named quantities (see horizon_forecast)
+        "net_room_change_ml": round(net_room_change_ml) if net_room_change_ml is not None else round(net_removed_ml),
+        "outdoor_transport_ml": round(outdoor_transport_ml) if outdoor_transport_ml is not None else round(uncapped_physical_removed_ml),
+        "to_target_ml": round(to_target_ml) if to_target_ml is not None else None,
         "temperature_change_c": round(temp_delta, 2),
         "exchange_fraction": round(fraction, 4),
         "confidence": confidence,
@@ -547,15 +613,17 @@ def _simulate_forecast_steps(
     _effective_residual_minutes: Any, _future_boundary: Any, bonus: Any, cumulative_min: Any,
     current_temp_c: Any, elapsed_before_forecast: Any, exchange_remaining: Any, exchanged_air_fraction: Any,
     forecast_max_temp_loss: Any, forecast_min_efficiency: Any, forecast_min_return: Any, hard_max_in: Any,
-    horizon: Any, initial_gradient: Any, internal_change_ml: Any, learned_thermal_residual_c_min: Any,
+    horizon: Any, internal_change_ml: Any, learned_thermal_residual_c_min: Any,
     learned_weight: Any, live_adapted: Any, live_observation_weight: Any, max_cumulative_temp_loss: Any,
     min_forecast_end_temp: Any, observed_projection_ml: Any, optimal_close_in_min: Any,
-    optimal_close_reason: Any, profile: Any, rate_per_min: Any, recent_observed_removed_ml_min: Any,
+    optimal_close_reason: Any, profile: Any, rate_per_min: Any, observed_shift_ah: Any,
     simulation_steps: Any, source_rate: Any, state_ah: Any, state_temp: Any, step_size: Any, target_ah: Any,
     temperature_path: Any, total_min_duration: Any, uncapped_physical_removed_ml: Any,
     ventilation_effect_uncapped_ml: Any, volume: Any, weather_confidences: Any,
+    anchor_ah: Any = None, anchor_temp_c: Any = None, moisture_share: Any = 1.0, thermal_share: Any = 1.0,
 ) -> Any:
     """Advance the moisture/temperature state in 5-minute steps through the future weather boundaries."""
+    outdoor_transport_ml = 0.0
     while cumulative_min < horizon - 1e-9:
         step = min(step_size, horizon - cumulative_min)
         step_end = cumulative_min + step
@@ -565,8 +633,10 @@ def _simulate_forecast_steps(
 
         step_fraction = exchanged_air_fraction(rate_per_min, step, bonus)
         exchange_remaining *= (1.0 - step_fraction)
-        model_removed = (state_ah - step_source_ah) * volume * step_fraction
+        # IQ2: buffered net change of the room air in this step (equals the plain replacement for share 1)
+        model_removed = (state_ah - relax(state_ah, step_source_ah, anchor_ah, rate_per_min, step, bonus, moisture_share)) * volume
         uncapped_physical_removed_ml += model_removed
+        outdoor_transport_ml += (state_ah - step_source_ah) * volume * step_fraction
 
         prev_effective = _effective_residual_minutes(cumulative_min)
         next_effective = _effective_residual_minutes(step_end)
@@ -574,20 +644,12 @@ def _simulate_forecast_steps(
         step_internal = source_rate * effective_step_min
         internal_change_ml += step_internal
 
-        # Recent measured net drying is most trustworthy near "now".
-        # As the simulation advances, its influence fades and is also scaled
-        # by the remaining moisture gradient, preventing a measured 5-minute
-        # rate from being copied unchanged over a full hour.
+        # Live correction: the same relaxation from the predicted state of this step, towards the equilibrium shifted
+        # by the measured net drying (it fades with the remaining gradient instead of copying one measured rate).
         step_effect = model_removed
-        if live_adapted:
-            gradient = abs(state_ah - step_source_ah)
-            gradient_ratio = min(max(gradient / max(initial_gradient, 0.15), 0.0), 1.5)
-            observed_step = float(recent_observed_removed_ml_min) * step * gradient_ratio
-            distance_decay = max(0.97, 1.0 - 0.03 * (cumulative_min / max(horizon, 1.0)))
-            step_weight = live_observation_weight * distance_decay
-            scale = max(abs(model_removed), 5.0)
-            observed_step = min(max(observed_step, -scale), scale * 1.5)
-            step_effect = model_removed * (1.0 - step_weight) + observed_step * step_weight
+        if observed_shift_ah is not None:
+            observed_step = (state_ah - relax(state_ah, step_source_ah + observed_shift_ah / moisture_share, anchor_ah, rate_per_min, step, bonus, moisture_share)) * volume
+            step_effect = (state_ah - relax(state_ah, step_source_ah + live_observation_weight * observed_shift_ah / moisture_share, anchor_ah, rate_per_min, step, bonus, moisture_share)) * volume
             observed_projection_ml += observed_step
 
         ventilation_effect_uncapped_ml += step_effect
@@ -601,7 +663,7 @@ def _simulate_forecast_steps(
             state_ah = min(max(state_ah, 0.0), 40.0)
 
         step_room_start_temp = state_temp
-        physical_dt = (step_source_temp - state_temp) * step_fraction
+        physical_dt = relax(state_temp, step_source_temp, anchor_temp_c, rate_per_min, step, bonus, thermal_share) - state_temp
         state_temp += physical_dt
         thermal_step = 0.0
         if learned_thermal_residual_c_min is not None:
@@ -660,5 +722,5 @@ def _simulate_forecast_steps(
     return (
         exchange_remaining, internal_change_ml, observed_projection_ml, optimal_close_in_min,
         optimal_close_reason, simulation_steps, state_ah, state_temp, uncapped_physical_removed_ml,
-        ventilation_effect_uncapped_ml,
+        ventilation_effect_uncapped_ml, outdoor_transport_ml,
     )

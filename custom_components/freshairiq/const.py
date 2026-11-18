@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "freshairiq"
-VERSION = "0.26.7.0"
+VERSION = "0.26.7.1"
 DIAGNOSTICS_SCHEMA_VERSION = 15
 PLATFORMS = ["sensor", "binary_sensor", "button", "select", "number"]
 STORAGE_VERSION = 1
@@ -97,7 +97,7 @@ CONF_ROOM_EXHAUST_FAN_MAX_RUNTIME = "exhaust_fan_max_runtime_min"
 # 0.26.5.5: optional switch/timer of another automation (Alexa, washing machine …) – while it is on,
 # FreshAirIQ leaves the room's fans to it and never switches them off.
 CONF_ROOM_EXHAUST_FAN_EXTERNAL_LOCK = "exhaust_fan_external_lock"
-# 0.26.7.0: an optional Home Assistant entity (e.g. input_boolean.urlaub) that pauses every automatic device action
+# 0.26.7.1: an optional Home Assistant entity (e.g. input_boolean.urlaub) that pauses every automatic device action
 CONF_AUTOMATION_LOCK_ENTITY = "automation_lock_entity"
 # 0.26.5.5: optional lock period of the automatic fan control (e.g. 22:00–07:00); off without both times
 CONF_ROOM_EXHAUST_FAN_BLOCK_START = "exhaust_fan_block_start"
@@ -128,7 +128,7 @@ CONF_ROOM_SORT_ORDER = "sort_order"
 CONF_ROOM_INCLUDE_CALCULATIONS = "include_in_calculations"
 CONF_ROOM_WINDOW_ORIENTATION = "window_orientation"
 CONF_ROOM_MOISTURE_SOURCES = "moisture_sources"
-CONF_ROOM_DISHWASHER_SIGNAL = "dishwasher_signal"  # 0.26.7.0 (#18): optional device signal (phase / drying)
+CONF_ROOM_DISHWASHER_SIGNAL = "dishwasher_signal"  # 0.26.7.1 (#18): optional device signal (phase / drying)
 # Optional per-room ventilation relevance threshold. "automatic" preserves the
 # established global room threshold; percentage/fixed modes only refine when a
 # non-urgent room becomes individually actionable. Safety/health overrides remain authoritative.
@@ -146,7 +146,7 @@ MOISTURE_SOURCE_WASHING_MACHINE = "washing_machine"
 MOISTURE_SOURCE_DRYER = "dryer"
 MOISTURE_SOURCE_IRONING_STATION = "ironing_station"
 MOISTURE_SOURCE_LAUNDRY_DRYING = "laundry_drying"
-MOISTURE_SOURCE_DISHWASHER = "dishwasher"  # 0.26.7.0 (#18)
+MOISTURE_SOURCE_DISHWASHER = "dishwasher"  # 0.26.7.1 (#18)
 MOISTURE_SOURCES = [
     MOISTURE_SOURCE_SHOWER, MOISTURE_SOURCE_BATH, MOISTURE_SOURCE_SAUNA, MOISTURE_SOURCE_COOKING,
     MOISTURE_SOURCE_WASHING_MACHINE, MOISTURE_SOURCE_DRYER, MOISTURE_SOURCE_IRONING_STATION, MOISTURE_SOURCE_LAUNDRY_DRYING,
@@ -216,7 +216,7 @@ DEFAULT_OPTIONS = {
     # remain available for backwards compatibility.
     "forecast_horizon_min": 5,
     "max_temp_loss_next_5_min_c": 0.6,
-    "airing_min_room_temp_c": 0.0,  # 0.26.7.0 (F11): own temperature limit for airing; 0 = none (no hidden default)
+    "airing_min_room_temp_c": 0.0,  # 0.26.7.1 (F11): own temperature limit for airing; 0 = none (no hidden default)
     "min_efficiency_ml_per_01c": 8.0,
     "surface_factor": 0.25,
     "mould_slight_surface_rh": 60.0,  # 0.26.6.1(7): all four mould risk limits are settings

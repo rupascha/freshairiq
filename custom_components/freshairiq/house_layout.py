@@ -33,6 +33,9 @@ EPS = 1e-6
 WALL_TOLERANCE = 0.05  # 5 cm (or 0.05 schematic units): walls closer than this are shared
 # Hotfix 0.26.6.0: a wall two rooms really share is at least as long as the narrowest opening (as in the card)
 MIN_SHARED_WALL = 0.3
+# a partition wall the user confirmed between two rooms (editor "take as shared wall"): at most 50 cm thick
+MAX_PARTITION_M = 0.5
+PARTITION_MATCH = 0.005  # a stored partition without its walls fits a wall pair this close to its thickness
 PHYSICAL_CONNECTIONS = ("door", "open_passage")
 # 0.26.6.0(2): optional door attributes (absent in older plans = drawn as before: hinge at the wall's start, into the room)
 DOOR_HINGES = ("left", "right")   # seen from inside the room the door belongs to, facing the wall
@@ -117,7 +120,32 @@ def polygons_overlap(first: list[tuple[float, float]], second: list[tuple[float,
                 return True
     if any(point_in_polygon(p, second) == "inside" for p in first) or any(point_in_polygon(p, first) == "inside" for p in second):
         return True
-    return point_in_polygon(interior_point(first), second) == "inside" or point_in_polygon(interior_point(second), first) == "inside"
+    if point_in_polygon(interior_point(first), second) == "inside" or point_in_polygon(interior_point(second), first) == "inside":
+        return True
+    return flush_overlap(first, second)
+
+
+def flush_overlap(first: list[tuple[float, float]], second: list[tuple[float, float]]) -> bool:
+    """Both rooms run along one wall stretch with their insides on the same side – a flush overlap that crosses no
+    wall (two 4 m squares 30 cm into each other along a common side). Touching at a wall or a corner is no overlap."""
+    for i in range(len(first)):
+        a, b = edge(first, i)
+        length = math.hypot(b[0] - a[0], b[1] - a[1])
+        if length < EPS:
+            continue
+        ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+        own = outward_normal(first, i)
+        for j in range(len(second)):
+            c, d = edge(second, j)
+            if abs((c[0] - a[0]) * uy - (c[1] - a[1]) * ux) > EPS or abs((d[0] - a[0]) * uy - (d[1] - a[1]) * ux) > EPS:
+                continue
+            tc, td = (c[0] - a[0]) * ux + (c[1] - a[1]) * uy, (d[0] - a[0]) * ux + (d[1] - a[1]) * uy
+            if min(length, max(tc, td)) - max(0.0, min(tc, td)) <= EPS:
+                continue
+            other = outward_normal(second, j)
+            if own[0] * other[0] + own[1] * other[1] > 0:
+                return True
+    return False
 
 
 def edge(points: list[tuple[float, float]], index: int) -> tuple[tuple[float, float], tuple[float, float]]:
@@ -192,12 +220,58 @@ def opening_samples(points: list[tuple[float, float]], opening: dict[str, Any], 
     return [edge_point(points, int(opening["edge"]), lo + (hi - lo) * k / (count - 1)) for k in range(count)]
 
 
+def _wall_index(value: Any) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+
+
+def partition_tolerance(first: dict[str, Any], second: dict[str, Any], first_wall: int, second_wall: int) -> float:
+    """How far apart wall ``first_wall`` of one room and wall ``second_wall`` of the other may lie and still be one
+    wall: the partition wall the user confirmed for exactly these two walls (``partitions`` – thickness in m, the
+    room's ``wall`` and the other room's ``other_wall``, set in the editor) plus WALL_TOLERANCE; else WALL_TOLERANCE.
+
+    A partition is geometry only – it never creates a way for air; doors and passages on it link both rooms."""
+    tol = WALL_TOLERANCE
+    for own, other, wall, other_wall in ((first, second, first_wall, second_wall), (second, first, second_wall, first_wall)):
+        for item in own.get("partitions") or []:
+            if isinstance(item, dict) and item.get("room") == other.get("id") and item.get("wall") == wall and item.get("other_wall") == other_wall:
+                thickness = _finite(item.get("thickness_m"))
+                if thickness is not None and 0 < thickness <= MAX_PARTITION_M:
+                    tol = max(tol, thickness + WALL_TOLERANCE)
+    return tol
+
+
+def facing_walls(first: dict[str, Any], second: dict[str, Any]) -> list[tuple[int, int, float]]:
+    """Walls of two rooms that face each other across a parallel gap of at most a partition's thickness and run side
+    by side for at least MIN_SHARED_WALL: (wall of the first, wall of the second, gap in m)."""
+    a_pts, b_pts, out = [tuple(p) for p in first["polygon"]], [tuple(p) for p in second["polygon"]], []
+    for i in range(len(a_pts)):
+        a1, a2 = edge(a_pts, i)
+        length = math.dist(a1, a2)
+        if length < MIN_SHARED_WALL:
+            continue
+        ux, uy = (a2[0] - a1[0]) / length, (a2[1] - a1[1]) / length
+        na = outward_normal(a_pts, i)
+        for j in range(len(b_pts)):
+            b1, b2 = edge(b_pts, j)
+            nb = outward_normal(b_pts, j)
+            if na[0] * nb[0] + na[1] * nb[1] > -0.995:
+                continue
+            t1, t2 = (b1[0] - a1[0]) * ux + (b1[1] - a1[1]) * uy, (b2[0] - a1[0]) * ux + (b2[1] - a1[1]) * uy
+            if min(length, max(t1, t2)) - max(0.0, min(t1, t2)) < MIN_SHARED_WALL:
+                continue
+            gap = ((b1[0] + b2[0]) / 2 - a1[0]) * na[0] + ((b1[1] + b2[1]) / 2 - a1[1]) * na[1]
+            if -WALL_TOLERANCE <= gap <= MAX_PARTITION_M + WALL_TOLERANCE:
+                out.append((i, j, gap))
+    return out
+
+
 def shared_wall_length(first: dict[str, Any], second: dict[str, Any]) -> float:
     """Longest stretch along which two rooms of the same floor share a wall (0 for another floor)."""
     if first.get("floor_id") != second.get("floor_id"):
         return 0.0
     a_pts, b_pts = [tuple(p) for p in first["polygon"]], [tuple(p) for p in second["polygon"]]
-    return max((shared_length(*edge(a_pts, i), *edge(b_pts, j)) for i in range(len(a_pts)) for j in range(len(b_pts))), default=0.0)
+    return max((shared_length(*edge(a_pts, i), *edge(b_pts, j), partition_tolerance(first, second, i, j))
+                for i in range(len(a_pts)) for j in range(len(b_pts))), default=0.0)
 
 
 def _geometry_issues(layout: dict[str, Any], rooms: dict[str, dict[str, Any]], valid_rooms: set[str]) -> list[dict[str, Any]]:
@@ -244,8 +318,8 @@ def opening_neighbour(layout: dict[str, Any], room_id: str, opening: dict[str, A
         if other["id"] == room_id or other.get("floor_id") != own.get("floor_id"):
             continue
         pts = [tuple(p) for p in other["polygon"]]
-        walls = [edge(pts, i) for i in range(len(pts))]
-        if all(any(_on_segment(a, b, p, WALL_TOLERANCE) for a, b in walls) for p in samples):
+        walls = [(edge(pts, i), partition_tolerance(own, other, int(opening["edge"]), i)) for i in range(len(pts))]
+        if all(any(_on_segment(a, b, p, tol) for (a, b), tol in walls) for p in samples):
             return str(other["id"])
     return None
 
@@ -298,6 +372,18 @@ def normalise(raw: Any) -> dict[str, Any]:
                 room[key] = sorted({i for i in locked if isinstance(i, int) and not isinstance(i, bool) and 0 <= i < len(room["polygon"])})
                 if not room[key]:
                     room.pop(key)
+        # a wall between two rooms the user confirmed in the editor: the other room, the wall's thickness and the
+        # two walls it lies between (this room's ``wall``, the other room's ``other_wall``)
+        if "partitions" in room:
+            items = room.get("partitions") if isinstance(room.get("partitions"), list) else []
+            room["partitions"] = []
+            for item in items:
+                other = _text(item.get("room")) if isinstance(item, dict) else ""
+                thickness = _finite(item.get("thickness_m")) if isinstance(item, dict) else None
+                if other and other != room["id"] and thickness is not None and 0 < thickness <= MAX_PARTITION_M:
+                    room["partitions"].append({"room": other, "thickness_m": round(thickness, 3), "wall": _wall_index(item.get("wall")),
+                                               "other_wall": _wall_index(item.get("other_wall"))})
+    _partition_walls(out["rooms"])
     for opening in out["openings"]:
         opening["contacts"] = [_text(c) for c in opening.get("contacts", []) if _text(c)][: LIMITS["contacts"]] if isinstance(opening.get("contacts"), list) else []
         if opening.get("kind") not in OPENING_KINDS:
@@ -313,6 +399,34 @@ def normalise(raw: Any) -> dict[str, Any]:
     for floor in out["floors"]:
         floor["id"], floor["name"], floor["level_key"] = _text(floor.get("id")), _text(floor.get("name")), _text(floor.get("level_key"))
     return out
+
+
+def _partition_walls(rooms: list[dict[str, Any]]) -> None:
+    """Each confirmed partition names its two walls. An entry without them (stored before) takes the one pair of
+    walls that face each other at its thickness (the editor stored the measured gap); with none or several such pairs it is left for the editor to
+    confirm again (dropped). Walls a room does not have are dropped; each pair of walls once."""
+    by_id = {r["id"]: r for r in rooms}
+    for room in rooms:
+        if "partitions" not in room:
+            continue
+        kept: dict[tuple[str, int, int], float] = {}
+        for item in room["partitions"]:
+            other = by_id.get(item["room"])
+            if other is None or other.get("floor_id") != room.get("floor_id"):
+                continue
+            wall, other_wall = item["wall"], item["other_wall"]
+            if wall is None or other_wall is None:
+                if any(v is None for p in room["polygon"] + other["polygon"] for v in p):
+                    continue
+                found = [(i, j) for i, j, gap in facing_walls(room, other) if abs(gap - item["thickness_m"]) <= PARTITION_MATCH]
+                if len(found) != 1:
+                    continue
+                wall, other_wall = found[0]
+            if wall < len(room["polygon"]) and other_wall < len(other["polygon"]):
+                kept[(item["room"], wall, other_wall)] = item["thickness_m"]
+        room["partitions"] = [{"room": k[0], "thickness_m": v, "wall": k[1], "other_wall": k[2]} for k, v in sorted(kept.items())]
+        if not room["partitions"]:
+            room.pop("partitions")
 
 
 def migrate(raw: Any) -> tuple[dict[str, Any] | None, str | None]:

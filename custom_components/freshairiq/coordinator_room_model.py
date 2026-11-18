@@ -33,6 +33,7 @@ from .forecast import horizon_forecast
 from .goals import room_comfort_target
 from .dishwasher import dishwasher_phase
 from .humidity_plateau import track_session
+from .iq2_runtime import iq2_base_rate, iq2_forecast_arguments, iq2_start_context, iq2_interval_physics, iq2_room_parameters, update_goal_history  # noqa: F401
 from .forecast_shadow import freeze_shadow_start
 from .forecast_validation import START_FORECAST_CONTEXT_VERSION, evaluate_start_forecast_at_duration, freeze_start_forecast_context
 from .learning_effectiveness import freeze_learning_effectiveness_context
@@ -45,6 +46,9 @@ from .surface_source import helper_reading, source_fields
 from .start_model_data import START_MODEL as _SHIPPED_START_MODEL
 
 START_MODEL = _validate_start_model(_SHIPPED_START_MODEL)
+
+
+MIXED_OPENING_REASON = "Fenster gleichzeitig offen und gekippt (Mischlüftung): bewertet mit dem allgemeinen Lüftungsmodell; das getrennte Kippmodell lernt aus dieser Lüftung nicht"
 
 
 def _remember_airing_kind(mem: dict[str, Any], result: Any, has_ventilation_contact: bool, is_open: Any) -> bool:
@@ -70,8 +74,6 @@ def _remember_airing_kind(mem: dict[str, Any], result: Any, has_ventilation_cont
 # rate – room decision, 5-minute check, costs, forecast – takes this rate. Nothing learned is deleted; learning
 # goes on and the learned rate returns once the evidence does.
 PHYSICS_FALLBACK_RATE = 0.03
-
-
 def _minutes_since(value: Any, now: datetime) -> float | None:
     """0.26.5.5 (audit F02): minutes since an ISO time stamp (None when unknown or unreadable)."""
     try:
@@ -208,7 +210,7 @@ class RoomModelMixin:
             effective_learning_samples = int(opening_model.get("samples", effective_learning_samples))
         elif has_ventilation_contact and opening_model_key in ((mem.get("start_model") or {}).get("rates") or {}):  # not learned yet: start model
             effective_learning_rate = float(mem["start_model"]["rates"][opening_model_key])
-        effective_learning_rate = PHYSICS_FALLBACK_RATE if _learning_v2_force_physics else effective_learning_rate  # F05: see PHYSICS_FALLBACK_RATE
+        effective_learning_rate, iq2_params, changed = self._iq2_select(mem, key, opening_model_key, PHYSICS_FALLBACK_RATE if _learning_v2_force_physics else effective_learning_rate, has_ventilation_contact, _learning_v2_force_physics, changed)  # F05: see PHYSICS_FALLBACK_RATE; IQ2: parameters in force
         if mem.get("session_active") and mem.get("session_target_fan_start") and raw_contact_open:
             joined = _session_target_min(self.data, options)
             mem["session_target_min"] = round(elapsed + joined, 1) if joined is not None else None
@@ -223,7 +225,7 @@ class RoomModelMixin:
             humidity_plateau=track_session(mem, session_active=bool(mem["session_active"]), elapsed_min=elapsed, temp_c=t, rh=rh, reports=int(mem.get("session_humidity_reports", 0))),
             session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),
             session_start_temp=mem.get("session_start_temp"), session_result_base_ml=float(mem.get("session_result_base_ml", 0.0)),
-            session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)),
+            session_result_ml=float(mem.get("session_result_ml", 0.0)), close_notified=bool(mem.get("close_notified", False)), close_notified_kind=mem.get("close_notified_kind"), session_goals_reached=bool(mem.get("session_goals_reached")), thermal_air_share=float(iq2_params["thermal_share"]),
             airflow_factor=airflow, pollen_index=pollen, measurements_stale=measurement_frame.get("quality") == "stale",
             session_fresh_measurements=int(mem.get("session_fresh_measurements", 0)),
             session_target_min=mem.get("session_target_min") if mem.get("session_active") else None,
@@ -317,16 +319,12 @@ class RoomModelMixin:
                             mem["forecast_recent_observed_at"] = now.isoformat()
                             curr_ref_ah = float(result.reference_humidity or 0.0)
                             avg_ref_ah = (float(prev_ref_ah) + curr_ref_ah) / 2.0 if prev_ref_ah is not None else curr_ref_ah
-                            avg_room_ah = (float(prev_ah) + curr_ah) / 2.0
-                            interval_fraction = exchanged_air_fraction(
-                                float(room_input.learning_rate), age_min,
-                                (1.25 if cross else 1.0) * airflow,
-                            )
-                            physical_removed = (avg_room_ah - avg_ref_ah) * volume * interval_fraction
+                            # IQ2: the residual is measured against the same buffered model the forecast uses
+                            physical_removed, physical_dt = iq2_interval_physics(
+                                self.__dict__.get("_iq2_params", {}).get(str(result.key)), mem, prev_ah=float(prev_ah), prev_temp=prev_temp, ref_ah=avg_ref_ah,
+                                ref_t=ref_t, rate=float(room_input.learning_rate), minutes=age_min, bonus=(1.25 if cross else 1.0) * airflow, volume=volume)
                             residual_ml_min = observed_ml_min + physical_removed / max(age_min, 1.0)
-                            if prev_temp is not None:
-                                avg_room_temp = (float(prev_temp) + t) / 2.0
-                                physical_dt = (ref_t - avg_room_temp) * interval_fraction
+                            if physical_dt is not None:
                                 residual_temp_min = observed_temp_min - physical_dt / max(age_min, 1.0)
 
                         residual_bound = max(8.0, volume * 0.25)
@@ -375,7 +373,9 @@ class RoomModelMixin:
             # A tilted three-state session is a valid, separately learned
             # ventilation mode. Do not silently upgrade a user's deliberate
             # tilt choice to fully-open after the session has started.
-            reason_list.append("Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet")
+            # U05 (0.26.7.1): open plus tilted at the same time is evaluated with the general model and never teaches
+            # the tilt model (coordinator_sessions: session_opening_mode_mixed) – the hint says so.
+            reason_list.append(MIXED_OPENING_REASON if explicit_tilted == "mixed" else "Drei-Zustands-Sensor meldet Kipplüftung; die gewählte Lüftungsart wird mit dem separaten Kippmodell bewertet")
         indirect_candidate = bool(not has_ventilation_contact and result.ventilation_candidate)
         indirect_cooling_candidate = bool(not has_ventilation_contact and result.cooling_candidate)
         if not has_ventilation_contact and action in {"Ventilate", "Ventilate for cooling"}:
@@ -398,10 +398,26 @@ class RoomModelMixin:
             # 0.26.5.1: remember a published close for the rest of the session
             # (released again by the model only with a clear margin).
             mem["close_notified"] = bool(result.close_recommended); changed = True
+        if mem["session_active"]:
+            # B3 (0.26.7.1): the cause of the stored close – set when the close is first given, upgraded only when the
+            # goals are really reached later; cleared with the close
+            kind = getattr(result, "close_kind", None) if result.close_recommended else None
+            stored = mem.get("close_notified_kind")
+            new_kind = (kind if stored is None or kind == "goals_reached" else stored) if kind else None
+            if new_kind != stored:
+                mem["close_notified_kind"] = new_kind; changed = True
+            changed = update_goal_history(mem, result) or changed
         return (
             changed, high_duration, humidity_trend, indirect_candidate, indirect_cooling_candidate,
             reason_list,
         )
+
+    def _iq2_select(self, mem: Any, key: Any, mode: Any, legacy_rate: float, has_contact: bool, force_physics: Any, changed: bool) -> tuple[float, dict[str, Any], bool]:
+        """IQ2 (0.26.7.1): the rate and shares in force – shipped start value → house → room and way of airing."""
+        params, seeded = iq2_room_parameters(mem, self.store.data.get("iq2_house"), mode=mode, legacy_rate=legacy_rate,
+                                             has_contact=has_contact, force_physics=bool(force_physics))
+        self.__dict__.setdefault("_iq2_params", {})[str(key)] = params
+        return float(params["rate"]), params, bool(seeded or changed)
 
     def _room_forecast(
         self,
@@ -471,6 +487,8 @@ class RoomModelMixin:
                 and not active_contact_reference
                 else None
             ),
+            **iq2_forecast_arguments(self.__dict__.get("_iq2_params", {}).get(str(result.key)), mem, running=bool(mem.get("session_active") and is_open),
+                                     current_ah=float(result.absolute_humidity or 0.0)),
         )
         if result.data_quality == "ok":
             # Hotfix 0.17.0.2: the freely selectable long-horizon card is a
@@ -593,6 +611,8 @@ class RoomModelMixin:
                 start_prediction = evaluate_start_forecast_at_duration(start_context, initial_horizon)
                 if start_prediction is not None:
                     mem["session_prediction_start_context"] = start_context
+                    mem["session_iq2_start"] = iq2_start_context(self.__dict__.get("_iq2_params", {}).get(str(result.key)), mem,
+                                                                 self.store.data.get("iq2_house"), mem.get("session_validation_id"))
                     mem["session_predicted_removed_ml"] = start_prediction["predicted_removed_ml"]
                     coach = evaluate_start_forecast_at_duration(start_context, initial_horizon, limit_to_target=True)  # #28: live coach basis
                     mem["session_target_limited_removed_ml"] = coach["predicted_removed_ml"] if coach is not None else None

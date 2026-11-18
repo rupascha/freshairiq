@@ -258,7 +258,7 @@ class SessionEventsMixin:
             "prediction_comparable": bool(prediction_comparable),
             "learning_effectiveness": learning_effectiveness_sample,
             "shadow_forecast": shadow_forecast_record(mem.get("session_prediction_start_context"), horizon_min=validation_elapsed, production_predicted_ml=mem.get("session_predicted_removed_ml"), measured_removed_ml=validation_removed, comparable=bool(prediction_comparable), time_aligned=bool(prediction_time_aligned), contaminated=bool(source_contaminated), reference_reversal=bool(reference_moisture_reversal), cross_ratio=cross_ratio, quarantined=bool(mem.get("session_learning_quarantined"))),  # passive shadow formula: same frozen start, same measured duration
-            "learning_observation": mem.pop("session_learning_observation", None),
+            "learning_observation": mem.pop("session_learning_observation", None), "iq2": mem.pop("session_iq2", None),  # iq2: additive score/learning report
             "forecast_timeline": list(mem.get("session_forecast_timeline") or []) + [{
                 "kind": "end",
                 "checkpoint_min": round(measurement_elapsed, 3),

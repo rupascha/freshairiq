@@ -32,7 +32,13 @@ def test_v025138_golden_master_has_provenance_and_full_matrix():
 def test_v025140_preserves_v025138_physics_golden_master(case):
     t, rh, volume, ref_t, ref_rh = case["input"]
     current = asdict(evaluate_room(_room(t, rh, volume, ref_t, ref_rh), DEFAULT_OPTIONS, False))
-    assert {field: current[field] for field in GOLDEN["fields"]} == case["output"]
+    # Testvermerk 0.26.7.1 (IQ2): the 5-minute decision value uses the exponential replacement of the forecast and the
+    # learning (1 - 0.97**5 = 0.1413) instead of the linear 5 * 0.03 = 0.15. Every other golden field – all decisions
+    # included – is unchanged; the 5-minute value is the golden value times that documented factor (rounded ml).
+    factor = (1 - 0.97 ** 5) / 0.15
+    unchanged = [field for field in GOLDEN["fields"] if field != "moisture_effect_next_5_min_ml"]
+    assert {field: current[field] for field in unchanged} == {field: case["output"][field] for field in unchanged}
+    assert abs(current["moisture_effect_next_5_min_ml"] - case["output"]["moisture_effect_next_5_min_ml"] * factor) <= 1.0
 
 
 @pytest.mark.parametrize("path", ("own_opening", "assigned_opening", "contactless"))

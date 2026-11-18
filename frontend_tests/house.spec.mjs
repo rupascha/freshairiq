@@ -216,7 +216,9 @@ test('editor: drag a room, undo, insert a corner, blocked save on overlap, save 
   await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="undo"]').click());
   expect(await roomPoints(editor, 'r_bad')).toEqual(before);
   // precision: a corner is inserted in the middle of a wall
-  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_bad' }; el._mode = 'precise'; el._render(); el.shadowRoot.querySelector('circle.mid').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 })); el.shadowRoot.querySelector('svg').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 })); });
+  // Test note (owner order "sechs Befunde", 6): the middle of wall 1 – the middle of wall 0 lies inside the bath door
+  // and is now refused instead of moving the door
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_bad' }; el._mode = 'precise'; el._render(); el.shadowRoot.querySelector('circle.mid[data-i="1"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 })); el.shadowRoot.querySelector('svg').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 })); });
   expect((await roomPoints(editor, 'r_bad')).length).toBe(5);
   // overlapping rooms cannot be saved; the problem is named at the room
   await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_bad').polygon = [[1, 1], [3, 1], [3, 3], [1, 3]]; }); el.shadowRoot.querySelector('[data-a="save"]').click(); });
@@ -2461,6 +2463,62 @@ test('hotfix (9) F06: a remaining time below zero is time over the target, never
   expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg[open]').textContent)).toContain('Über Ziel');
 });
 
+// N1 (0.26.7.1): a forecast limited at the humidity target names the physical value too and the end point is the
+// forecast's own, not a close time
+test('N1: the 15-minute forecast tile shows the target-limited 0 ml together with the physical benefit', async ({ page }) => {
+  await mount(page);
+  await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
+  const rooms = await page.evaluate(() => window.__ROOMS), on = { ...rooms, bad: { ...rooms.bad, active: true } };
+  await sameAsCard(page, 'capped', { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 44, recommended_duration_min: 20,
+    remaining_duration_min: null, remaining_duration_state: 'reassessing', forecast_horizon_min: 15, forecast_moisture_effect_ml: 0,
+    forecast_uncapped_moisture_effect_ml: 71, forecast_target_limited: true, forecast_live_adapted: true, forecast_optimal_close_in_min: null });
+  const tile = await page.evaluate(async () => {
+    const src = document.getElementById('classic'); let c = document.getElementById('classic-n1');
+    if (!c) { c = document.createElement('faiq-classic-test'); c.id = 'classic-n1'; document.body.appendChild(c); c.setConfig({ dashboard_variant: 'classic', forecast_horizon_min: 15 }); }
+    c.hass = src._hass; await new Promise(r => setTimeout(r, 150));
+    for (let t = 0; c._renderFrame != null && t < 5000; t += 16) await new Promise(r => requestAnimationFrame(() => r()));
+    const n = c.shadowRoot.querySelector('[data-info="next5"]'); return n ? n.textContent.replace(/\s+/g, ' ') : '';
+  });
+  expect(tile).toContain('am Feuchteziel begrenzt');
+  expect(tile).toContain('physikalisch noch ≈ 71 ml');
+  expect(tile).toContain('Prognose-Endpunkt > 15 min');
+});
+
+// R07 (0.26.7.2): past the target time with air that still helps, the integration publishes no remaining time
+// (remaining_duration_state "reassessing"); neither card invents a countdown or "0 min · Ziel erreicht"
+test('R07: past the target time the IQ time is "wird neu bewertet" on the card and the house map shows no countdown', async ({ page }) => {
+  await mount(page);
+  await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
+  const rooms = await page.evaluate(() => window.__ROOMS), on = { ...rooms, bad: { ...rooms.bad, active: true } };
+  const r = await sameAsCard(page, 'reassessing', { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 300, recommended_duration_min: 12,
+    remaining_duration_min: null, remaining_duration_state: 'reassessing' }, '💧 bisher ≈ 300 ml');
+  // the IQ time tile of the classic dashboard variant (same card class, own element)
+  const full = () => page.evaluate(async () => {
+    const src = document.getElementById('classic'); let c = document.getElementById('classic-v');
+    if (!c) { c = document.createElement('faiq-classic-test'); c.id = 'classic-v'; document.body.appendChild(c); c.setConfig({ dashboard_variant: 'classic' }); }
+    c.hass = src._hass; await new Promise(r => setTimeout(r, 150));
+    for (let t = 0; c._renderFrame != null && t < 5000; t += 16) await new Promise(r => requestAnimationFrame(() => r()));
+    return [...c.shadowRoot.querySelectorAll('[data-info="time"]')].map(n => n.textContent.replace(/\s+/g, '')).join('|');
+  });
+  expect(await full()).toBe('IQ-ZEITwirdneubewertetLüftungwirktweiter');            // was "0 min · Ziel erreicht"
+  // a close beyond the target is the intended overrun, shown as such
+  const o = await sameAsCard(page, 'overrun', { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 300, recommended_duration_min: 12,
+    remaining_duration_min: -8, remaining_duration_state: 'overrun' }, '💧 bisher ≈ 300 ml ⏱ 8 Min. über Ziel');
+  expect(o.card).toContain('+8 min');
+  expect(await full()).toBe('IQ-ZEIT+8minüberZiel');
+  // N1 (0.26.7.1): a running airing with 0 min (older payload or countdown at its end) is not "target reached"
+  await sameAsCard(page, 'zero running', { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 300, recommended_duration_min: 12,
+    remaining_duration_min: 0, remaining_duration_state: 'countdown' });
+  expect(await full()).toBe('IQ-ZEITwirdneubewertetLüftungwirktweiter');
+  await sameAsCard(page, 'zero legacy', { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 300, recommended_duration_min: 12,
+    remaining_duration_min: 0 });
+  expect(await full()).toBe('IQ-ZEITwirdneubewertetLüftungwirktweiter');
+  await sameAsCard(page, 'real close', { rooms: on, status: 'close_windows', potential_total_ml: 700, live_balance_ml: 300, recommended_duration_min: 12,
+    remaining_duration_min: 0, remaining_duration_state: 'close' });
+  expect(await full()).toBe('IQ-ZEIT0minjetztschließen');
+  expect(await full()).not.toContain('Zielerreicht');
+});
+
 test('hotfix (9) F07: wait, pollen, night strategy, a delayed release and a running session – the time is shown exactly where the IQ view shows it', async ({ page }) => {
   await mount(page);
   await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
@@ -3166,7 +3224,8 @@ test('v0.26.6.1 editor hotfix: quick and precision mode are clearly told apart a
   expect(await hintText(editor)).toContain('Ziehen verschiebt den Raum');
   await editor.locator('[data-a="edit_corners"]').click();
   expect(await state()).toEqual({ quick: 'false', corners: 6, scale: 0, title: 'Präzision: einzelne Ecken, Wandlängen und Winkel bearbeiten' });
-  expect(await hintText(editor)).toContain('Ecken ziehen');
+  // Test note (floor plan editor order "Raumform ändern"): the room's own action now names the shape and its hint on the plan
+  expect(await hintText(editor)).toBe('Wandpunkt antippen, um eine Ecke einzufügen. Ecke ziehen.');
   expect(await editor.evaluate(el => !!el.shadowRoot.querySelector('details[data-sec="corners"] [data-vx="0"]'))).toBe(true);
   await editor.locator('[data-a="corners_done"]').click();
   expect((await state()).quick).toBe('true');
@@ -3191,7 +3250,9 @@ test('v0.26.6.1 editor hotfix, a new user: from an empty floor to a room with a 
   expect(room.polygon.length).toBe(6);
   expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_bad' });
   expect(await hintText(editor)).toContain('Ziehen verschiebt den Raum');
-  await editor.locator('.tools [data-tool="window"]').click();
+  // Test note (floor plan editor order "＋ Öffnung"): window, outside door, interior door and passage are chosen from "＋ Öffnung"
+  await editor.locator('.tools [data-a="opick"]').click();
+  await editor.locator('.opick [data-tool="window"]').click();
   expect(await hintText(editor)).toBe('Tippe auf eine Außenwand, um ein Fenster zu platzieren.');
   await tapPlan(page, editor, [0, 2]);                                   // the west wall of the new room
   const opening = await editor.evaluate(el => el._layout.openings.find(o => o.room_id === 'r_bad'));
@@ -3516,6 +3577,89 @@ test('0.26.7.0 floors: hidden floors never come back by themselves, one floor al
   expect(await impl(page).evaluate(el => el._floor)).toBe('f_og');
 });
 
+// IQ2 (0.26.7.1): the main value of the forecast tile is the expected net change of the room air; the amount still
+// needed to the humidity target and the forecast quality are separate values. A payload of an older integration
+// (no IQ2 fields) keeps the N1 presentation above.
+test('IQ2: the forecast tile shows the expected net change, the target amount and the forecast quality apart (de/en)', async ({ page }) => {
+  await mount(page);
+  await page.waitForFunction(() => !!customElements.get('freshairiq-card'));
+  const rooms = await page.evaluate(() => window.__ROOMS), on = { ...rooms, bad: { ...rooms.bad, active: true } };
+  const base = { rooms: on, status: 'ventilate', potential_total_ml: 700, live_balance_ml: 44, recommended_duration_min: 20,
+    remaining_duration_min: null, remaining_duration_state: 'reassessing', forecast_horizon_min: 15, forecast_moisture_effect_ml: 0,
+    forecast_uncapped_moisture_effect_ml: 71, forecast_target_limited: true, forecast_live_adapted: true, forecast_optimal_close_in_min: null,
+    forecast_net_room_change_ml: 36, forecast_outdoor_transport_ml: 76 };
+  const tile = async (payload, id) => {
+    await push(page, payload);
+    await settle(page, 300);
+    await classicFacts(page, payload);                                  // the real card class with this payload
+    return page.evaluate(async id => {
+      const src = document.getElementById('classic'); let c = document.getElementById(id);
+      if (!c) { c = document.createElement('faiq-classic-test'); c.id = id; document.body.appendChild(c); c.setConfig({ dashboard_variant: 'classic', forecast_horizon_min: 15 }); }
+      c.hass = src._hass; await new Promise(r => setTimeout(r, 150));
+      for (let t = 0; c._renderFrame != null && t < 5000; t += 16) await new Promise(r => requestAnimationFrame(() => r()));
+      const n = c.shadowRoot.querySelector('[data-info="next5"]'); return n ? n.textContent.replace(/\s+/g, ' ') : '';
+    }, id);
+  };
+  const reached = await tile({ ...base, forecast_to_target_ml: 0, forecast_interval_ml: null, forecast_quality_state: 'collecting', forecast_scored_airings: 2 }, 'classic-iq2');
+  expect(reached).toContain('36 ml');                                  // the expected net change, not the target-limited 0 ml
+  expect(reached).toContain('Feuchteziel erreicht');
+  expect(reached).toContain('Prognosegüte wird kalibriert');           // unknown is said, no percentage is invented
+  expect(reached).not.toContain('am Feuchteziel begrenzt');
+  expect(reached).not.toContain('Prognose-Endpunkt');
+  expect(reached).not.toMatch(/\d+ ?%/);
+  const open = await tile({ ...base, forecast_to_target_ml: 120, forecast_interval_ml: [20, 55], forecast_quality_state: 'calibrated', forecast_scored_airings: 14 }, 'classic-iq2');
+  expect(open).toContain('bis zum Feuchteziel noch ≈ 120 ml');
+  expect(open).toContain('Erwartungsbereich 20 … 55 ml');
+  const unknown = await tile({ ...base, forecast_to_target_ml: null, forecast_interval_ml: null, forecast_quality_state: 'collecting' }, 'classic-iq2');
+  expect(unknown).not.toContain('Feuchteziel');                        // no target known: nothing claimed about it
+  const english = await tile({ ...base, output_language: 'en', forecast_to_target_ml: 120, forecast_interval_ml: [20, 55], forecast_quality_state: 'calibrated' }, 'classic-iq2');
+  expect(english).toContain('120 ml');
+  expect(english).not.toMatch(/Feuchteziel|Erwartungsbereich|Prognose/);
+});
+
+// IQ2 (0.26.7.1), cause 4.3 / 4.4 of the order: the moisture window showed "noch 0 Min." / "noch 7 Min." from an old
+// plan and "Prognosesicherheit 100 %" for a sample count. Both cards now read the integration's own time meaning.
+test('IQ2: the moisture window shows the integration\'s time state per room, learning maturity and forecast quality', async ({ page }) => {
+  await mount(page);
+  const live = { ...await page.evaluate(() => window.__ROOMS) };
+  live.bad = { ...live.bad, active: true, result_ml: 1, session_target_min: 8.5, session_elapsed_min: 21, time_state: 'close', time_remaining_min: 0 };
+  live.flur = { ...live.flur, active: true, result_ml: 0.4, session_target_min: 8.5, session_elapsed_min: 1.5, time_state: 'minimum', time_remaining_min: 1.5 };
+  live.wohnen = { ...live.wohnen, active: true, result_ml: 12, session_target_min: 30, session_elapsed_min: 40, time_state: 'reassessing', time_remaining_min: null };
+  live.schlaf = { ...live.schlaf, active: true, result_ml: 7, session_target_min: 30, session_elapsed_min: 4, time_state: 'countdown', time_remaining_min: 6.2 };
+  const payload = { rooms: live, status: 'ventilate', live_balance_ml: 20, potential_total_ml: 129, remaining_duration_min: null, remaining_duration_state: 'reassessing',
+    prognosis_confidence: 100, forecast_horizon_min: 15, forecast_quality_state: 'collecting', forecast_scored_airings: 3, forecast_interval_ml: null, output_language: 'de' };
+  const read = async extra => {
+    await page.evaluate(x => window.__subs['freshairiq/dashboard/subscribe'](x), { ...payload, ...extra });
+    await impl(page).evaluate(el => { el._selected = { type: 'moisture', id: '' }; el._render(); });
+    return impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.roomdlg');
+      return { rows: Object.fromEntries([...d.querySelectorAll('.rrow')].map(r => [r.querySelector('b').textContent, r.textContent.replace(/\s+/g, ' ').trim()])), text: d.textContent.replace(/\s+/g, ' ') }; });
+  };
+  const de = await read({});
+  expect(de.rows.Bad).toContain('jetzt schließen');
+  expect(de.rows.Bad).not.toMatch(/noch \d+ Min/);                      // the photo: "noch 0 Min." beside a reached goal
+  expect(de.rows.Flur).toContain('Mindestdauer noch 2 Min.');           // its own clock, not the old plan's 7 minutes
+  expect(de.rows.Wohnen).toContain('wird neu bewertet');
+  expect(de.rows.Schlafzimmer).toContain('noch 7 Min.');
+  expect(de.text).toContain('Lernreife');
+  expect(de.text).not.toContain('Prognosesicherheit');                  // a sample count is no forecast probability
+  expect(de.text).toContain('Prognosegüte');
+  expect(de.text).toContain('wird kalibriert · 3 Vergleiche');
+  expect(de.text).toContain('wird neu bewertet');                       // the remaining-time tile: no "–", no 0
+  const calibrated = await read({ forecast_quality_state: 'calibrated', forecast_scored_airings: 14, forecast_interval_ml: [20.4, 55.2] });
+  expect(calibrated.text).toContain('20 bis 55 ml in 15 Min. erwartet');
+  // a payload of an older integration (no time state): no time is invented from session_target_min − elapsed
+  const old = { ...live }; for (const k of Object.keys(old)) { old[k] = { ...old[k] }; delete old[k].time_state; delete old[k].time_remaining_min; }
+  const legacy = await read({ rooms: old });
+  for (const row of Object.values(legacy.rows)) expect(row).not.toMatch(/⏱|noch \d+ Min|Mindestdauer/);
+  const en = await read({ output_language: 'en' });
+  expect(en.rows.Bad).toContain('close now');
+  expect(en.rows.Flur).toContain('minimum time 2 min left');
+  expect(en.rows.Wohnen).toContain('being reassessed');
+  expect(en.text).toContain('Learning maturity');
+  expect(en.text).toContain('Forecast quality');
+  expect(en.text).not.toMatch(/Lernreife|Prognosegüte|Mindestdauer|wird neu bewertet/);
+});
+
 test('0.26.7.0 moisture by room: the rooms\' own published values, the card\'s total, rounding said, a tap opens the room', async ({ page }) => {
   await mount(page);
   await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS,
@@ -3531,11 +3675,14 @@ test('0.26.7.0 moisture by room: the rooms\' own published values, the card\'s t
   await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg [data-room-open="r_bad"]').click());
   expect(await impl(page).evaluate(el => el._selected)).toEqual({ type: 'room', id: 'r_bad' });
   // during an airing: the airing rooms' result so far and their time left
-  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, active: true, result_ml: 22, session_target_min: 15, session_elapsed_min: 6 } },
+  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, active: true, result_ml: 22, session_target_min: 15, session_elapsed_min: 6, time_state: 'countdown', time_remaining_min: 9 } },
     live_balance_ml: 22, potential_total_ml: 129, remaining_duration_min: 9, output_language: 'de' }));
   await impl(page).evaluate(el => { el._selected = { type: 'moisture', id: '' }; el._render(); });
   const live = await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('dialog.roomdlg .rrow')].map(r => r.textContent.replace(/\s+/g, ' ').trim()));
   // Test note (0.26.7.0 UI/theme order, UI07): the room rows of the moisture window write minutes like its tiles ("Min.")
+  // Testvermerk 0.26.7.1 (IQ2, cause 4.3 of the order): the row no longer computes "session_target_min − elapsed" itself
+  // (a stale plan time); it shows the time the integration publishes for the room. The payload therefore carries
+  // time_state / time_remaining_min like the integration's; the expected text is unchanged.
   expect(live).toEqual([expect.stringMatching(/Bad.*≈ 22 ml.*noch 9 Min\..*lüftet/)]);
 });
 
@@ -4092,4 +4239,869 @@ test('hotfix U03: "Lage und Form" follows the stored layout – reopening, undo 
   await settle(page, 80);
   const save = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').pop());
   expect(save.layout.rooms.find(r => r.id === 'r_bad').provenance).toBe('user');         // what a reopen or a restart reads
+});
+
+// ---- R04 (0.26.7.2): the house card's feedback fields use the shared draft store of the dashboard card ------------
+test('R04: house card feedback keeps its draft across live updates, leaving and reopening, type switch, multiline and scroll; the receipt stays', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await mount(page);
+  await page.evaluate(() => { window.__api = []; window.__pending = [];
+    const el = document.querySelector('freshairiq-house-card-impl');
+    el._hass = { ...el._hass, callApi: (method, path, body) => { window.__api.push([method, path, body]);
+      return path.startsWith('freshairiq/feedback/') ? new Promise(resolve => window.__pending.push(resolve)) : Promise.resolve({ registered: true }); } }; });
+  const q = (sel, fn = 'value') => impl(page).evaluate((el, [sel, fn]) => { const n = el.shadowRoot.querySelector(sel); return n ? n[fn] : null; }, [sel, fn]);
+  const open = async () => { await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-menu]').click());
+    await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.menudlg [data-support]').click());
+    await expect.poll(() => impl(page).evaluate(el => !!el.shadowRoot.querySelector('dialog.roomdlg[open] #feedback-message'))).toBe(true); };
+  const closeIt = async () => { await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg [data-close-detail]').click()); await settle(page, 40); };
+  const live = async () => { await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de', status_text: `neu ${Math.random()}` })); await settle(page, 60); };
+  await open();
+  const text = Array.from({ length: 14 }, (_, i) => `Zeile ${i + 1}: Beobachtung`).join('\n');
+  await impl(page).evaluate(el => el.shadowRoot.getElementById('feedback-message').focus());
+  await page.keyboard.insertText(text);
+  await impl(page).evaluate(el => { el.shadowRoot.getElementById('feedback-message').scrollTop = 60; el.shadowRoot.getElementById('feedback-message').dispatchEvent(new Event('scroll')); });
+  await live(); await live();
+  expect(await q('#feedback-message')).toBe(text);                                   // live updates keep it (and the focus)
+  expect(await impl(page).evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.id)).toBe('feedback-message');
+  await closeIt();
+  await open();                                                                         // leave and reopen: the draft is back
+  expect(await q('#feedback-message')).toBe(text);
+  expect(await q('#feedback-message', 'scrollTop')).toBeGreaterThan(0);
+  // switching the type keeps both drafts
+  const choose = v => impl(page).evaluate((el, v) => { const s = el.shadowRoot.getElementById('feedback-type'); s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); }, v);
+  await choose('improvement');
+  expect(await q('#feedback-message')).toBe('');
+  await impl(page).evaluate(el => el.shadowRoot.getElementById('feedback-message').focus());
+  await page.keyboard.insertText('Idee aus der Hauskarte');
+  await closeIt(); await open();
+  expect([await q('#feedback-type'), await q('#feedback-message')]).toEqual(['improvement', 'Idee aus der Hauskarte']);
+  await choose('bug');
+  expect(await q('#feedback-message')).toBe(text);
+  // send the bug draft; the receipt stays after leaving and reopening, the idea draft is untouched
+  await impl(page).evaluate(el => el.shadowRoot.getElementById('feedback-send').click());
+  await expect.poll(() => page.evaluate(() => window.__pending.length)).toBe(1);
+  expect((await page.evaluate(() => window.__api.find(c => c[1].startsWith('freshairiq/feedback/'))))[2]).toMatchObject({ type: 'bug', message: text });
+  await page.evaluate(() => window.__pending.shift()({ feedback_id: 'FAIQ-FB-HOUSE', accepted: true, cooldown_until: new Date(Date.now() + 15 * 60e3).toISOString() }));
+  await settle(page, 60);
+  expect(await q('#feedback-message')).toBe('');
+  await closeIt(); await open();
+  expect(await q('#feedback-result', 'textContent')).toContain('FAIQ-FB-HOUSE');
+  expect(await q('#feedback-send', 'disabled')).toBe(true);                            // 15-minute default unchanged
+  await choose('improvement');
+  expect(await q('#feedback-message')).toBe('Idee aus der Hauskarte');
+});
+
+// ---- floor plan editor order: room shapes easy to find, openings placed again and assigned to the configured contacts ----
+const CONTACT_ROOMS = { bad: { contact_entities: ['binary_sensor.bad_fenster'], inside_contact_entities: ['binary_sensor.bad_tuer'] },
+  wohnen: { contact_entities: ['sensor.wohnen_lage', 'binary_sensor.wohnen_tuer'] }, schlaf: { contact_entities: ['binary_sensor.schlaf_fenster'] } };
+const CONTACT_NAMES = { 'binary_sensor.bad_fenster': 'Badfenster', 'binary_sensor.bad_tuer': 'Badtür', 'binary_sensor.wohnen_tuer': 'Terrassentür' };
+const openPlanEditor = async (page, [vw, vh, card], options = {}) => {
+  await page.setViewportSize({ width: vw, height: vh });
+  await mount(page, options);
+  await page.evaluate(([card, contacts]) => {
+    document.getElementById('m').style.cssText = `width:${card}px`;
+    for (const [key, v] of Object.entries(contacts)) window.__ROOMS[key] = { ...window.__ROOMS[key], ...v };
+    window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' });
+  }, [card, CONTACT_ROOMS]);
+  await settle(page, 80);
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
+  await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
+  await settle(page, 150);
+  const editor = page.locator('freshairiq-house-layout-editor');
+  await editor.evaluate((el, names) => { el._hass.states = Object.fromEntries(Object.entries(names).map(([id, n]) => [id, { entity_id: id, state: 'off', attributes: { friendly_name: n } }])); el._render(); }, CONTACT_NAMES);
+  return editor;
+};
+const SCREENS = [['desktop', [1280, 800, 500]], ['phone', [360, 780, 340]]];
+
+for (const [screen, size] of SCREENS) {
+  test(`floor plan editor order (${screen}): the modes say what they do, an L shape in quick mode, "Raumform ändern" on a drawn rectangle`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    const modes = await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('[data-mode]')].map(b => {
+      const r = b.getBoundingClientRect(), clipped = [...b.querySelectorAll('span')].some(x => x.scrollWidth > x.clientWidth + 1);
+      return [b.textContent.trim(), r.width > 0 && r.right <= innerWidth + 1 && r.left >= -1, clipped];
+    }));
+    expect(modes).toEqual([['Schnell · Räume anordnen', true, false], ['Präzision · Ecken und Wände bearbeiten', true, false]]);
+    expect(await editor.evaluate(el => { el._sel = null; el._render(); return el.shadowRoot.querySelector('.aside').textContent; })).toContain('L- und die U-Form');
+    // a drawn rectangle with a locked wall and an opening: "Raumform ändern" opens its corners, nothing else changes
+    const before = await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_flur').locked_walls = [0]; }); return JSON.stringify([el._layout.rooms, el._layout.openings]); });
+    await tapPlan(page, editor, [4, 2]);                                           // the middle of the hall
+    expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_flur' });
+    await editor.locator('.aside [data-a="edit_corners"]').click();
+    const opened = await editor.evaluate(el => ({ mode: el._mode, mids: el.shadowRoot.querySelectorAll('circle.mid').length, label: el.shadowRoot.querySelector('.aside .shape-btn').textContent, plan: JSON.stringify([el._layout.rooms, el._layout.openings]) }));
+    expect(opened).toEqual({ mode: 'precise', mids: 4, label: 'Raumform fertig', plan: before });
+    expect(await hintText(editor)).toBe('Wandpunkt antippen, um eine Ecke einzufügen. Ecke ziehen.');
+    // tap the point on the east wall and drag it out: a new corner, the locked wall and every opening stay
+    const mid = await editor.evaluate(el => { const c = el.shadowRoot.querySelector('circle.mid[data-id="r_flur"][data-i="1"]').getBoundingClientRect(); return [c.x + c.width / 2, c.y + c.height / 2]; });
+    const [ox] = await plan2screen(editor, [9, 2]);
+    await page.mouse.move(mid[0], mid[1]); await page.mouse.down(); await page.mouse.move((mid[0] + ox) / 2, mid[1], { steps: 3 }); await page.mouse.move(ox, mid[1], { steps: 3 }); await page.mouse.up();
+    await settle(page, 60);
+    const shaped = await editor.evaluate(el => ({ room: el._layout.rooms.find(r => r.id === 'r_flur'), openings: JSON.stringify(el._layout.openings) }));
+    expect(shaped.room.polygon.length).toBe(5);
+    expect(shaped.room.polygon[2][0]).toBeGreaterThan(8.5);
+    expect(shaped.room.locked_walls).toEqual([0]);
+    expect(JSON.parse(shaped.openings)).toEqual(JSON.parse(before)[1]);
+    await editor.locator('.aside [data-a="corners_done"]').click();
+    expect(await editor.evaluate(el => el._mode)).toBe('quick');
+    // drawing only (phone): the plan itself offers "Raumform ändern" for the chosen room
+    if (await editor.evaluate(el => !!el.shadowRoot.querySelector('[data-a="panel_toggle"]') && getComputedStyle(el.shadowRoot.querySelector('[data-a="panel_toggle"]')).display !== 'none')) {
+      await tapPlan(page, editor, [4, 2]);                                         // the hall again (the corner was chosen last)
+      await editor.locator('[data-a="panel_toggle"]').click();
+      await editor.locator('.hint [data-a="shape_edit"]').click();
+      expect(await editor.evaluate(el => el._mode)).toBe('precise');
+      expect(await hintText(editor)).toContain('Wandpunkt antippen, um eine Ecke einzufügen. Ecke ziehen.');
+      await editor.locator('[data-mode="quick"]').click();
+      await editor.locator('[data-a="panel_toggle"]').click();
+    }
+    // a missing room is drawn on its own as an L shape in quick mode – the drawn rooms stay as they are
+    const others = await editor.evaluate(el => { el._commit(l => { l.rooms = l.rooms.filter(r => r.id !== 'r_schlaf'); l.openings = l.openings.filter(o => o.room_id !== 'r_schlaf'); }); el._sel = null; el._render(); return JSON.stringify(el._layout.rooms); });
+    await editor.locator('.aside [data-add-room="schlaf"]').click();
+    expect(await editor.evaluate(el => [el.shadowRoot.querySelector('[data-f="add_key"]').value, el.shadowRoot.querySelectorAll('.shapes [data-shape]').length])).toEqual(['schlaf', 4]);
+    await editor.locator('[data-shape="l"]').click();
+    await editor.locator('.aside [data-a="add"]').click();
+    const added = await editor.evaluate(el => ({ mode: el._mode, room: el._layout.rooms.find(r => r.room_key === 'schlaf'), rest: JSON.stringify(el._layout.rooms.filter(r => r.room_key !== 'schlaf')) }));
+    expect([added.mode, added.room.polygon.length, added.rest]).toEqual(['quick', 6, others]);
+  });
+
+  test(`floor plan editor order (${screen}): window, outside door and interior door deleted, placed again on the right wall and connected to their contacts; saved and reopened`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    const selectAndDelete = async id => { await editor.evaluate((el, id) => { el._sel = { type: 'opening', id }; el._panelHidden = false; el._render(); }, id); await editor.locator('.aside [data-a="delete"]').click(); };
+    const openingOf = (editor, room, kind) => editor.evaluate((el, [room, kind]) => el._layout.openings.find(o => o.room_id === room && o.kind === kind && o.provenance === 'user' && !['o_bad', 'd_bad', 'o_wohnen'].includes(o.id)) || null, [room, kind]);
+    // the window of the bath: deleted, then placed from "Grundriss prüfen" for its configured contact
+    await selectAndDelete('o_bad');
+    await editor.evaluate(el => { el._sel = null; el._render(); });
+    const row = await editor.evaluate(el => el.shadowRoot.querySelector('[data-unplaced="binary_sensor.bad_fenster"]').textContent.replace(/\s+/g, ' '));
+    expect(row).toContain('Badfenster'); expect(row).toContain('Bad');
+    expect(await hintText(editor)).toContain('2 Kontakte sind noch keiner Öffnung zugeordnet');   // the window and the terrace door
+    await editor.locator('[data-unplaced="binary_sensor.bad_fenster"] [data-place="window"]').click();
+    expect(await hintText(editor)).toBe('Tippe auf eine Außenwand, um ein Fenster zu platzieren. Für „Badfenster“ (Bad).');
+    await tapPlan(page, editor, [2, 4]);                                           // the wall the bath shares with the hall
+    expect(await editor.evaluate(el => [el._layout.openings.length, el.shadowRoot.querySelector('.ov-top .msg.err').textContent])).toEqual([3, expect.stringContaining('keine freie Außenwand')]);
+    await tapPlan(page, editor, [0, 6]);                                           // the bath's outside wall
+    const win = await openingOf(editor, 'r_bad', 'window');
+    expect([win.edge, win.contacts, win.interior]).toEqual([3, ['binary_sensor.bad_fenster'], undefined]);
+    const shown = await editor.evaluate(el => ({ tool: el._tool, sel: el._sel.type, assign: !!el.shadowRoot.querySelector('.aside .assign'), first: el.shadowRoot.querySelector('.aside .assign [data-contact]').dataset.contact,
+      checked: el.shadowRoot.querySelector('[data-contact="binary_sensor.bad_fenster"]').checked }));
+    expect(shown).toEqual({ tool: null, sel: 'opening', assign: true, first: 'binary_sensor.bad_fenster', checked: true });
+    // an interior door contact on an outside window is explained, not refused
+    await editor.locator('[data-contact="binary_sensor.bad_tuer"]').check();
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.aside .assign .msg').textContent)).toContain('als Innentür eingerichtet');
+    await editor.locator('[data-contact="binary_sensor.bad_tuer"]').uncheck();
+    // an outside door from "＋ Öffnung", even with the properties hidden: placed, chosen, assignment open – best match first
+    await editor.evaluate(el => { el._sel = null; el._panelHidden = true; el._render(); });
+    await editor.locator('.tools [data-a="opick"]').click();
+    expect(await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('.opick [data-tool]')].map(b => b.textContent.trim()))).toEqual(['Fenster', 'Außentür', 'Innentür', 'Offener Durchgang']);
+    await editor.locator('.opick [data-tool="outer_door"]').click();
+    await tapPlan(page, editor, [4, 6]);                                           // between bath and living room: no outside wall
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent)).toContain('keine freie Außenwand');
+    await tapPlan(page, editor, [10, 4.6]);                                        // the living room's outside wall
+    let door = await openingOf(editor, 'r_wohnen', 'door');
+    expect([door.mechanics, door.interior, door.contacts]).toEqual(['door', undefined, []]);
+    expect(await editor.evaluate(el => [el._panelHidden, !!el.shadowRoot.querySelector('.aside .assign'), el.shadowRoot.querySelector('.aside .assign [data-contact]').dataset.contact])).toEqual([false, true, 'binary_sensor.wohnen_tuer']);
+    await editor.locator('[data-contact="binary_sensor.wohnen_tuer"]').check();
+    // deleted again and placed for its contact from "Grundriss prüfen"
+    await selectAndDelete(door.id);
+    await editor.evaluate(el => { el._sel = null; el._render(); });
+    await editor.locator('[data-unplaced="binary_sensor.wohnen_tuer"] [data-place="outer_door"]').click();
+    await tapPlan(page, editor, [10, 4.6]);
+    door = await openingOf(editor, 'r_wohnen', 'door');
+    expect(door.contacts).toEqual(['binary_sensor.wohnen_tuer']);
+    // the interior door: only offered as an interior door, refused on an outside wall, placed on the shared wall
+    await selectAndDelete('d_bad');
+    await editor.evaluate(el => { el._sel = null; el._render(); });
+    expect(await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('[data-unplaced="binary_sensor.bad_tuer"] [data-place]')].map(b => b.dataset.place))).toEqual(['door']);
+    await editor.locator('[data-unplaced="binary_sensor.bad_tuer"] [data-place="door"]').click();
+    await tapPlan(page, editor, [0, 6]);
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent)).toContain('keine Innenwand');
+    await tapPlan(page, editor, [2.6, 4]);
+    const inner = await editor.evaluate(el => el._layout.openings.find(o => o.kind === 'door' && o.interior === true));
+    expect([inner.room_id, inner.contacts]).toEqual([expect.any(String), ['binary_sensor.bad_tuer']]);
+    // an open passage without a sensor: nothing to assign
+    await editor.locator('.tools [data-a="opick"]').click();
+    await editor.locator('.opick [data-tool="passage"]').click();
+    await tapPlan(page, editor, [6, 4]);
+    expect(await editor.evaluate(el => [el._layout.openings.find(o => o.id === el._sel.id).kind, !!el.shadowRoot.querySelector('.aside .assign')])).toEqual(['passage', false]);
+    expect(await editor.evaluate(el => { el._sel = null; el._render(); return el.shadowRoot.querySelectorAll('[data-unplaced]').length; })).toBe(0);
+    // saved and opened again: every assignment is kept
+    await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+    await settle(page, 150);
+    const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+    const byContact = layout => Object.fromEntries(layout.openings.flatMap(o => o.contacts.map(c => [c, [o.room_id, o.kind, o.interior === true]])));
+    expect(byContact(saved)).toEqual({ 'binary_sensor.bad_fenster': ['r_bad', 'window', false], 'binary_sensor.wohnen_tuer': ['r_wohnen', 'door', false],
+      'binary_sensor.bad_tuer': [inner.room_id, 'door', true], 'sensor.wohnen_lage': ['r_wohnen', 'window', false], 'binary_sensor.schlaf_fenster': ['r_schlaf', 'window', false] });
+    await impl(page).evaluate((el, saved) => { el._layoutInfo = { ...el._layoutInfo, layout: saved, revision: 4 }; el._render(); }, saved);
+    await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
+    await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
+    const again = page.locator('freshairiq-house-layout-editor');
+    expect(await again.evaluate(el => el._layout)).toEqual(saved);
+    expect(await again.evaluate(el => { el._sel = null; el._render(); return [el._progress().unplaced, el._progress().orphans]; })).toEqual([0, []]);
+  });
+}
+
+test('floor plan editor order: the trace module places windows and outside doors on outside stretches only, interior kinds on a shared wall', async ({ page }) => {
+  await mount(page);
+  const out = await page.evaluate(async layout => {
+    const T = await import('/freshairiq-house-trace.js?v=t');
+    const at = (p, kind) => { const o = T.openingAt(layout, 'f_eg', p, 0.4, kind); return o && (o.error || [o.room_id, o.edge, o.kind, o.width_m, o.interior === true]); };
+    return { window: at([0, 6], 'window'), shared: at([2, 4], 'window'), door: at([10, 5.5], 'outer_door'), inner: at([2, 4], 'door'), innerOut: at([0, 6], 'door'), far: at([20, 20], 'window'),
+      free: T.freeStretches(layout, layout.rooms[1], [0, 4], [8, 4]) };
+  }, LAYOUT);
+  expect(out).toEqual({ window: ['r_bad', 3, 'window', null, false], shared: 'no_exterior_wall', door: ['r_wohnen', 1, 'door', 0.9, false],
+    inner: [expect.any(String), expect.any(Number), 'door', 0.9, true], innerOut: 'no_interior_wall', far: null, free: [] });
+});
+
+// Owner order "sechs Befunde" and the plan check: every case through the visible controls, on desktop and phone.
+const moveRoom = (editor, id, dx, dy) => editor.evaluate((el, [id, dx, dy]) => el._commit(l => { const r = l.rooms.find(x => x.id === id); r.polygon = r.polygon.map(([x, y]) => [Math.round((x + dx) * 1000) / 1000, Math.round((y + dy) * 1000) / 1000]); }), [id, dx, dy]);
+const marker = (editor, id) => editor.evaluate((el, id) => { const g = el.shadowRoot.querySelector(`g.fd[data-id="${id}"]`); if (!g) return null; const r = g.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }, id);
+const tapMarker = async (page, editor, id) => { const at = await marker(editor, id); expect(at).not.toBeNull(); await page.mouse.click(at[0], at[1]); await settle(page, 60); };
+const findingMsg = editor => editor.evaluate(el => { const m = el.shadowRoot.querySelector('.fdmsg'); return m ? { text: m.querySelector('b').textContent, fx: [...m.querySelectorAll('[data-fx]')].map(b => b.textContent) } : null; });
+const fx = async (editor, action) => { await editor.locator(`.fdmsg [data-fx="${action}"]`).click(); };
+const previewNote = editor => editor.evaluate(el => el._preview ? el.shadowRoot.querySelector('.ov-top .msg, .msg').textContent : null);
+const poly = (editor, id) => editor.evaluate((el, id) => el._layout.rooms.find(r => r.id === id).polygon, id);
+const press = async (editor, a) => { await editor.locator(`[data-a="${a}"]`).first().click(); };
+
+for (const [screen, size] of SCREENS) {
+  test(`plan check (${screen}): "Prüfen" is always reachable – also with a selection and hidden properties; "Zeigen" leads to the place`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await moveRoom(editor, 'r_bad', 0, 0.06);
+    await editor.evaluate(el => { el._floor = 'f_og'; el._sel = { type: 'room', id: 'r_schlaf' }; el._panelHidden = true; el._render(); });
+    const btn = editor.locator('.tools [data-a="check"]');
+    await expect(btn).toBeVisible();
+    expect(await btn.evaluate(b => { const r = b.getBoundingClientRect(); return r.right <= innerWidth + 1 && r.left >= -1 && r.bottom <= innerHeight + 1; })).toBe(true);
+    expect(await btn.textContent()).toMatch(/^Prüfen · \d+$/);
+    await btn.click();
+    const go = editor.locator('.checkov [data-go="fd|gap|r_bad|r_flur|0|2"]');
+    await expect(go).toBeVisible();
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.checkov').textContent)).toContain('Bad und Flur liegen hier 6 cm auseinander.');
+    await go.click();
+    const shown = await editor.evaluate(el => ({ floor: el._floor, finding: el._finding, open: el._checkOpen }));
+    expect(shown).toEqual({ floor: 'f_eg', finding: 'gap|r_bad|r_flur|0|2', open: false });
+    expect(await findingMsg(editor)).toEqual({ text: 'Bad und Flur liegen hier 6 cm auseinander.', fx: ['Wände ausrichten', 'Als gemeinsame Wand übernehmen'] });
+    const [mx, my] = await marker(editor, 'gap|r_bad|r_flur|0|2');
+    const box = await editor.evaluate(el => { const r = el.shadowRoot.querySelector('svg').getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; });
+    expect(mx).toBeGreaterThan(box[0]); expect(mx).toBeLessThan(box[0] + box[2]); expect(my).toBeGreaterThan(box[1]); expect(my).toBeLessThan(box[1] + box[3]);
+    // the next-step hint offers the same place
+    await press(editor, 'fd_close');
+    await editor.evaluate(el => { el._sel = null; el._render(); });
+    expect(await hintText(editor)).toContain('1 Stellen im Plan prüfen');
+    await editor.locator('.hint [data-go]').click();
+    expect(await editor.evaluate(el => el._finding)).toBe('gap|r_bad|r_flur|0|2');
+  });
+
+  test(`Befund 2 (${screen}): "Fenster hinzufügen" places like "＋ Öffnung → Fenster"; a plan with doors only asks for no window`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await editor.evaluate(el => { el._sel = { type: 'opening', id: 'o_bad' }; el._panelHidden = false; el._render(); });
+    await editor.locator('.aside [data-a="delete"]').click();
+    await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_bad' }; el._panelHidden = false; el._render(); });
+    await editor.locator('.aside [data-a="window"]').click();
+    const viaRoom = await editor.evaluate(el => [el._tool, el.shadowRoot.querySelector('.hint').textContent.trim()]);
+    await editor.evaluate(el => { el._setTool(null); el._sel = null; el._render(); });
+    await editor.locator('.tools [data-a="opick"]').click();
+    await editor.locator('.opick [data-tool="window"]').click();
+    expect(await editor.evaluate(el => [el._tool, el.shadowRoot.querySelector('.hint').textContent.trim()])).toEqual(viaRoom);
+    expect(viaRoom[0]).toBe('window');
+    await tapPlan(page, editor, [2, 4]);                                           // between bath and hall: refused
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent)).toContain('keine freie Außenwand');
+    await tapPlan(page, editor, [0, 6]);
+    const win = await editor.evaluate(el => el._layout.openings.find(o => o.id === el._sel.id));
+    expect([win.room_id, win.kind, win.edge]).toEqual(['r_bad', 'window', 3]);
+    // doors only: complete without windows
+    await editor.evaluate(el => { el._commit(l => { l.openings = l.openings.filter(o => o.kind !== 'window'); }); el._sel = null; el._render(); });
+    expect(await hintText(editor)).not.toContain('Fenster setzen');
+    await editor.evaluate(el => { el._commit(l => { l.openings = []; }); el._render(); });
+    expect(await hintText(editor)).toContain('Fenster setzen');
+  });
+
+  for (const stored of [true, false]) {
+    test(`Befund 3 (${screen}, ${stored ? 'saved plan' : 'first draft'}): "Fehlende Räume ergänzen" keeps moved rooms, locks, deleted openings and contacts`, async ({ page }) => {
+      const editor = await openPlanEditor(page, size, { stored });
+      await editor.evaluate(el => { if (el._preview) el.shadowRoot.querySelector('[data-a="apply"]').click(); });
+      await editor.evaluate(el => el._commit(l => {
+        l.rooms = l.rooms.filter(r => r.id !== 'r_schlaf'); l.openings = l.openings.filter(o => o.room_id !== 'r_schlaf' && o.id !== 'o_wohnen');
+        const flur = l.rooms.find(r => r.id === 'r_flur'); flur.locked_walls = [0]; flur.polygon = flur.polygon.map(([x, y]) => [x, y - 1]);
+        l.openings.find(o => o.id === 'o_bad').contacts = ['binary_sensor.bad_tuer'];
+        l.openings.find(o => o.id === 'd_bad').contacts = [];
+      }));
+      const before = await editor.evaluate(el => JSON.stringify([el._layout.rooms, el._layout.openings]));
+      await editor.evaluate(el => { el._sel = null; el._render(); });
+      await press(editor, 'menu');
+      await editor.locator('[data-a="missing"]').click();
+      await settle(page, 120);
+      const after = await editor.evaluate(el => ({ rooms: el._layout.rooms, openings: el._layout.openings, dirty: el._dirty }));
+      const [rooms, openings] = JSON.parse(before);
+      expect(after.rooms.filter(r => r.id !== 'r_schlaf')).toEqual(rooms);
+      expect(after.openings.filter(o => o.room_id !== 'r_schlaf')).toEqual(openings);
+      expect(after.rooms.find(r => r.id === 'r_schlaf').floor_id).toBe('f_og');
+      expect(after.openings.filter(o => o.room_id === 'r_schlaf').map(o => o.contacts)).toEqual([['binary_sensor.schlaf_fenster']]);
+      expect(after.dirty).toBe(true);
+      await press(editor, 'undo');
+      expect(await editor.evaluate(el => JSON.stringify([el._layout.rooms, el._layout.openings]))).toBe(before);
+    });
+  }
+
+  test(`Befund 4 (${screen}): the chosen room stays chosen when the shape changes`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await editor.evaluate(el => { el._commit(l => { l.rooms = l.rooms.filter(r => !['r_schlaf', 'r_wohnen'].includes(r.id)); l.openings = l.openings.filter(o => !['r_schlaf', 'r_wohnen'].includes(o.room_id)); }); el._sel = null; el._render(); });
+    await press(editor, 'add_open');
+    const keys = await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('[data-f="add_key"] option')].map(o => o.value));
+    expect(keys.length).toBe(2);
+    await editor.locator('[data-f="add_key"]').selectOption(keys[1]);
+    await editor.locator('[data-shape="l"]').click();
+    expect(await editor.evaluate(el => [el.shadowRoot.querySelector('[data-f="add_key"]').value, el._shape])).toEqual([keys[1], 'l']);
+    await editor.locator('[data-shape="u"]').click();
+    expect(await editor.locator('[data-f="add_key"]').inputValue()).toBe(keys[1]);
+    await editor.locator('.aside [data-a="add"]').click();
+    expect(await editor.evaluate(el => el._room(el._sel.id).room_key)).toBe(keys[1]);
+  });
+
+  test(`Befund 6 (${screen}): a window keeps its place when its wall gets a corner; a corner inside it is refused and the free points shown`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await editor.evaluate(el => el._commit(l => { l.openings.push({ id: 'o_flur', room_id: 'r_flur', edge: 0, offset: 0.75, width_m: 1.0, kind: 'window', mechanics: 'unknown', contacts: [] }); }));
+    const at = o => editor.evaluate((el, id) => { const G = el._layout.openings.find(x => x.id === id), r = el._layout.rooms.find(x => x.id === G.room_id), a = r.polygon[G.edge], b = r.polygon[(G.edge + 1) % r.polygon.length]; return [a[0] + (b[0] - a[0]) * G.offset, a[1] + (b[1] - a[1]) * G.offset, G.width_m].map(v => Math.round(v * 100) / 100); }, o);   // to the centimetre (offsets are stored to 3 places)
+    expect(await at('o_flur')).toEqual([6, 0, 1]);
+    await tapPlan(page, editor, [2, 2]);
+    await editor.evaluate(el => { el._panelHidden = false; el._render(); });
+    await editor.locator('.aside [data-a="edit_corners"]').click();
+    const mid = await editor.evaluate(el => { const c = el.shadowRoot.querySelector('circle.mid[data-id="r_flur"][data-i="0"]').getBoundingClientRect(); return [c.x + c.width / 2, c.y + c.height / 2]; });
+    await page.mouse.click(mid[0], mid[1]); await settle(page, 60);
+    const split = await editor.evaluate(el => ({ n: el._layout.rooms.find(r => r.id === 'r_flur').polygon.length, o: el._layout.openings.find(x => x.id === 'o_flur') }));
+    expect(split.n).toBe(5); expect(split.o.edge).toBe(1);
+    expect(await at('o_flur')).toEqual([6, 0, 1]);
+    // the corner removed again: the window is back on one wall, still at 6 m
+    await editor.evaluate(el => { el._sel = { type: 'vertex', id: 'r_flur', index: 1 }; el._panelHidden = false; el._render(); });
+    await editor.locator('.aside [data-a="delete"]').click();
+    expect(await editor.evaluate(el => [el._layout.rooms.find(r => r.id === 'r_flur').polygon.length, el._layout.openings.find(x => x.id === 'o_flur').edge])).toEqual([4, 0]);
+    expect(await at('o_flur')).toEqual([6, 0, 1]);
+    // the window in the middle: a corner there would cut it – refused, the free points are marked and work
+    await editor.evaluate(el => { el._commit(l => { l.openings.find(o => o.id === 'o_flur').offset = 0.5; }); el._sel = { type: 'room', id: 'r_flur' }; el._render(); });
+    const plan = await editor.evaluate(el => JSON.stringify(el._layout));
+    const mid0 = await editor.evaluate(el => { const c = el.shadowRoot.querySelector('circle.mid[data-id="r_flur"][data-i="0"]').getBoundingClientRect(); return [c.x + c.width / 2, c.y + c.height / 2]; });
+    await page.mouse.click(mid0[0], mid0[1]); await settle(page, 60);
+    expect(await editor.evaluate(el => JSON.stringify(el._layout))).toBe(plan);
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent)).toContain('Hier kann kein Wandpunkt eingefügt werden – er läge mitten in: Fenster.');
+    const free = await editor.evaluate(el => [...el.shadowRoot.querySelectorAll('circle.mid.free')].map(c => Number(c.dataset.t)));
+    expect(free.length).toBe(2);
+    expect(await editor.evaluate(el => el.shadowRoot.querySelectorAll('line.freeseg').length)).toBe(2);
+    const handle = await editor.evaluate(el => { const c = el.shadowRoot.querySelector('circle.mid.free').getBoundingClientRect(); return [c.x + c.width / 2, c.y + c.height / 2]; });
+    await page.mouse.click(handle[0], handle[1]); await settle(page, 60);
+    expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_flur').polygon.length)).toBe(5);
+    expect(await at('o_flur')).toEqual([4, 0, 1]);
+  });
+
+  test(`plan check (${screen}): a small joint – marked with rooms and size, "Wände ausrichten" as preview, applied, undone`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await moveRoom(editor, 'r_bad', 0, 0.06);
+    expect(await marker(editor, 'gap|r_bad|r_flur|0|2')).not.toBeNull();
+    await tapMarker(page, editor, 'gap|r_bad|r_flur|0|2');
+    expect((await findingMsg(editor)).text).toBe('Bad und Flur liegen hier 6 cm auseinander.');
+    const moved = await poly(editor, 'r_bad');
+    await fx(editor, 'align');
+    expect(await previewNote(editor)).toContain('Vorschau: Bad rückt 6 cm an Flur heran');
+    expect(await poly(editor, 'r_bad')).toEqual(moved);                            // a preview changes nothing yet
+    await editor.locator('[data-a="apply"]').click();
+    expect(await poly(editor, 'r_bad')).toEqual([[0, 4], [4, 4], [4, 8], [0, 8]]);
+    expect(await marker(editor, 'gap|r_bad|r_flur|0|2')).toBeNull();
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('svg').textContent + [...el.shadowRoot.querySelectorAll('g.fd')].length)).toMatch(/0$/);
+    await press(editor, 'undo');
+    expect(await poly(editor, 'r_bad')).toEqual(moved);
+    // the joint made by dropping a room: marked and chosen right away
+    await press(editor, 'undo');
+    await editor.evaluate(el => { el._sel = null; el._render(); });
+    for (let i = 0; i < 3; i++) await press(editor, 'zoom-in');                  // close enough that 45 cm is no snap (12 px)
+    await editor.evaluate(el => { el._centerOn([2, 5]); el._render(); });
+    const from = await plan2screen(editor, [2, 6]), to = await plan2screen(editor, [2, 6.45]);
+    await page.mouse.move(from[0], from[1]); await page.mouse.down(); await page.mouse.move(from[0], (from[1] + to[1]) / 2, { steps: 4 }); await page.mouse.move(to[0], to[1], { steps: 4 }); await page.mouse.up();
+    await settle(page, 80);
+    const drop = await editor.evaluate(el => ({ bad: el._layout.rooms.find(r => r.id === 'r_bad').polygon, finding: el._finding }));
+    const gap = Math.round((drop.bad[0][1] - 4) * 100);                            // the drawing grid may round the drop
+    expect([gap > 30 && gap <= 50, drop.finding]).toEqual([true, 'gap|r_bad|r_flur|0|2']);
+    expect((await findingMsg(editor)).text).toBe(`Bad und Flur liegen hier ${gap} cm auseinander.`);
+  });
+
+  test(`plan check (${screen}): a real partition wall – taken as shared wall, inner sizes kept, the door links both rooms, saved and reopened`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await moveRoom(editor, 'r_bad', 0, 0.14);
+    const inner = await poly(editor, 'r_bad');
+    await tapMarker(page, editor, 'gap|r_bad|r_flur|0|2');
+    expect((await findingMsg(editor)).text).toBe('Bad und Flur liegen hier 14 cm auseinander.');
+    expect(await editor.evaluate(el => [...el._layout.openings].find(o => o.id === 'd_bad') && el.shadowRoot.querySelectorAll('.pwall').length)).toBe(0);
+    await fx(editor, 'wall');
+    expect(await previewNote(editor)).toContain('14 cm dicke Wand');
+    await editor.locator('[data-a="apply"]').click();
+    const after = await editor.evaluate(async el => {
+      const G = await import('/freshairiq-house-geometry.js?v=t'), rooms = el._layout.rooms, bad = rooms.find(r => r.id === 'r_bad'), d = el._layout.openings.find(o => o.id === 'd_bad');
+      return { parts: bad.partitions, link: G.openingLink(rooms, bad, d), walls: el.shadowRoot.querySelectorAll('.pwall').length, marker: !!el.shadowRoot.querySelector('g.fd'), via: !!G.passage(el._layout, 'r_bad', 'r_flur') };
+    });
+    expect(after.parts).toEqual([{ room: 'r_flur', thickness_m: 0.14, wall: 0, other_wall: 2 }]);   // only the two walls of this spot
+    expect(after.link).toBeTruthy(); expect(after.walls).toBeGreaterThan(0); expect(after.marker).toBe(false);
+    expect(await poly(editor, 'r_bad')).toEqual(inner);
+    // without the door the wall alone connects nothing
+    const alone = await editor.evaluate(async el => { const G = await import('/freshairiq-house-geometry.js?v=t'); return !!G.passage(Object.assign({}, el._layout, { openings: el._layout.openings.filter(o => o.id !== 'd_bad'), connections: [] }), 'r_bad', 'r_flur'); });
+    expect([after.via, alone]).toEqual([true, false]);
+    await press(editor, 'undo');
+    expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').partitions)).toBeUndefined();
+    await press(editor, 'redo');
+    await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+    await settle(page, 150);
+    const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+    expect(saved.rooms.find(r => r.id === 'r_flur').partitions).toEqual([{ room: 'r_bad', thickness_m: 0.14, wall: 2, other_wall: 0 }]);
+    expect(saved.openings.find(o => o.id === 'd_bad').contacts).toEqual(['binary_sensor.bad_tuer']);
+    await impl(page).evaluate((el, saved) => { el._layoutInfo = { ...el._layoutInfo, layout: saved, revision: 4 }; el._editing = false; el._render(); }, saved);
+    const map = await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('.pwall').length);
+    expect(map).toBeGreaterThan(0);                                                // the house map draws the wall too
+    await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
+    await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
+    const again = page.locator('freshairiq-house-layout-editor');
+    expect(await again.evaluate(el => el._layout)).toEqual(saved);
+    expect(await again.evaluate(el => [el.shadowRoot.querySelectorAll('.pwall').length > 0, el.shadowRoot.querySelectorAll('g.fd').length])).toEqual([true, 0]);
+  });
+
+  test(`plan check (${screen}): an overlap – marked with its depth, "Verschiebung vorschlagen" as preview, applied`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await moveRoom(editor, 'r_bad', 0, -0.3);
+    await tapMarker(page, editor, 'overlap|r_bad|r_flur');
+    expect(await findingMsg(editor)).toEqual({ text: 'Bad und Flur überlappen sich hier um 30 cm.', fx: ['Verschiebung vorschlagen'] });
+    await fx(editor, 'shift');
+    expect(await previewNote(editor)).toMatch(/Vorschau: (Bad|Flur) wird um 30 cm verschoben/);
+    await editor.locator('[data-a="apply"]').click();
+    const out = await editor.evaluate(async el => { const G = await import('/freshairiq-house-geometry.js?v=t'); return G.planFindings(el._layout.rooms.filter(r => r.floor_id === 'f_eg')).filter(f => f.code === 'overlap').length; });
+    expect(out).toBe(0);
+    await press(editor, 'undo');
+    expect(await marker(editor, 'overlap|r_bad|r_flur')).not.toBeNull();
+  });
+
+  test(`plan check (${screen}): a 60 cm step is marked as 5,60 m vs 5,00 m – never shared out; adjust one room or keep it`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await editor.evaluate(el => el._commit(l => {
+      const r = id => l.rooms.find(x => x.id === id);
+      r('r_flur').polygon = [[0, 0], [5.6, 0], [5.6, 4], [0, 4]]; r('r_bad').polygon = [[0, 4], [5, 4], [5, 8], [0, 8]];
+      r('r_wohnen').polygon = r('r_wohnen').polygon.map(([x, y]) => [x + 10, y]);
+    }));
+    const id = await editor.evaluate(el => el._findings().find(f => f.code === 'step').id);
+    await tapMarker(page, editor, id);
+    expect(await findingMsg(editor)).toEqual({ text: 'Versatz: Die gemeinsame Wand ist bei Bad 5,00 m lang, bei Flur 5,60 m – 60 cm Unterschied.',
+      fx: ['Bad auf 5,60 m verlängern', 'Flur auf 5,00 m kürzen', 'Versatz ist richtig'] });
+    await fx(editor, 'extend:r_bad');
+    expect(await previewNote(editor)).toContain('Bei Bad wird die Wand 5,60 m lang');
+    await editor.locator('[data-a="apply"]').click();
+    expect(await poly(editor, 'r_bad')).toEqual([[0, 4], [5.6, 4], [5.6, 8], [0, 8]]);
+    expect(await poly(editor, 'r_flur')).toEqual([[0, 0], [5.6, 0], [5.6, 4], [0, 4]]);   // the other room is not touched
+    await press(editor, 'undo');
+    await tapMarker(page, editor, id);
+    await fx(editor, 'shorten:r_flur');
+    await editor.locator('[data-a="no-apply"]').click();
+    expect(await poly(editor, 'r_flur')).toEqual([[0, 0], [5.6, 0], [5.6, 4], [0, 4]]);
+    await tapMarker(page, editor, id);
+    await fx(editor, 'keep');
+    expect(await marker(editor, id)).toBeNull();
+    expect(await poly(editor, 'r_bad')).toEqual([[0, 4], [5, 4], [5, 8], [0, 8]]);
+  });
+
+  test(`plan check (${screen}): after "Räume zusammenfügen" what is left is marked and chosen`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await editor.evaluate(el => el._commit(l => {
+      const r = id => l.rooms.find(x => x.id === id);
+      r('r_flur').polygon = [[0, 0], [5.6, 0], [5.6, 4], [0, 4]]; r('r_bad').polygon = [[0, 4.2], [5, 4.2], [5, 8.2], [0, 8.2]];
+      r('r_wohnen').polygon = r('r_wohnen').polygon.map(([x, y]) => [x + 10, y]);
+    }));
+    await editor.evaluate(el => { el._sel = null; el._render(); });
+    await press(editor, 'menu');
+    await editor.locator('[data-a="join"]').click();
+    await editor.locator('[data-a="apply"]').click();
+    const left = await editor.evaluate(el => ({ finding: el._finding, codes: el._findings().map(f => f.code) }));
+    expect(left.codes).toContain('step');
+    expect(left.finding).toMatch(/^step\|/);
+    expect((await findingMsg(editor)).text).toContain('60 cm Unterschied');
+  });
+}
+
+// Order "drei Grundrissfehler": a partition only between its two confirmed walls, a step along rows of rooms, a flush overlap.
+const U_ROOMS = [{ id: 'r_u', room_key: 'bad', floor_id: 'f_eg', polygon: [[0, 0], [6, 0], [6, 5], [4.5, 5], [4.5, 2], [1.5, 2], [1.5, 5], [0, 5]], provenance: 'user' },
+  { id: 'r_m', room_key: 'flur', floor_id: 'f_eg', polygon: [[1.7, 2.6], [4.32, 2.6], [4.32, 7], [1.7, 7]], provenance: 'user' }];
+const U_DOORS = [{ id: 'd_left', room_id: 'r_u', edge: 5, offset: 0.7, width_m: 0.9, kind: 'door', mechanics: 'door', contacts: ['binary_sensor.bad_tuer'] },
+  { id: 'd_right', room_id: 'r_u', edge: 3, offset: 0.3, width_m: 0.9, kind: 'door', mechanics: 'door', contacts: [] }];
+// the same plan and walls as tests/test_floor_plan_editor_findings.py (U_ROOM / U_MIDDLE): there the air paths are checked
+const U_CONFIRMED = { r_u: [{ room: 'r_m', thickness_m: 0.18, wall: 3, other_wall: 1 }], r_m: [{ room: 'r_u', thickness_m: 0.18, wall: 1, other_wall: 3 }] };
+const SIX_ROOMS = [['nord1', 0, 2, 4, 8], ['nord2', 2, 3.5, 4, 8], ['nord3', 3.5, 5.6, 4, 8], ['sued1', 0, 2.05, 0, 4], ['sued2', 2.05, 2.95, 0, 4], ['sued3', 2.95, 5, 0, 4]]
+  .map(([key, x0, x1, y0, y1]) => ({ id: `r_${key}`, room_key: key, floor_id: 'f_eg', polygon: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], provenance: 'user' }));
+const setFloor = (editor, rooms, openings) => editor.evaluate((el, [rooms, openings]) => { el._commit(l => { l.rooms = [...l.rooms.filter(r => r.floor_id !== 'f_eg'), ...rooms]; l.openings = [...l.openings.filter(o => o.room_id === 'r_schlaf'), ...openings]; l.connections = []; }); el._floor = 'f_eg'; el._sel = null; el._render(); }, [rooms, openings]);
+const doorTargets = editor => editor.evaluate(async el => { const G = await import('/freshairiq-house-geometry.js?v=t'); return Object.fromEntries(['d_left', 'd_right'].map(id => { const o = el._layout.openings.find(x => x.id === id), r = el._layout.rooms.find(x => x.id === o.room_id), t = G.openingLink(el._layout.rooms, r, o); return [id, t ? t.id : 'outside']; })); });
+
+for (const [screen, size] of SCREENS) {
+  test(`partition (${screen}): confirmed on the right wall of a U-shaped room only – the left door stays an outside door, the left joint stays to check; saved, reopened, wall edits`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await setFloor(editor, U_ROOMS, U_DOORS);
+    const found = await editor.evaluate(el => el._findings().filter(f => f.code === 'gap').map(f => [f.id, f.gap, f.wall_a, f.wall_b]));
+    expect(found).toEqual([['gap|r_u|r_m|3|1', 0.18, 3, 1], ['gap|r_u|r_m|5|3', 0.2, 5, 3]]);
+    expect(await doorTargets(editor)).toEqual({ d_left: 'outside', d_right: 'outside' });
+    await tapMarker(page, editor, 'gap|r_u|r_m|3|1');
+    expect((await findingMsg(editor)).text).toBe('Bad und Flur liegen hier 18 cm auseinander.');
+    await fx(editor, 'wall');
+    await editor.locator('[data-a="apply"]').click();
+    const after = await editor.evaluate(el => ({ parts: Object.fromEntries(el._layout.rooms.map(r => [r.id, r.partitions])), fills: [...el.shadowRoot.querySelectorAll('.pwall')].map(p => p.getAttribute('points')),
+      left: !!el.shadowRoot.querySelector('g.fd[data-id="gap|r_u|r_m|5|3"]'), right: !!el.shadowRoot.querySelector('g.fd[data-id="gap|r_u|r_m"]') }));
+    expect(after.parts).toEqual(U_CONFIRMED);
+    expect(after.fills.length).toBe(1);                                            // only the right joint is filled
+    expect(after.fills[0].split(' ').map(p => Number(p.split(',')[0])).every(x => x >= 4.32 - 1e-6 && x <= 4.5 + 1e-6)).toBe(true);
+    expect([after.left, after.right]).toEqual([true, false]);
+    expect(await doorTargets(editor)).toEqual({ d_left: 'outside', d_right: 'r_m' });
+    // a corner inserted on wall 0 and removed again: the confirmed walls move along (3 → 4 → 3)
+    await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_u' }; el._panelHidden = false; el._finding = null; el._render(); });
+    await editor.locator('.aside [data-a="edit_corners"]').click();
+    const mid = await editor.evaluate(el => { const c = el.shadowRoot.querySelector('circle.mid[data-id="r_u"][data-i="0"]').getBoundingClientRect(); return [c.x + c.width / 2, c.y + c.height / 2]; });
+    await page.mouse.click(mid[0], mid[1]); await settle(page, 60);
+    expect(await editor.evaluate(el => [el._layout.rooms.find(r => r.id === 'r_u').partitions, el._layout.rooms.find(r => r.id === 'r_m').partitions]))
+      .toEqual([[{ room: 'r_m', thickness_m: 0.18, wall: 4, other_wall: 1 }], [{ room: 'r_u', thickness_m: 0.18, wall: 1, other_wall: 4 }]]);
+    expect(await doorTargets(editor)).toEqual({ d_left: 'outside', d_right: 'r_m' });
+    await editor.evaluate(el => { el._sel = { type: 'vertex', id: 'r_u', index: 1 }; el._panelHidden = false; el._render(); });
+    await editor.locator('.aside [data-a="delete"]').click();
+    expect(await editor.evaluate(el => Object.fromEntries(el._layout.rooms.map(r => [r.id, r.partitions])))).toEqual(U_CONFIRMED);
+    await editor.locator('[data-mode="quick"]').click();
+    // saved and reopened: the same walls, the same door targets, the left joint still marked
+    await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+    await settle(page, 150);
+    const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+    expect(Object.fromEntries(saved.rooms.filter(r => r.floor_id === 'f_eg').map(r => [r.id, r.partitions]))).toEqual(U_CONFIRMED);
+    await impl(page).evaluate((el, saved) => { el._layoutInfo = { ...el._layoutInfo, layout: saved, revision: 4 }; el._render(); }, saved);
+    expect(await impl(page).evaluate(el => el.shadowRoot.querySelectorAll('.pwall').length)).toBe(1);
+    await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-edit]').click());
+    await page.waitForFunction(() => document.querySelector('freshairiq-house-card-impl').shadowRoot.querySelector('freshairiq-house-layout-editor'));
+    const again = page.locator('freshairiq-house-layout-editor');
+    expect(await again.evaluate(el => el._layout)).toEqual(saved);
+    expect(await doorTargets(again)).toEqual({ d_left: 'outside', d_right: 'r_m' });
+    expect(await again.evaluate(el => { el._floor = 'f_eg'; el._render(); return el._findings().map(f => f.id); })).toEqual(['gap|r_u|r_m|5|3']);
+  });
+
+  test(`step (${screen}): two rows of three rooms – "Prüfen → Zeigen" marks 60 cm on the right, 5,60 m against 5,00 m; only safe corrections, else keep`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await setFloor(editor, SIX_ROOMS, []);
+    const all = await editor.evaluate(el => el._findings().map(f => [f.code, f.step, f.at]));
+    expect(all).toEqual([['step', 0.6, [5.3, 4]]]);                                // no 5 cm step between the first rooms
+    await editor.locator('.tools [data-a="check"]').click();
+    const go = editor.locator('.checkov [data-go^="fd|step|"]');
+    await expect(go).toHaveCount(1);
+    await go.click();
+    const text = 'Versatz: Entlang dieser Wand sind nord1, nord2 und nord3 zusammen 5,60 m lang, sued1, sued2 und sued3 zusammen 5,00 m – 60 cm Unterschied.';
+    expect(await findingMsg(editor)).toEqual({ text, fx: ['sued3 auf 2,65 m verlängern', 'nord3 auf 1,50 m kürzen', 'Versatz ist richtig'] });
+    const at = await marker(editor, await editor.evaluate(el => el._finding));
+    const right = await plan2screen(editor, [5.3, 4]);
+    expect(Math.abs(at[0] - right[0]) < 2 && Math.abs(at[1] - right[1]) < 2).toBe(true);
+    await fx(editor, 'extend:r_sued3');
+    expect(await previewNote(editor)).toContain('Bei sued3 wird die Wand 2,65 m lang');
+    await editor.locator('[data-a="apply"]').click();
+    expect(await poly(editor, 'r_sued3')).toEqual([[2.95, 0], [5.6, 0], [5.6, 4], [2.95, 4]]);
+    expect(await editor.evaluate(el => el._findings().length)).toBe(0);
+    await press(editor, 'undo');
+    // the hall-side shortening would open a joint: not offered; with both end walls locked nothing is safe
+    await editor.evaluate(el => { el._commit(l => { l.rooms.find(r => r.id === 'r_sued3').locked_walls = [0, 2]; l.rooms.find(r => r.id === 'r_nord3').locked_walls = [0, 2]; }); el._finding = null; el._render(); });
+    const id = await editor.evaluate(el => el._findings()[0].id);
+    await tapMarker(page, editor, id);
+    const none = await findingMsg(editor);
+    expect(none.fx).toEqual(['Versatz ist richtig']);
+    expect(await editor.evaluate(el => el.shadowRoot.querySelector('.fdmsg').textContent)).toContain('Keine Anpassung möglich');
+    await fx(editor, 'keep');
+    expect(await marker(editor, id)).toBeNull();
+  });
+
+  test(`step (${screen}): a correction that would open a new joint is not offered`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    // 2.00 m against 2.05 m; behind the south room's end wall a lower room (not on the line): shortening the south
+    // room by 5 cm would open a joint to it – only "extend" and "keep" are offered
+    const back = { id: 'r_back', room_key: 'back', floor_id: 'f_eg', polygon: [[2.05, 0], [3, 0], [3, 3.5], [2.05, 3.5]], provenance: 'user' };
+    await setFloor(editor, [...SIX_ROOMS.filter(r => ['r_nord1', 'r_sued1'].includes(r.id)), back], []);
+    expect(await editor.evaluate(el => el._findings().map(f => [f.code, f.step]))).toEqual([['step', 0.05]]);
+    const raw = await editor.evaluate(el => el._findings()[0].fixes.map(x => [x.kind, x.room, x.length]));
+    expect(raw).toEqual([['extend', 'r_nord1', 2.05], ['shorten', 'r_sued1', 2]]);
+    await tapMarker(page, editor, await editor.evaluate(el => el._findings()[0].id));
+    expect((await findingMsg(editor)).fx).toEqual(['nord1 auf 2,05 m verlängern', 'Versatz ist richtig']);
+  });
+
+  test(`overlap (${screen}): two 4 × 4 m rooms 30 cm into each other along a common side – marked, saving refused`, async ({ page }) => {
+    const editor = await openPlanEditor(page, size);
+    await setFloor(editor, [{ id: 'r_bad', room_key: 'bad', floor_id: 'f_eg', polygon: [[0, 0], [4, 0], [4, 4], [0, 4]], provenance: 'user' },
+      { id: 'r_flur', room_key: 'flur', floor_id: 'f_eg', polygon: [[0, 3.7], [4, 3.7], [4, 7.7], [0, 7.7]], provenance: 'user' }], []);
+    await tapMarker(page, editor, 'overlap|r_bad|r_flur');
+    expect(await findingMsg(editor)).toEqual({ text: 'Bad und Flur überlappen sich hier um 30 cm.', fx: ['Verschiebung vorschlagen'] });
+    const calls = await page.evaluate(() => window.__calls.length);
+    await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+    await settle(page, 120);
+    expect(await page.evaluate(n => window.__calls.slice(n).filter(c => c.type === 'freshairiq/house_map/save').length, calls)).toBe(0);
+    expect(await editor.evaluate(el => el._issues().map(i => i.code))).toContain('E_ROOM_OVERLAP');
+    // side by side on the same line it is no overlap
+    await editor.evaluate(el => el._commit(l => { l.rooms.find(r => r.id === 'r_flur').polygon = [[0, 4], [4, 4], [4, 8], [0, 8]]; }));
+    expect(await editor.evaluate(el => [el._findings().length, el._issues().filter(i => i.code === 'E_ROOM_OVERLAP').length])).toEqual([0, 0]);
+  });
+}
+
+// Grundriss-Editor order "acht Probleme": touch, mouse and keyboard; partition on a merged wall; menus; preview lock; short walls.
+// Touch-pointer events as a finger sends them (pointerType "touch"), on the element under a plan point.
+const finger = (editor, type, id, p) => editor.evaluate((el, [type, id, p]) => {
+  const svg = el.shadowRoot.querySelector('svg'), pt = svg.createSVGPoint(); pt.x = p[0]; pt.y = -p[1];
+  const s = pt.matrixTransform(svg.getScreenCTM()), under = type === 'pointerdown' && el.shadowRoot.elementFromPoint(s.x, s.y), target = under && svg.contains(under) ? under : svg;
+  target.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: s.x, clientY: s.y, button: type === 'pointermove' ? -1 : 0,
+    buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1, bubbles: true, composed: true, cancelable: true }));
+}, [type, id, p]);
+const state = editor => editor.evaluate(el => ({ plan: JSON.stringify([el._layout.rooms, el._layout.openings]), past: el._history.past.length, future: el._history.future.length, dirty: el._dirty }));
+const A_SPLIT = { id: 'r_bad', room_key: 'bad', floor_id: 'f_eg', polygon: [[0, 0], [4, 0], [4, 2], [4, 4], [0, 4]], provenance: 'user' };
+const B_NEXT = { id: 'r_flur', room_key: 'flur', floor_id: 'f_eg', polygon: [[4.14, 0], [8, 0], [8, 4], [4.14, 4]], provenance: 'user' };
+const OUT_DOOR = { id: 'd_out', room_id: 'r_bad', edge: 2, offset: 0.5, width_m: 0.9, kind: 'door', mechanics: 'door', contacts: [] };
+const LOW_DOOR = { id: 'd_low', room_id: 'r_bad', edge: 1, offset: 0.5, width_m: 0.9, kind: 'door', mechanics: 'door', contacts: [] };
+const linkOfDoor = (editor, id) => editor.evaluate(async (el, id) => { const G = await import('/freshairiq-house-geometry.js?v=t'); const o = el._layout.openings.find(x => x.id === id), r = el._layout.rooms.find(x => x.id === o.room_id), t = G.openingLink(el._layout.rooms, r, o); return t ? t.id : 'outside'; }, id);
+
+test('order "acht Probleme" (1): a corner between a confirmed and an unconfirmed part of a wall is not removed – the door above stays an outside door', async ({ page }) => {
+  const editor = await openPlanEditor(page, [1280, 800, 500]);
+  const lowOnly = [{ ...A_SPLIT, partitions: [{ room: 'r_flur', thickness_m: 0.14, wall: 1, other_wall: 3 }] }, { ...B_NEXT, partitions: [{ room: 'r_bad', thickness_m: 0.14, wall: 3, other_wall: 1 }] }];
+  await setFloor(editor, lowOnly, [OUT_DOOR, LOW_DOOR]);
+  expect([await linkOfDoor(editor, 'd_out'), await linkOfDoor(editor, 'd_low')]).toEqual(['outside', 'r_flur']);
+  await editor.evaluate(el => { el._mode = 'precise'; el._sel = { type: 'room', id: 'r_bad' }; el._panelHidden = false; el._render(); });
+  const corner = await plan2screen(editor, [4, 2]);
+  await page.mouse.click(corner[0], corner[1]); await settle(page, 60);
+  expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'vertex', id: 'r_bad', index: 2 });
+  const before = await state(editor);
+  await editor.locator('.aside [data-a="delete"]').click();
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top .msg.err').textContent)).toContain('Diese Ecke bleibt: Die Trennwand zu Flur ist nur für einen Teil dieser Wand bestätigt');
+  expect(await state(editor)).toEqual(before);                                     // corner, partition and history unchanged
+  expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'vertex', id: 'r_bad', index: 2 });
+  expect(await linkOfDoor(editor, 'd_out')).toBe('outside');
+  // the same with the Delete key on the drawing
+  await editor.evaluate(el => el.shadowRoot.querySelector('.canvas').focus());
+  await page.keyboard.press('Delete');
+  expect(await state(editor)).toEqual(before);
+  // saved as it is: the plan the backend test (tests/test_floor_plan_editor_findings.py, split wall) checks up to the air paths
+  await editor.evaluate(el => el.shadowRoot.querySelector('[data-a="save"]').click());
+  await settle(page, 150);
+  const saved = await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').at(-1).layout);
+  expect(saved.rooms.filter(r => r.floor_id === 'f_eg').map(r => [r.id, r.polygon, r.partitions])).toEqual([
+    ['r_bad', A_SPLIT.polygon, [{ room: 'r_flur', thickness_m: 0.14, wall: 1, other_wall: 3 }]], ['r_flur', B_NEXT.polygon, [{ room: 'r_bad', thickness_m: 0.14, wall: 3, other_wall: 1 }]]]);
+  expect(saved.openings.filter(o => o.room_id === 'r_bad').map(o => [o.id, o.edge])).toEqual([['d_out', 2], ['d_low', 1]]);
+});
+
+test('order "acht Probleme" (1b): with both parts of the wall confirmed the corner goes – one partition for the whole wall', async ({ page }) => {
+  const editor = await openPlanEditor(page, [1280, 800, 500]);
+  const both = [{ ...A_SPLIT, partitions: [{ room: 'r_flur', thickness_m: 0.14, wall: 1, other_wall: 3 }, { room: 'r_flur', thickness_m: 0.14, wall: 2, other_wall: 3 }] },
+    { ...B_NEXT, partitions: [{ room: 'r_bad', thickness_m: 0.14, wall: 3, other_wall: 1 }, { room: 'r_bad', thickness_m: 0.14, wall: 3, other_wall: 2 }] }];
+  await setFloor(editor, both, [OUT_DOOR, LOW_DOOR]);
+  await editor.evaluate(el => { el._mode = 'precise'; el._sel = { type: 'vertex', id: 'r_bad', index: 2 }; el._panelHidden = false; el._render(); });
+  await editor.locator('.aside [data-a="delete"]').click();
+  const merged = await editor.evaluate(el => [el._layout.rooms.find(r => r.id === 'r_bad').polygon.length, el._layout.rooms.find(r => r.id === 'r_bad').partitions, el._layout.rooms.find(r => r.id === 'r_flur').partitions]);
+  expect(merged).toEqual([4, [{ room: 'r_flur', thickness_m: 0.14, wall: 1, other_wall: 3 }], [{ room: 'r_bad', thickness_m: 0.14, wall: 3, other_wall: 1 }]]);
+});
+
+test('order "acht Probleme" (3): the mouse edits with its main button only; a tap without a change keeps "Redo"', async ({ page }) => {
+  const editor = await openPlanEditor(page, [1280, 800, 500]);
+  await tapPlan(page, editor, [2, 6]);
+  const start = await state(editor);
+  const from = await plan2screen(editor, [2, 6]), to = await plan2screen(editor, [2, 6.8]);
+  for (const button of ['right', 'middle']) {
+    await page.mouse.move(from[0], from[1]); await page.mouse.down({ button }); await page.mouse.move(to[0], to[1], { steps: 5 }); await page.mouse.up({ button }); await settle(page, 40);
+    expect((await state(editor)).plan, button).toBe(start.plan);
+  }
+  // a change, undone – a tap on a room (no change) keeps the step for "Redo"
+  await editor.evaluate(el => el.shadowRoot.querySelector('.canvas').focus());
+  await page.keyboard.press('ArrowRight');
+  await editor.locator('[data-a="undo"]').click();
+  expect((await state(editor)).future).toBe(1);
+  await tapPlan(page, editor, [2, 6]); await tapPlan(page, editor, [4, 2]);
+  expect(await state(editor)).toMatchObject({ plan: start.plan, future: 1 });
+  await expect(editor.locator('[data-a="redo"]')).toBeEnabled();
+  await editor.locator('[data-a="redo"]').click();
+  expect((await state(editor)).plan).not.toBe(start.plan);
+  // a real drag with the main button is one step
+  const past = (await state(editor)).past;
+  await page.mouse.move(from[0], from[1]); await page.mouse.down(); await page.mouse.move(to[0], to[1], { steps: 5 }); await page.mouse.up(); await settle(page, 40);
+  expect((await state(editor)).past).toBe(past + 1);
+});
+
+test('order "acht Probleme" (4): Ctrl/Cmd+Z stays in a field; rooms, doors, windows and marked spots open with Enter and Space', async ({ page }) => {
+  const editor = await openPlanEditor(page, [1280, 800, 500]);
+  await moveRoom(editor, 'r_bad', 0, 0.06);
+  const moved = await state(editor);
+  await editor.evaluate(el => { el._mode = 'precise'; el._sel = { type: 'room', id: 'r_bad' }; el._panelHidden = false; el._render(); });
+  const field = editor.locator('.aside input[data-vx="0"]');
+  await field.focus();
+  for (const key of ['Control+z', 'Meta+z', 'Control+Shift+z', 'Control+y']) { await page.keyboard.press(key); expect((await state(editor)).plan, key).toBe(moved.plan); }
+  // Tab-reachable shapes: Enter or Space chooses them, the focus stays on them
+  for (const [selector, key, expected] of [['polygon[data-k="room"][data-id="r_flur"]', 'Enter', { type: 'room', id: 'r_flur' }], ['line[data-k="op"][data-id="o_wohnen"]', ' ', { type: 'opening', id: 'o_wohnen' }],
+    ['circle[data-k="v"][data-id="r_bad"][data-i="1"]', 'Enter', { type: 'vertex', id: 'r_bad', index: 1 }]]) {
+    await editor.evaluate((el, s) => { el._sel = { type: 'room', id: 'r_bad' }; el._render(); el.shadowRoot.querySelector(`svg ${s}`).focus(); }, selector);
+    expect(await editor.evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.tagName)).not.toBe('BODY');
+    await page.keyboard.press(key === ' ' ? 'Space' : key);
+    expect(await editor.evaluate(el => el._sel)).toEqual(expected);
+    expect(await editor.evaluate(el => el.shadowRoot.activeElement.getAttribute('data-k'))).toBe(selector.match(/data-k="(\w+)"/)[1]);
+  }
+  await editor.evaluate(el => { el._sel = null; el._render(); el.shadowRoot.querySelector('svg g.fd').focus(); });
+  await page.keyboard.press('Space');
+  expect(await editor.evaluate(el => [el._finding, !!el.shadowRoot.querySelector('.fdmsg')])).toEqual(['gap|r_bad|r_flur|0|2', true]);
+  // real Tab steps reach the shapes of the drawing
+  await editor.evaluate(el => { el._finding = null; el._render(); el.shadowRoot.querySelector('.canvas').focus(); });
+  const reached = new Set();
+  for (let i = 0; i < 12; i++) { await page.keyboard.press('Tab'); reached.add(await editor.evaluate(el => el.shadowRoot.activeElement && el.shadowRoot.activeElement.getAttribute('data-k'))); }
+  expect([...reached]).toEqual(expect.arrayContaining(['room', 'op', 'fd']));
+});
+
+test('order "acht Probleme" (5): "Öffnung hinzufügen", "Weitere Werkzeuge" and "Prüfen" – switching leaves exactly the new menu open', async ({ page }) => {
+  const editor = await openPlanEditor(page, [1280, 800, 500]);
+  const open = () => editor.evaluate(el => [...el.shadowRoot.querySelectorAll('.ov.opick, .ov.menu, .ov.checkov')].filter(o => !o.hidden).map(o => o.className.replace('ov ', '')));
+  await editor.locator('.tools [data-a="opick"]').click();
+  expect(await open()).toEqual(['opick']);
+  await editor.locator('.tools [data-a="menu"]').click();
+  expect(await open()).toEqual(['menu']);
+  await editor.locator('.tools [data-a="check"]').click();
+  expect(await open()).toEqual(['checkov']);
+  await editor.locator('.tools [data-a="opick"]').click();
+  expect(await open()).toEqual(['opick']);
+  await editor.locator('.tools [data-a="check"]').click();
+  expect(await open()).toEqual(['checkov']);
+  await editor.locator('.tools [data-a="menu"]').click();
+  expect(await open()).toEqual(['menu']);
+  await editor.locator('.tools [data-a="add_open"]').click();
+  expect(await open()).toEqual([]);
+});
+
+test('order "acht Probleme" (6): while a preview is open the plan stays – zoom and moving the view still work; "Übernehmen" takes exactly the preview', async ({ page }) => {
+  const editor = await openPlanEditor(page, [1280, 800, 500]);
+  await moveRoom(editor, 'r_bad', 0, 0.14);
+  await tapMarker(page, editor, 'gap|r_bad|r_flur|0|2');
+  await fx(editor, 'wall');
+  const before = await state(editor);
+  const wohnen = await poly(editor, 'r_wohnen');
+  // drag another room with the mouse, the arrow keys, Delete
+  await tapPlan(page, editor, [8, 5]);
+  const from = await plan2screen(editor, [8, 5.5]), to = await plan2screen(editor, [9, 6.5]);
+  await page.mouse.move(from[0], from[1]); await page.mouse.down(); await page.mouse.move(to[0], to[1], { steps: 5 }); await page.mouse.up(); await settle(page, 40);
+  expect(await editor.evaluate(el => el.shadowRoot.querySelector('.ov-top').textContent)).toContain('Die Vorschau ist noch offen');
+  await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_wohnen' }; el._render(); el.shadowRoot.querySelector('.canvas').focus(); });
+  await page.keyboard.press('ArrowRight'); await page.keyboard.press('Delete');
+  expect(await state(editor)).toEqual(before);
+  expect(await editor.evaluate(el => !!el._preview)).toBe(true);
+  // the view moves and zooms
+  const view = await editor.evaluate(el => JSON.stringify(el._view));
+  await editor.locator('[data-a="zoom-in"]').click();
+  const zoomed = await editor.evaluate(el => JSON.stringify(el._view));
+  expect(zoomed).not.toBe(view);
+  const a = await editor.evaluate(el => { const r = el.shadowRoot.querySelector('svg').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }), b = [a[0] + 60, a[1] + 40];
+  await page.mouse.move(a[0], a[1]); await page.mouse.down(); await page.mouse.move(b[0], b[1], { steps: 4 }); await page.mouse.up(); await settle(page, 40);
+  expect(await editor.evaluate(el => JSON.stringify(el._view))).not.toBe(zoomed);
+  await editor.locator('[data-a="apply"]').click();
+  expect(await poly(editor, 'r_wohnen')).toEqual(wohnen);
+  expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_bad').partitions)).toEqual([{ room: 'r_flur', thickness_m: 0.14, wall: 0, other_wall: 2 }]);
+});
+
+test.describe('order "acht Probleme": touch', () => {
+  test.use({ hasTouch: true });
+  for (const [label, size] of [['phone', [360, 780, 340]], ['tablet', [768, 1024, 700]]]) {
+    test(`(2) ${label}: a cancelled touch places nothing and takes nothing; a second finger undoes the begun edit and zooms`, async ({ page }) => {
+      const editor = await openPlanEditor(page, size);
+      // placing a window: the touch is cancelled – no window; a real tap places one
+      await editor.evaluate(el => { el._commit(l => { l.openings = l.openings.filter(o => o.id !== 'o_bad'); }); el._setTool('window'); el._render(); });
+      let start = await state(editor);
+      await finger(editor, 'pointerdown', 1, [0, 6]); await finger(editor, 'pointercancel', 1, [0, 6]); await settle(page, 40);
+      expect(await state(editor)).toEqual(start);
+      const at = await plan2screen(editor, [0, 6]);
+      await page.touchscreen.tap(at[0], at[1]); await settle(page, 80);
+      expect(await editor.evaluate(el => el._layout.openings.filter(o => o.room_id === 'r_bad' && o.kind === 'window').length)).toBe(1);
+      // moving a chosen room: cancelled – back where it was, no history step
+      await editor.evaluate(el => { el._setTool(null); el._sel = { type: 'room', id: 'r_bad' }; el._centerOn([2, 5]); el._render(); });   // the room in the free middle of the drawing
+      start = await state(editor);
+      await finger(editor, 'pointerdown', 1, [2, 6]); await finger(editor, 'pointermove', 1, [1.5, 6.3]); await finger(editor, 'pointermove', 1, [1, 6.6]);
+      expect((await state(editor)).plan).not.toBe(start.plan);                     // it was moving
+      await finger(editor, 'pointercancel', 1, [1, 6.6]); await settle(page, 40);
+      expect(await state(editor)).toEqual(start);
+      // moving a room, then a second finger: the room goes back at once, the two fingers zoom
+      await editor.evaluate(el => { el._centerOn([2, 5]); el._render(); });
+      await finger(editor, 'pointerdown', 1, [2, 6]); await finger(editor, 'pointermove', 1, [1, 7]); await finger(editor, 'pointermove', 1, [0, 8.3]);   // far enough to beat the snapping
+      expect((await state(editor)).plan).not.toBe(start.plan);
+      const view = await editor.evaluate(el => el._view.size);
+      await finger(editor, 'pointerdown', 2, [6, 2]);
+      expect(await state(editor)).toEqual(start);
+      await finger(editor, 'pointermove', 2, [8, 0]); await finger(editor, 'pointermove', 1, [1, 7]);
+      expect(await editor.evaluate(el => el._view.size)).not.toBe(view);
+      await finger(editor, 'pointerup', 2, [8, 0]); await finger(editor, 'pointerup', 1, [1, 7]); await settle(page, 40);
+      expect(await state(editor)).toEqual(start);
+      // a new wall point: cancelled – the wall stays as it was
+      await editor.evaluate(el => { el._mode = 'precise'; el._sel = { type: 'room', id: 'r_flur' }; el._fit(); el._centerOn([7, 2]); el._render(); });
+      start = await state(editor);
+      await finger(editor, 'pointerdown', 1, [8, 2]);
+      expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_flur').polygon.length)).toBe(5);
+      await finger(editor, 'pointermove', 1, [8.4, 2]); await finger(editor, 'pointercancel', 1, [8.4, 2]); await settle(page, 40);
+      expect(await state(editor)).toEqual(start);
+      expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_flur' });
+      // and a wall point with a second finger: also undone
+      await finger(editor, 'pointerdown', 1, [8, 2]); await finger(editor, 'pointerdown', 2, [2, 2]);
+      expect(await state(editor)).toEqual(start);
+      await finger(editor, 'pointerup', 2, [2, 2]); await finger(editor, 'pointerup', 1, [8, 2]);
+    });
+  }
+
+  test('(8) a 14 px wall in precision mode: the point for a new corner and both corners are apart and tappable; a window there can be chosen', async ({ page }) => {
+    const editor = await openPlanEditor(page, [390, 844, 370]);
+    await editor.evaluate(el => { el._mode = 'precise'; el._sel = { type: 'room', id: 'r_flur' }; el._render(); });
+    const L = await editor.evaluate(el => 14 * el._unit()), a = L / Math.SQRT2;   // a chamfer of 14 CSS px at the hall's north-east corner
+    const shape = [[0, 0], [8, 0], [8, 4 - a], [8 - a, 4], [0, 4]];
+    await editor.evaluate((el, shape) => { el._commit(l => { const r = l.rooms.find(x => x.id === 'r_flur'); r.polygon = shape; }); el._autoFit = false; el._render(); }, shape);
+    const hits = await editor.evaluate((el, shape) => {
+      const svg = el.shadowRoot.querySelector('svg'), at = p => { const pt = svg.createSVGPoint(); pt.x = p[0]; pt.y = -p[1]; const s = pt.matrixTransform(svg.getScreenCTM()); return [s.x, s.y]; };
+      const hit = q => { const t = el.shadowRoot.elementFromPoint(q[0], q[1]); return t && [t.getAttribute('data-k'), t.getAttribute('data-i'), t.getAttribute('class')]; };
+      const mid = el.shadowRoot.querySelector('circle.mid[data-id="r_flur"][data-i="2"]'), m = mid.getBoundingClientRect(), c = [m.x + m.width / 2, m.y + m.height / 2];
+      return { mid: hit(c), out: mid.classList.contains('out'), v2: hit(at(shape[2])), v3: hit(at(shape[3])), len: Math.hypot(...[0, 1].map(k => at(shape[2])[k] - at(shape[3])[k])), center: c };
+    }, shape);
+    expect(Math.round(hits.len)).toBe(14);
+    expect(hits.out).toBe(true);
+    expect(hits.mid.slice(0, 2)).toEqual(['mid', '2']);
+    expect(hits.v2.slice(0, 2)).toEqual(['v', '2']); expect(hits.v3.slice(0, 2)).toEqual(['v', '3']);
+    await page.touchscreen.tap(hits.center[0], hits.center[1]); await settle(page, 80);
+    expect(await editor.evaluate(el => el._layout.rooms.find(r => r.id === 'r_flur').polygon.length)).toBe(6);
+    await editor.locator('[data-a="undo"]').click();
+    // a window on the short wall: its middle chooses the window, the corners stay reachable
+    await editor.evaluate((el, a) => { el._commit(l => { l.openings.push({ id: 'o_short', room_id: 'r_flur', edge: 2, offset: 0.5, width_m: G2(a), kind: 'window', mechanics: 'unknown', contacts: [] }); }); el._sel = { type: 'room', id: 'r_flur' }; el._render(); function G2(x) { return Math.round(x * 0.8 * 1000) / 1000; } }, L);
+    const again = await editor.evaluate((el, shape) => {
+      const svg = el.shadowRoot.querySelector('svg'), at = p => { const pt = svg.createSVGPoint(); pt.x = p[0]; pt.y = -p[1]; const s = pt.matrixTransform(svg.getScreenCTM()); return [s.x, s.y]; };
+      const hit = q => { const t = el.shadowRoot.elementFromPoint(q[0], q[1]); return t && [t.getAttribute('data-k'), t.getAttribute('data-i') || t.getAttribute('data-id')]; };
+      const mid = at([(shape[2][0] + shape[3][0]) / 2, (shape[2][1] + shape[3][1]) / 2]);
+      return { op: hit(mid), v2: hit(at(shape[2])), v3: hit(at(shape[3])), mid };
+    }, shape);
+    expect(again.op).toEqual(['op', 'o_short']);
+    expect(again.v2).toEqual(['v', '2']); expect(again.v3).toEqual(['v', '3']);
+    await page.touchscreen.tap(again.mid[0], again.mid[1]); await settle(page, 80);
+    expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'opening', id: 'o_short' });
+  });
+
+  // phone and tablet upright and sideways: toolbar, properties, floors, preview with "Übernehmen", "Speichern", "Abbrechen"
+  for (const [label, w, h] of [['phone upright', 360, 780], ['phone sideways', 844, 390], ['tablet upright', 768, 1024], ['tablet sideways', 1024, 768]]) {
+    test(`devices, ${label}: toolbar, properties, floor change, preview "Übernehmen", "Speichern" and "Abbrechen" by touch`, async ({ page }) => {
+      const editor = await openPlanEditor(page, [w, h, w - 20]);
+      const onScreen = await editor.evaluate(el => ['add_open', 'opick', 'check', 'menu', 'undo', 'redo', 'save', 'cancel'].map(a => {
+        const b = el.shadowRoot.querySelector(`[data-a="${a}"]`), r = b.getBoundingClientRect(); return [a, r.width > 0 && r.left >= -1 && r.right <= innerWidth + 1]; }));
+      expect(onScreen.filter(([, ok]) => !ok)).toEqual([]);
+      const tap = async loc => { await loc.scrollIntoViewIfNeeded(); const b = await loc.boundingBox(); await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); await settle(page, 60); };
+      // properties of a room chosen by a tap on the plan
+      const at = await plan2screen(editor, [2, 6]);
+      await page.touchscreen.tap(at[0], at[1]); await settle(page, 80);
+      expect(await editor.evaluate(el => el._sel)).toEqual({ type: 'room', id: 'r_bad' });
+      if (await editor.evaluate(el => el._panelHidden)) await tap(editor.locator('[data-a="panel_toggle"]'));
+      expect(await editor.evaluate(el => el.shadowRoot.querySelector('.aside').textContent)).toContain('Bad');
+      // floors
+      await editor.locator('[data-f="view_floor"]').selectOption('f_og');
+      expect(await editor.evaluate(el => el._floor)).toBe('f_og');
+      await editor.locator('[data-f="view_floor"]').selectOption('f_eg');
+      // a preview: a touch drag on another room changes nothing, "Übernehmen" takes the preview
+      await moveRoom(editor, 'r_bad', 0, 0.14);
+      await editor.evaluate(el => { el._sel = null; el._render(); });
+      await tap(editor.locator('.tools [data-a="check"]'));
+      await tap(editor.locator('.checkov [data-go="fd|gap|r_bad|r_flur|0|2"]'));
+      await tap(editor.locator('.fdmsg [data-fx="wall"]'));
+      const before = await state(editor);
+      await editor.evaluate(el => { el._sel = { type: 'room', id: 'r_wohnen' }; el._render(); });
+      await finger(editor, 'pointerdown', 1, [8, 5.5]); await finger(editor, 'pointermove', 1, [9, 6.5]); await finger(editor, 'pointerup', 1, [9, 6.5]);
+      expect(await state(editor)).toEqual(before);
+      await tap(editor.locator('[data-a="apply"]'));
+      expect(await editor.evaluate(el => [!!el._preview, (el._layout.rooms.find(r => r.id === 'r_bad').partitions || []).length])).toEqual([false, 1]);
+      // save, then leave the editor
+      await tap(editor.locator('[data-a="save"]'));
+      await settle(page, 150);
+      expect(await page.evaluate(() => window.__calls.filter(c => c.type === 'freshairiq/house_map/save').length)).toBe(1);
+      const cancel = await impl(page).evaluate(el => !!el.shadowRoot.querySelector('freshairiq-house-layout-editor'));
+      if (cancel) { await tap(page.locator('freshairiq-house-layout-editor').locator('[data-a="cancel"]')); }
+      expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('freshairiq-house-layout-editor'))).toBe(false);
+    });
+  }
 });

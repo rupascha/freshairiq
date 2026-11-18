@@ -12,7 +12,7 @@ from .const import (
     CONF_ROOM_TARGET_TEMPERATURE_MODE,
 )
 from . import cover_guard
-from .climate_sources import advance_climate_report_activity, climate_report_snapshot
+from .climate_sources import advance_climate_report_activity, climate_changes_since, climate_report_snapshot
 from .consolidation import session_target_min as _session_target_min
 from .coordinator_contacts import _room_physical_opened_at
 from .coordinator_sources import _state_report_timestamp
@@ -128,6 +128,7 @@ class RoomSessionMixin:
         elif include_ventilation_group_start(ventilation_group, physical_started):
             changed = True
         mem["session_active"] = True
+        mem["session_iq2_episode"] = self._iq2_join_house_episode(mem, cfg["key"], now)
         mem["session_co2_only"] = bool(mem.get("co2_airing_last"))  # 0.26.5.4 (review A07): asked for CO2 alone
         # 0.26.4.10: the airing duration FreshAirIQ showed when the window was
         # opened. Until it has passed, a close is only advised if moisture
@@ -163,6 +164,8 @@ class RoomSessionMixin:
         mem["session_result_base_ml"] = 0.0
         mem["session_result_ml"] = 0.0
         mem["close_notified"] = False
+        mem["close_notified_kind"] = None
+        mem["session_goals_reached"] = False
         # Use the same aggregated/proxy states as the room calculation;
         # list-valued multi-sensor configs are not valid hass.states keys.
         temp_reported = _state_report_timestamp(temperature_state)
@@ -195,8 +198,10 @@ class RoomSessionMixin:
         # already arrived after physical opening count even when a contact
         # delay postponed creation of the FreshAirIQ session.
         sensor_snapshot = climate_report_snapshot(self.hass, temperature_entity, humidity_entity)
+        opening_changes = climate_changes_since(self.hass, temperature_entity, humidity_entity, physical_started)
         sensor_counts: dict[str, int] = {}
         for sensor_key, sensor_row in sensor_snapshot.items():
+            sensor_row["changes"] = dict(opening_changes.get(sensor_key) or {})
             count = 0
             for stamp in dict(sensor_row.get("reports") or {}).values():
                 if _after_physical_open(stamp):
@@ -234,9 +239,11 @@ class RoomSessionMixin:
         else:
             mem["start_measurement_state"] = "uncertain"
         mem["start_measurement_in_session_gate_passed"] = False
-        mem["session_learning_started"] = now.isoformat() if measurement_frame.get("learning_eligible") else None
-        mem["session_last_eligible_ah"] = mem["session_start_ah"] if measurement_frame.get("learning_eligible") else None
-        mem["session_last_eligible_at"] = now.isoformat() if measurement_frame.get("learning_eligible") else None
+        # The valid start values are the measurement basis whatever their age;
+        # learning, validation and the live balance share this one start.
+        mem["session_learning_started"] = now.isoformat()
+        mem["session_last_eligible_ah"] = mem["session_start_ah"]
+        mem["session_last_eligible_at"] = now.isoformat()
         mem["forecast_recent_removed_ml_min"] = None
         mem["forecast_recent_observed_at"] = None
         mem["session_moisture_source_detected"] = False
@@ -253,6 +260,8 @@ class RoomSessionMixin:
         mem["session_learning_quarantined"] = bool(three_state_stale_contacts)
         mem["session_learning_quarantine_code"] = "FAIQ-OPENING-3STATE-006" if three_state_stale_contacts else None
         mem["session_contact_unknown_expired"] = False
+        mem["session_iq2_start"] = None
+        mem["session_learning_reset_at"] = None
         # 0.26.4.9: judged over the whole airing, not by its first moment.
         cover_guard.reset(mem)
         cover_guard.tick(mem, cover_learning_guard, now)
@@ -359,6 +368,8 @@ class RoomSessionMixin:
                 mem["session_result_base_ml"] = 0.0
                 mem["session_result_ml"] = 0.0
                 mem["close_notified"] = False
+                mem["close_notified_kind"] = None
+                mem["session_goals_reached"] = False
                 # Keep the same aggregated/proxy states used for this calculation cycle.
                 # For a legacy single sensor this is the original HA State object.
                 mem["session_last_temperature_update"] = _state_report_timestamp(temperature_state)
@@ -548,16 +559,10 @@ class RoomSessionMixin:
         # held/stale age alone no longer decides whether the completed session
         # is usable. The final decision is made from actual session activity.
         if mem["session_active"] and measurements_valid and measurement_frame.get("learning_eligible"):
+            # The learning start is frozen when the session opens and is never
+            # moved to a later, fresher point (restored legacy sessions without
+            # it are measured from session_started at finalisation).
             current_ah = absolute_humidity(t, rh)
-            if not mem.get("session_learning_started"):
-                mem["session_learning_started"] = now.isoformat()
-                mem["session_learning_start_ah"] = current_ah
-                mem["session_learning_source_ah"] = absolute_humidity(ref_t, ref_rh)
-                mem["session_start_frame_quality"] = measurement_frame.get("quality")
-                mem["session_start_frame_skew_s"] = measurement_frame.get("skew_s")
-                mem["session_start_frame_max_age_s"] = measurement_frame.get("max_age_s")
-                mem["session_start_frame_learning_eligible"] = True
-                changed = True
             mem["session_last_eligible_ah"] = current_ah
             # Store the sensor report clock, not the coordinator-refresh clock.
             # This prevents repeatedly refreshed held values from looking new.

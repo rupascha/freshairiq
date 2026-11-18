@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from .energy import exchanged_air_fraction, ventilation_cost
 from .forecast import (
     effective_night_rate_ml_h,
+    elapsed_minutes,
     in_night_window,
     night_interval_bounds,
     night_window_hours,
@@ -91,7 +92,8 @@ class NightStageMixin:
                 try:
                     last_dt = datetime.fromisoformat(last_raw); hours = (now - last_dt).total_seconds() / 3600.0
                     if hours >= .25:
-                        if hours <= 1.5:
+                        # F16: with learning off the window keeps moving, but nothing is learned from it
+                        if hours <= 1.5 and bool(options.get("learning_enabled", True)):
                             observed_rate = (total_water - float(last_water)) / hours
                             # Store a household-normalised rate so a night with
                             # one resident home does not permanently teach the
@@ -131,34 +133,22 @@ class NightStageMixin:
         # v0.18.0.3: establish one exact night window before any night-facing
         # calculation. Forecast value, strategy text and notifications therefore
         # describe the same hours and the same hourly weather rows.
-        def _time_value(value: Any, default_hour: int) -> tuple[int, int]:
-            try:
-                raw = str(value)
-                if ":" in raw:
-                    hour_raw, minute_raw = raw.split(":", 1)
-                    return int(hour_raw) % 24, min(max(int(minute_raw[:2]), 0), 59)
-                return int(raw) % 24, 0
-            except (TypeError, ValueError):
-                return default_hour, 0
-
-        night_start_h, night_start_m = _time_value(options.get("night_start_hour", "22:00"), 22)
-        current_minutes = now.hour * 60 + now.minute + now.second / 60.0
-        start_minutes = night_start_h * 60 + night_start_m
         configured_night_hours = night_window_hours(options.get("night_start_hour"), options.get("night_end_hour"))
-        hours_to_start = ((start_minutes - current_minutes) % 1440.0) / 60.0 if configured_night_hours > 0 else 24.0
+        # F12: the night is found by the local clock; durations to and inside it are real (UTC) minutes
+        night_start_dt, night_end_dt = night_interval_bounds(
+            now, options.get("night_start_hour", "22:00"), options.get("night_end_hour", "07:00")
+        )
+        hours_to_start = max(elapsed_minutes(now, night_start_dt), 0.0) / 60.0 if configured_night_hours > 0 else 24.0
         night_strategy_relevant = bool(options.get("night_forecast_enabled")) and configured_night_hours > 0 and (
             in_night_window(now, options.get("night_start_hour"), options.get("night_end_hour"))
             or hours_to_start <= 3.0
-        )
-        night_start_dt, night_end_dt = night_interval_bounds(
-            now, options.get("night_start_hour", "22:00"), options.get("night_end_hour", "07:00")
         )
 
         night_rows = [
             x for x in self._hourly_forecast_cache
             if night_start_dt <= x.get("datetime", night_start_dt - timedelta(days=1)) <= night_end_dt
         ]
-        night_hours = max((night_end_dt - night_start_dt).total_seconds() / 3600.0, 0.0)
+        night_hours = max(elapsed_minutes(night_start_dt, night_end_dt) / 60.0, 0.0)
         night_forecast_base = overnight_forecast_ml(
             options, self.store.data.get("night_model_ml_h"), int(self.store.data.get("night_model_samples", 0)),
             adults=effective_adults, children=effective_children, hours=night_hours,
@@ -269,7 +259,7 @@ class NightStageMixin:
         first_rain_row = next((x for x in night_rows if _rain_row(x)), None)
         first_rain_dt = first_rain_row.get("datetime") if first_rain_row else None
         minutes_until_rain = (
-            max((first_rain_dt - now).total_seconds() / 60.0, 0.0)
+            max(elapsed_minutes(now, first_rain_dt), 0.0)
             if isinstance(first_rain_dt, datetime) else None
         )
         rain_start_label = first_rain_dt.strftime("%H:%M") if isinstance(first_rain_dt, datetime) else None

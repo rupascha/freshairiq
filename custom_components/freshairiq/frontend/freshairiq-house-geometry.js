@@ -82,7 +82,26 @@ export const polygonsOverlap = (first, second) => {
     for (let j = 0; j < second.length; j++)
       if (segmentsCross(first[i], first[(i + 1) % first.length], second[j], second[(j + 1) % second.length])) return true;
   if (first.some(p => pointInPolygon(p, second) === "inside") || second.some(p => pointInPolygon(p, first) === "inside")) return true;
-  return pointInPolygon(interiorPoint(first), second) === "inside" || pointInPolygon(interiorPoint(second), first) === "inside";
+  if (pointInPolygon(interiorPoint(first), second) === "inside" || pointInPolygon(interiorPoint(second), first) === "inside") return true;
+  return flushOverlap(first, second);
+};
+// Both rooms run along one wall stretch with their insides on the same side – a flush overlap that crosses no wall
+// (two 4 m squares 30 cm into each other along a common side). Touching at a wall or a corner is no overlap.
+export const flushOverlap = (first, second) => {
+  for (let i = 0; i < first.length; i++) {
+    const a = first[i], b = first[(i + 1) % first.length], len = dist(a, b);
+    if (len < EPS) continue;
+    const ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len, own = outwardNormal(first, i);
+    for (let j = 0; j < second.length; j++) {
+      const c = second[j], d = second[(j + 1) % second.length];
+      if (Math.abs((c[0] - a[0]) * uy - (c[1] - a[1]) * ux) > EPS || Math.abs((d[0] - a[0]) * uy - (d[1] - a[1]) * ux) > EPS) continue;
+      const tc = (c[0] - a[0]) * ux + (c[1] - a[1]) * uy, td = (d[0] - a[0]) * ux + (d[1] - a[1]) * uy;
+      if (Math.min(len, Math.max(tc, td)) - Math.max(0, Math.min(tc, td)) <= EPS) continue;
+      const other = outwardNormal(second, j);
+      if (own[0] * other[0] + own[1] * other[1] > 0) return true;
+    }
+  }
+  return false;
 };
 export const edgePoint = (pts, index, offset) => {
   const a = pts[index], b = pts[(index + 1) % pts.length];
@@ -195,6 +214,25 @@ export const smoothBearing = (previous, next, factor = 0.35) => {
 // 0.26.5.5: walls. Each edge of a room is cut into parts – shared with another room of the same floor
 // (interior: both walls on one line within WALL_TOLERANCE, overlapping by more than WALL_TOLERANCE) or not
 // (exterior). A corner point alone or a wall a little apart is no shared wall.
+// A partition wall the user confirmed between two rooms (room.partitions = [{room, thickness_m, wall, other_wall}],
+// the editor's "take as shared wall"): the two confirmed walls – this room's ``wall``, the other room's
+// ``other_wall`` – are one wall within its thickness + WALL_TOLERANCE for walls, doors and passages
+// (house_layout.partition_tolerance). Every other wall of the pair keeps WALL_TOLERANCE. It never makes a way for air.
+export const MAX_PARTITION = 0.5;
+export const partitionsBetween = (a, b) => {
+  const out = [];
+  for (const [own, other, flip] of [[a, b, false], [b, a, true]]) for (const item of (own && own.partitions) || []) {
+    const t = Number(item && item.thickness_m);
+    if (!item || item.room !== (other && other.id) || !(t > 0 && t <= MAX_PARTITION) || !Number.isInteger(item.wall) || !Number.isInteger(item.other_wall)) continue;
+    out.push(flip ? { wa: item.other_wall, wb: item.wall, t } : { wa: item.wall, wb: item.other_wall, t });
+  }
+  return out;
+};
+// ``ea`` / ``eb``: the walls in question (null = any wall of that room)
+export const partitionTol = (a, b, ea = null, eb = null) => {
+  const hit = partitionsBetween(a, b).filter(p => (ea == null || p.wa === ea) && (eb == null || p.wb === eb));
+  return hit.length ? Math.max(...hit.map(p => p.t)) + WALL_TOLERANCE : WALL_TOLERANCE;
+};
 export const wallParts = (rooms, room) => {
   const pts = room.polygon || [], out = [];
   for (let i = 0; i < pts.length; i++) {
@@ -206,8 +244,8 @@ export const wallParts = (rooms, room) => {
     for (const other of rooms) {
       if (other.id === room.id || other.floor_id !== room.floor_id || !Array.isArray(other.polygon) || other.polygon.length < 3) continue;
       other.polygon.forEach((c, j) => {
-        const d = other.polygon[(j + 1) % other.polygon.length];
-        if (off(c) > WALL_TOLERANCE || off(d) > WALL_TOLERANCE) return;
+        const d = other.polygon[(j + 1) % other.polygon.length], tol = partitionTol(room, other, i, j);
+        if (off(c) > tol || off(d) > tol) return;
         const lo = Math.max(Math.min(along(c), along(d)), 0), hi = Math.min(Math.max(along(c), along(d)), len);
         if (hi - lo > WALL_TOLERANCE) shared.push([lo, hi]);
       });
@@ -247,7 +285,7 @@ export const openingLink = (rooms, room, o) => {
   const offset = Number.isFinite(Number(o.offset)) ? Number(o.offset) : 0.5, lo = Math.max(offset - half, 0), hi = Math.min(offset + half, 1);
   const samples = [0, 1, 2, 3, 4].map(k => edgePoint(pts, o.edge, lo + (hi - lo) * k / 4));
   return rooms.find(other => other.id !== room.id && other.floor_id === room.floor_id && Array.isArray(other.polygon) && other.polygon.length >= 3
-    && samples.every(p => other.polygon.some((c, i) => onSegment(c, other.polygon[(i + 1) % other.polygon.length], p, WALL_TOLERANCE)))) || null;
+    && samples.every(p => other.polygon.some((c, i) => onSegment(c, other.polygon[(i + 1) % other.polygon.length], p, partitionTol(room, other, o.edge, i))))) || null;
 };
 // A wall two rooms really share: the longest common stretch, at least as long as the narrowest opening (0.3).
 // A shared corner, a few centimetres or a wall on another floor is none.
@@ -320,11 +358,11 @@ const onLineOf = (a, b, p, tol) => {
   return len > EPS && Math.abs((p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0])) / len <= tol;
 };
 // The parts of segment a→b that none of ``segments`` (lying on its line) covers.
-const uncovered = (a, b, segments) => {
+const uncovered = (a, b, segments, tol = WALL_TOLERANCE) => {
   const len = dist(a, b);
   if (len < EPS) return [];
   const ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len, along = p => (p[0] - a[0]) * ux + (p[1] - a[1]) * uy;
-  const cover = segments.filter(([p, q]) => onLineOf(a, b, p, WALL_TOLERANCE) && onLineOf(a, b, q, WALL_TOLERANCE))
+  const cover = segments.filter(([p, q]) => onLineOf(a, b, p, tol) && onLineOf(a, b, q, tol))
     .map(([p, q]) => [Math.max(Math.min(along(p), along(q)), 0), Math.min(Math.max(along(p), along(q)), len)])
     .filter(([lo, hi]) => hi - lo > EPS).sort((x, y) => x[0] - y[0]);
   const out = [];
@@ -353,8 +391,13 @@ export const wallSegments = (rooms, openings = []) => {
     if (span) gaps.push(span);
   }
   const shared = [], out = [];
+  // an interior part may be one side of a partition wall: a door's gap reaches across its thickness
+  const confirmed = drawable.some(r => (r.partitions || []).length);
+  const thick = (room, edge) => (confirmed ? Math.max(WALL_TOLERANCE, ...drawable.filter(r => r.id !== room.id).map(r => partitionTol(room, r, edge))) : WALL_TOLERANCE);
   for (const room of drawable) for (const w of wallParts(drawable, room)) {
-    for (const [a, b] of uncovered(w.a, w.b, w.interior ? [...gaps, ...shared] : gaps)) {
+    const reach = w.interior ? thick(room, w.edge) : WALL_TOLERANCE;
+    const open = uncovered(w.a, w.b, gaps, reach);
+    for (const [a, b] of w.interior ? open.flatMap(([p, q]) => uncovered(p, q, shared)) : open) {
       out.push({ edge: w.edge, room: room.id, a, b, interior: w.interior });
       if (w.interior) shared.push([a, b]);
     }
@@ -422,6 +465,18 @@ export const resizeWall = (layout, roomId, edge, length, fixed = "start") => {
   if (res.error) return res;
   return { polygons: { [room.id]: res.pts } };   // neighbouring rooms are never moved along (a clash is refused)
 };
+// The wall made ``length`` long by moving the end wall at its free end in parallel (both of its corners alike): every
+// angle stays, the wall after it takes up the change. Triangles have no such end wall – resizeWall then.
+export const stretchWall = (layout, roomId, edge, length, fixed = "start") => {
+  const room = (layout.rooms || []).find(r => r.id === roomId);
+  const pts = room && room.polygon, n = pts ? pts.length : 0;
+  if (n < 4 || !(edge >= 0 && edge < n) || !(Number(length) >= 0.1)) return resizeWall(layout, roomId, edge, length, fixed);
+  const i1 = (edge + 1) % n, F = fixed === "end" ? i1 : edge, M = fixed === "end" ? edge : i1, N = fixed === "end" ? (M - 1 + n) % n : (M + 1) % n;
+  const old = dist(pts[F], pts[M]);
+  if (old < EPS) return { error: "wall" };
+  const k = (Number(length) - old) / old, d = [(pts[M][0] - pts[F][0]) * k, (pts[M][1] - pts[F][1]) * k];
+  return { polygons: { [room.id]: pts.map((p, i) => (i === M || i === N ? [round3(p[0] + d[0]), round3(p[1] + d[1])] : p.slice())) } };
+};
 // Make the angle at corner ``corner`` exactly 90° (an inner corner of an L or U shape: 270°): the wall ``keep`` ("in" = the wall ending at the corner, "out" =
 // the wall starting there) keeps its direction, the other wall turns about the corner and keeps its length; the wall
 // after it takes up the change (locks are carried). Only this corner is changed – no other corner is squared.
@@ -471,6 +526,7 @@ export const joinRooms = (rooms, { tol = 0.35, anchorId = null } = {}) => {
   const matches = [];
   for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
     const A = list[i], B = list[j];
+    if (partitionTol(A, B) > WALL_TOLERANCE) continue;   // a confirmed partition wall stays as thick as it is
     for (let ea = 0; ea < A.polygon.length; ea++) {
       const a0 = A.polygon[ea], a1 = A.polygon[(ea + 1) % A.polygon.length], la = dist(a0, a1);
       if (la < 0.2) continue;
@@ -648,4 +704,187 @@ export const labelSpot = (pts, h, pad = 0, blocks = []) => {
     }
   }
   return best && { x: best.x, y: best.y, w: best.w };
+};
+
+// ---------------------------------------------------------------------- floor plan check: gaps, overlaps, steps
+// Two walls facing each other across a parallel gap: [{ea, eb, gap, lo, hi}] (lo/hi along A's wall, in m).
+const facingWalls = (A, B) => {
+  const out = [];
+  for (let ea = 0; ea < A.polygon.length; ea++) {
+    const a0 = A.polygon[ea], a1 = A.polygon[(ea + 1) % A.polygon.length], la = dist(a0, a1);
+    if (la < 0.2) continue;
+    const u = [(a1[0] - a0[0]) / la, (a1[1] - a0[1]) / la], na = outwardNormal(A.polygon, ea);
+    for (let eb = 0; eb < B.polygon.length; eb++) {
+      const b0 = B.polygon[eb], b1 = B.polygon[(eb + 1) % B.polygon.length], lb = dist(b0, b1);
+      if (lb < 0.2) continue;
+      const v = [(b1[0] - b0[0]) / lb, (b1[1] - b0[1]) / lb], nb = outwardNormal(B.polygon, eb);
+      if (Math.abs(u[0] * v[1] - u[1] * v[0]) > JOIN_ANGLE || na[0] * nb[0] + na[1] * nb[1] > -0.95) continue;
+      const sb = [(b0[0] - a0[0]) * u[0] + (b0[1] - a0[1]) * u[1], (b1[0] - a0[0]) * u[0] + (b1[1] - a0[1]) * u[1]];
+      const lo = Math.max(0, Math.min(...sb)), hi = Math.min(la, Math.max(...sb));
+      if (hi - lo < 0.3) continue;
+      const mid = [(b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2];
+      out.push({ ea, eb, gap: (mid[0] - a0[0]) * na[0] + (mid[1] - a0[1]) * na[1], lo, hi, la, lb, sb, u, na, a0 });
+    }
+  }
+  return out;
+};
+// The walls of a floor that face each other ({"a|b|wall a|wall b": gap}) – to see whether a change opens a joint
+// where two rooms touched (also one within WALL_TOLERANCE).
+export const wallContacts = rooms => {
+  const out = new Map(), list = rooms.filter(r => Array.isArray(r.polygon) && r.polygon.length >= 3);
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    if (list[i].floor_id !== list[j].floor_id) continue;
+    for (const f of facingWalls(list[i], list[j])) out.set(`${list[i].id}|${list[j].id}|${f.ea}|${f.eb}`, f.gap);
+  }
+  return out;
+};
+export const opensJoint = (before, after, tol = 0.01) => {
+  const now = wallContacts(after);
+  return [...wallContacts(before)].some(([k, g]) => Math.abs(g) <= tol && now.has(k) && Math.abs(now.get(k)) > tol);
+};
+// The partition walls of a floor as filled areas between both rooms' walls ({a, b, polygon}).
+export const partitionFills = rooms => {
+  const out = [], list = rooms.filter(r => Array.isArray(r.polygon) && r.polygon.length >= 3);
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const A = list[i], B = list[j];
+    if (!partitionsBetween(A, B).length || A.floor_id !== B.floor_id) continue;
+    for (const f of facingWalls(A, B)) {
+      const tol = partitionTol(A, B, f.ea, f.eb);
+      if (tol <= WALL_TOLERANCE || f.gap <= EPS || f.gap > tol) continue;
+      const at = (t, k) => [f.a0[0] + f.u[0] * t + f.na[0] * k, f.a0[1] + f.u[1] * t + f.na[1] * k];
+      out.push({ a: A.id, b: B.id, polygon: [at(f.lo, 0), at(f.hi, 0), at(f.hi, f.gap), at(f.lo, f.gap)].map(p => [round3(p[0]), round3(p[1])]) });
+    }
+  }
+  return out;
+};
+// What the plan check marks between two rooms of one floor:
+//  overlap – the rooms overlap (``depth``: the smallest move that separates them);
+//  gap     – two walls face each other a little apart (``gap`` in m, at most ``maxGap``) – a joint or a partition wall
+//            not confirmed yet (a confirmed partition of that thickness is no finding);
+//  step    – two rooms share a wall that ends level at one end but ``step`` apart at the other, where both rooms'
+//            end walls face the same way (e.g. 5.60 m and 5.00 m along one facade): marked, never evened out.
+export const planFindings = (rooms, { maxGap = 0.5, maxStep = 1.0 } = {}) => {
+  const list = rooms.filter(r => Array.isArray(r.polygon) && r.polygon.length >= 3), out = [];
+  const boxes = new Map(list.map(r => [r.id, bbox([r.polygon])]));
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+    const A = list[i], B = list[j], ba = boxes.get(A.id), bb = boxes.get(B.id);
+    if (A.floor_id !== B.floor_id || ba.minX > bb.maxX + maxGap || bb.minX > ba.maxX + maxGap || ba.minY > bb.maxY + maxGap || bb.minY > ba.maxY + maxGap) continue;
+    if (polygonsOverlap(A.polygon, B.polygon)) {
+      const at = [(Math.max(ba.minX, bb.minX) + Math.min(ba.maxX, bb.maxX)) / 2, (Math.max(ba.minY, bb.minY) + Math.min(ba.maxY, bb.maxY)) / 2];
+      const depth = Math.min(ba.maxX - bb.minX, bb.maxX - ba.minX, ba.maxY - bb.minY, bb.maxY - ba.minY);
+      out.push({ code: "overlap", id: `overlap|${A.id}|${B.id}`, a: A.id, b: B.id, depth: round3(depth), at: at.map(round3) });
+      continue;
+    }
+    const walls = facingWalls(A, B), tolOf = f => partitionTol(A, B, f.ea, f.eb);
+    // every joint on its own (a U-shaped room may face its neighbour twice), named by its two walls
+    const gaps = walls.filter(f => { const tol = tolOf(f); return f.gap > WALL_TOLERANCE && f.gap <= maxGap && !(tol > WALL_TOLERANCE && Math.abs(f.gap - (tol - WALL_TOLERANCE)) <= WALL_TOLERANCE); })
+      .sort((x, y) => x.gap - y.gap);
+    for (const gap of gaps) {
+      const m = (gap.lo + gap.hi) / 2, at = [gap.a0[0] + gap.u[0] * m + gap.na[0] * gap.gap / 2, gap.a0[1] + gap.u[1] * m + gap.na[1] * gap.gap / 2];
+      out.push({ code: "gap", id: `gap|${A.id}|${B.id}|${gap.ea}|${gap.eb}`, a: A.id, b: B.id, wall_a: gap.ea, wall_b: gap.eb, gap: round3(gap.gap), n: gap.na.map(round3), at: at.map(round3) });
+    }
+    for (const f of walls.filter(w => Math.abs(w.gap) <= Math.max(WALL_TOLERANCE, tolOf(w)))) {
+      const step = wallRunStep(list, A, f, maxStep);
+      if (step && !out.some(x => x.id === step.id || x.key === step.key)) out.push(step);
+    }
+  }
+  return out;
+};
+// A step along one wall line: the walls of every room on each side of the line that continue each other form one
+// run (rows of rooms, e.g. 2.00 + 1.50 + 2.10 m against 2.05 + 0.90 + 2.05 m). Both runs end level at one end and
+// ``step`` apart at the other, where the end walls of both runs face the same way – marked, never evened out. The
+// offer: the end room of the shorter run reaches the longer one (``fixes``: extend) or the other way (shorten).
+const wallRunStep = (list, A, f, maxStep) => {
+  const side = (sign, offset) => {
+    const items = [];
+    for (const r of list) {
+      if (r.floor_id !== A.floor_id) continue;
+      r.polygon.forEach((p, e) => {
+        const q = r.polygon[(e + 1) % r.polygon.length], n = outwardNormal(r.polygon, e);
+        const off = x => (x[0] - f.a0[0]) * f.na[0] + (x[1] - f.a0[1]) * f.na[1] - offset, along = x => (x[0] - f.a0[0]) * f.u[0] + (x[1] - f.a0[1]) * f.u[1];
+        if (dist(p, q) < EPS || Math.abs(off(p)) > WALL_TOLERANCE || Math.abs(off(q)) > WALL_TOLERANCE || (n[0] * f.na[0] + n[1] * f.na[1]) * sign < 0.95) return;
+        const tp = along(p), tq = along(q);
+        items.push({ room: r.id, edge: e, lo: Math.min(tp, tq), hi: Math.max(tp, tq), startAtLo: tp <= tq, polygon: r.polygon });
+      });
+    }
+    items.sort((x, y) => x.lo - y.lo);
+    const runs = [];
+    for (const it of items) { const last = runs[runs.length - 1]; if (last && it.lo <= last.hi + WALL_TOLERANCE) { last.hi = Math.max(last.hi, it.hi); last.items.push(it); } else runs.push({ lo: it.lo, hi: it.hi, items: [it] }); }
+    return runs;
+  };
+  const own = side(1, 0).find(r => r.items.some(it => it.room === A.id && it.edge === f.ea)), other = side(-1, f.gap).find(r => r.lo < f.hi && r.hi > f.lo);
+  if (!own || !other) return null;
+  const ends = [[other.lo - own.lo, 0], [other.hi - own.hi, 1]];
+  const level = ends.find(([d]) => Math.abs(d) <= 0.02), off = ends.find(([d]) => Math.abs(d) > 0.02 && Math.abs(d) <= maxStep);
+  if (!level || !off) return null;
+  const k = off[1];
+  // the room at the step on each side, its wall on the line and the wall that ends the run there
+  const endOf = run => {
+    const it = run.items.reduce((b, x) => (k ? (x.hi > b.hi ? x : b) : (x.lo < b.lo ? x : b)));
+    const n = it.polygon.length, endAtStart = (k === 0) === it.startAtLo;   // the corner at the step is polygon[edge]
+    return { ...it, endWall: endAtStart ? (it.edge - 1 + n) % n : (it.edge + 1) % n, fixed: endAtStart ? "end" : "start", length: dist(it.polygon[it.edge], it.polygon[(it.edge + 1) % n]) };
+  };
+  const ea = endOf(own), eb = endOf(other), oa = outwardNormal(ea.polygon, ea.endWall), ob = outwardNormal(eb.polygon, eb.endWall);
+  if (oa[0] * ob[0] + oa[1] * ob[1] < 0.95) return null;
+  const la = own.hi - own.lo, lb = other.hi - other.lo, diff = Math.abs(off[0]), [short, long] = la < lb ? [ea, eb] : [eb, ea];
+  const pa = k ? own.hi : own.lo, pb = k ? other.hi : other.lo, m = (pa + pb) / 2;
+  const at = [f.a0[0] + f.u[0] * m + f.na[0] * f.gap / 2, f.a0[1] + f.u[1] * m + f.na[1] * f.gap / 2];
+  const names = run => [...new Set(run.items.map(it => it.room))];
+  return { code: "step", id: `step|${ea.room}|${eb.room}|${ea.edge}`, key: `${names(own).join(",")}|${names(other).join(",")}|${k}`, a: ea.room, b: eb.room, wall_a: ea.edge, wall_b: eb.edge,
+    rooms_a: names(own), rooms_b: names(other), length_a: round3(la), length_b: round3(lb), step: round3(diff), longer: la > lb ? ea.room : eb.room, at: at.map(round3),
+    fixes: [{ kind: "extend", room: short.room, wall: short.edge, length: round3(short.length + diff), fixed: short.fixed },
+      { kind: "shorten", room: long.room, wall: long.edge, length: round3(long.length - diff), fixed: long.fixed }] };
+};
+// The smallest straight move of room ``id`` that ends its overlap with room ``otherId`` without touching any
+// other room of its floor ({dx, dy}) – null when every such move would hit another room.
+export const separation = (rooms, id, otherId) => {
+  const A = rooms.find(r => r.id === id), B = rooms.find(r => r.id === otherId);
+  if (!A || !B) return null;
+  const a = bbox([A.polygon]), b = bbox([B.polygon]);
+  const moves = [[b.minX - a.maxX, 0], [b.maxX - a.minX, 0], [0, b.minY - a.maxY], [0, b.maxY - a.minY]].sort((x, y) => Math.hypot(...x) - Math.hypot(...y));
+  for (const [dx, dy] of moves) {
+    const moved = A.polygon.map(p => [round3(p[0] + dx), round3(p[1] + dy)]);
+    if (!rooms.some(r => r.id !== id && r.floor_id === A.floor_id && Array.isArray(r.polygon) && r.polygon.length >= 3 && polygonsOverlap(moved, r.polygon))) return { dx: round3(dx), dy: round3(dy) };
+  }
+  return null;
+};
+// ---------------------------------------------------------------------- a new or removed corner on a wall
+const drawnWidth = (len, o) => Math.min(Math.max(o.width_m || Math.min(0.9, len * 0.4), 0), len);
+// A corner inserted on wall ``index`` of ``room`` at ``ts`` (0–1 along it): the openings of that wall keep their
+// place – each moves to the part it lies on, with its drawn width – and later walls shift by one. An opening the
+// new corner would cut is not moved: {blocked: [ids], free: [[lo, hi], …]} names the stretches (0–1) where a corner fits.
+export const splitOpenings = (openings, room, index, ts = 0.5) => {
+  const pts = room.polygon, len = edgeLength(pts, index), cut = ts * len, out = [], blocked = [], taken = [];
+  for (const o of openings) {
+    if (o.room_id !== room.id) { out.push(o); continue; }
+    if (o.edge > index) { out.push({ ...o, edge: o.edge + 1 }); continue; }
+    if (o.edge !== index) { out.push(o); continue; }
+    const w = drawnWidth(len, o), c = (Number.isFinite(Number(o.offset)) ? Number(o.offset) : 0.5) * len, lo = c - w / 2, hi = c + w / 2;
+    taken.push([lo, hi]);
+    const width = o.width_m == null ? round3(w) : o.width_m;
+    if (hi <= cut + 0.01) out.push({ ...o, width_m: width, offset: round3(c / cut) });
+    else if (lo >= cut - 0.01) out.push({ ...o, edge: index + 1, width_m: width, offset: round3((c - cut) / (len - cut)) });
+    else { blocked.push(o.id); out.push(o); }
+  }
+  if (!blocked.length) return { openings: out };
+  const free = [];
+  let pos = 0.1;
+  for (const [lo, hi] of taken.sort((x, y) => x[0] - y[0])) { if (lo - 0.05 - pos >= 0.2) free.push([pos, lo - 0.05]); pos = Math.max(pos, hi + 0.05); }
+  if (len - 0.1 - pos >= 0.2) free.push([pos, len - 0.1]);
+  return { blocked, free: free.map(([lo, hi]) => [round3(lo / len), round3(hi / len)]) };
+};
+// Corner ``k`` of ``room`` removed: the openings of the two walls that become one keep their place on the new wall.
+export const mergeOpenings = (openings, room, k) => {
+  const pts = room.polygon, n = pts.length, prev = (k - 1 + n) % n;
+  const next = pts.filter((_, i) => i !== k), merged = k === 0 ? n - 2 : k - 1;
+  const a = next[merged], b = next[(merged + 1) % next.length], len = dist(a, b) || 1;
+  return openings.map(o => {
+    if (o.room_id !== room.id) return o;
+    if (o.edge === prev || o.edge === k) {
+      const old = edgeLength(pts, o.edge), c = edgePoint(pts, o.edge, Number.isFinite(Number(o.offset)) ? Number(o.offset) : 0.5);
+      const t = projectOnSegment(c, a, b).t;
+      return { ...o, edge: merged, offset: round3(t), width_m: o.width_m == null ? round3(drawnWidth(old, o)) : o.width_m };
+    }
+    return { ...o, edge: o.edge > k ? o.edge - 1 : o.edge };
+  });
 };

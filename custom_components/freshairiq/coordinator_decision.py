@@ -25,7 +25,8 @@ from .intelligence import build_intelligence_state, sync_active_recommendation
 from .language_confidence import adapt_language_confidence
 from .learning_components import build_learning_components_status
 from .learning_v2 import build_learning_v2_status
-from .live_coach import align_live_coach_state, refine_live_recommendation
+from .iq2 import house_fields as iq2_house_fields
+from .live_coach import align_live_coach_state, refine_live_recommendation, r07_time_fields, room_time_fields
 from .model import absolute_humidity
 from .open_connections import connection_map
 from .opening_strategy import (
@@ -154,12 +155,15 @@ class HouseDecisionMixin:
         elif active and intelligent_recommendation.get("live_coach_target_min") is not None:
             displayed_recommended = float(intelligent_recommendation["live_coach_target_min"])
             coach_remaining = intelligent_recommendation.get("live_coach_remaining_min")
-            remaining = float(remaining if coach_remaining is None else coach_remaining)  # S2: None is "no coach time"
+            # R07 (0.26.7.2): None means "no honest countdown" (reassessed each cycle) – never the coarse house table
+            remaining = None if coach_remaining is None else float(coach_remaining)
         if str(intelligent_recommendation.get("kind") or "") == "close":
             # A close action is immediate, but the dashboard's IQ-ZEIT tile should
             # still show how far the real session has already passed its target.
             # Negative remaining time is rendered as "+X min über Ziel".
             remaining = min(0.0, round(float(displayed_recommended) - max_elapsed, 1))
+        self._r07_time_fields = r07_time_fields(intelligent_recommendation, results, active=bool(active), remaining=remaining,
+                                                displayed_recommended=displayed_recommended, max_elapsed=max_elapsed)
 
         # Routine bucket tables are an internal model. Keep only compact
         # Hotfix 0.20.2.6: when house mode is active, the short-term tile and
@@ -175,7 +179,7 @@ class HouseDecisionMixin:
         # recommendation. Canonical room actions are preserved as metadata and
         # this happens only after all physics/learning decisions are complete.
         synchronize_room_presentation_actions(intelligent_recommendation, results, min_duration_min=float(options.get("min_duration_min", 3.0)))
-        house_aligned_room_actions(intelligent_recommendation, results)
+        house_aligned_room_actions(intelligent_recommendation, results); room_time_fields(results, {**(self._r07_time_fields or {}), "remaining_duration_min": remaining}, float(options.get("min_duration_min", 3.0)))  # IQ2: one time meaning per room
         for _key, _room in results.items():
             if isinstance(_room, dict) and _room.get("fan_automation") is not None:
                 _room["fan_automation"] = room_fan_automation(_room, self._fan_snapshot(_key))
@@ -300,12 +304,13 @@ class HouseDecisionMixin:
         """Assemble the published house payload and finish the update cycle."""
         data = {
             "status": status, "status_text": status_text, "rooms": results, "levels": list(self.entry.data.get(CONF_LEVELS, [])), "potential_total_ml": round(realistic_house_effect), "actionable_potential_ml": round(realistic_actionable_potential), "theoretical_potential_total_ml": round(potential), "theoretical_actionable_potential_ml": round(actionable_potential), "live_balance_ml": round(live), "next_5_min_ml": round(max(next5_effect, 0)), "next_5_min_effect_ml": round(next5_effect), "moisture_gain_next_5_min_ml": round(moisture_gain_next5),
+            **iq2_house_fields(results),
             "forecast_horizon_min": forecast_horizon, "forecast_moisture_effect_ml": round(forecast_effect), "forecast_uncapped_moisture_effect_ml": round(forecast_uncapped_effect), "forecast_target_limited": forecast_target_limited, "forecast_live_adapted": forecast_live_adapted, "forecast_live_observation_weight": round(forecast_live_observation_weight, 3),
             "forecast_temperature_change_c": round(forecast_temp, 2), "forecast_cost": round(forecast_cost, 4),
             "forecast_heat_kwh": round(forecast_heat, 4), "forecast_confidence": forecast_confidence,
             "forecast_optimal_close_in_min": forecast_optimal_close_in_min,
             "max_surface_rh": max_surface, "total_water_ml": round(total_water), "ventilation_threshold_ml": round(ventilation_threshold), "ventilation_threshold_percent": float(options.get("min_potential_percent_total_water", 10)), "ventilation_threshold_mode": threshold_mode, "ventilation_threshold_reason": threshold_reason,
-            "prognosis_confidence": confidence, "cross_ventilation": cross, "recommended_duration_min": displayed_recommended, "remaining_duration_min": remaining, "temperature_change_live_c": temp_live,
+            "prognosis_confidence": confidence, "cross_ventilation": cross, "recommended_duration_min": displayed_recommended, "remaining_duration_min": remaining, **(getattr(self, "_r07_time_fields", None) or {}), "temperature_change_live_c": temp_live,
             "last_learning_diagnosis": self.store.data.get("last_diagnosis", ""), "operating_profile": options.get("operating_profile", "comfort"), "cooling_rooms": len(cooling),
             "overnight_forecast_ml": night_forecast, "overnight_forecast_base_ml": night_forecast_base,
             "overnight_weather_effect_ml": round(weather_effect), "overnight_trend_effect_ml": round(trend_effect),

@@ -107,14 +107,17 @@ def test_observed_rate_follows_the_learning_rules(start, end, source, elapsed) -
                                                     source_ah=source, learning_enabled=True, max_duration_min=120)
     assert (observed is not None) == valid
     if valid:
-        assert observed == round((start - end) / (start - source) / elapsed, 5)
+        # Testvermerk 0.26.7.1 (IQ2): the measured rate is the exact inverse of the exponential forward model
+        # (1 - (1 - removed) ** (1 / minutes)); the earlier linear removed / minutes shrank with the duration
+        assert observed == round(1 - (1 - (start - end) / (start - source)) ** (1 / elapsed), 5)
 
 
 def test_learning_observation_record() -> None:
     row = learning_observation(start_ah=12.0, end_ah=10.0, source_ah=7.0, elapsed_min=10.0, max_duration_min=120,
                                rate_before=0.03, samples_before=2, usable=True)
-    assert row == {"observed_rate_per_min": 0.04, "usable": True, "start_ah": 12.0, "end_ah": 10.0, "source_ah": 7.0,
-                   "elapsed_min": 10.0, "rate_before": 0.03, "samples_before": 2}
+    # Testvermerk 0.26.7.1 (IQ2): exact inverse (0.0498 instead of the linear 0.04) and the additive marker
+    assert row == {"observed_rate_per_min": 0.0498, "usable": True, "rate_inversion": "exponential", "start_ah": 12.0, "end_ah": 10.0,
+                   "source_ah": 7.0, "elapsed_min": 10.0, "rate_before": 0.03, "samples_before": 2}
     blocked = learning_observation(start_ah=12.0, end_ah=10.0, source_ah=None, elapsed_min="x", max_duration_min=None,
                                    rate_before=None, samples_before=None, usable=False)
     assert blocked["observed_rate_per_min"] is None and blocked["source_ah"] is None and blocked["samples_before"] == 0

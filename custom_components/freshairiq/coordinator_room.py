@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
+from .room_close_strategy import apply_benefit_close, room_close_options
 from .const import (
     CONF_CONTACT_COVERS,
     CONF_CONTACT_DELAYS,
@@ -50,7 +51,7 @@ from .automation_events import action_code
 from .climate_sources import aggregate_states
 from .contact_sides import inside_contacts
 from .coordinator_contacts import _contact_ids, _contact_specific_reference, _cover_openings, _unit_checked_reference
-from .coordinator_sources import _aggregate_state_proxy, _float_state, _humidity_value
+from .coordinator_sources import _aggregate_state_proxy, _float_state, _humidity_value, _temperature_state
 from .goals import normalise_disabled_goals
 from .intelligence import ensure_behaviour_defaults
 from .exhaust_reference import NEIGHBOUR_REFERENCE_REASON, REFERENCE_UNIT_REASON
@@ -122,6 +123,7 @@ class RoomEvaluationMixin:
         ``changed`` flag and the house-wide ``ventilation_group`` accumulator.
         """
         key = cfg["key"]; mem = self.store.room(key); ensure_behaviour_defaults(mem); include = bool(cfg.get(CONF_ROOM_INCLUDE_CALCULATIONS, True))
+        options = room_close_options(options, cfg)  # K02: the room's own close strategy / temperature limit (default: unchanged)
         outdoor_pm25 = getattr(self, "_outdoor_pm25", None)
         # v0.21.0.2: structure-only rooms are valid building metadata and may
         # intentionally have no climate/contact entities. Never dereference
@@ -258,7 +260,9 @@ class RoomEvaluationMixin:
             changed, high_duration, humidity_trend, indirect_candidate, indirect_cooling_candidate,
             reason_list,
         ) = self._room_recommendation_state(
-            airflow=airflow, cfg=cfg, changed=changed, co2=co2, cross=cross, explicit_tilted=explicit_tilted,
+            airflow=airflow, cfg=cfg, changed=changed, co2=co2, cross=cross,
+            # U05 (0.26.7.1): the hint names the model really used – the tilt model only for a pure tilted opening
+            explicit_tilted=("tilted" if explicit_tilted and specialist_opening_mode == "tilted" else "mixed" if explicit_tilted and opening_mode == "mixed" else None),
             has_ventilation_contact=has_ventilation_contact, is_open=is_open, mem=mem, now=now,
             options=options, outdoor_pm25=outdoor_pm25, pollen=pollen, ref_t=ref_t, result=result,
             room_input=room_input, t=t, wind_bearing=wind_bearing, wind_speed=wind_speed,
@@ -275,6 +279,8 @@ class RoomEvaluationMixin:
             is_open=is_open, measurement_frame=measurement_frame, mem=mem, moisture_source=moisture_source,
             now=now, opening_mode=opening_mode, options=options, ref_t=ref_t, result=result, t=t,
         )
+        changed = apply_benefit_close(mem, result, dynamic5, measurement_frame, options, cfg[CONF_ROOM_VOLUME], reason_list,
+                                      running=bool(mem.get("session_active") and is_open)) or changed
         (changed,) = self._freeze_session_prediction(
             cfg=cfg, changed=changed, cross=cross, dynamic=dynamic, elapsed=elapsed, forecast_args=forecast_args,
             forecast_horizon=forecast_horizon, measurement_frame=measurement_frame, mem=mem, now=now,
@@ -417,7 +423,7 @@ class RoomEvaluationMixin:
         # are estimated when a configured sensor is missing.
         temperature_entity = cfg.get(CONF_ROOM_TEMPERATURE)
         humidity_entity = cfg.get(CONF_ROOM_HUMIDITY)
-        monitor_temp_source = aggregate_states(self.hass, temperature_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")))
+        monitor_temp_source = aggregate_states(self.hass, temperature_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")), temperature=True)
         monitor_humidity_source = aggregate_states(self.hass, humidity_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean")))
         temperature_state = _aggregate_state_proxy(self.hass, temperature_entity, monitor_temp_source)
         humidity_state = _aggregate_state_proxy(self.hass, humidity_entity, monitor_humidity_source)
@@ -495,7 +501,7 @@ class RoomEvaluationMixin:
         """Room climate, reference air and optional air-quality sensor readings."""
         temperature_entity = cfg.get(CONF_ROOM_TEMPERATURE)
         humidity_entity = cfg.get(CONF_ROOM_HUMIDITY)
-        temperature_source = aggregate_states(self.hass, temperature_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")))
+        temperature_source = aggregate_states(self.hass, temperature_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")), temperature=True)
         humidity_source = aggregate_states(self.hass, humidity_entity, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_HUMIDITY_AGGREGATION, "mean")))
         temperature_state = _aggregate_state_proxy(self.hass, temperature_entity, temperature_source)
         humidity_state = _aggregate_state_proxy(self.hass, humidity_entity, humidity_source)
@@ -503,13 +509,13 @@ class RoomEvaluationMixin:
         room_reference_humidity_entity = cfg.get(CONF_ROOM_REFERENCE_HUMIDITY)
         default_reference_temperature_entity = room_reference_temperature_entity or outdoor_temp_entity
         default_reference_humidity_entity = room_reference_humidity_entity or outdoor_humidity_entity
-        default_ref_t = _float_state(self.hass, room_reference_temperature_entity) if room_reference_temperature_entity else outdoor_t
+        default_ref_t = _temperature_state(self.hass, room_reference_temperature_entity) if room_reference_temperature_entity else outdoor_t
         default_ref_rh = _float_state(self.hass, room_reference_humidity_entity) if room_reference_humidity_entity else outdoor_rh
         reference_temperature_entity, reference_humidity_entity, ref_t, ref_rh = _unit_checked_reference(self.hass, _contact_specific_reference(
             self.hass, cfg,
             default_temp_entity=default_reference_temperature_entity,
             default_humidity_entity=default_reference_humidity_entity,
-            default_temp=default_ref_t, default_humidity=default_ref_rh, humidity_reader=_humidity_value,
+            default_temp=default_ref_t, default_humidity=default_ref_rh, humidity_reader=_humidity_value, temperature_reader=_temperature_state,
         ))
         reference_temperature_state = self.hass.states.get(reference_temperature_entity) if reference_temperature_entity else outdoor_temp_state
         reference_humidity_state = self.hass.states.get(reference_humidity_entity) if reference_humidity_entity else outdoor_humidity_state

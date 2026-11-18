@@ -36,7 +36,7 @@ CANDIDATE_FORMULA_ID = "humidity-hybrid-2026-10-31-r1"
 # The active start forecast: ``forecast.horizon_forecast`` replayed on the frozen start
 # curve (start context v2). Bump the revision with every change of that calculation;
 # tests/test_forecast_shadow_026505.py pins the source of forecast.py to this ID.
-PRODUCTION_FORMULA_ID = f"start-curve-v{START_FORECAST_CONTEXT_VERSION}-horizon-forecast-r2"  # r2: final hotfix F11-C (no max-duration end point)
+PRODUCTION_FORMULA_ID = f"start-curve-v{START_FORECAST_CONTEXT_VERSION}-horizon-forecast-r4"  # r4: one live relaxation for every horizon (I01), clock-change minutes (F12)
 # 0.26.7.0 (owner order point 7): the prepared successor – the same versioned formula and coefficients as the
 # candidate, but fed with the physical start replay (the production side since #28) instead of the target-limited
 # one, matching the time-unlimited close decision (F11). Pure shadow: recorded per session next to the candidate,

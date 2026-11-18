@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from math import isfinite, sqrt
 from typing import Any, Iterable
 
+from .forecast_validation import VALIDATION_RECORD_VERSION
+
 BACKTEST_MIN_VERSION_SAMPLES = 3
 
 
@@ -138,10 +140,20 @@ def _metric_summary(samples: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _previous_basis(record: dict[str, Any]) -> bool:
+    """R08: an explicitly older validation basis (missing or unreadable = unknown, kept)."""
+    version = _number(record.get("validation_version"))
+    return version is not None and version < VALIDATION_RECORD_VERSION
+
+
 def _room_samples(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     samples: list[dict[str, Any]] = []
     for record in records:
         if not isinstance(record, dict) or not record.get("valid"):
+            continue
+        # R08 (0.26.7.2): records of the earlier, target-capped replay (validation_version < 3) are kept apart as in
+        # validation_summary (#28) – not mixed into today's room reliability; a missing version is unknown, not old
+        if _previous_basis(record):
             continue
         version = str(record.get("model_version") or "unknown")
         ended_at = record.get("ended_at")
@@ -376,6 +388,7 @@ def backtest_summary(records: list[dict[str, Any]], *, days: int = 30) -> dict[s
         "period_days": max(1, int(days)),
         "record_count": len(scoped),
         "valid_record_count": valid_record_count,
+        "previous_basis_record_count": sum(1 for item in scoped if isinstance(item, dict) and item.get("valid") and _previous_basis(item)),
         "room_sample_count": len(samples),
         "distinct_validation_days": len(distinct_days),
         "overall": _metric_summary(samples),

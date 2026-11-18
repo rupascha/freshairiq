@@ -242,6 +242,7 @@ def _routine_and_seasonal_parts(
         best_days = 0
         full = False
         best_year = None
+        best_cover = (False, False)  # N2 (0.26.7.1): start/end coverage of the best-observed period, shown on the card
         for period, raw_days in seasonal_period_days.items():
             try:
                 year_s, period_key = period.split(":", 1)
@@ -264,11 +265,12 @@ def _routine_and_seasonal_parts(
             near_end = max(parsed) >= finish.fromordinal(finish.toordinal() - 7)
             this_full = len(set(parsed)) >= 60 and near_start and near_end
             if len(set(parsed)) > best_days:
-                best_days, best_year = len(set(parsed)), year
+                best_days, best_year, best_cover = len(set(parsed)), year, (near_start, near_end)
             full = full or this_full
         if full:
             completed_seasons.add(key)
-        season_breakdown.append({"key": key, "label": season_names[key], "optimized": full, "observed_days": best_days, "year": best_year})
+        season_breakdown.append({"key": key, "label": season_names[key], "optimized": full, "observed_days": best_days, "year": best_year,
+                                 "covers_start": best_cover[0], "covers_end": best_cover[1], "min_days": 60})
     calendar_span_days = (max(all_dates) - min(all_dates)).days + 1 if len(all_dates) >= 2 else (1 if all_dates else 0)
     # A partially traversed season is real evidence too. Each season contributes
     # up to 25 points; only a fully traversed season may contribute the full 25.

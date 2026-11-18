@@ -9,6 +9,8 @@ real device; the notify service records what the user would receive.
 """
 from __future__ import annotations
 
+import pytest
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 import json
@@ -79,7 +81,12 @@ async def _cycle(hass, freezer, coordinator) -> None:
         await hass.async_block_till_done()
 
 
-async def test_garage_end_to_end_without_switching_cycles_and_without_manual_push(hass, freezer) -> None:
+# Testvermerk 0.26.7.1 (IQ2, owner decision of 15.11.2026): the default close strategy is "close once the goals are
+# reached". The fan room is still judged by its own model and never by a house plan, switches once on and once off and
+# sends no manual push – but with the default it stops when the humidity goal (58 %) is reached; the behaviour of
+# 0.26.5.4 (runs while it dries, stops at its maximum runtime of 60 min) is the explicit room choice "keep_drying".
+@pytest.mark.parametrize("strategy,stop_reason", [(None, "goal_reached"), ("keep_drying", "max_runtime")])
+async def test_garage_end_to_end_without_switching_cycles_and_without_manual_push(hass, freezer, strategy, stop_reason) -> None:
     freezer.move_to(START)
     log: list = []
     _switch(hass, log)
@@ -91,10 +98,13 @@ async def test_garage_end_to_end_without_switching_cycles_and_without_manual_pus
     _climate(hass, garage_rh=rh)
     hass.states.async_set(FAN, "off")
     hass.states.async_set(DOOR, "off", {"device_class": "door"})
-    entry = await _setup(hass, _entry(rooms=[_garage()], options=NOTIFY))
+    entry = await _setup(hass, _entry(rooms=[_garage(**({"close_strategy": strategy} if strategy else {}))], options=NOTIFY))
     coordinator = entry.runtime_data
     states: list[str] = []
+    stop_rh = None
     for _ in range(140):  # 70 minutes
+        if stop_rh is None and len(log) == 2:
+            stop_rh = rh
         if hass.states.get(FAN).state == "on":
             rh -= 0.4
         else:
@@ -108,8 +118,14 @@ async def test_garage_end_to_end_without_switching_cycles_and_without_manual_pus
     # house airing plan - the fan runs while it still dries the room and stops at its
     # maximum runtime (60 min): one start, one stop, no switching cycle.
     assert services == ["turn_on", "turn_off"]
-    assert (log[1][1] - log[0][1]).total_seconds() >= 60 * 60
-    assert [s for i, s in enumerate(states) if i == 0 or s != states[i - 1]] == ["running", "completed"]
+    runtime = (log[1][1] - log[0][1]).total_seconds()
+    if stop_reason == "max_runtime":
+        assert runtime >= 60 * 60
+    else:                                   # the goal, not a clock: 88 % → 58 % at 0.8 %/min takes about 38 minutes
+        assert 35 * 60 <= runtime < 60 * 60 and stop_rh is not None and 57.0 <= stop_rh <= 58.5
+    # a stop at the goal passes the confirmed "stopping" step of the automation; never back to "running"
+    assert [s for i, s in enumerate(states) if i == 0 or s != states[i - 1]] == (
+        ["running", "completed"] if stop_reason == "max_runtime" else ["running", "stopping", "completed"])
 
     # what the user receives: no manual "switch off the fan" for a fan FreshAirIQ switches itself
     texts = [str(call.data.get("message")) + " " + str(call.data.get("title")) for call in pushes]
@@ -129,7 +145,7 @@ async def test_garage_end_to_end_without_switching_cycles_and_without_manual_pus
     # 0.26.5.4 (review A10): every command and how it ended
     assert [(f"turn_{row['command']}", row["result"]) for row in trace] == [
         (services[0], "pending"), (services[0], "confirmed"), (services[1], "pending"), (services[1], "confirmed")]
-    assert [row["reason"] for row in trace] == ["recommendation", "recommendation", "max_runtime", "max_runtime"] and "switch." not in json.dumps(trace)
+    assert [row["reason"] for row in trace] == ["recommendation", "recommendation", stop_reason, stop_reason] and "switch." not in json.dumps(trace)
     record = coordinator.diagnostics._build_record(coordinator.data, coordinator.store.data, dt_util.now(), [], "test")
     assert record["fan_automation_trace"] == trace
     exported = next(r for r in record["rooms"] if r["key"] == "garage")

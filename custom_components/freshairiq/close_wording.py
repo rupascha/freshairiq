@@ -87,6 +87,50 @@ def area_close_instruction(area: str, rooms: list[Any]) -> str:
     return f"{area} schließen" + (f" · Lüfter in {' + '.join(fans)} ausschalten" if fans else "")
 
 
+def protective_close(room: dict[str, Any]) -> bool:
+    """R01 (0.26.7.2): the room model released a close that protects the room (explicit temperature limit).
+
+    Only this kind – not every ``close_recommended`` – overrules a running moisture source and the house presentation.
+    A goal close, the physical "air no longer helps" close and a source keep-open stay distinguishable.
+    """
+    return bool(isinstance(room, dict) and room.get("close_recommended") and room.get("close_kind") == "temperature_limit")
+
+
+def goal_close(room: dict[str, Any]) -> bool:
+    """IQ2 (0.26.7.1): the room model released the close because the room's goals are reliably reached (or held).
+
+    Like the protective close this is a decision of the room model, not a marginal-return estimate: the house
+    aggregate keeps it instead of answering "the air still dries" against a goal that is already met.
+    """
+    return bool(isinstance(room, dict) and room.get("close_recommended") and room.get("close_kind") in {"goals_reached", "goals_held"})
+
+
+def benefit_close(room: dict[str, Any]) -> bool:
+    """The room model closed because the confirmed IQ2 benefit is exhausted while the humidity target is still open.
+
+    Like a goal close it is a decision of the room (own threshold, two new readings); the house aggregate keeps it.
+    """
+    return bool(isinstance(room, dict) and room.get("close_recommended") and room.get("close_kind") == "benefit_exhausted")
+
+
+# R07 (0.26.7.2): the reason of a house close follows the rooms' own close kind (``close_kind`` of the room model) –
+# a temperature limit or reached goals are never presented as "the physical close criterion".
+_CLOSE_CAUSE_TEXT = {
+    "temperature_limit": "Deine Temperaturgrenze beim Lüften ist erreicht – Schließen wegen der Temperatur, nicht weil genug Feuchtigkeit entfernt wurde",
+    "goals_reached": "Die Ziele des Raums sind erreicht",
+    "goals_held": "Die Ziele des Raums wurden in dieser Lüftung erreicht",
+    "benefit_exhausted": "Weiteres Lüften entfernt kaum noch Feuchtigkeit – das Feuchteziel ist noch nicht erreicht",
+}
+_CLOSE_CAUSE_ORDER = ("temperature_limit", "goals_reached", "goals_held", "benefit_exhausted")
+
+
+def close_cause(rooms: Any) -> tuple[str | None, str | None]:
+    """(close kind, German text) of the closing rooms; (None, None) when no room states a non-physical cause."""
+    kinds = {r.get("close_kind") for r in (rooms or []) if isinstance(r, dict) and r.get("close_recommended")}
+    kind = next((k for k in _CLOSE_CAUSE_ORDER if k in kinds), None)
+    return kind, _CLOSE_CAUSE_TEXT.get(kind) if kind else None
+
+
 def keep_instruction(rooms: list[Any], remaining_min: float | None) -> str:
     """"Bad offen lassen · Lüfter in Garage laufen lassen · noch ca. 4 min" (no time without a target)."""
     picked = [r for r in rooms if isinstance(r, dict)]
@@ -117,7 +161,10 @@ def fan_stop_message(room: Any) -> str:
     # 0.26.5.4: the fan draws its air from the neighbouring room when one is configured
     neighbour = isinstance(room, dict) and room.get("reference_path") == "neighbour_room"
     failed = fan_automation(room).get("state") == "failed"
-    text = _FAN_STOP_TEXT[(neighbour, delta is not None and delta < 0, failed)]
+    kind = room.get("close_kind") if isinstance(room, dict) and room.get("close_recommended") else None
+    # R01/R02 (0.26.7.2): a close released by the temperature limit or the room goals is worded by that cause – the air
+    # may still be clearly drier, so "hardly drier any more" would be false
+    text = _FAN_STOP_CAUSE_TEXT[(kind, failed)] if (kind, failed) in _FAN_STOP_CAUSE_TEXT else _FAN_STOP_TEXT[(neighbour, delta is not None and delta < 0, failed)]
     if fan_automation(room).get("state") == "manual":
         # 0.26.7.0 (support case B): the automatic control is on, but this run was started by hand or by another
         # automation – FreshAirIQ does not switch off what it did not switch on, and says so instead of a bare order
@@ -135,6 +182,18 @@ _FAN_STOP_TEXT = {
     (False, False, True): "Die Außenluft ist kaum noch trockener als die Raumluft. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
     (True, True, True): "Die Zuluft aus dem Nebenraum ist gerade feuchter als die Raumluft. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
     (True, False, True): "Die Zuluft aus dem Nebenraum ist kaum noch trockener als die Raumluft. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
+}
+
+
+_FAN_STOP_CAUSE_TEXT = {
+    ("temperature_limit", False): "Deine Temperaturgrenze beim Lüften ist erreicht. Lüfter ausschalten.",
+    ("temperature_limit", True): "Deine Temperaturgrenze beim Lüften ist erreicht. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
+    ("goals_reached", False): "Die Ziele dieses Raums sind erreicht. Lüfter ausschalten.",
+    ("goals_reached", True): "Die Ziele dieses Raums sind erreicht. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
+    ("goals_held", False): "Die Ziele dieses Raums wurden in dieser Lüftung erreicht. Lüfter ausschalten.",
+    ("goals_held", True): "Die Ziele dieses Raums wurden in dieser Lüftung erreicht. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
+    ("benefit_exhausted", False): "Weiteres Lüften entfernt kaum noch Feuchtigkeit. Lüfter ausschalten.",
+    ("benefit_exhausted", True): "Weiteres Lüften entfernt kaum noch Feuchtigkeit. Automatisches Ausschalten hat nicht geklappt. Lüfter ausschalten.",
 }
 
 

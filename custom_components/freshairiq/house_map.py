@@ -15,6 +15,7 @@ or the diagnostics export.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -63,6 +64,8 @@ class HouseLayoutStore:
         self._store = Store(hass, STORE_VERSION, f"{DOMAIN}.house_layout.{entry_id}")
         self.raw: Any = None
         self.loaded = False
+        # F11: revision check, write and the new revision in memory happen as one step per configuration
+        self.lock = asyncio.Lock()
 
     async def async_load(self) -> None:
         if not self.loaded:
@@ -210,16 +213,17 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
         connection.send_error(msg["id"], "too_large", "Layout too large")
         return
     store = await _store(hass, entry.entry_id)
-    if msg["base_revision"] != store.revision():
-        connection.send_error(msg["id"], "revision_conflict", f"Layout changed elsewhere (revision {store.revision()})")
-        return
-    layout = normalise(msg["layout"])
-    issues = validate(layout, [r["key"] for r in _room_list(entry)])
-    if errors(issues):
-        connection.send_error(msg["id"], "invalid_layout", json.dumps(errors(issues)[:20]))
-        return
-    layout["revision"] = store.revision() + 1
-    await store.async_save(layout)
+    async with store.lock:
+        if msg["base_revision"] != store.revision():
+            connection.send_error(msg["id"], "revision_conflict", f"Layout changed elsewhere (revision {store.revision()})")
+            return
+        layout = normalise(msg["layout"])
+        issues = validate(layout, [r["key"] for r in _room_list(entry)])
+        if errors(issues):
+            connection.send_error(msg["id"], "invalid_layout", json.dumps(errors(issues)[:20]))
+            return
+        layout["revision"] = store.revision() + 1
+        await store.async_save(layout)  # a failed write raises: no result is sent and the stored revision stays
     async_dispatcher_send(hass, _signal(entry.entry_id))
     connection.send_result(msg["id"], {"house_map_api": API, "revision": layout["revision"], "issues": issues})
 

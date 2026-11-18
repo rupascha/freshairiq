@@ -20,6 +20,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from .forecast import elapsed_minutes
+
 RAIN_CONDITIONS = frozenset({"rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"})
 SNOW_CONDITIONS = frozenset({"snowy", "snowy-rainy"})
 THUNDER_CONDITIONS = frozenset({"lightning", "lightning-rainy"})
@@ -57,7 +59,7 @@ def minutes_until_rain(rows: Any, now: datetime, window_min: int = RAIN_SOON_WIN
         if not isinstance(start, datetime):
             continue
         # An hourly slot covers [start, start + 60 min): the current hour counts as now.
-        delta = (start - now).total_seconds() / 60.0
+        delta = elapsed_minutes(now, start)  # F12: real minutes, also across a clock change
         if delta < -60:
             continue
         if delta > window_min:

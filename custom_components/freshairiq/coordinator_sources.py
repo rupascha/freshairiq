@@ -7,8 +7,8 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .const import CONF_CONTACT_COVERS
-from .climate_sources import entity_ids
-from .house_wind import parse_bearing
+from .climate_sources import celsius, entity_ids
+from .house_wind import parse_bearing, speed_ms as house_speed_ms
 from .outdoor_air import plausible_pm25
 from .robustness import finite_float
 
@@ -53,6 +53,14 @@ def _float_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
     state = hass.states.get(entity_id)
     if state is None or state.state in {"unknown", "unavailable", "none", ""}: return None
     return finite_float(state.state)
+
+
+def _temperature_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
+    """F09: a temperature sensor in °C, converted from the unit it states (°C/°F/K); another unit gives no value."""
+    state = hass.states.get(entity_id) if entity_id else None
+    if state is None:
+        return None
+    return celsius(_float_state(hass, entity_id), (state.attributes or {}).get("unit_of_measurement"))
 
 
 def _humidity_percent(hass: HomeAssistant, entity_id: str | None) -> tuple[float | None, str | None]:
@@ -152,7 +160,8 @@ def _weather_values(hass: HomeAssistant, entity_id: str | None) -> tuple[float |
     if state is None: return None, None
     temperature = finite_float(state.attributes.get("temperature"))
     humidity = finite_float(state.attributes.get("humidity"))
-    return temperature, humidity
+    # F09: a weather entity states its temperature in ``temperature_unit`` (the HA weather contract)
+    return celsius(temperature, state.attributes.get("temperature_unit")), humidity
 
 
 def _weather_wind(hass: HomeAssistant, entity_id: str | None) -> tuple[float | None, float | None]:
@@ -160,11 +169,12 @@ def _weather_wind(hass: HomeAssistant, entity_id: str | None) -> tuple[float | N
     state = hass.states.get(entity_id)
     if state is None: return None, None
     bearing = state.attributes.get("wind_bearing")
-    speed = state.attributes.get("wind_speed")
     # 0.26.7.0: a compass text ("NW", "SSW", "NNO") is a valid bearing as on the house map – it was dropped before
     bearing = parse_bearing(bearing)
-    speed = finite_float(speed)
-    return bearing, speed
+    # F10: the speed in the unit of the airflow formula (km/h, the HA weather default it was calibrated with), from
+    # the entity's ``wind_speed_unit`` – the same conversion as the house map; an unknown unit gives no speed
+    speed_ms, _assumed = house_speed_ms(state.attributes.get("wind_speed"), state.attributes.get("wind_speed_unit"))
+    return bearing, (speed_ms * 3.6 if speed_ms is not None else None)
 
 
 def _humidity_value(hass: HomeAssistant, entity_id: str | None) -> float | None:

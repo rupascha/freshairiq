@@ -25,12 +25,14 @@ from . import cover_guard, cross_pairs
 from .climate_sources import aggregate_states, climate_report_snapshot, participating_climate_entities
 from .coordinator_contacts import _contact_ids, _room_ventilation_state
 from .intelligence import clear_session_behaviour, learn_completed_session
-from .measurement_frame import session_measurement_quality, trusted_session_end_baseline
+from .measurement_frame import room_session_measurement_quality, trusted_session_end_baseline
 from .model import absolute_humidity, update_learning
 from .opening_state import update_passage_pattern
 from .post_stabilization import start_post_close_observation
 from .robustness import finite_float
 from .start_model import learning_observation
+from . import iq2
+from .iq2_runtime import EXHAUST_MODE, iq2_base_rate
 
 
 class SessionFinishMixin:
@@ -57,6 +59,8 @@ class SessionFinishMixin:
             "session_start_humidity": None,
             "session_result_base_ml": 0.0,
             "close_notified": False,
+            "close_notified_kind": None,
+            "session_goals_reached": False,
             "session_fresh_measurements": 0,
             "session_target_min": None,
             "session_target_fan_start": False,
@@ -137,13 +141,7 @@ class SessionFinishMixin:
             max(finite_float(mem.get("session_cross_seconds"), 0.0) or 0.0, 0.0),
             elapsed_seconds,
         )
-        session_quality = session_measurement_quality(
-            int(mem.get("session_fresh_measurements", 0)),
-            temperature_reports=int(mem.get("session_temperature_reports", 0)),
-            humidity_reports=int(mem.get("session_humidity_reports", 0)),
-            final_temperature_feedback=bool(mem.get("session_close_temperature_feedback")),
-            final_humidity_feedback=bool(mem.get("session_close_humidity_feedback")),
-        )
+        session_quality = room_session_measurement_quality(mem)
         diagnosis = (
             "Lernmessung übersprungen: Nach dem Schließen war innerhalb der "
             "Abschlusswartezeit kein verwendbarer Temperatur-/Feuchte-Endwert verfügbar."
@@ -384,7 +382,7 @@ class SessionFinishMixin:
             _temperature_cfg, _humidity_cfg, _snapshot, mem.get("session_climate_report_counts") or {}, min_reports=1
         )
         if _qualified_t:
-            _session_t = aggregate_states(self.hass, _qualified_t, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean"))).value
+            _session_t = aggregate_states(self.hass, _qualified_t, finite=finite_float, strategy=str(cfg.get(CONF_ROOM_TEMPERATURE_AGGREGATION, "mean")), temperature=True).value
             if _session_t is not None:
                 t = _session_t
         if _qualified_h:
@@ -392,17 +390,11 @@ class SessionFinishMixin:
             if _session_rh is not None:
                 rh = _session_rh
         end_ah = absolute_humidity(t, rh) if -10 < t < 50 and 5 <= rh <= 100 else 0.0
-        session_quality = session_measurement_quality(
-            int(mem.get("session_fresh_measurements", 0)),
-            temperature_reports=int(mem.get("session_temperature_reports", 0)),
-            humidity_reports=int(mem.get("session_humidity_reports", 0)),
-            final_temperature_feedback=bool(mem.get("session_close_temperature_feedback")),
-            final_humidity_feedback=bool(mem.get("session_close_humidity_feedback")),
-        )
-        # In-session timestamp activity remains a hard gate. Historical
-        # measurement-frame age classes may describe confidence, but they can no
-        # longer make a session learnable when either room-climate channel never
-        # produced a newer report after the physical opening.
+        session_quality = room_session_measurement_quality(mem)
+        # In-session activity remains a hard gate: at least two real value
+        # changes (T+T, RH+RH or T+RH) between physical opening and close.
+        # Measurement-frame age classes only describe confidence; neither the
+        # age of the frozen start values nor T/RH skew can make or break it.
         session_activity_eligible = bool(session_quality.get("timestamp_gate_passed"))
         mem["start_measurement_in_session_gate_passed"] = session_activity_eligible
         # Objective validation now uses the same strict in-session timestamp
@@ -459,7 +451,8 @@ class SessionFinishMixin:
         mem["session_learning_observation"] = learning_observation(
             start_ah=learning_start_ah, end_ah=end_ah, source_ah=source_ah, elapsed_min=measurement_elapsed,
             max_duration_min=self.options.get("learning_max_duration_min", 120), rate_before=mem.get("learning_rate"),
-            samples_before=mem.get("learning_samples"), usable=not (cover_learning_blocked or learning_contaminated or not frame_learning_eligible),
+            samples_before=mem.get("learning_samples"),
+            usable=not (cover_learning_blocked or learning_contaminated or not frame_learning_eligible or mem.get("session_learning_reset_at")),
         )
         if cover_learning_blocked:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
@@ -475,7 +468,11 @@ class SessionFinishMixin:
             valid = False
         elif not frame_learning_eligible:
             rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
-            diagnosis = f"Lernmessung übersprungen: {session_quality.get('reason') or 'Temperatur und Luftfeuchtigkeit haben während der Lüftung keine ausreichend neuen Zeitstempel geliefert.'}"
+            diagnosis = f"Lernmessung übersprungen: {session_quality.get('reason') or 'Weniger als zwei Messänderungen während der Lüftung.'}"
+            valid = False
+        elif mem.get("session_learning_reset_at"):
+            rate = float(mem["learning_rate"]); samples = int(mem["learning_samples"])
+            diagnosis = "Lernmessung übersprungen: das Lernwissen wurde während dieser Lüftung zurückgesetzt"
             valid = False
         else:
             old_rate = float(mem["learning_rate"])
@@ -567,9 +564,83 @@ class SessionFinishMixin:
                 }
                 mem["opening_learning"] = opening_learning
                 diagnosis = f"{diagnosis} · {session_mode}-Modell separat gelernt"
+        self._iq2_learn_airing(
+            cfg=cfg, mem=mem, end_ah=end_ah, learning_start_ah=learning_start_ah, measurement_elapsed=measurement_elapsed, source_ah=source_ah,
+            usable=not (cover_learning_blocked or learning_contaminated or not frame_learning_eligible or mem.get("session_learning_quarantined")),
+            weight=float(session_quality.get("learning_weight", 0.0) or 0.0),
+        )
         mem["learning_rate"] = rate; mem["learning_samples"] = samples; mem["diagnosis"] = diagnosis; mem["last_learning_at"] = now.isoformat(); mem["last_learning_valid"] = bool(valid); self.store.data["last_diagnosis"] = f"{cfg['name']}: {diagnosis}"
         return (rate, valid)
 
+
+    def _iq2_learn_airing(self, *, cfg: Any, mem: Any, end_ah: Any, learning_start_ah: Any, measurement_elapsed: Any,
+                          source_ah: Any, usable: bool, weight: float) -> None:
+        """IQ2: score the forecast frozen at the start of this airing, then learn room and house parameters from it."""
+        session_mode = str(mem.get("session_specialist_opening_mode") or "")
+        start, mem["session_iq2_start"] = mem.get("session_iq2_start"), None  # scored at most once
+        if (not usable or not bool(self.options["learning_enabled"]) or not isinstance(mem.get("iq2"), dict) or session_mode == EXHAUST_MODE
+                or mem.get("session_learning_reset_at")):
+            # fan-only airings teach the exhaust model, not the window model; an airing that began before a learning
+            # reset does not refill the reset models
+            mem["session_iq2"] = {"model": iq2.MODEL, "usable": False}
+            return
+        mode = session_mode if session_mode in iq2.MODES and session_mode != iq2.GENERAL and not mem.get("session_opening_mode_mixed") else iq2.GENERAL
+        if not (isinstance(start, dict) and start.get("validation_id") == mem.get("session_validation_id")):
+            start = None
+        house_weight, episode = self._iq2_house_vote(mem, weight)
+        room_state, house_state, report = iq2.learn_airing(
+            mem.get("iq2"), self.store.data.get("iq2_house"), mode=mode, base_rate=iq2_base_rate(mem, mode),
+            start_ah=learning_start_ah, end_ah=end_ah, source_ah=source_ah, minutes=measurement_elapsed,
+            volume_m3=cfg[CONF_ROOM_VOLUME], quality_weight=weight, legacy_rate=mem.get("learning_rate"),
+            start_temp=mem.get("session_start_temp"), end_temp=mem.get("session_last_valid_temperature"),
+            source_temp=mem.get("session_start_source_temp"), max_minutes=self.options.get("learning_max_duration_min", 120),
+            house_weight=house_weight, start=start,
+        )
+        mem["iq2"], self.store.data["iq2_house"], mem["session_iq2"] = room_state, house_state, report
+        if report.get("usable"):
+            episode["used"] = round((finite_float(episode.get("used")) or 0.0) + float(report.get("house_weight") or 0.0), 6)
+
+    def _iq2_join_house_episode(self, mem: Any, key: Any, now: Any) -> str:
+        """I02: rooms aired at the same time form one house episode; its membership is fixed when a room joins."""
+        episode = self.store.data.get("iq2_house_episode")
+        current = episode.get("id") if isinstance(episode, dict) else None
+        joined = current is not None and any(
+            isinstance(other, dict) and other is not mem and other.get("session_active") and other.get("session_iq2_episode") == current
+            for other in (self.store.data.get("rooms") or {}).values()
+        )
+        if joined:
+            episode["members"] = max(int(finite_float(episode.get("members")) or 0), 0) + 1
+        else:
+            episode = {"id": f"{key}:{now.isoformat()}", "members": 1, "used": 0.0}
+            self.store.data["iq2_house_episode"] = episode
+        return str(episode["id"])
+
+    def _iq2_house_vote(self, mem: Any, weight: float) -> tuple[float, dict[str, Any]]:
+        """House vote of one airing: its quality weight split over the episode's members, at most one per episode."""
+        episode = self._iq2_adopt_restored_sessions(mem)
+        members = max(int(finite_float(episode.get("members")) or 1), 1)
+        left = max(1.0 - (finite_float(episode.get("used")) or 0.0), 0.0)
+        return min(max(min(float(weight), 1.0), 0.0) / members, left), episode
+
+    def _iq2_adopt_restored_sessions(self, mem: Any) -> dict[str, Any]:
+        """I02: airings restored without a valid episode (saved before it existed, or with a lost record) share one.
+
+        All of them still open join together the first time one of them ends – into the episode still running, or a
+        new one – so their house vote no longer depends on the order in which they end.
+        """
+        episode = self.store.data.get("iq2_house_episode")
+        current = episode.get("id") if isinstance(episode, dict) else None
+        if current is not None and mem.get("session_iq2_episode") == current:
+            return episode
+        rooms = [room for room in (self.store.data.get("rooms") or {}).values() if isinstance(room, dict)]
+        restored = [room for room in rooms if (room is mem or room.get("session_active")) and (current is None or room.get("session_iq2_episode") != current)]
+        if current is None or not any(room.get("session_active") and room.get("session_iq2_episode") == current for room in rooms):
+            episode = {"id": f"restored:{dt_util.now().isoformat()}", "members": 0, "used": 0.0}
+            self.store.data["iq2_house_episode"] = episode
+        episode["members"] = max(int(finite_float(episode.get("members")) or 0), 0) + len(restored)
+        for room in restored:
+            room["session_iq2_episode"] = episode["id"]
+        return episode
 
     def _cross_ventilation_active(self) -> bool:
         pairs_raw = str(self.options.get("cross_ventilation_pairs", "")).strip()

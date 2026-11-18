@@ -73,7 +73,9 @@ def test_frontend_uses_only_strict_prediction_metrics_for_accuracy_card():
     assert "last.prediction_accuracy_percent" in block
     assert "scoreValidated" in block
     assert "partial_validated" in block
-    assert "wegen nicht ausreichend synchroner Messdaten ausgeschlossen" in block
+    assert "Raum/Räume von der Genauigkeitswertung ausgeschlossen · ${exclusionReason}" in block
+    assert "last.prediction_exclusion_reason" in block
+    assert "nicht ausreichend synchron" not in block
 
 
 def test_forecast_accuracy_remains_strict_after_followup_learning_hotfix():

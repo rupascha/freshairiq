@@ -7,7 +7,10 @@ from custom_components.freshairiq.ventilation_result import finalise_ventilation
 from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-JS = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
+# Testvermerk 0.26.7.2 (R07): the IQ time tile moved into freshairiq-card-data.js (card size gate); the source contract
+# reads both modules, the checked expressions are unchanged
+JS = "\n".join((ROOT / f"custom_components/freshairiq/frontend/{name}").read_text(encoding="utf-8")
+                for name in ("freshairiq-card.js", "freshairiq-card-data.js"))
 COORD = module_source("coordinator")
 
 
