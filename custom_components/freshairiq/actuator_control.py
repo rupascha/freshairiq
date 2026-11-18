@@ -154,11 +154,21 @@ def decide_cover(
 
     if follow_open:
         if not mem.get("follow_active"):
+            mem.pop("open_pending", None)
+            mem.pop("command_failed", None)
             mem["follow_active"] = True
             mem["restore_position"] = view.position
             mem["restore_closed"] = view.closed
             if not view.fully_open and view.state != "opening":
                 return [(COVER_OPEN, None)]
+            return []
+        if mem.get("open_pending"):
+            # a refused open of this window session: sent again until it is open, moved by hand or out of attempts
+            if view.fully_open or view.state == "opening" or _moved_since_restore_point(view, mem):
+                mem.pop("open_pending", None)
+                mem.pop("failed_attempts", None)
+                return []
+            return [] if mem.get("command_failed") else [(COVER_OPEN, None)]
         return []
 
     if mem.get("follow_active"):
@@ -167,6 +177,11 @@ def decide_cover(
         mem["follow_active"] = False
         position = mem.pop("restore_position", None)
         was_closed = bool(mem.pop("restore_closed", False))
+        if mem.pop("open_pending", None):
+            # never opened: there is nothing to move back
+            mem.pop("failed_attempts", None)
+            mem.pop("command_failed", None)
+            return []
         if not (view.fully_open or view.state == "opening"):
             # moved by someone while the window was open: keep it as it is
             mem["sun_state"] = "foreign" if sun_auto and sun_wants_close else None
@@ -197,6 +212,15 @@ def decide_cover(
     return []
 
 
+def _moved_since_restore_point(view: CoverView, mem: dict[str, Any]) -> bool:
+    if view.state == "closing":
+        return True
+    position = mem.get("restore_position")
+    if position is not None and view.position is not None:
+        return view.position != position
+    return view.closed != bool(mem.get("restore_closed"))
+
+
 def combine_cover_setups(first: CoverSetup, second: CoverSetup) -> CoverSetup:
     """F06: one physical cover in several rooms – the contacts of all of them decide together."""
     return CoverSetup([*first.contacts, *second.contacts], [*first.follow_contacts, *second.follow_contacts],
@@ -220,10 +244,24 @@ def cover_command_result(mem: dict[str, Any], before: dict[str, Any], sent: bool
     A command the service refused leaves the cover memory as it was, so the next evaluation decides again (the
     restore point is taken from the cover as it really is); after ``COVER_COMMAND_ATTEMPTS`` refusals the decision is
     kept and no further command is sent for it.
+
+    A refused open of a window session is the exception: the session and its restore point stay, the open is kept
+    as ``open_pending`` and sent again by ``decide_cover`` within the same ``COVER_COMMAND_ATTEMPTS``.
     """
     if sent:
         mem.pop("failed_attempts", None)
         mem.pop("command_failed", None)
+        mem.pop("open_pending", None)
+        return
+    if mem.get("follow_active") and (not before.get("follow_active") or before.get("open_pending")):
+        earlier = before.get("failed_attempts") if before.get("open_pending") else None
+        attempts = (int(earlier) if isinstance(earlier, (int, float)) and not isinstance(earlier, bool) else 0) + 1
+        mem["open_pending"] = True
+        if attempts < COVER_COMMAND_ATTEMPTS:
+            mem["failed_attempts"] = attempts
+        else:
+            mem.pop("failed_attempts", None)
+            mem["command_failed"] = True
         return
     earlier = before.get("failed_attempts")
     attempts = (int(earlier) if isinstance(earlier, (int, float)) and not isinstance(earlier, bool) else 0) + 1

@@ -650,10 +650,11 @@ class ActuatorController:
         if decision == "off" and mem.get("reason") == "max_runtime":
             self._block_sharers(room, fans)  # 0.26.5.5: the maximum runtime protects the device, not one room
         if decision == "on":
-            mem.pop("released_fans", None)  # a new automatic start takes the whole group over again
-            group = fans
+            # A1: a new automatic start takes the whole group over again, with this room's released fans (F08: no foreign one)
+            retry, group = mem.get("reason") == "partial_start", fans
+            mem.pop("released_fans", None)
             started = {fan for fan in group if getattr(self.hass.states.get(fan), "state", None) != "on"}
-            kept = set(mem.get("owned_fans") or []) if mem.get("reason") == "partial_start" else set()
+            kept = set(mem.get("owned_fans") or []) if retry else released & set(fans)
             mem["owned_fans"] = sorted(kept | started)
         elif decision == "off":
             group = view

@@ -112,7 +112,7 @@ jobs:
     # after them, the frame-time projects), webkit, firefox – instead of one serial job; npm and the Playwright
     # browsers are cached. Every project and test still runs; only the wall time shrinks.
     # All engines (chromium webkit firefox) on main, pull requests, the weekly run and releases.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

@@ -30,7 +30,8 @@ if not hasattr(sys.modules["homeassistant.helpers.event"], "async_track_time_cha
     sys.modules["homeassistant.helpers.event"].async_track_time_change = lambda *a, **k: (lambda: None)
 
 from custom_components.freshairiq import iq2, iq2_runtime  # noqa: E402
-from custom_components.freshairiq.actuator_control import COVER_COMMAND_ATTEMPTS, CoverSetup, combine_cover_setups, cover_command_result, own_fans  # noqa: E402
+from custom_components.freshairiq.actuator_control import (  # noqa: E402
+    COVER_COMMAND_ATTEMPTS, COVER_OPEN, CoverSetup, CoverView, combine_cover_setups, cover_command_result, decide_cover, own_fans)
 from custom_components.freshairiq.actuator_controller import ActuatorController  # noqa: E402
 from custom_components.freshairiq.const import CONF_ROOM_VOLUME  # noqa: E402
 from custom_components.freshairiq.coordinator_session_validation import SessionValidationMixin  # noqa: E402
@@ -582,10 +583,31 @@ def test_f07_a_refused_open_is_tried_again_and_the_restore_point_stays_right():
     hass, controller = _controller(rooms, {"binary_sensor.a": ("on", {}), "cover.x": ("open", {"current_position": 40, **COVER})})
     calls = _covers_follow(hass, fail=["open_cover"])
     _evaluate(controller)
-    assert calls == ["open_cover!"] and controller._memory["covers"]["cover.x"] == {"failed_attempts": 1}
+    assert calls == ["open_cover!"] and controller._memory["covers"]["cover.x"]["follow_active"] is True
     _evaluate(controller)                                                                # before: never tried again
-    assert calls == ["open_cover!", "open_cover"]
-    assert controller._memory["covers"]["cover.x"]["restore_position"] == 40 and "failed_attempts" not in controller._memory["covers"]["cover.x"]
+    assert calls == ["open_cover!", "open_cover"] and hass.states.get("cover.x").attributes["current_position"] == 100
+    _evaluate(controller)
+    assert calls == ["open_cover!", "open_cover"]                                        # open now: nothing more
+    hass.states.async_set("binary_sensor.a", "off", {})
+    _evaluate(controller)
+    assert calls[-1] == "set_cover_position" and hass.states.get("cover.x").attributes["current_position"] == 40
+
+
+def test_f07_a_window_session_without_any_successful_open_moves_nothing_back():
+    rooms = [{"key": "a", "contact_covers": {"binary_sensor.a": ["cover.x"]}, "contact_cover_follow": {"binary_sensor.a": True}}]
+    hass, controller = _controller(rooms, {"binary_sensor.a": ("on", {}), "cover.x": ("open", {"current_position": 40, **COVER})})
+    calls = _covers_follow(hass, fail=["open_cover"] * 2)
+    _evaluate(controller)
+    _evaluate(controller)
+    assert calls == ["open_cover!", "open_cover!"] and controller._memory["covers"]["cover.x"]["follow_active"] is True
+    hass.states.async_set("binary_sensor.a", "off", {})                                  # closed before the third try
+    _evaluate(controller)
+    _evaluate(controller)
+    assert calls == ["open_cover!", "open_cover!"] and hass.states.get("cover.x").attributes["current_position"] == 40
+    assert controller._memory["covers"]["cover.x"]["follow_active"] is False
+    hass.states.async_set("binary_sensor.a", "on", {})                                   # the next session starts afresh
+    _evaluate(controller)
+    assert calls[-1] == "open_cover" and hass.states.get("cover.x").attributes["current_position"] == 100
     hass.states.async_set("binary_sensor.a", "off", {})
     _evaluate(controller)
     assert calls[-1] == "set_cover_position" and hass.states.get("cover.x").attributes["current_position"] == 40
@@ -603,6 +625,27 @@ def test_f07_retries_are_bounded_and_a_manual_move_is_still_respected():
     hass.states.async_set("binary_sensor.a", "off", {})
     _evaluate(controller)
     assert calls == ["open_cover!"] * COVER_COMMAND_ATTEMPTS
+
+
+@pytest.mark.parametrize("moved", [CoverView("open", 60, supports_position=True), CoverView("closing", 0, supports_position=True),
+                                   CoverView("closing")])
+def test_f07_a_pending_open_ends_with_a_manual_move_and_other_refusals_stay_bounded(moved):
+    setup = CoverSetup(["binary_sensor.a"], ["binary_sensor.a"], [])
+    closed = CoverView("closed", 0 if moved.position is not None else None, supports_position=moved.supports_position)
+
+    def cover(view, mode="open"):
+        return decide_cover(view=view, setup=setup, contact_modes={"binary_sensor.a": mode}, sun_auto=False, sun_wants_close=False, mem=mem)
+
+    mem = {}
+    before = dict(mem)
+    assert cover(closed) == [(COVER_OPEN, None)]
+    cover_command_result(mem, before, False)
+    assert cover(closed) == [(COVER_OPEN, None)]                                         # still closed: sent again
+    assert cover(moved) == [] and cover(moved) == []                                     # moved by hand: no further open
+    assert cover(moved, "closed") == [] and mem["follow_active"] is False                # and nothing is moved back
+    memory = {"failed_attempts": COVER_COMMAND_ATTEMPTS - 1}
+    cover_command_result(memory, dict(memory), False)
+    assert memory == {"command_failed": True}                                            # outside a window session as before
 
 
 def _fan_controller(rooms, states):
