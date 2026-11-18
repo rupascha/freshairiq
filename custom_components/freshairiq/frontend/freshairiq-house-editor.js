@@ -483,6 +483,11 @@ text{fill:var(--ed-fg);pointer-events:none}
 :host([data-layout~="short"]) .tg-floor select{flex:1 1 auto;min-width:4.5em}
 :host([data-layout~="short"]) .tools button{padding-left:8px;padding-right:8px}
 :host([data-layout~="short"]) .more-btn .lbl{display:none}
+/* stacked editor: floor and modes in the first row, the add buttons in the second – the floor choice gives way, so a
+   wider select or text (Firefox, WebKit) never pushes the modes into a third row and the drawing keeps its height */
+:host([data-layout="stack"]) .tools{display:grid;grid-template-columns:minmax(0,max-content) max-content;justify-content:start}
+:host([data-layout="stack"]) .tools>.tg-floor{min-width:0}
+:host([data-layout="stack"]) .tg-add{grid-column:1/-1}
 :host([data-layout~="phone"]) .tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
 :host([data-layout~="phone"]) .tg-add{grid-column:1/-1;display:flex;gap:4px}
 :host([data-layout~="phone"]) .tg-add>button{flex:1 1 auto;padding:6px 4px;font-size:14px;min-width:0}
@@ -495,10 +500,10 @@ text{fill:var(--ed-fg);pointer-events:none}
 .seg{display:inline-flex;border:1px solid var(--ed-line);border-radius:14px;overflow:hidden}
 .seg>button{border:0;border-radius:0;margin:0}
 .seg>button+button{border-left:1px solid var(--ed-line)}
-/* the two modes say what they are for, also without a tooltip; two lines where the toolbar is narrow. No wrapping flex
-   row: Firefox and WebKit size such a button by its widest part, which broke the label into two lines (or clipped it) */
+/* the two modes say what they are for, also without a tooltip; one line, or two stacked lines where the toolbar is narrow */
 .seg>button{display:inline-flex;align-items:baseline;flex-wrap:nowrap;justify-content:center;text-align:center}
 .seg .ms{font-weight:400;white-space:nowrap}
+.seg .md{display:inline-block;white-space:pre}  /* an inline box reports no client width in Firefox */
 @container (max-width:600px){.seg>button{flex-direction:column;align-items:center;line-height:1.15;padding:4px 8px}.seg .md{display:none}.seg .ms{font-size:13px;white-space:normal}}
 :host([data-layout~="phone"]) .seg>button,:host([data-layout~="short"]) .seg>button{flex-direction:column;align-items:center;line-height:1.15;padding:4px 8px}
 :host([data-layout~="phone"]) .seg .md,:host([data-layout~="short"]) .seg .md{display:none}
@@ -1225,8 +1230,10 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
               + `<circle class="mid free" data-k="mid" data-id="${esc(room.id)}" data-i="${i}" data-t="${G.round3((lo + hi) / 2)}" cx="${G.round3(c[0])}" cy="${G.round3(-c[1])}" r="${G.round3(midR)}"><title>${esc(this._t("add_corner"))}</title></circle>`;
           }
           else {
-            const m = at(0.5), half = G.edgeLength(room.polygon, i) / 2, reach = Math.max(hitR(i), hitR((i + 1) % n)) + midR;
-            if (half < reach) {
+            // the point stays on the wall while each corner keeps at least half its target (more than the drawn dot) –
+            // not only while the two never touch, which flipped the point out of a wall with a few per cent less zoom
+            const m = at(0.5), half = G.edgeLength(room.polygon, i) / 2, corner = Math.max(hitR(i), hitR((i + 1) % n)), reach = corner + midR;
+            if (half < corner / 2 + midR) {
               const o = G.outwardNormal(room.polygon, i), off = Math.sqrt(reach * reach - half * half) + 2 * u, c = [m[0] + o[0] * off, m[1] + o[1] * off];
               mids += `<line class="midlead" x1="${G.round3(m[0])}" y1="${G.round3(-m[1])}" x2="${G.round3(c[0])}" y2="${G.round3(-c[1])}" stroke-width="${G.round3(1.5 * u)}"/>`
                 + `<circle class="mid out" data-k="mid" data-id="${esc(room.id)}" data-i="${i}" cx="${G.round3(c[0])}" cy="${G.round3(-c[1])}" r="${G.round3(midR)}"><title>${esc(this._t("add_corner"))}</title></circle>`;
