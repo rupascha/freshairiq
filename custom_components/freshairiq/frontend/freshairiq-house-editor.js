@@ -476,6 +476,11 @@ text{fill:var(--ed-fg);pointer-events:none}
 :host([data-layout~="side"]) .ptoggle{display:none}
 :host([data-layout~="short"]) .tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
 :host([data-layout~="short"]) .tools>*{flex:none}
+:host([data-layout~="short"]) .tools{column-gap:8px}
+/* the floor choice gives way on a short screen, never the buttons after it (engines differ in text and select widths) */
+:host([data-layout~="short"]) .tools>.tg-floor{flex:0 1 auto;min-width:0}
+:host([data-layout~="short"]) .tg-floor .fl{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+:host([data-layout~="short"]) .tg-floor select{flex:1 1 auto;min-width:4.5em}
 :host([data-layout~="short"]) .tools button{padding-left:8px;padding-right:8px}
 :host([data-layout~="short"]) .more-btn .lbl{display:none}
 :host([data-layout~="phone"]) .tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
@@ -490,9 +495,11 @@ text{fill:var(--ed-fg);pointer-events:none}
 .seg{display:inline-flex;border:1px solid var(--ed-line);border-radius:14px;overflow:hidden}
 .seg>button{border:0;border-radius:0;margin:0}
 .seg>button+button{border-left:1px solid var(--ed-line)}
-/* the two modes say what they are for, also without a tooltip; two lines where the toolbar is narrow */
-.seg>button{display:inline-flex;align-items:baseline;flex-wrap:wrap;justify-content:center;text-align:center}
+/* the two modes say what they are for, also without a tooltip; two lines where the toolbar is narrow. No wrapping flex
+   row: Firefox and WebKit size such a button by its widest part, which broke the label into two lines (or clipped it) */
+.seg>button{display:inline-flex;align-items:baseline;flex-wrap:nowrap;justify-content:center;text-align:center}
 .seg .ms{font-weight:400;white-space:nowrap}
+@container (max-width:600px){.seg>button{flex-direction:column;align-items:center;line-height:1.15;padding:4px 8px}.seg .md{display:none}.seg .ms{font-size:13px;white-space:normal}}
 :host([data-layout~="phone"]) .seg>button,:host([data-layout~="short"]) .seg>button{flex-direction:column;align-items:center;line-height:1.15;padding:4px 8px}
 :host([data-layout~="phone"]) .seg .md,:host([data-layout~="short"]) .seg .md{display:none}
 :host([data-layout~="phone"]) .seg .ms,:host([data-layout~="short"]) .seg .ms{font-size:13px;white-space:normal}
@@ -504,7 +511,9 @@ text{fill:var(--ed-fg);pointer-events:none}
 /* floating over the drawing: hint and messages (top), undo/redo (bottom left), zoom (bottom right), the "more" menu */
 .ov{position:absolute;z-index:2}
 .ov-top{top:8px;left:8px;right:8px;display:grid;gap:6px;justify-items:start;pointer-events:none;max-height:calc(100% - 76px);overflow:auto}
-.ov-top>*{pointer-events:auto;max-width:100%;box-sizing:border-box}
+.ov-top>*{max-width:100%;box-sizing:border-box}
+/* a hint or message that grows by a line never takes a tap meant for the plan below it – only its own controls do */
+.ov-top button,.ov-top a,.ov-top input,.ov-top select,.ov-top label,.ov-top summary{pointer-events:auto}
 .hint{background:var(--ed-bg);color:var(--ed-fg);border:1px solid var(--ed-line);border-left:4px solid var(--ed-accent);border-radius:10px;padding:6px 10px;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .hint button{margin-left:6px}
 .ov-top .msg{background:var(--ed-bg);box-shadow:0 1px 4px rgba(0,0,0,.18)}
@@ -1881,7 +1890,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
       <div class="row"><button data-a="menu">${t("close")}</button></div></div>`;
     this.shadowRoot.innerHTML = `<style>${STYLE}</style>
       <div class="tools" role="toolbar" aria-label="${esc(t("grp_edit"))}">
-        <div class="tg tg-floor"><label>${t("floor")} <select data-f="view_floor">${this._layout.floors.map(f => `<option value="${esc(f.id)}"${f.id === this._floor ? " selected" : ""}>${esc(this._floorName(f))}</option>`).join("")}</select></label></div>
+        <div class="tg tg-floor"><label><span class="fl">${t("floor")}</span> <select data-f="view_floor">${this._layout.floors.map(f => `<option value="${esc(f.id)}"${f.id === this._floor ? " selected" : ""}>${esc(this._floorName(f))}</option>`).join("")}</select></label></div>
         <div class="tg tg-mode seg" role="group" aria-label="${esc(t("mode_label"))}">${mode("quick")}${mode("precise")}</div>
         <div class="tg tg-add" role="group" aria-label="${esc(t("openings_bar"))}"><button data-a="add_open" aria-pressed="${!!this._adding}" title="${esc(t("tb_room_title"))}">${t("tb_room")}</button><button data-a="opick" aria-pressed="${this._openPick || placing}" aria-expanded="${!!this._openPick}">${t("tb_opening")}</button><button data-a="check" aria-expanded="${!!this._checkOpen}" aria-label="${esc(`${t("check_title")}${count ? ` (${count})` : ""}`)}">${t("check_btn")}${count ? ` · ${count}` : ""}</button><button class="more-btn" data-a="menu" aria-expanded="${!!this._menu}" aria-label="${esc(t("more_title"))}">⋯<span class="lbl"> ${t("more")}</span></button></div>
       </div>
@@ -1911,6 +1920,7 @@ class FreshAirIQHouseLayoutEditor extends HTMLElement {
     svg.addEventListener("pointermove", ev => this._move(ev));
     svg.addEventListener("pointerup", ev => this._up(ev));
     svg.addEventListener("pointercancel", ev => this._pointerCancel(ev));
+    svg.addEventListener("contextmenu", ev => ev.preventDefault());
     svg.addEventListener("wheel", ev => { ev.preventDefault(); this._zoom(ev.deltaY > 0 ? 1.1 : 1 / 1.1); }, { passive: false });
     root.querySelectorAll("[data-mode]").forEach(el => el.addEventListener("click", () => { this._mode = el.dataset.mode; this._shapeEdit = false; this._modeHint = !this._sel; this._render(); }));
     // v0.26.6.1 editor hotfix: a section the user opened or closed stays so across re-renders

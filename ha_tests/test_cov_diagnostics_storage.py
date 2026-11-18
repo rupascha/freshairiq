@@ -164,6 +164,40 @@ async def test_runtime_environment_falls_back_for_unusable_system_info(hass, cfg
     assert set(env) == {"home_assistant_version", "python_version", "os_name", "os_version", "architecture", "python_implementation"}
 
 
+async def test_runtime_environment_falls_back_when_system_info_raises(hass, cfg, monkeypatch) -> None:
+    import homeassistant.helpers.system_info as system_info
+
+    async def broken(_hass):
+        raise RuntimeError("system info unavailable")
+
+    monkeypatch.setattr(system_info, "async_get_system_info", broken)
+    env = await _recorder(hass)._async_runtime_environment()
+    assert env == diag._runtime_environment_snapshot()
+
+
+async def test_contact_profile_without_entity_registry(hass, cfg, monkeypatch) -> None:
+    from homeassistant.helpers import entity_registry
+
+    def broken(_hass):
+        raise RuntimeError("registry not loaded")
+
+    monkeypatch.setattr(entity_registry, "async_get", broken)
+    recorder = _recorder(hass)
+    assert recorder._contact_profile("binary_sensor.window", {"binary_sensor.window"}) == {
+        "entity_domain": "binary_sensor", "platform": None, "three_state": True}
+    assert recorder._contact_profile("input_select.door", set()) == {"entity_domain": "input_select", "platform": None, "three_state": False}
+
+
+def test_runtime_environment_snapshot_without_home_assistant_version(monkeypatch) -> None:
+    import homeassistant.const as ha_const
+
+    monkeypatch.delattr(ha_const, "__version__")
+    snapshot = diag._runtime_environment_snapshot()
+    assert snapshot["home_assistant_version"] is None
+    assert set(snapshot) == {"home_assistant_version", "python_version", "os_name", "os_version", "architecture", "python_implementation"}
+    assert snapshot["python_version"]
+
+
 # =========================================================================== configuration snapshot / records
 
 
