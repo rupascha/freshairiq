@@ -20,7 +20,7 @@ from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.forecast import _boundary_at, horizon_forecast
 from custom_components.freshairiq.iq2_runtime import update_goal_history
 from custom_components.freshairiq.live_coach import _reassess_reason, refine_live_recommendation, room_time_fields
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 from custom_components.freshairiq.model import RoomInput, evaluate_room
 from custom_components.freshairiq.notification_policy import effective_room_action
 from custom_components.freshairiq.room_close_strategy import close_strategy, room_close_options
@@ -353,7 +353,7 @@ def test_p3_critical_co2_is_named_and_more_humid_air_is_not_called_drier():
                       "die Außenluft ist 2.3 g/m³ feuchter als die Raumluft und entfeuchtet gerade nicht; "
                       "Raum -0.4 °C seit Start – FreshAirIQ bewertet jeden Zyklus neu")
     assert "trockener" not in reason and rec["kind"] == "continue"
-    english = to_english(reason)
+    english = Translator().text(reason)
     assert "CO₂ (1600 ppm, critical from 1400 ppm)" in english and "more humid" in english
     assert not any(word in english for word in ("Geplante", "Außenluft", "weitergelüftet", "bewertet"))
 
@@ -382,7 +382,7 @@ def test_p3_every_reason_that_keeps_a_window_open_is_named_truthfully():
     assert _reason([]) == ("Geplante Zeit erreicht; die Außenluft ist 0.0 g/m³ feuchter als die Raumluft und entfeuchtet gerade nicht"
                            " – FreshAirIQ bewertet jeden Zyklus neu")
     for text in (_reason([drier], 41.6), _reason([open_goal], 10.0), _reason([cooling]), _reason([source], -3.0)):
-        english = to_english(text)
+        english = Translator().text(text)
         assert not any(word in english for word in ("Geplante", "Außenluft", "weitergelüftet", "Feuchtequelle", "seit Start", "bewertet")), english
 
 

@@ -33,12 +33,7 @@ def test_basics_icon_uses_broadly_supported_mdi_icon():
     assert '["group_basics","mdi:home-cog","Grundlagen"' not in JS
 
 
-def test_resident_profile_is_prominently_exposed():
-    assert 'resident-profile-spotlight' in JS
-    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
-    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
-    assert 'resident-feature-badge' in JS
-    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
+# test_resident_profile_is_prominently_exposed: retired — it pinned only the stylesheet of the dashboard resident profile removed in 0.26.4.3; resident profiles: tests/test_resident_room_profiles_020404.py
 
 
 def test_release_version_021002_everywhere():

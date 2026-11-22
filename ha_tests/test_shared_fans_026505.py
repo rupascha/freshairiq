@@ -230,3 +230,47 @@ async def test_f01_a_lock_in_another_room_protects_the_shared_device(hass, freez
     await _cycle(hass, freezer, coordinator, controller, a=True, b=False)
     assert all(SHARED not in entities for service, entities in log[1:])  # still locked: never switched on either
     await controller.async_stop()
+
+
+async def test_026702_the_laundry_room_starts_the_fans_without_the_old_office_warning(hass, freezer) -> None:
+    """Support diagnosis 19./20.11.: the office's switch-off at its maximum runtime failed, both fans were off later
+    and the laundry room started them the next morning – the office no longer shows the old warning but the room
+    that started the shared fans; the failure stays in the trace."""
+    freezer.move_to(START)
+    for fan in (SHARED, SECOND):
+        hass.states.async_set(fan, "off")
+    log = _services(hass)
+    rooms = [{**_room("buro", [SHARED, SECOND], mode="recommendation"), "name": "Büro", "exhaust_fan_max_runtime_min": 60},
+             {**_room("waschkuche", [SHARED, SECOND], mode="recommendation"), "name": "Waschküche"}]
+    _entry, coordinator, controller = await _controller(hass, rooms)
+
+    async def cycle(minutes: float, **aligned: str) -> None:
+        freezer.tick(timedelta(minutes=minutes))
+        coordinator.data = {"rooms": {key: {"house_aligned_action": action} for key, action in aligned.items()}}
+        await controller._async_evaluate(fans=True)
+        await hass.async_block_till_done()
+
+    def office() -> dict:
+        on = any(hass.states.get(fan).state == "on" for fan in (SHARED, SECOND))
+        room = {"house_aligned_action": "wait",
+                "configured_actuators": {"exhaust_fan_control": "recommendation", "exhaust_fan": [SHARED, SECOND], "mechanical_exhaust_active": on}}
+        return room_fan_automation(room, controller.fan_snapshot("buro"))
+
+    await cycle(0, buro="ventilate", waschkuche="wait")
+    assert log == [("turn_on", [SECOND, SHARED])]
+    _services(hass, report=False)                                            # the devices accept the switch-off but stay on
+    await cycle(61, buro="continue_ventilating", waschkuche="wait")          # maximum runtime
+    await cycle(1.1, buro="continue_ventilating", waschkuche="wait")         # not carried out within a minute
+    assert (office()["state"], office()["label_key"]) == ("failed", "failed_off")
+    for fan in (SHARED, SECOND):
+        hass.states.async_set(fan, "off")                                    # switched off by hand afterwards
+    await cycle(10, buro="wait", waschkuche="wait")
+    assert controller.fan_snapshot("buro")["command_state"] == "confirmed"
+    assert [(row["room_key"], row["result"]) for row in controller.fan_trace()][-2:] == [("buro", "failed"), ("buro", "confirmed")]
+    log = _services(hass)
+    await cycle(16 * 60, buro="wait", waschkuche="ventilate_indirectly")     # next morning: the laundry room starts them
+    assert log == [("turn_on", [SECOND, SHARED])]
+    state = office()
+    assert (state["state"], state["label_key"], state["user_action_needed"]) == ("shared", "shared_owner", False)
+    assert state["started_by"] == {"room_keys": ["waschkuche"], "room_names": ["Waschküche"]}
+    await controller.async_stop()

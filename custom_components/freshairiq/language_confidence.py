@@ -225,6 +225,17 @@ def _lead_variants(band: str) -> list[str]:
     }.get(band, ["FreshAirIQ bewertet die aktuelle Situation anhand der verfügbaren Messwerte."])
 
 
+ROOM_CLOSE_TEXT = {
+    "temperature_limit": "Deine Temperaturgrenze beim Lüften ist erreicht – Schließen wegen der Temperatur, nicht weil genug Feuchtigkeit entfernt wurde. Jetzt schließen.",
+    "goals_reached": "Feuchteziel erreicht – die Ziele des Raums sind erfüllt. Jetzt schließen.",
+    "goals_held": "Feuchteziel in dieser Lüftung erreicht. Jetzt schließen.",
+    "benefit_exhausted": "Weiteres Lüften entfernt kaum noch Feuchtigkeit – das Feuchteziel ist noch nicht erreicht. Jetzt schließen.",
+    "air_no_longer_helps": "Die Außenluft trocknet den Raum nicht mehr. Jetzt schließen.",
+    "summer_warming": "Die Außenluft ist nicht mehr kühler als der Raum. Jetzt schließen.",
+    "model_fallback": "Neue Messwerte fehlen; laut Modell bringt weiteres Lüften kaum noch etwas. Jetzt schließen.",
+}
+
+
 def room_notification_message(event: str, room: dict[str, Any], store_data: dict[str, Any] | None = None) -> str:
     """Presentation-only varied copy for room-scoped notifications."""
     store = store_data if isinstance(store_data, dict) else {}
@@ -232,6 +243,8 @@ def room_notification_message(event: str, room: dict[str, Any], store_data: dict
     samples = int(_f(room.get("learning_samples")))
     band, _ = _band(min(samples / 80.0, 1.0) * 100.0)
     signature = f"room-notify|{event}|{room.get('key') or name}|{band}"
+    # the push of a room close names the cause the room model decided on (never "goal reached" for another cause)
+    close_kind = room.get("close_kind") if event == "close" and room.get("close_recommended") else None
     variants = {
         "ventilate": [
             "Jetzt lüften.",
@@ -247,7 +260,7 @@ def room_notification_message(event: str, room: dict[str, Any], store_data: dict
             "Optimales Lüftungsziel erreicht. Empfehlung: jetzt schließen.",
             "Die zusätzliche Lüftungswirkung wird klein. Jetzt schließen.",
             "Für diesen Raum ist der passende Schließzeitpunkt erreicht.",
-        ],
+        ] if close_kind is None else [ROOM_CLOSE_TEXT.get(close_kind, "Für diesen Raum ist der passende Schließzeitpunkt erreicht.")],
         "sensor": [
             "Messwerte fehlen oder sind unplausibel. Sensoren prüfen.",
             "Für eine verlässliche Empfehlung fehlen gültige Messwerte. Sensoren prüfen.",

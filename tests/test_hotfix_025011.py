@@ -65,5 +65,8 @@ def test_invalid_reason_when_frozen_start_curve_cannot_be_time_aligned():
 
 def test_pure_logic_ci_gate_is_hard_100_percent():
     workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
-    assert "--cov-fail-under=100" in workflow
+    gate = (ROOT / "tools/pure_logic_coverage_gate.py").read_text(encoding="utf-8")
+    assert "python tools/quality_gate.py --profile local" in workflow
+    assert '"tools/pure_logic_coverage_gate.py"' in (ROOT / "tools/quality_gate.py").read_text(encoding="utf-8")
+    assert "if percent < 100.0 or covered != total:" in gate
     assert "--cov-fail-under=95" not in workflow

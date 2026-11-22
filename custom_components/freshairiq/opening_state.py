@@ -94,15 +94,6 @@ def specialist_opening_provenance(modes: dict[str, str], proven_three_state: set
     return mode, signature
 
 
-def room_opening_mode(hass: Any, entity_ids: list[str], remembered_three_state: set[str] | None = None) -> tuple[str, set[str]]:
-    """Return closed/open/tilted/unknown and newly proven three-state entities."""
-    modes, proven = opening_contact_profile(hass, entity_ids, remembered_three_state)
-    aggregate = aggregate_opening_mode(modes)
-    # Compatibility API historically returned one of four values. Mixed remains
-    # physically open here; richer callers should use opening_contact_profile.
-    return ("open" if aggregate == "mixed" else aggregate), proven
-
-
 def stabilise_explicit_mode(current: str, previous: str | None, state_age_seconds: float | None, *, threshold_seconds: float = 3.0) -> tuple[str, bool]:
     """Confirm every explicit three-state transition after a short stable window.
 

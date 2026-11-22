@@ -383,6 +383,9 @@ _ROOM_KEYS = (
     "forecast_net_room_change_ml", "forecast_outdoor_transport_ml", "forecast_to_target_ml", "forecast_interval_ml",
     "forecast_quality", "iq2", "time_state", "time_remaining_min",
     "close_recommended", "close_kind", "close_decision_ready", "contact_count", "action_hint",
+    # 0.26.7.2 (Issue #30): the benefit check of a running airing – its value, the room's threshold, the confirmations, the
+    # state of the check as a fixed code and the path a confirmed close came from
+    "forecast_5_min_benefit_ml", "close_benefit_threshold_ml", "close_benefit_confirmations", "close_check", "close_benefit_basis",
     # 0.26.7.0 (F09/F10, behaviour learning): how a moisture load was recognised, the dishwasher phase and the
     # counted behaviour evidence with its reminder adaptation – numbers, fixed codes and fixed reason texts only, no entity ids
     "moisture_source_active", "moisture_source_identified_source", "moisture_source_confidence",
@@ -441,4 +444,6 @@ _TREND_ROOM_KEYS = (
     "active", "open_seconds", "opening_state", "opening_state_explicit", "three_state_transition_suppressed", "three_state_transients_suppressed", "passage_door_configured", "learning_quarantined", "learning_quarantine_code", "opening_diagnostic_codes", "action",
     "potential_ml", "result_ml",
     "forecast_moisture_effect_ml", "forecast_temperature_change_c",
+    # only present while the room airs: why the benefit check does not close (yet), as a fixed code
+    "close_check", "close_benefit_basis",
 )

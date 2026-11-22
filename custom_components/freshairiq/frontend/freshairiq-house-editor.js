@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.7.1";
+const FAIQ_VERSION = "0.26.7.2";
 // FreshAirIQ house map – floor plan editor (opened from the house card by administrators).
 // Quick mode: move/scale/rotate rooms, slide openings along their wall, templates.
 // Precision mode: drag/add/delete corners, numeric coordinates, snap to grid and walls.

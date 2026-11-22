@@ -1,6 +1,5 @@
 """Regression tests for FreshAirIQ 0.25.0.7 opening-level strategy."""
 from __future__ import annotations
-from tests.release_version import CURRENT_RELEASE_VERSION
 
 from copy import deepcopy
 from pathlib import Path
@@ -103,9 +102,3 @@ def test_coordinator_disables_outdoor_future_for_active_local_reference():
     assert text.count("and not active_contact_reference") >= 3
     assert '"opening_assessments": opening_assessments' in text
     assert "enrich_opening_recommendation(" in text
-
-
-def test_release_version():
-    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

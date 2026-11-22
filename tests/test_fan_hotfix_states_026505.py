@@ -14,7 +14,7 @@ import pytest
 from custom_components.freshairiq.actuator_control import FAN_COMMAND_TIMEOUT_S, decide_fan
 from custom_components.freshairiq.close_wording import fan_stop_message
 from custom_components.freshairiq.fan_automation import auto_stop, event_fields, room_fan_automation
-from custom_components.freshairiq.localize import to_english as translate_text
+from custom_components.freshairiq.localize import Translator
 
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
 
@@ -82,7 +82,7 @@ def test_f3_push_and_english_wording_match_the_phase() -> None:
     assert auto_stop(checking) and auto_stop(sent)
     assert fan_stop_message(checking) == "Lüftungsziel erreicht – FreshAirIQ prüft kurz und schaltet die Lüftung dann aus."
     assert fan_stop_message(sent) == "Lüftungsziel erreicht – FreshAirIQ beendet die Lüftung."
-    assert translate_text(fan_stop_message(checking)) == "Airing goal reached – FreshAirIQ checks briefly and then ends the airing."
-    assert translate_text(checking["fan_automation"]["label"]) == "Airing goal reached – FreshAirIQ checks briefly and then ends the airing"
+    assert Translator().text(fan_stop_message(checking)) == "Airing goal reached – FreshAirIQ checks briefly and then ends the airing."
+    assert Translator().text(checking["fan_automation"]["label"]) == "Airing goal reached – FreshAirIQ checks briefly and then ends the airing"
     # the event contract keeps its keys
     assert set(event_fields(checking)) == {"mode", "state", "owned", "command", "command_state", "user_action_needed"}

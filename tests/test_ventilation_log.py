@@ -43,8 +43,7 @@ def test_log_handles_invalid_values_naive_dates_and_non_lists():
 
 
 def test_pdf_helpers_invalid_and_multi_page():
-    from custom_components.freshairiq.ventilation_log import _fmt_dt, _fmt, _pdf_escape
-    assert _fmt_dt("bad") == "–"
+    from custom_components.freshairiq.ventilation_log import _fmt, _pdf_escape
     assert _fmt("bad") == "–"
     assert "\\(" in _pdf_escape("(x)")
     events=[]
@@ -66,3 +65,24 @@ def test_filter_skips_timezone_incompatible_event_when_report_bounds_are_naive()
         datetime(2026,10,4,23,59),
     )
     assert selected == []
+
+
+# 0.26.7.2 (owner order 21.11.): on 25.10.2026 02:50 summer time (00:50 UTC) came before 02:10 winter time (01:10 UTC);
+# sorted as text it was the other way round. Older entries without an offset are read in the report's zone, as when filtering.
+from zoneinfo import ZoneInfo  # noqa: E402
+
+BERLIN = ZoneInfo("Europe/Berlin")
+DST_DAY = [
+    {**_event("winter", "2026-10-25T02:20:00+01:00"), "started_at": "2026-10-25T02:10:00+01:00"},
+    {**_event("summer", "2026-10-25T02:59:00+02:00"), "started_at": "2026-10-25T02:50:00+02:00"},
+    {**_event("legacy", "2026-10-25T02:40:00"), "started_at": "2026-10-25T02:30:00"},   # no offset: 02:30 summer time
+    {**_event("later", "2026-10-25T09:10:00+01:00"), "started_at": "2026-10-25T09:00:00+01:00"},
+]
+
+
+def test_log_is_ordered_by_the_absolute_start_across_the_dst_change():
+    selected = filter_ventilation_log(DST_DAY, datetime(2026, 10, 25, tzinfo=BERLIN), datetime(2026, 10, 25, 23, 59, tzinfo=BERLIN))
+    assert [r["event_id"] for r in selected] == ["legacy", "summer", "winter", "later"]
+    assert selected[1]["started_at"] == "2026-10-25T02:50:00+02:00"                   # stored entries unchanged
+    pdf = build_ventilation_pdf(selected, datetime(2026, 10, 25, tzinfo=BERLIN), datetime(2026, 10, 25, 23, 59, tzinfo=BERLIN)).decode("latin1")
+    assert pdf.index("(02:30-02:40)") < pdf.index("(02:50-02:59)") < pdf.index("(02:10-02:20)") < pdf.index("(09:00-09:10)")

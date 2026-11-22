@@ -1,6 +1,4 @@
-from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
-import json
 
 ROOT = Path(__file__).resolve().parents[1]
 COMP = ROOT / "custom_components" / "freshairiq"
@@ -52,11 +50,3 @@ def test_chart_and_learning_html_are_reference_cached_without_changing_math():
     assert "if (cache) cache.set(rows, html);" in block
     assert "if (cached && cached.model === model && cached.backtest === backtest && cached.effectiveness === effectiveness) return cached.html;" in block
     assert "this._learningCardCache = { model, backtest, effectiveness, html };" in block
-
-
-def test_performance_hotfix_does_not_change_backend_version_contracts():
-    manifest = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == CURRENT_RELEASE_VERSION
-    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP / "const.py").read_text(encoding="utf-8")
-    for name in ("freshairiq-card.js", "freshairiq-panel.js", "freshairiq-loader.js"):
-        assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (COMP / "frontend" / name).read_text(encoding="utf-8")

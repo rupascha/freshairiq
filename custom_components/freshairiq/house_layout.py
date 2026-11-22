@@ -191,23 +191,6 @@ def shared_length(a1, a2, b1, b2, tol: float = WALL_TOLERANCE) -> float:
     return max(hi - lo, 0.0)
 
 
-def neighbour_at(layout: dict[str, Any], room_id: str, point: tuple[float, float]) -> str | None:
-    """The other room on the same floor whose wall contains ``point`` (None = exterior wall)."""
-    rooms = {r["id"]: r for r in layout.get("rooms", [])}
-    own = rooms.get(room_id)
-    if own is None:
-        return None
-    for other in layout.get("rooms", []):
-        if other["id"] == room_id or other.get("floor_id") != own.get("floor_id"):
-            continue
-        pts = [tuple(p) for p in other["polygon"]]
-        for i in range(len(pts)):
-            a, b = edge(pts, i)
-            if _on_segment(a, b, point, WALL_TOLERANCE):
-                return str(other["id"])
-    return None
-
-
 def opening_samples(points: list[tuple[float, float]], opening: dict[str, Any], count: int = 5) -> list[tuple[float, float]]:
     """Points along the whole span of an opening on its wall (width as drawn: stored, else min(0.9, 40 %))."""
     a, b = edge(points, int(opening["edge"]))
@@ -439,12 +422,6 @@ def migrate(raw: Any) -> tuple[dict[str, Any] | None, str | None]:
     if version != SCHEMA_VERSION:
         return None, "E_SCHEMA_VERSION"
     return normalise(raw), None
-
-
-def ccw(points: list[list[float]]) -> list[list[float]]:
-    """The same polygon in counter-clockwise order."""
-    pts = [tuple(p) for p in points]
-    return [list(p) for p in (pts if signed_area(pts) >= 0 else list(reversed(pts)))]
 
 
 def _issue(code: str, kind: str, ident: str, index: int | None = None) -> dict[str, Any]:

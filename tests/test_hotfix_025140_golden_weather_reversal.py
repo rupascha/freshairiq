@@ -41,9 +41,8 @@ def test_v025140_preserves_v025138_physics_golden_master(case):
     assert abs(current["moisture_effect_next_5_min_ml"] - case["output"]["moisture_effect_next_5_min_ml"] * factor) <= 1.0
 
 
-@pytest.mark.parametrize("path", ("own_opening", "assigned_opening", "contactless"))
-def test_dynamic_weather_reversal_dry_to_wet_closes_and_reports_moisture_gain(path):
-    # Opening ownership is routing metadata; all three paths feed the same climate frame.
+def test_dynamic_weather_reversal_dry_to_wet_closes_and_reports_moisture_gain():
+    # Opening ownership is routing metadata and no model input: one climate frame covers every path.
     start_ah = absolute_humidity(22.0, 68.0)
     dry = evaluate_room(_room(22.0, 68.0, 50.0, 8.0, 55.0,
                               contact_open=True, contact_open_seconds=300,
@@ -63,8 +62,7 @@ def test_dynamic_weather_reversal_dry_to_wet_closes_and_reports_moisture_gain(pa
     assert wet.action == "Close"
 
 
-@pytest.mark.parametrize("path", ("own_opening", "assigned_opening", "contactless"))
-def test_dynamic_weather_reversal_wet_to_dry_restores_drying_physics(path):
+def test_dynamic_weather_reversal_wet_to_dry_restores_drying_physics():
     wet = evaluate_room(_room(22.0, 68.0, 50.0, 26.0, 92.0), DEFAULT_OPTIONS, False)
     dry = evaluate_room(_room(22.0, 68.0, 50.0, 8.0, 55.0), DEFAULT_OPTIONS, False)
     assert wet.delta_g_m3 < 0 and wet.moisture_effect_next_5_min_ml < 0

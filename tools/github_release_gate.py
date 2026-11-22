@@ -90,16 +90,26 @@ def _check_common(paths: set[str], read_text, errors: list[str]) -> str | None:
             fail(errors, "hacs.json name must be FreshAirIQ")
         if not hacs.get("homeassistant"):
             fail(errors, "hacs.json must declare the minimum Home Assistant version")
-        # Backward compatibility (A-236): with ``zip_release`` HACS and the Marketplace look for the asset in
-        # every release a user picks, also older ones without it – going back to an older version would fail.
-        # Installs keep using the source archive; the installation ZIP is attached for manual installs.
-        if hacs.get("zip_release") is not None or hacs.get("filename") is not None:
-            fail(errors, "hacs.json must not set zip_release/filename: older releases carry no installation ZIP (A-236)")
+        # A-243: HACS and the Marketplace read hacs.json at the tag they install, so this release installs
+        # from its asset while older tags (no zip_release there) keep installing from their source archive.
+        # The asset must therefore exist before a release becomes public.
+        if hacs.get("zip_release") is not True or hacs.get("filename") != INSTALL_ASSET:
+            fail(errors, f"hacs.json must set zip_release: true and filename: {INSTALL_ASSET} (installs and counts the release asset, A-243)")
         release = ".github/workflows/release.yml"
-        if release in paths:
+        if release not in paths:
+            fail(errors, f"missing {release}: nothing would attach {INSTALL_ASSET} before publishing")
+        else:
             text = read_text(release)
             if "tools/build_install_zip.py" not in text or INSTALL_ASSET not in text:
                 fail(errors, f"release workflow must build and attach {INSTALL_ASSET}")
+            steps = ("build_install_zip.py --check", "--draft", f"grep -qx {INSTALL_ASSET}", "--draft=false")
+            at = 0
+            for step in steps:
+                found = text.find(step, at)
+                if found < 0:
+                    fail(errors, f"release workflow must check {INSTALL_ASSET} on the draft before publishing (missing or out of order: {step})")
+                    break
+                at = found + len(step)
     except Exception as exc:
         fail(errors, f"invalid hacs.json: {exc}")
 

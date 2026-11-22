@@ -912,3 +912,984 @@ test('U04 (0.26.7.1): every menu entry and a nested page go back exactly one lev
   await impl(page).evaluate(el => el.shadowRoot.querySelector('svg.plan [data-room="r_wohnen"]').dispatchEvent(new MouseEvent('click', { bubbles: true })));
   expect(await state()).toMatchObject({ open: 1, kind: 'room', back: false });
 });
+
+// ---- 0.26.7.2: weather animation without visible repetition, wind along the real facade, bounded load ----
+const modUrl = name => `performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/${name}'))`;
+const loadMods = page => page.evaluate(async src => { const [V, G, M, A, F] = await Promise.all(src.map(s => import(eval(s)))); window.__V = V; window.__G = G; window.__M = M; window.__A = A; window.__F = F; },
+  [modUrl('freshairiq-house-view.js'), modUrl('freshairiq-house-geometry.js'), modUrl('freshairiq-house-motion.js'), modUrl('freshairiq-house-atmos.js'), modUrl('freshairiq-house-flow.js')]);
+
+test('0.26.7.2 wind along the facade: rectangular and L-shaped houses, frontal and oblique wind – around the corners, no kink, never into a wall, also while swinging', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const r = await page.evaluate(() => {
+    const V = window.__V, G = window.__G, M = window.__M;
+    const HOUSES = {
+      rect: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 6], [0, 6]] }],
+      L: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 4], [0, 4]] }, { id: 'b', polygon: [[0, 4], [4, 4], [4, 10], [0, 10]] }],
+      card: [{ id: 'b', polygon: [[0, 4], [4, 4], [4, 8], [0, 8]] }, { id: 'f', polygon: [[0, 0], [8, 0], [8, 4], [0, 4]] }, { id: 'w', polygon: [[4, 4], [10, 4], [10, 7], [7, 7], [7, 10], [4, 10]] }],
+    };
+    const inside = (rooms, p) => rooms.some(x => G.pointInPolygon(p, x.polygon) === 'inside');
+    const dist = (rooms, p) => Math.min(...rooms.flatMap(x => x.polygon.map((q, i) => { const s = G.projectOnSegment(p, q, x.polygon[(i + 1) % x.polygon.length]); return Math.hypot(p[0] - s.point[0], p[1] - s.point[1]); })));
+    const out = [];
+    for (const [name, rooms] of Object.entries(HOUSES)) for (const from of [0, 45, 90, 135, 200, 270, 315]) {
+      const box = G.bbox(rooms.map(x => x.polygon)), m = 5, frame = { minX: box.minX - m, minY: box.minY - m, maxX: box.maxX + m, maxY: box.maxY + m };
+      const t = G.bearingVector((from + 180) % 360, 0);
+      const streams = V.facadeStreams({ rooms, fromDeg: from, northDeg: 0, G, frame, variety: M.streamVariety(8, 11 + from) });
+      let minClear = Infinity, maxBend = 0, wrapped = 0, downwind = 0;
+      for (const s of streams) {
+        // the line itself, densely: outside every room
+        for (let i = 0; i < s.points.length - 1; i++) for (let k = 0; k < 4; k++) {
+          const a = s.points[i], b = s.points[i + 1], p = [a[0] + (b[0] - a[0]) * k / 4, a[1] + (b[1] - a[1]) * k / 4];
+          minClear = Math.min(minClear, inside(rooms, p) ? -1 : dist(rooms, p));
+        }
+        // the bend: the radius of every three points stays a soft curve (no kink)
+        for (let i = 1; i < s.points.length - 1; i++) {
+          const a = s.points[i - 1], b = s.points[i], c = s.points[i + 1], u = [b[0] - a[0], b[1] - a[1]], v = [c[0] - b[0], c[1] - b[1]];
+          const lu = Math.hypot(...u), lv = Math.hypot(...v); if (lu < 1e-6 || lv < 1e-6) continue;
+          maxBend = Math.max(maxBend, Math.abs(Math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1])) * 180 / Math.PI);
+        }
+        // around a corner: while the stream stays close to the house, the wall it follows turns by 80° and more
+        const wall = p => { let best = null; for (const x of rooms) x.polygon.forEach((q, i) => { const s2 = G.projectOnSegment(p, q, x.polygon[(i + 1) % x.polygon.length]);
+          const d = Math.hypot(p[0] - s2.point[0], p[1] - s2.point[1]); if (!best || d < best.d) best = { d, a: Math.atan2(p[1] - s2.point[1], p[0] - s2.point[0]) }; }); return best; };
+        const near = s.points.map(wall).filter(w => w.d < 2.5);
+        if (near.some(w => Math.abs(Math.atan2(Math.sin(w.a - near[0].a), Math.cos(w.a - near[0].a))) >= 80 * Math.PI / 180)) wrapped += 1;
+        const e = s.points[s.points.length - 1], st = s.points[0];
+        if ((e[0] - st[0]) * t[0] + (e[1] - st[1]) * t[1] > 0) downwind += 1;
+        // the swinging ribbon (also with the 30 % breathing of the loop): never beyond the free distance at any sample
+        const f = V.waveFrame(s.points, 0.2, s.clear);
+        for (const phase of [0, 0.25, 0.5, 0.75]) {
+          const d = V.wavePath(f, { amp: 2.5 * 1.3, wavelength: 4, shift: 0.7, form: 0.8, pad: 0.15 }, phase);
+          for (const xy of d.split(/[ML ]+/).filter(Boolean)) { const [x, y] = xy.split(',').map(Number); const p = [x, -y]; minClear = Math.min(minClear, inside(rooms, p) ? -1 : dist(rooms, p) + 1e-6); }
+        }
+      }
+      out.push({ name, from, n: streams.length, deflect: streams.filter(s => s.kind === 'deflect').length, minClear, maxBend, wrapped, downwind });
+    }
+    return out;
+  });
+  for (const c of r) {
+    const tag = `${c.name} from ${c.from}°`;
+    expect(c.n, tag).toBe(8);
+    expect(c.deflect, tag).toBeGreaterThan(3);                 // most gusts meet the house …
+    expect(c.minClear, tag).toBeGreaterThan(0.1);              // … and never touch or cross a wall, also while swinging
+    expect(c.maxBend, tag).toBeLessThan(25);                    // soft curves only
+    expect(c.wrapped, tag).toBeGreaterThanOrEqual(3);           // they wind around the corners
+    expect(c.downwind, tag).toBe(c.n);                          // and leave with the wind
+  }
+  // every gust its own way: distance, hug and release differ, lanes and lengths of a house stay as before
+  const v = await page.evaluate(() => window.__M.streamVariety(6, 4));
+  expect(new Set(v.map(x => Math.round(x.gap * 1000))).size).toBe(6);
+  expect(new Set(v.map(x => Math.round(x.form * 1000))).size).toBe(6);
+});
+
+// the same houses and wind directions as above: the drawn ribbons (every strand of every level, several phases, the loop's breathing
+// and a strong gust) keep their stroke outside the walls, also at inner and outer corners; the lines between the drawn points count,
+// not only the points
+async function drawnRibbons(page, HOUSES, angles) {
+  await mount(page);
+  await loadMods(page);
+  return page.evaluate(({ HOUSES, angles }) => {
+    const V = window.__V, G = window.__G, M = window.__M, F = window.__F;
+    const segDist = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy, u = l2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2)) : 0; return Math.hypot(p[0] - a[0] - dx * u, p[1] - a[1] - dy * u); };
+    const o = (u, v, w) => Math.sign((v[0] - u[0]) * (w[1] - u[1]) - (v[1] - u[1]) * (w[0] - u[0]));
+    // the line between two drawn points: its distance to a wall, 0 when it crosses it
+    const segSeg = (p, q, a, b) => (o(p, q, a) * o(p, q, b) < 0 && o(a, b, p) * o(a, b, q) < 0 ? 0 : Math.min(segDist(p, a, b), segDist(q, a, b), segDist(a, p, q), segDist(b, p, q)));
+    // strictly inside a room (ray casting; a point on a wall is caught by the distance check above)
+    const inPoly = (p, poly) => { let odd = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > p[1]) !== (yj > p[1]) && p[0] < xi + (p[1] - yi) / (yj - yi) * (xj - xi)) odd = !odd; } return odd; };
+    let worst = Infinity, checked = 0, eddies = 0, eddyWorst = Infinity;
+    for (const level of ['minimal', 'normal', 'intense']) for (const u of [0.02, 0.035]) for (const [name, rooms] of Object.entries(HOUSES)) for (const from of angles) {
+      const px = n => n * u, motion = M.PROFILES[level];
+      const box = G.bbox(rooms.map(x => x.polygon)), m = 5, frame = { minX: box.minX - m, minY: box.minY - m, maxX: box.maxX + m, maxY: box.maxY + m };
+      const variety = M.streamVariety(motion.streams, 11 + from).map(v => ({ ...v, amp: v.amp * Math.pow(1.45, 0.8) * (motion.amp || 1) }));
+      const lanes = V.outerLanes({ rooms, fromDeg: from, northDeg: 0, G, frame, variety, minClear: V.ribbonClear(px, motion), gusts: V.gustVariety(M.streamVariety(motion.gusts, 7 + from), 7 + from),
+        gustClear: px(7), join: px(24), need: px(4.5) }), streams = lanes.streams;
+      const field = F.buildField({ rooms, G, wind: { available: true, from_deg: from, speed_ms: 18, gust_ms: 28 }, northDeg: 0 }), speed = F.relativeSpeed(field);
+      const waves = [];
+      V.ribbonsSvg(streams, { variety, motion, px, round3: x => x, waves, phase: () => 0, frameOf: s => V.waveFrame(V.streamLine(s), px(9), s.clear, motion.pathPoints, V.streamLine(s).map(speed), s.damp, s.near) });
+      const walls = rooms.flatMap(x => x.polygon.map((q, i) => [q, x.polygon[(i + 1) % x.polygon.length]]));
+      for (const w of waves) {
+        const half = w.geo.pad - px(2);
+        for (const breath of [1, 1.3 + 0.4 * field.gust.amp]) for (const ph of [0, 0.2, 0.4, 0.6, 0.8]) {
+          const P = V.wavePath(w.frame, { ...w.geo, amp: w.geo.amp * breath }, ph).split(/[ML ]+/).filter(Boolean).map(xy => { const [x, y] = xy.split(',').map(Number); return [x, -y]; });
+          // (a wall further away than the stroke's half width and 40 px cannot set the least gap)
+          const reach = half + px(40);
+          for (let i = 0; i < P.length - 1; i++) {
+            const x0 = Math.min(P[i][0], P[i + 1][0]) - reach, x1 = Math.max(P[i][0], P[i + 1][0]) + reach, y0 = Math.min(P[i][1], P[i + 1][1]) - reach, y1 = Math.max(P[i][1], P[i + 1][1]) + reach;
+            for (const [a, b] of walls) if (Math.max(a[0], b[0]) >= x0 && Math.min(a[0], b[0]) <= x1 && Math.max(a[1], b[1]) >= y0 && Math.min(a[1], b[1]) <= y1) worst = Math.min(worst, (segSeg(P[i], P[i + 1], a, b) - half) / u);
+          }
+          for (const p of P) if (rooms.some(x => inPoly(p, x.polygon))) worst = -1;
+          checked += 1;
+        }
+      }
+      // the storm gusts (their broad stroke) and the lee's curls (their stroke, all the way they drift) stay outside the house as well
+      for (const g of lanes.gusts) for (let i = 0; i < g.points.length - 1; i++) for (const [a, b] of walls) worst = Math.min(worst, (segSeg(g.points[i], g.points[i + 1], a, b) - px(5.5)) / u);
+      const E = new F.LeeCurls().plan({ curls: lanes.curls, count: motion.eddies });
+      for (const e of E.items) { eddies += 1; for (let x = 0; x <= 1.0001; x += 0.1) {
+        const dr = e.drift * Math.pow(x, 1.3), P = e.points.map(q => [q[0] + e.dir[0] * dr, q[1] + e.dir[1] * dr]);
+        for (let i = 0; i < P.length - 1; i++) for (const [a, b] of walls) eddyWorst = Math.min(eddyWorst, (segSeg(P[i], P[i + 1], a, b) - px(1.3)) / u);
+        if (P.some(p => rooms.some(q => inPoly(p, q.polygon)))) eddyWorst = -1; } }
+    }
+    return { worst, checked, eddies, eddyWorst };
+  }, { HOUSES, angles });
+}
+
+test('0.26.7.2 drawn wind ribbons: every strand, every level and phase, with breathing and gust – the stroke never reaches a wall', async ({ page }) => {
+  const r = await drawnRibbons(page, {
+    rect: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 6], [0, 6]] }],
+    L: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 4], [0, 4]] }, { id: 'b', polygon: [[0, 4], [4, 4], [4, 10], [0, 10]] }],
+    card: [{ id: 'b', polygon: [[0, 4], [4, 4], [4, 8], [0, 8]] }, { id: 'f', polygon: [[0, 0], [8, 0], [8, 4], [0, 4]] }, { id: 'w', polygon: [[4, 4], [10, 4], [10, 7], [7, 7], [7, 10], [4, 10]] }],
+  }, [0, 45, 135, 200, 270]);
+  expect(r.checked).toBeGreaterThan(2000);
+  expect(r.worst).toBeGreaterThan(0.5);          // screen pixels between the edge of the stroke and the wall
+  expect(r.eddies).toBeGreaterThan(20);
+  expect(r.eddyWorst).toBeGreaterThan(0.5);
+});
+
+// U-shaped houses: the notch towards the wind (north), a wide one and one opening sideways, wind from the north and nearby (350°):
+// no stream runs into the notch and on through its end, no drawn ribbon cuts the outside wall there
+test('0.26.7.2 drawn wind ribbons around a U-shaped house: wind from 0° and 350° and nearby – no stroke cuts the wall at the end of the notch', async ({ page }) => {
+  const r = await drawnRibbons(page, {
+    U: [{ id: 'u', polygon: [[0, 0], [10, 0], [10, 8], [7, 8], [7, 3], [3, 3], [3, 8], [0, 8]] }],
+    Uwide: [{ id: 'u', polygon: [[0, 0], [10, 0], [10, 8], [8, 8], [8, 3], [2, 3], [2, 8], [0, 8]] }],
+    Uwest: [{ id: 'u', polygon: [[0, 0], [0, 10], [-8, 10], [-8, 8], [-3, 8], [-3, 2], [-8, 2], [-8, 0]] }],
+  }, [0, 10, 340, 350]);
+  expect(r.checked).toBeGreaterThan(1500);
+  expect(r.worst).toBeGreaterThan(0.5);
+  expect(r.eddies).toBeGreaterThan(10);
+  expect(r.eddyWorst).toBeGreaterThan(0.5);
+});
+
+// the same houses drawn as the card draws them: the visible line of every ribbon (each at its own phase, with the loop's breathing
+// and a strong gust) never crosses another ribbon's line, and no gust crosses the line of a ribbon it does not run on (a joining
+// gust: of its pair) – the broad, nearly clear air mass lies over its neighbours anyway
+async function drawnCrossings(page, HOUSES, angles) {
+  await mount(page);
+  await loadMods(page);
+  return page.evaluate(({ HOUSES, angles }) => {
+    const V = window.__V, G = window.__G, M = window.__M, F = window.__F;
+    const o = (u, v, w) => Math.sign((v[0] - u[0]) * (w[1] - u[1]) - (v[1] - u[1]) * (w[0] - u[0]));
+    // how often drawn lines of different owners cross: [{key, skip, P}] – segments sorted into a grid, only those sharing a cell
+    // are compared, each pair once (in the cell where their boxes start to overlap); ``skip``: owners a line may cross, e.g. a
+    // gust's own ribbons
+    const crossings = (lines, cell) => {
+      const grid = new Map(), cellOf = x => Math.floor(x / cell);
+      let n = 0;
+      lines.forEach((l, i) => { for (let a = 0; a < l.P.length - 1; a++) {
+        const P = l.P[a], Q = l.P[a + 1];
+        for (let gx = cellOf(Math.min(P[0], Q[0])); gx <= cellOf(Math.max(P[0], Q[0])); gx++) for (let gy = cellOf(Math.min(P[1], Q[1])); gy <= cellOf(Math.max(P[1], Q[1])); gy++) {
+          const k = gx * 100003 + gy;
+          let list = grid.get(k);
+          if (!list) grid.set(k, (list = []));
+          list.push(i, a);
+        }
+      } });
+      for (const [k, segs] of grid) for (let u = 0; u < segs.length; u += 2) for (let v = u + 2; v < segs.length; v += 2) {
+        const A = lines[segs[u]], B = lines[segs[v]];
+        if (A.key === B.key || (A.skip && A.skip.has(B.key)) || (B.skip && B.skip.has(A.key))) continue;
+        const P = A.P[segs[u + 1]], Q = A.P[segs[u + 1] + 1], C = B.P[segs[v + 1]], D = B.P[segs[v + 1] + 1];
+        if (cellOf(Math.max(Math.min(P[0], Q[0]), Math.min(C[0], D[0]))) * 100003 + cellOf(Math.max(Math.min(P[1], Q[1]), Math.min(C[1], D[1]))) !== k) continue;
+        if (o(P, Q, C) * o(P, Q, D) < 0 && o(C, D, P) * o(C, D, Q) < 0) n++;
+      }
+      return n;
+    };
+    let crossed = 0, pairs = 0;
+    for (const level of ['minimal', 'normal', 'intense']) for (const u of [0.02, 0.035]) for (const [name, rooms] of Object.entries(HOUSES)) for (const from of angles) {
+      const px = n => n * u, motion = M.PROFILES[level];
+      const box = G.bbox(rooms.map(x => x.polygon)), m = 5, frame = { minX: box.minX - m, minY: box.minY - m, maxX: box.maxX + m, maxY: box.maxY + m };
+      const variety = M.streamVariety(motion.streams, 11 + from).map(v => ({ ...v, amp: v.amp * Math.pow(1.45, 0.8) * (motion.amp || 1) }));
+      const lanes = V.outerLanes({ rooms, fromDeg: from, northDeg: 0, G, frame, variety, minClear: V.ribbonClear(px, motion), gusts: V.gustVariety(M.streamVariety(motion.gusts, 7 + from), 7 + from),
+        gustClear: px(7), join: px(24), need: px(4.5) });
+      const field = F.buildField({ rooms, G, wind: { available: true, from_deg: from, speed_ms: 18, gust_ms: 28 }, northDeg: 0 }), speed = F.relativeSpeed(field);
+      const waves = [], owner = new Map();
+      V.ribbonsSvg(lanes.streams, { variety, motion, px, round3: x => x, waves, phase: () => 0, frameOf: s => { const f = V.waveFrame(V.streamLine(s), px(9), s.clear, motion.pathPoints, V.streamLine(s).map(speed), s.damp, s.near); owner.set(f, s); return f; } });
+      const lines = waves.filter(w => w.geo.line != null), all = lanes.gusts.map((g, i) => `g${i}`);
+      const gusts = lanes.gusts.map((g, i) => ({ key: `g${i}`, skip: new Set([...all, ...[g.variety, g.merge ? lanes.gusts[g.merge.into].variety : -1].map(v => `r${v}`)]), P: g.points }));
+      for (const set of [0, 1, 2]) for (const breath of [1, 1.3 + 0.4 * field.gust.amp]) {
+        const P = lines.map((w, k) => ({ key: `r${owner.get(w.frame).variety}`, P: V.wavePath(w.frame, { ...w.geo, amp: w.geo.amp * breath }, (set * 0.29 + k * 0.137 + (w.geo.offset || 0)) % 1)
+          .split(/[ML ]+/).filter(Boolean).map(xy => { const [x, y] = xy.split(',').map(Number); return [x, -y]; }) }));
+        pairs += P.length * (P.length - 1) / 2;
+        crossed += crossings([...P, ...gusts], px(40));
+      }
+    }
+    return { crossed, pairs };
+  }, { HOUSES, angles });
+}
+
+test('0.26.7.2 drawn ribbons and gusts together (rectangle, L, the card house): no line crosses another, at every level, phase and swing', async ({ page }) => {
+  const r = await drawnCrossings(page, {
+    rect: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 6], [0, 6]] }],
+    L: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 4], [0, 4]] }, { id: 'b', polygon: [[0, 4], [4, 4], [4, 10], [0, 10]] }],
+    card: [{ id: 'b', polygon: [[0, 4], [4, 4], [4, 8], [0, 8]] }, { id: 'f', polygon: [[0, 0], [8, 0], [8, 4], [0, 4]] }, { id: 'w', polygon: [[4, 4], [10, 4], [10, 7], [7, 7], [7, 10], [4, 10]] }],
+  }, [0, 45, 135, 200, 270]);
+  expect(r.pairs).toBeGreaterThan(5000);
+  expect(r.crossed).toBe(0);
+});
+
+test('0.26.7.2 drawn ribbons and gusts together around U-shaped houses: no line crosses another, at every level, phase and swing', async ({ page }) => {
+  const r = await drawnCrossings(page, {
+    U: [{ id: 'u', polygon: [[0, 0], [10, 0], [10, 8], [7, 8], [7, 3], [3, 3], [3, 8], [0, 8]] }],
+    Uwide: [{ id: 'u', polygon: [[0, 0], [10, 0], [10, 8], [8, 8], [8, 3], [2, 3], [2, 8], [0, 8]] }],
+    Uwest: [{ id: 'u', polygon: [[0, 0], [0, 10], [-8, 10], [-8, 8], [-3, 8], [-3, 2], [-8, 2], [-8, 0]] }],
+  }, [0, 10, 340, 350, 90, 270]);
+  expect(r.pairs).toBeGreaterThan(5000);
+  expect(r.crossed).toBe(0);
+});
+
+// 0.26.7.2 (outer wind): one ordered set of outer ways – ribbons and the gusts on them never cross, every ribbon that meets the house
+// lets go of it and runs on calmly with the wind, closing in towards the wake behind the house (never away from it, never back
+// against the wind); two gusts of one side join behind the house
+test('0.26.7.2 outer ways: ribbons and gusts without crossing, every ribbon on to its calm run-out into the wake, two gusts joining behind the house', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const r = await page.evaluate(() => {
+    const V = window.__V, G = window.__G, M = window.__M;
+    const HOUSES = {
+      rect: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 6], [0, 6]] }],
+      L: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 4], [0, 4]] }, { id: 'b', polygon: [[0, 4], [4, 4], [4, 10], [0, 10]] }],
+      U: [{ id: 'u', polygon: [[0, 0], [10, 0], [10, 8], [7, 8], [7, 3], [3, 3], [3, 8], [0, 8]] }],
+    };
+    const o = (u, v, w) => Math.sign((v[0] - u[0]) * (w[1] - u[1]) - (v[1] - u[1]) * (w[0] - u[0]));
+    const cross = (A, B) => { let n = 0; for (let a = 0; a < A.length - 1; a++) for (let b = 0; b < B.length - 1; b++) if (o(A[a], A[a + 1], B[b], B[b + 1]) * o(A[a], A[a + 1], B[b + 1], B[b]) < 0 && o(B[b], B[b + 1], A[a], A[a + 1]) * o(B[b], B[b + 1], A[a + 1], A[a]) < 0) n++; return n; };
+    const segDist = (p, a, b) => { const s = G.projectOnSegment(p, a, b); return Math.hypot(p[0] - s.point[0], p[1] - s.point[1]); };
+    const lineDist = (p, P) => { let m = Infinity; for (let i = 0; i < P.length - 1; i++) m = Math.min(m, segDist(p, P[i], P[i + 1])); return m; };
+    const out = [];
+    for (const [name, rooms] of Object.entries(HOUSES)) for (const from of [0, 30, 45, 90, 200, 315]) for (const level of ['normal', 'intense']) {
+      const motion = M.PROFILES[level], px = n => n * 0.025;
+      const box = G.bbox(rooms.map(x => x.polygon)), m = 5, frame = { minX: box.minX - m, minY: box.minY - m, maxX: box.maxX + m, maxY: box.maxY + m };
+      const t = G.bearingVector((from + 180) % 360, 0), lon = q => q[0] * t[0] + q[1] * t[1];
+      const rear = Math.max(...rooms.flatMap(x => x.polygon.map(lon))), across = q => q[0] * -t[1] + q[1] * t[0];
+      const sil = rooms.flatMap(x => x.polygon.map(across)), mid = (Math.min(...sil) + Math.max(...sil)) / 2;
+      const L = V.outerLanes({ rooms, fromDeg: from, northDeg: 0, G, frame, variety: M.streamVariety(motion.streams, 11 + from), minClear: V.ribbonClear(px, motion),
+        gusts: V.gustVariety(M.streamVariety(motion.gusts, 7 + from), 7 + from), gustClear: px(7), join: px(24), need: px(4.5) });
+      // every ribbon that meets the house lets go of it and runs on with the wind for a good stretch, behind the house towards the wake
+      let worstAngle = 0, short = 0, met = 0, away = 0;
+      for (const s of L.streams.filter(x => x.kind === 'deflect')) {
+        met += 1;
+        if (s.release < 0) { short += 1; continue; }
+        let arc = 0, run = 0;
+        for (let i = s.release + 1; i < s.points.length; i++) {
+          const a = s.points[i - 1], b = s.points[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]); arc += l;
+          if (arc < 3 || l < 1e-6) continue;
+          run += l; worstAngle = Math.max(worstAngle, Math.acos(Math.min(1, ((b[0] - a[0]) * t[0] + (b[1] - a[1]) * t[1]) / l)) * 180 / Math.PI);
+          if (lon(a) > rear && Math.abs(across(b) - mid) > Math.abs(across(a) - mid) + 5e-3) away += 1;   // (5 mm of a 10 m house)
+        }
+        if (run < 2) short += 1;
+      }
+      // no crossing: ribbons among themselves, gusts among themselves, gusts with every ribbon
+      let crossings = 0;
+      for (let i = 0; i < L.streams.length; i++) for (let j = i + 1; j < L.streams.length; j++) crossings += cross(L.streams[i].points, L.streams[j].points);
+      for (let i = 0; i < L.gusts.length; i++) for (let j = i + 1; j < L.gusts.length; j++) crossings += cross(L.gusts[i].points, L.gusts[j].points);
+      for (const g of L.gusts) for (const s of L.streams) crossings += cross(g.points, s.points);
+      const width = px(24) / 2.2;
+      const joins = L.gusts.filter(g => g.merge).map(g => {
+        const lead = L.gusts[g.merge.into], P = g.points, d = P.map(q => lineDist(q, lead.points));
+        const before = P.filter(q => lon(q) < g.merge.lon - g.merge.blend).map(q => lineDist(q, lead.points)), last = before.slice(-6);
+        let rising = 0; for (let i = 1; i < P.length; i++) if (lon(P[i]) >= g.merge.lon - g.merge.blend && d[i] > d[i - 1] + 1e-3) rising++;
+        const fl = lead.fade.stops, ff = g.fade.stops, mOff = g.merge.blend / (g.merge.blend + g.merge.overlap);
+        const released = Math.max(...[g, lead].map(w => lon(w.points[Math.max(0, w.points.findIndex(q => lon(q) >= g.merge.lon - g.merge.blend) - 1)])));
+        return { end: d[d.length - 1], apart: Math.min(...last) / Math.min(g.width || Infinity, px(24) / 2.2), rising, behind: g.merge.lon > rear, inRun: g.merge.lon - g.merge.blend >= released - 1e-6,
+          full: ff[0][1] === 1 && fl[0][1] === 1, gone: ff[ff.length - 1][1], back: fl[fl.length - 1][1],
+          sum: Math.max(...fl.map(([off, a], i) => (off >= mOff - 1e-6 ? Math.abs(a + ff[i][1] - 1) : 0))), half: Math.min(...fl.map(s => s[1])) };
+      });
+      out.push({ tag: `${name} ${from}° ${level}`, worstAngle, short, met, away, crossings, joins, width, gusts: L.gusts.length });
+    }
+    return out;
+  });
+  let joins = 0;
+  for (const c of r) {
+    expect(c.crossings, c.tag).toBe(0);                          // ribbons and gusts, also in combination
+    expect(c.short, c.tag).toBe(0);                              // every ribbon reaches its run-out
+    expect(c.worstAngle, c.tag).toBeLessThan(30);                // and runs on calmly with the wind …
+    expect(c.away, c.tag).toBe(0);                               // … behind the house towards the wake, never away from it
+    expect(c.gusts, c.tag).toBe(c.tag.endsWith('intense') ? 3 : 2);
+    for (const j of c.joins) {
+      joins += 1;
+      expect(j.end, c.tag).toBeLessThan(1e-6);                   // one way after the meeting point
+      expect(j.inRun, c.tag).toBe(true);                         // in the run-out, behind the house where the drawing has room
+      expect(j.apart, c.tag).toBeGreaterThan(1);                 // two gusts before (more than a stroke apart) …
+      expect(j.rising, c.tag).toBe(0);                           // … coming nearer steadily …
+      expect(j.full, c.tag).toBe(true);                          // … fully visible until they touch
+      expect(j.half, c.tag).toBeGreaterThanOrEqual(0.5);         // the leading one never fades below half
+      expect(j.sum, c.tag).toBeLessThan(0.01);                   // on the shared stretch the two add up to one gust
+      expect([j.gone, j.back], c.tag).toEqual([0, 1]);           // the joined gust runs on at full strength
+    }
+  }
+  expect(joins).toBeGreaterThan(r.length * 0.75);
+  expect(r.flatMap(c => c.joins).filter(j => j.behind).length).toBeGreaterThan(joins * 0.5);
+});
+
+// the crossing once seen on the narrow card (wind from 270°, the card's house): ribbons, their drawn lines while they swing and the
+// gusts on them stay apart at every level, in the narrow and in a wide drawing – and the ribbons pass the house visibly on both sides
+test('0.26.7.2 wind from 270° on the card house, narrow and wide: no crossing of ribbons, drawn lines or gusts, the ribbons pass the house', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const r = await page.evaluate(() => {
+    const V = window.__V, G = window.__G, M = window.__M;
+    const rooms = [{ id: 'b', polygon: [[0, 4], [4, 4], [4, 8], [0, 8]] }, { id: 'f', polygon: [[0, 0], [8, 0], [8, 4], [0, 4]] }, { id: 'w', polygon: [[4, 4], [10, 4], [10, 7], [7, 7], [7, 10], [4, 10]] }];
+    const o = (u, v, w) => Math.sign((v[0] - u[0]) * (w[1] - u[1]) - (v[1] - u[1]) * (w[0] - u[0]));
+    const cross = (A, B) => { let n = 0; for (let a = 0; a < A.length - 1; a++) for (let b = 0; b < B.length - 1; b++) if (o(A[a], A[a + 1], B[b], B[b + 1]) * o(A[a], A[a + 1], B[b + 1], B[b]) < 0 && o(B[b], B[b + 1], A[a], A[a + 1]) * o(B[b], B[b + 1], A[a + 1], A[a]) < 0) n++; return n; };
+    const toPts = d => d.split(/[ML ]+/).filter(Boolean).map(xy => { const [x, y] = xy.split(',').map(Number); return [x, -y]; });
+    const out = [];
+    for (const [name, frame, u] of [['narrow', { minX: -1.6, minY: -3.258, maxX: 11.6, maxY: 13.059 }, 0.035], ['wide', { minX: -5.083, minY: -2.775, maxX: 15.083, maxY: 11.6 }, 0.022]]) for (const level of ['minimal', 'normal', 'intense']) {
+      const motion = M.PROFILES[level], px = n => n * u, strength = 1.45, count = Math.max(2, Math.min(9, Math.round(motion.streams * strength)));
+      const variety = M.streamVariety(count, 83).map(v => ({ ...v, amp: v.amp * Math.pow(strength, 0.8) * (motion.amp || 1) }));
+      const L = V.outerLanes({ rooms, fromDeg: 270, northDeg: 0, G, frame, variety, minClear: V.ribbonClear(px, motion), gusts: V.gustVariety(M.streamVariety(motion.gusts, 101), 101), gustClear: px(7), join: px(24), need: px(4.5) });
+      let centre = 0, gusts = 0, drawn = 0;
+      for (let i = 0; i < L.streams.length; i++) for (let j = i + 1; j < L.streams.length; j++) centre += cross(L.streams[i].points, L.streams[j].points);
+      for (const g of L.gusts) for (const s of L.streams) gusts += cross(g.points, s.points);
+      const waves = [], owner = new Map();
+      V.ribbonsSvg(L.streams, { variety, motion, px, round3: x => x, waves, phase: () => 0, frameOf: s => { const f = V.waveFrame(V.streamLine(s), px(9), s.clear, motion.pathPoints, null, s.damp, s.near); owner.set(f, s); return f; } });
+      const lines = waves.filter(w => w.geo.line != null);
+      for (const set of [0, 1, 2, 3]) for (const breath of [1, 1.6]) {
+        const P = lines.map((w, k) => ({ s: owner.get(w.frame), P: toPts(V.wavePath(w.frame, { ...w.geo, amp: w.geo.amp * breath }, (set * 0.23 + k * 0.137 + (w.geo.offset || 0)) % 1)) }));
+        for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) if (P[i].s !== P[j].s) drawn += cross(P[i].P, P[j].P);
+      }
+      // past the house and still in the drawing: ribbons that met it run on beside and behind it, on both sides
+      const seen = L.streams.filter(s => s.kind === 'deflect' && s.points.some(q => q[0] > 10 && q[0] < frame.maxX && q[1] > frame.minY && q[1] < frame.maxY));
+      out.push({ tag: `${name} ${level}`, n: L.streams.length, centre, gusts, drawn, past: new Set(seen.map(s => s.side)).size });
+    }
+    return out;
+  });
+  for (const c of r) {
+    expect(c.n, c.tag).toBeGreaterThan(3);
+    expect([c.centre, c.gusts, c.drawn], c.tag).toEqual([0, 0, 0]);
+    expect(c.past, c.tag).toBe(2);
+  }
+});
+
+// the join as it plays: two stretches of air in step towards one point, both fully there until they touch; on the shared stretch
+// the two pictures cross-fade into one (the sum stays that of one gust), the joined gust runs on without a gap
+test('0.26.7.2 two gusts join in the browser: two stretches until they touch, one gust after, no gap, second track or jump of brightness', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const r = await page.evaluate(async () => {
+    const V = window.__V, G = window.__G, M = window.__M;
+    const W = await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-weather.js')));
+    const rooms = [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 6], [0, 6]] }], ppu = 40, frame = { minX: -5, minY: -5, maxX: 15, maxY: 11 };
+    const L = V.outerLanes({ rooms, fromDeg: 0, northDeg: 0, G, frame, variety: M.streamVariety(5, 11), gusts: V.gustVariety(M.streamVariety(3, 7), 7), gustClear: 0.2, join: 0.6 });
+    const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+    document.body.appendChild(svg);
+    L.gusts.forEach((g, i) => { const p = document.createElementNS(ns, 'path'); p.setAttribute('d', g.points.map((q, k) => `${k ? 'L' : 'M'} ${q[0]},${-q[1]}`).join(' '));
+      p.setAttribute('data-gust', i); p.setAttribute('pathLength', '100'); p.setAttribute('stroke-dasharray', '18 100'); svg.appendChild(p); });
+    const run = new W.GustRunner();
+    run.plan(L.gusts, ppu, () => 1);
+    run.bind(svg.querySelectorAll('path[data-gust]'), false);
+    const fol = run.gusts.find(g => g.lead), lead = fol.lead, gf = L.gusts[fol.i], gl = L.gusts[lead.i];
+    lead.s.phase = 0; lead.s.rest = 0.5; lead.s.pace = 1;
+    const pointAt = (P, x) => { let a = 0; for (let k = 1; k < P.length; k++) { const l = Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]); if (a + l >= x) { const u = (x - a) / l; return [P[k - 1][0] + (P[k][0] - P[k - 1][0]) * u, P[k - 1][1] + (P[k][1] - P[k - 1][1]) * u]; } a += l; } return null; };
+    // the stroke's opacity at a point: its fade along the wind (the gradient the card draws)
+    const alpha = (g, p) => { if (!g.fade) return 1; const { from, to, stops } = g.fade, ax = [to[0] - from[0], to[1] - from[1]], l2 = ax[0] * ax[0] + ax[1] * ax[1];
+      const off = Math.max(0, Math.min(1, ((p[0] - from[0]) * ax[0] + (p[1] - from[1]) * ax[1]) / l2)); let k = 1; while (k < stops.length - 1 && stops[k][0] < off) k++;
+      const [o0, a0] = stops[k - 1], [o1, a1] = stops[k]; return a0 + (a1 - a0) * (o1 > o0 ? Math.max(0, Math.min(1, (off - o0) / (o1 - o0))) : 0); };
+    // the middle of each stretch on its own way (from the dash offset the runner wrote)
+    const mid = (g, P) => { const units = g.dash - Number(g.el.getAttribute('stroke-dashoffset')) - g.dash / 2; return units > 0 && units < 100 ? pointAt(P, units / 100 * g.length / ppu) : null; };
+    const frames = [];
+    for (let k = 0; k < 600 && lead.s.phase < 1; k++) {
+      run.step(1 / 30, 25, 0.8);
+      const a = mid(lead, gl.points), b = mid(fol, gf.points);
+      frames.push({ at: (lead.head - lead.dash * lead.length / 200) / ppu, a: a && alpha(gl, a), b: b && alpha(gf, b), gap: a && b ? Math.hypot(a[0] - b[0], a[1] - b[1]) : null, dom: fol.el.getAttribute('opacity') });
+    }
+    const t = [0, -1], lon = q => q[0] * t[0] + q[1] * t[1];
+    const toLon = x => { const P = gl.points; let a = 0; for (let k = 1; k < P.length; k++) { a += Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]); if (lon(P[k]) >= x) return a; } return a; };
+    return { frames, contact: toLon(gf.merge.contact), meet: toLon(gf.merge.lon), end: toLon(gf.merge.lon + gf.merge.overlap), width: 0.6 / 2.2, style: true };
+  });
+  const { frames, contact, meet, end, width } = r;
+  expect(frames.length).toBeGreaterThan(60);
+  const apart = frames.filter(f => f.a != null && f.b != null && f.at < contact - width);
+  expect(apart.length).toBeGreaterThan(5);
+  for (const f of apart) { expect(f.a).toBeCloseTo(1, 2); expect(f.b).toBeCloseTo(1, 2); expect(f.gap).toBeGreaterThan(width * 0.99); }   // two gusts
+  const shared = frames.filter(f => f.a != null && f.b != null && f.at > meet && f.at < end);
+  expect(shared.length).toBeGreaterThan(3);
+  for (const f of shared) { expect(f.gap).toBeLessThan(1e-3); expect(Math.abs(f.a + f.b - 1)).toBeLessThan(0.02); }       // one line, the sum of one gust
+  const after = frames.filter(f => f.at > end + 0.5 && f.a != null);
+  expect(after.length).toBeGreaterThan(5);
+  for (const f of after) { expect(f.a).toBe(1); expect(f.b == null || f.b === 0).toBe(true); }                             // one gust runs on
+  // no jump: each stretch's opacity changes steadily, and the leading one is there in every frame from its start to its end
+  for (let i = 1; i < frames.length; i++) {
+    if (frames[i].a != null && frames[i - 1].a != null) expect(Math.abs(frames[i].a - frames[i - 1].a)).toBeLessThan(0.12);
+    if (frames[i].b != null && frames[i - 1].b != null) expect(Math.abs(frames[i].b - frames[i - 1].b)).toBeLessThan(0.12);
+  }
+  const seen = frames.map(f => f.a != null), first = seen.indexOf(true), last = seen.lastIndexOf(true);
+  expect(seen.slice(first, last + 1).every(Boolean)).toBe(true);
+  expect(frames.every(f => f.dom == null)).toBe(true);                                                                     // no fade in time on top
+});
+
+// on a narrow card: the storm's gusts run on the ribbons, two join behind the house – the card draws their fade along the wind and
+// moves them in step; a sequence of pictures shows two gusts before they touch, the join and one gust running on
+test('0.26.7.2 narrow card: two gusts before they touch, their join and one gust running on – a rendered sequence', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 420, height: 860 });
+  await mount(page);
+  let found = null;
+  for (const bearing of ['W', 'NW', 'N', 'SW', 'S', 'E']) {
+    await setup(page, { weather_effects: 'full', animation_level: 'intense' }, STATES('pouring', { wind_speed: 80, wind_gust_speed: 110, wind_bearing: bearing }));
+    await settle(page, 300);
+    found = await impl(page).evaluate(el => {
+      const lanes = el._facades.kinds.outer.lanes, i = lanes.gusts.findIndex(g => g.merge);
+      if (i < 0) return null;
+      const elF = el.shadowRoot.querySelector(`path[data-gust="${i}"]`), elL = el.shadowRoot.querySelector(`path[data-gust="${lanes.gusts[i].merge.into}"]`);
+      const grad = id => { const m = /url\(#([^)]+)\)/.exec(id || ''); return m ? el.shadowRoot.getElementById(m[1]) : null; };
+      const gF = grad(elF.getAttribute('style')), gL = grad(elL.getAttribute('style'));
+      return { i, stopsF: gF ? gF.querySelectorAll('stop').length : 0, stopsL: gL ? gL.querySelectorAll('stop').length : 0, inStep: el._gustRun.gusts.find(g => g.i === i).lead === el._gustRun.gusts.find(g => g.i === lanes.gusts[i].merge.into) };
+    });
+    if (found) break;
+  }
+  expect(found).not.toBeNull();
+  expect(found.stopsF).toBeGreaterThan(5); expect(found.stopsL).toBeGreaterThan(5); expect(found.inStep).toBe(true);
+  // the sequence: the gusts moved by the card's own runner from the start of their way past the meeting point (the loop held still)
+  const shots = [];
+  for (const share of [0.3, 0.5, 0.62, 0.7, 0.78, 0.9]) {
+    const state = await impl(page).evaluate((el, [i, share]) => {
+      el._windStop();
+      const run = el._gustRun, g = run.gusts.find(x => x.i === i), lead = g.lead, lanes = el._facades.kinds.outer.lanes, merge = lanes.gusts[i].merge;
+      lead.s.phase = 0; lead.s.rest = 0.5;
+      const ppu = lead.length / (lanes.gusts[merge.into].points.reduce((s, q, k, P) => s + (k ? Math.hypot(q[0] - P[k - 1][0], q[1] - P[k - 1][1]) : 0), 0));
+      const target = merge.at * ppu * share / 0.7;   // 0.7 of the way: the middle of the stretch at the meeting point
+      lead.way = null; lead.s.phase = Math.min(1, (target + lead.dash * lead.length / 200) / ((lead.dash + 100) * lead.length / 100));
+      for (const x of run.gusts) run.draw(x, false);
+      return { lead: lead.head / ppu, meet: merge.at };
+    }, [found.i, share]);
+    shots.push(state);
+    await impl(page).locator('svg.plan').screenshot({ path: testInfo.outputPath(`join-${shots.length}.png`) });
+  }
+  expect(shots[0].lead).toBeLessThan(shots[shots.length - 1].lead);
+  expect(shots.some(s => s.lead < s.meet) && shots.some(s => s.lead > s.meet)).toBe(true);
+});
+
+// the lee's curl as one movement: it starts on the passing edge ribbon behind the house, is drawn from there onwards, drifts with the
+// wind and fades – no jump between frames; at most one at "normal", two at "intense", none at "minimal" or still
+test('0.26.7.2 a curl peels off the edge ribbon behind the house, drifts with the wind and fades – one movement', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mount(page);
+  await setup(page, { weather_effects: 'full', animation_level: 'intense' }, STATES('pouring', { wind_speed: 80, wind_gust_speed: 110, wind_bearing: 'W' }));
+  await settle(page, 600);
+  const r = await impl(page).evaluate(el => {
+    const lanes = el._facades.kinds.outer.lanes, E = el._eddies, field = el._flowField, out = [];
+    const e = E.items[0], el0 = el.shadowRoot.querySelector('path[data-eddy="0"]');
+    const ribbon = lanes.streams.find(s => s.points[e.from] === e.points[0]);
+    // a cycle in which it rolls up
+    let t0 = null;
+    for (let t = 0.05; t < 600 && t0 == null; t += 0.05) if (E.at(field, e, t).opacity > 0 && E.at(field, e, t - 0.05).opacity === 0) t0 = t;
+    let prev = null;
+    for (let k = 0; k < 400; k++) {
+      const t = t0 - 0.05 + k * 0.05, s = E.at(field, e, t);
+      E.step(field, t);
+      const tr = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(el0.getAttribute('transform')), dx = Number(tr[1]), dy = -Number(tr[2]);
+      out.push({ t, op: Number(el0.getAttribute('opacity')), drawn: parseFloat(el0.getAttribute('stroke-dasharray')), along: dx * e.dir[0] + dy * e.dir[1], x: s.x });
+      if (prev && prev.opacity > 0 && s.opacity === 0) break;
+      prev = s;
+    }
+    const start = e.points[0], P = ribbon ? ribbon.points : [];
+    let onRibbon = Infinity; for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy, u = Math.max(0, Math.min(1, ((start[0] - a[0]) * dx + (start[1] - a[1]) * dy) / l2)); onRibbon = Math.min(onRibbon, Math.hypot(start[0] - a[0] - dx * u, start[1] - a[1] - dy * u)); }
+    // behind the house: further along the wind than any wall
+    const walls = el._facades.field.field.segs.flatMap(s => [[s.ax, s.ay], [s.ax + s.tx * s.len, s.ay + s.ty * s.len]]);
+    const behind = start[0] * e.dir[0] + start[1] * e.dir[1] > Math.max(...walls.map(q => q[0] * e.dir[0] + q[1] * e.dir[1]));
+    return { out, onRibbon, behind, count: E.items.length, edge: !!ribbon && ribbon === lanes.streams.filter(s => s.side === ribbon.side && s.release >= 0).sort((a, b) => a.y - b.y)[0] };
+  });
+  expect(r.count).toBe(2);
+  expect(r.onRibbon).toBeLessThan(1e-6);                                    // it starts on the ribbon …
+  expect(r.edge).toBe(true);                                                // … the innermost one of its side, the edge of the wake …
+  expect(r.behind).toBe(true);                                              // … behind the house
+  const live = r.out.filter(f => f.op > 0);
+  expect(live.length).toBeGreaterThan(40);
+  expect(live[0].drawn).toBeLessThan(15);                                   // peeling off: drawn from the ribbon onwards
+  expect(Math.max(...live.map(f => f.drawn))).toBeGreaterThan(95);
+  for (let i = 1; i < r.out.length; i++) {
+    if (r.out[i].op > 0) expect(r.out[i].along).toBeGreaterThanOrEqual(r.out[i - 1].along - 1e-9);   // drifting with the wind, never back
+    expect(Math.abs(r.out[i].op - r.out[i - 1].op)).toBeLessThan(0.05);                              // fading in and out steadily
+  }
+  expect(r.out[r.out.length - 1].op).toBe(0);
+  expect(Math.max(...r.out.map(f => f.along))).toBeGreaterThan(0.5);
+});
+
+// the approach before and after (same houses, same wind): 0.26.7.2 before this change traced these values (first turn of the
+// gusts that meet the house, least distance in front of a windward wall; mean over the streams, house of 10 m)
+test('0.26.7.2 the wind turns nearer the windward wall than before, and the air slows in front and runs faster past the sides', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const BEFORE = { 'rect|270': [3.095, 1.521], 'rect|225': [2.42, 1.65], 'rect|0': [3.082, 1.859], 'rect|45': [2.4, 1.687],
+    'L|270': [3.697, 1.805], 'L|225': [2.971, 1.996], 'L|0': [3.834, 2.016], 'L|45': [3.603, 2.142] };
+  const r = await page.evaluate(() => {
+    const V = window.__V, G = window.__G, M = window.__M, F = window.__F;
+    const HOUSES = { rect: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 6], [0, 6]] }],
+      L: [{ id: 'a', polygon: [[0, 0], [10, 0], [10, 4], [0, 4]] }, { id: 'b', polygon: [[0, 4], [4, 4], [4, 10], [0, 10]] }] };
+    const out = {};
+    for (const [name, rooms] of Object.entries(HOUSES)) for (const from of [270, 225, 0, 45]) {
+      const box = G.bbox(rooms.map(x => x.polygon)), m = 5, frame = { minX: box.minX - m, minY: box.minY - m, maxX: box.maxX + m, maxY: box.maxY + m };
+      const t = G.bearingVector((from + 180) % 360, 0);
+      const streams = V.facadeStreams({ rooms, fromDeg: from, northDeg: 0, G, frame, variety: M.streamVariety(8, 11 + from) });
+      const walls = rooms.flatMap(x => x.polygon.map((q, i) => [q, x.polygon[(i + 1) % x.polygon.length]]));
+      const near = p => { let best = null; for (const [a, b] of walls) { const s = G.projectOnSegment(p, a, b), d = Math.hypot(p[0] - s.point[0], p[1] - s.point[1]); if (!best || d < best.d) best = { d, a, b }; } return best; };
+      const turn = [], windward = [];
+      for (const s of streams.filter(x => x.kind === 'deflect')) {
+        const P = s.points;
+        for (let i = 1; i < P.length; i++) { const v = [P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]], l = Math.hypot(...v); if (l && (v[0] * t[0] + v[1] * t[1]) / l < Math.cos(Math.PI / 18)) { turn.push(near(P[i]).d); break; } }
+        let mn = Infinity;
+        for (const p of P) { const w = near(p), e = [w.b[0] - w.a[0], w.b[1] - w.a[1]], len = Math.hypot(...e), on = [e[1] / len, -e[0] / len];
+          const sg = Math.sign((p[0] - w.a[0]) * on[0] + (p[1] - w.a[1]) * on[1]) || 1; if ((on[0] * t[0] + on[1] * t[1]) * sg < -0.5) mn = Math.min(mn, w.d); }
+        if (mn < Infinity) windward.push(mn);
+      }
+      const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+      out[`${name}|${from}`] = [avg(turn), avg(windward)];
+    }
+    // the speed of the air along a stream from the 2D flow model: in front of the windward wall below, past the sides above the wind
+    const rooms = HOUSES.rect, field = F.buildField({ rooms, G, wind: { available: true, from_deg: 270, speed_ms: 8 }, northDeg: 0 }), speed = F.relativeSpeed(field);
+    return { out, front: speed([-0.3, 3]), side: speed([5, 6.4]), free: speed([-12, 3]), gust: F.gustBoost(field, 0) >= 0 && F.gustBoost(null, 5) === 0 };
+  });
+  for (const [key, [turn, windward]] of Object.entries(r.out)) {
+    expect(turn, `${key} first turn`).toBeLessThan(BEFORE[key][0] * 0.99);
+    expect(windward, `${key} windward distance`).toBeLessThan(BEFORE[key][1] * 0.92);
+    expect(windward, `${key} windward distance`).toBeGreaterThan(0.3);        // closer – not onto the wall
+  }
+  expect(r.front).toBeLessThan(0.8);
+  expect(r.side).toBeGreaterThan(1.05);
+  expect(r.free).toBeGreaterThan(0.9); expect(r.free).toBeLessThan(1.2);
+  expect(r.gust).toBe(true);
+});
+
+test('0.26.7.2 the wind follows the animation level: eddies none at "minimal", one at "normal", two at "intense", none still; the ribbons at every level', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mount(page);
+  const seen = {};
+  for (const level of ['off', 'minimal', 'normal', 'intense']) {
+    await setup(page, { weather_effects: 'full', animation_level: level }, STATES('pouring', { wind_speed: 80, wind_gust_speed: 110, wind_bearing: 'W' }));
+    await settle(page, 600);
+    seen[level] = await impl(page).evaluate(el => {
+      const root = el.shadowRoot, eddies = [...root.querySelectorAll('path[data-eddy]')];
+      const ribbons = [...root.querySelectorAll('path.wave.mid.k-deflect, path.wave.mid.k-pass')].map(p => Number(p.getAttribute('stroke-width')));
+      return { eddies: eddies.length, loop: !!el._windRaf, ribbons, maxPoints: Math.max(0, ...(el._waves || []).map(w => w.frame.samples.length)) };
+    });
+  }
+  expect(seen.off.eddies).toBe(0); expect(seen.off.loop).toBe(false);
+  expect(seen.minimal.eddies).toBe(0);
+  expect(seen.normal.eddies).toBe(1);
+  expect(seen.intense.eddies).toBe(2);
+  for (const level of ['minimal', 'normal', 'intense']) expect(seen[level].ribbons.length, level).toBeGreaterThan(1);
+  for (const level of ['minimal', 'normal', 'intense']) expect(seen[level].maxPoints, level).toBeLessThanOrEqual({ minimal: 48, normal: 72, intense: 96 }[level]);
+  // the eddies come and go while the loop runs (their opacity changes over time; never a jump of the drawing)
+  await settle(page, 4000);
+  const later = await impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('path[data-eddy]')].map(e => [e.getAttribute('opacity'), e.getAttribute('transform')]));
+  expect(later.length).toBe(2);
+  expect(later.every(([o, t]) => o != null && /translate\(/.test(t))).toBe(true);
+});
+
+test('0.26.7.2 the card traces the streams once per house, wind and drawing – a live update reuses them and never restarts the weather', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mount(page, { config: { animation_level: 'normal' } });
+  await setup(page, { weather_effects: 'full' }, STATES('pouring', { wind_speed: 80, wind_gust_speed: 110, wind_bearing: 'W' }));
+  await settle(page, 400);
+  const before = await impl(page).evaluate(el => {
+    const cloud = el.shadowRoot.querySelector('.wxu .wx.clouds > i'), a = cloud && cloud.getAnimations()[0], c = a && a.effect.getComputedTiming();
+    window.__drops = el._wx.layer.p; window.__some = el._wx.layer.p.slice(0, 60); window.__streams = el._facades.kinds.outer.lanes.streams;
+    return { vb: el.shadowRoot.querySelector('svg.plan').getAttribute('viewBox'), gusts: el.shadowRoot.querySelectorAll('path[data-gust]').length, n: el._wx.layer.p.length, cloud: a ? [((c.currentIteration || 0) + c.progress) * c.duration, c.duration] : null, at: performance.now() };
+  });
+  expect(before.n).toBeGreaterThan(50);
+  expect(before.gusts).toBeGreaterThan(0);
+  // a new reading of the rooms (as Home Assistant sends every few seconds)
+  await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: 22.3 } }, output_language: 'de' }));
+  await settle(page, 120);
+  const after = await impl(page).evaluate((el, at) => {
+    const cloud = el.shadowRoot.querySelector('.wxu .wx.clouds > i'), a = cloud && cloud.getAnimations()[0], c = a && a.effect.getComputedTiming();
+    return { vb: el.shadowRoot.querySelector('svg.plan').getAttribute('viewBox'), same: el._facades.kinds.outer.lanes.streams === window.__streams, kept: el._wx.layer.p === window.__drops && window.__some.filter(q => el._wx.layer.p.includes(q)).length >= 20, n: el._wx.layer.p.length, canvas: el._wx.canvas.isConnected,
+      cloud: a ? [((c.currentIteration || 0) + c.progress) * c.duration, c.duration] : null, elapsed: performance.now() - at, loop: !!el._windRaf };
+  }, before.at);
+  expect([after.same, after.kept, after.canvas, after.loop]).toEqual([true, true, true, true]);   // the same ways and drops, in the same loop
+  expect(Math.abs(after.n - before.n)).toBeLessThanOrEqual(2);
+  // the new cloud element continues where the old one was (not from its start): same cycle, the time that passed added
+  expect(after.cloud[1]).toBe(before.cloud[1]);   // the same cloud (also when the bars changed the drawing's size)
+  const cycle = before.cloud[1], expected = (before.cloud[0] + after.elapsed) % cycle, got = after.cloud[0] % cycle;
+  // (a restart would put it back to its start: further off than the start latency of an animation on a busy machine)
+  expect(Math.min(Math.abs(got - expected), cycle - Math.abs(got - expected))).toBeLessThan(1500);
+  // the traced streams are reused (no new geometry for a live update); a new wind direction traces them again
+  const reuse = await impl(page).evaluate(el => { const s = el._facades.kinds.outer.lanes.streams; el._render(); const same = el._facades.kinds.outer.lanes.streams === s;
+    const w = el._hass.states['weather.home']; el._hass = { ...el._hass, states: { ...el._hass.states, 'weather.home': { ...w, attributes: { ...w.attributes, wind_bearing: 'N' } } } }; el._windSmoothOwn = null;
+    el._render(); return [same, el._facades.kinds.outer.lanes.streams === s]; });
+  expect(reuse).toEqual([true, false]);
+});
+
+test('0.26.7.2 a new reading of the rooms keeps the flow field, the outer ways, joins, curls and the prepared gust profiles; wind or layout prepare them again', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mount(page, { config: { animation_level: 'normal' } });
+  await setup(page, { weather_effects: 'full' }, STATES('pouring', { wind_speed: 80, wind_gust_speed: 110, wind_bearing: 'W' }));
+  await settle(page, 400);
+  const first = await impl(page).evaluate(el => {
+    window.__k = { field: el._flowField, speed: el._flow.hit.speed, ways: el._gustRun.ways, next: el._gustRun.next, streams: el._facades.kinds.outer.lanes.streams,
+      lanes: el._facades.kinds.outer.lanes, links: el._gustRun.links, curls: el._facades.kinds.outer.lanes.curls };
+    return { field: !!el._flowField, ways: el._gustRun.ways.length > 0 && el._gustRun.ways.every(Boolean), gusts: el.shadowRoot.querySelectorAll('path[data-gust]').length };
+  });
+  expect(first.field && first.ways && first.gusts > 0).toBe(true);
+  const kept = el => [el._flowField === window.__k.field, el._flow.hit.speed === window.__k.speed, el._gustRun.ways === window.__k.ways, el._gustRun.next === window.__k.next,
+    el._facades.kinds.outer.lanes.streams === window.__k.streams, el._facades.kinds.outer.lanes === window.__k.lanes, el._gustRun.links === window.__k.links,
+    el._eddies.items.every(e => window.__k.curls.some(c => c.points === e.points))];
+  // an ordinary temperature reading (twice) and an unrelated state change: nothing of the wind is prepared again
+  for (const t of [22.3, 22.4]) {
+    await page.evaluate(t => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: t } }, output_language: 'de' }), t);
+    await settle(page, 120);
+    expect(await impl(page).evaluate(kept)).toEqual([true, true, true, true, true, true, true, true]);
+  }
+  expect(await impl(page).evaluate(el => { el._hass = { ...el._hass, states: { ...el._hass.states, 'sensor.other': { entity_id: 'sensor.other', state: '5', attributes: {} } } }; el._render();
+    return [el._flowField === window.__k.field, el._gustRun.ways === window.__k.ways]; })).toEqual([true, true]);
+  // the wind's speed: a new field, its speed profile and the gusts' time tables; the traced ways stay (same direction)
+  const wind = await impl(page).evaluate(el => { const w = el._hass.states['weather.home'];
+    el._hass = { ...el._hass, states: { ...el._hass.states, 'weather.home': { ...w, attributes: { ...w.attributes, wind_speed: 95 } } } }; el._render();
+    return [el._flowField === window.__k.field, el._gustRun.ways === window.__k.ways, el._facades.kinds.outer.lanes.streams === window.__k.streams, !!el._flowField]; });
+  expect(wind).toEqual([false, false, true, true]);
+  // a new direction: new outer ways, joins and curls
+  const turned = await impl(page).evaluate(el => { const w = el._hass.states['weather.home'];
+    el._hass = { ...el._hass, states: { ...el._hass.states, 'weather.home': { ...w, attributes: { ...w.attributes, wind_bearing: 'N' } } } }; el._windSmoothOwn = null; el._render();
+    return [el._facades.kinds.outer.lanes === window.__k.lanes, el._gustRun.links === window.__k.links]; });
+  expect(turned).toEqual([false, false]);
+  // the layout (a saved edit): everything again
+  const layout = await impl(page).evaluate(el => { window.__k = { field: el._flowField, ways: el._gustRun.ways };
+    el._layoutInfo = { ...el._layoutInfo, layout: { ...el._layoutInfo.layout } }; el._render();
+    return [el._flowField === window.__k.field, el._gustRun.ways === window.__k.ways, !!el._flowField]; });
+  expect(layout).toEqual([false, false, true]);
+});
+
+test('0.26.7.2 single particles: new values outside the picture, sideways snow, sleet and hail by the condition, nothing for unknown weather', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const r = await page.evaluate(() => {
+    const A = window.__A, cv = document.createElement('canvas'), L = new A.WeatherLayer(cv);
+    L.setScene({ kind: 'rain', level: 2, slant: 20, n: 80, w: 400, h: 300, scale: 1, splash: 4 }, 1);
+    const first = L.p[0], seen = new Set(), starts = [];
+    const orig = L._spawn.bind(L); L._spawn = any => { const q = orig(any); starts.push([q.x, q.y, q.vy, q.len, q.a]); return q; };
+    for (let i = 0; i < 400; i++) { L.frame(0.05); seen.add(L.p.map(q => q.vy.toFixed(3)).join()); }
+    const fresh = starts.filter(s => s[1] < 0 || s[0] < 0 || s[0] > 400);
+    // snow sways: the drawn x of one flake changes back and forth while it falls
+    const S = new A.WeatherLayer(document.createElement('canvas')); S.setScene({ kind: 'snow', level: 2, slant: 0, n: 30, w: 400, h: 300, scale: 1 }, 1);
+    const f = S.p[0], xs = []; for (let i = 0; i < 40; i++) { S.frame(0.05); if (S.p[0] === f) xs.push(f.x + Math.sin(f.ph + f.age * f.freq * 6.283) * f.sway); }
+    const dx = xs.slice(1).map((x, i) => Math.sign(x - xs[i])).filter(Boolean);
+    const kinds = ['rainy', 'pouring', 'snowy', 'snowy-rainy', 'hail', 'exceptional', 'cloudy', null].map(c => A.skyState({ condition: c }, null).precip);
+    const flags = [A.skyState({ raining: true }, null).precip, A.skyState({ snowing: true }, null).precip, A.skyState({ raining: true, snowing: true }, null).precip, A.skyState({}, null).precip];
+    return { replaced: !L.p.includes(first), respawned: starts.length, outside: fresh.length / Math.max(starts.length, 1), varied: new Set(starts.map(s => s[2].toFixed(1))).size,
+      lens: new Set(starts.map(s => s[3].toFixed(1))).size, rings: L.rings.length <= 4, sway: dx.some((d, i) => i && d !== dx[i - 1]), kinds, flags };
+  });
+  expect(r.replaced).toBe(true);
+  expect(r.respawned).toBeGreaterThan(40);
+  expect(r.outside).toBe(1);                                    // every new particle starts outside the visible area
+  expect(r.varied).toBeGreaterThan(20); expect(r.lens).toBeGreaterThan(20);   // with its own speed and length
+  expect(r.rings).toBe(true);
+  expect(r.sway).toBe(true);
+  expect(r.kinds).toEqual(['rain', 'rain', 'snow', 'sleet', 'hail', null, null, null]);
+  expect(r.flags).toEqual(['rain', 'snow', 'sleet', null]);
+  // on the card: sleet and hail are drawn as such, an unknown condition draws nothing that falls
+  await page.setViewportSize({ width: 1280, height: 900 });
+  for (const [cond, cls] of [['snowy-rainy', 'sleet'], ['hail', 'hail'], ['exceptional', null]]) {
+    await setup(page, { weather_effects: 'dynamic' }, STATES(cond));
+    const got = await impl(page).evaluate(el => ['rain', 'snow', 'sleet', 'hail'].filter(k => el.shadowRoot.querySelector(`.wxu .wx.${k}`)));
+    expect(got, cond).toEqual(cls ? [cls] : []);
+  }
+});
+
+test('0.26.7.2 load: budgets per level and device, rain also in calm air, the switches and a hidden or removed card stop the work', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mount(page);
+  // n: the drops in the picture's budget (after a change of level the extra ones leave the picture as they fall out of it)
+  const look = () => impl(page).evaluate(el => ({ level: el.getAttribute('data-motion'), loop: !!el._windRaf, fps: el._windRaf && el._windRaf.fps, n: el._wx.layer ? el._wx.layer.p.filter(q => !q.last).length : 0,
+    px: el._wx.canvas ? el._wx.canvas.width * el._wx.canvas.height : 0, css: el._wx.layer ? el._wx.layer.w * el._wx.layer.h : 0, waves: el._waves ? el._waves.length : 0,
+    points: el._waves && el._waves.length ? Math.max(...el._waves.map(w => w.frame.samples.length)) : 0 }));
+  const at = async (level, extra = {}, wind = { wind_speed: 80, wind_gust_speed: 110, wind_bearing: 'W' }) => { await setup(page, { weather_effects: 'full', animation_level: level, ...extra }, STATES('pouring', wind)); await settle(page, 200); return look(); };
+  const calmAir = { wind_speed: 0, wind_gust_speed: 0, wind_bearing: 'W' };
+  const levels = {};
+  for (const l of ['minimal', 'normal', 'intense']) levels[l] = await at(l);
+  const M = await page.evaluate(async src => { const m = await import(eval(src)); return { P: m.PROFILES, S: m.SMALL_CAPS }; }, modUrl('freshairiq-house-motion.js'));
+  for (const [l, s] of Object.entries(levels)) {
+    expect(s.n, l).toBeLessThanOrEqual(M.P[l].particles);
+    expect(s.points, l).toBeLessThanOrEqual(M.P[l].pathPoints);
+    expect(s.px, l).toBeLessThanOrEqual(Math.ceil(s.css * M.P[l].wxDpr * M.P[l].wxDpr) + 4);
+  }
+  expect(levels.minimal.n).toBeLessThan(levels.normal.n); expect(levels.normal.n).toBeLessThan(levels.intense.n);
+  // a phone (coarse pointer, small screen): "intense" keeps the lower ceiling
+  await page.setViewportSize({ width: 390, height: 844 }); await settle(page, 200);
+  const phone = await at('intense');
+  expect(phone.fps).toBe(M.S.intense.fps); expect(phone.n).toBeLessThanOrEqual(M.S.intense.particles); expect(phone.points).toBeLessThanOrEqual(M.S.intense.pathPoints);
+  expect(phone.px).toBeLessThanOrEqual(Math.ceil(phone.css) + 4);
+  await page.setViewportSize({ width: 1280, height: 900 }); await settle(page, 200);
+  // rain in calm air: no wind ribbons, the loop still runs for the falling weather
+  await impl(page).evaluate(el => { el._house = { ...el._house, wind: { ...el._house.wind, available: false, calm: true, speed_ms: 0 } }; el._payload = { ...el._payload, weather_now: { condition: 'pouring', raining: true } }; });
+  const calm = await at('normal', { weather_entity: '' }, calmAir);
+  expect([calm.waves, calm.loop, calm.n > 0]).toEqual([0, true, true]);
+  // the weather switch off: the drops stand still (no loop for them) – the picture stays
+  const still = await at('normal', { weather_entity: '', animation_parts: ['wind', 'light', 'ambient'] }, calmAir);
+  expect([still.loop, still.n > 0]).toEqual([false, true]);
+  // the card out of sight, covered or removed: no loop
+  await at('normal', { weather_entity: '', animation_parts: undefined }, calmAir);
+  for (const how of ['hidden', 'covered']) {
+    await impl(page).evaluate((el, how) => { if (how === 'hidden') el._offscreen = true; else el._covered = true; el._syncPaused(); }, how);
+    expect((await look()).loop, how).toBe(false);
+    await impl(page).evaluate(el => { el._offscreen = false; el._covered = false; el._syncPaused(); });
+    expect((await look()).loop, how).toBe(true);
+  }
+  const loop = await page.evaluate(async src => { const m = await import(eval(src)); document.getElementById('card').remove(); return m.loopSize(); }, modUrl('freshairiq-house-motion.js'));
+  expect(loop).toBe(0);
+});
+
+test('0.26.7.2 fog, clouds, stars, rays and lightning: no grid, nothing in step, the flash not more often or brighter', async ({ page }) => {
+  await mount(page);
+  await loadMods(page);
+  const r = await page.evaluate(() => {
+    const A = window.__A, frame = { minX: 0, minY: 0, maxX: 30, maxY: 20 }, px = v => v * 0.05;
+    const grab = (cond, phase, wind) => { const under = { html: '', vb: [0, -20, 30, 20], ppu: 40, t: 123.4, level: 'normal', particles: 200 };
+      const svg = A.weatherSvg({ ...A.skyState({ condition: cond, thunder: cond === 'lightning-rainy' }, phase === 'night' ? { state: 'below_horizon', attributes: { elevation: -20, azimuth: 0 } } : { state: 'above_horizon', attributes: { elevation: 30, azimuth: 180 } }), directional: true },
+        frame, wind, 0, px, 'm', under);
+      const d = document.createElement('div'); d.innerHTML = under.html + `<svg>${svg}</svg>`; return d; };
+    const wind = { available: true, from_deg: 250, speed_ms: 6 };
+    const fog = [...grab('fog', 'day', wind).querySelectorAll('.wx.fog > i')], clouds = [...grab('cloudy', 'day', wind).querySelectorAll('.wx.clouds > i')];
+    const stars = [...grab('clear-night', 'night', wind).querySelectorAll('.wx.stars > i')], rays = [...grab('sunny', 'day', wind).querySelectorAll('path.ray')];
+    const timing = n => [n.style.animationDuration, n.style.animationDelay];
+    const keyframes = A.ATMOS_STYLE.match(/@keyframes flash\{([\s\S]*?)\}\}/)[1];
+    const peaks = [...keyframes.matchAll(/opacity:(\.\d+)/g)].map(m => Number(m[1])).filter(v => v > 0);
+    const cycle = Number(A.ATMOS_STYLE.match(/\.wx\.flash\{[^}]*animation:flash (\d+)s/)[1]);
+    // one flash = its peaks close together (a flicker): peaks less than 3 % of the cycle apart count once
+    const at = [...keyframes.matchAll(/(\d+(?:\.\d+)?)%\{opacity:\.\d+\}/g)].map(m => Number(m[1]));
+    const flashes = at.filter((p, i) => !i || p - at[i - 1] >= 3).length;
+    return { fog: fog.map(n => [n.style.width, n.style.height, n.style.top, ...timing(n)]), clouds: clouds.map(timing), stars: stars.map(timing), rays: rays.map(n => [n.style.animationDuration, n.style.animationDelay]),
+      peak: Math.max(...peaks), cycle, flashes };
+  });
+  const distinct = (rows, k) => new Set(rows.map(x => x[k])).size;
+  expect(r.fog.length).toBeGreaterThanOrEqual(3); expect(r.fog.length).toBeLessThanOrEqual(4);
+  for (const k of [0, 1, 2, 3, 4]) expect(distinct(r.fog, k), `fog ${k}`).toBe(r.fog.length);   // sizes, heights, drift and fade rhythm all differ
+  expect(distinct(r.clouds, 0)).toBe(r.clouds.length); expect(distinct(r.clouds, 1)).toBe(r.clouds.length);
+  expect(distinct(r.stars, 0)).toBeGreaterThan(r.stars.length * 0.8);
+  expect(distinct(r.rays, 0)).toBe(r.rays.length);
+  // lightning: before 0.26.7.2 one flash (two peaks) in 9 s at most .35 – now not more often, never brighter
+  expect(r.peak).toBeLessThanOrEqual(0.35);
+  expect(r.cycle / Math.max(r.flashes, 1)).toBeGreaterThanOrEqual(9);
+});
+
+test('0.26.7.2 lightning in "full" and "dynamic": the uneven sequence of each mode, no jump on a live update; none with "off" and reduced motion', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mount(page, { config: { animation_level: 'normal' } });
+  const flash = () => impl(page).evaluate(el => {
+    const n = el.shadowRoot.querySelector('.wxu .wx.flash'); if (!n) return null;
+    const a = n.getAnimations()[0]; if (!a) return { name: getComputedStyle(n).animationName, running: false };
+    const c = a.effect.getComputedTiming(), peaks = a.effect.getKeyframes().map(k => Number(k.opacity)).filter(v => v > 0);
+    const at = a.effect.getKeyframes().filter(k => Number(k.opacity) > 0).map(k => k.offset * 100), events = at.filter((p, i) => !i || p - at[i - 1] >= 3).length;
+    return { name: a.animationName, running: true, cycle: c.duration, peak: Math.max(...peaks), events, pos: ((c.currentIteration || 0) + c.progress) * c.duration, at: performance.now() };
+  });
+  const result = {};
+  for (const [fx, name, cycle, peak] of [['dynamic', 'flash', 45000, 0.35], ['full', 'flash-soft', 65000, 0.32]]) {
+    await setup(page, { weather_effects: fx }, STATES('lightning-rainy', { wind_speed: 30, wind_bearing: 'SW' }));
+    await settle(page, 300);
+    const a = await flash();
+    expect([a.name, a.cycle, a.peak, a.events], fx).toEqual([name, cycle, peak, 5]);
+    expect(a.cycle / a.events, fx).toBe(fx === 'full' ? 13000 : 9000);                       // the mode's earlier average rate
+    // a live reading: the new flash layer continues in the same cycle
+    await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: 22.4 } }, output_language: 'de' }));
+    await settle(page, 150);
+    const b = await flash(), expected = (a.pos + (b.at - a.at)) % cycle, diff = Math.abs(b.pos % cycle - expected);
+    expect(b.name).toBe(name);
+    expect(Math.min(diff, cycle - diff), fx).toBeLessThan(1500);
+    result[fx] = true;
+  }
+  expect(result).toEqual({ dynamic: true, full: true });
+  await setup(page, { weather_effects: 'off' }, STATES('lightning-rainy'));
+  expect(await flash()).toBe(null);
+  await mount(page, { reducedMotion: 'reduce', config: { animation_level: 'normal' } });
+  for (const fx of ['dynamic', 'full']) {
+    await setup(page, { weather_effects: fx }, STATES('lightning-rainy'));
+    const r = await flash();
+    expect([r.running, r.name], fx).toEqual([false, 'none']);
+  }
+});
+
+// 0.26.7.2 (support diagnosis 21.11.): the airing log on the house map – its dates in Home Assistant's time zone (the export
+// endpoint's), at 00:20 in Berlin "to" is the new day; a chosen period stays through a live update and both exports request it.
+test.describe('0.26.7.2 airing log period', () => {
+  test.use({ timezoneId: 'UTC' });
+  test('dates in Home Assistant\'s time zone, the chosen period through a live update into CSV and PDF', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-11-21T23:20:00Z'));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const errors = await mount(page);
+    await impl(page).evaluate(el => {
+      window.__api3 = [];
+      el._hass = { ...el._hass, config: { time_zone: 'Europe/Berlin' }, callApi: (m, p) => {
+        window.__api3.push(p); return Promise.resolve(p.includes('format=csv') ? { csv: 'a;b', filename: 'x.csv' } : { pdf_base64: btoa('%PDF-1.4'), filename: 'x.pdf' }); } };
+      URL.createObjectURL = () => 'blob:x'; URL.revokeObjectURL = () => {}; HTMLAnchorElement.prototype.click = () => {};
+      el._selected = null; el._menuOpen = true; el._render(); el.shadowRoot.querySelector('[data-ventlog]').click();
+    });
+    await expect.poll(() => impl(page).evaluate(el => !!el.shadowRoot.querySelector('dialog.roomdlg[open] #ventlog-export'))).toBe(true);
+    const dates = () => impl(page).evaluate(el => ['ventlog-start', 'ventlog-end'].map(id => el.shadowRoot.getElementById(id).value));
+    expect(await dates()).toEqual(['2026-10-23', '2026-11-22']);
+    await impl(page).evaluate(el => {
+      for (const [id, value] of [['ventlog-start', '2026-11-03'], ['ventlog-end', '2026-11-07']]) {
+        const input = el.shadowRoot.getElementById(id); input.value = value; input.dispatchEvent(new Event('change'));
+      }
+    });
+    await page.evaluate(() => window.__subs['freshairiq/dashboard/subscribe']({ rooms: window.__ROOMS, output_language: 'de' }));
+    await settle(page, 120);
+    expect(await dates()).toEqual(['2026-11-03', '2026-11-07']);
+    await impl(page).evaluate(el => el.shadowRoot.getElementById('ventlog-csv').click());
+    await expect.poll(() => page.evaluate(() => window.__api3.length)).toBe(1);
+    await impl(page).evaluate(el => el.shadowRoot.getElementById('ventlog-export').click());
+    await expect.poll(() => page.evaluate(() => window.__api3.length)).toBe(2);
+    expect(await page.evaluate(() => window.__api3)).toEqual(['freshairiq/ventilation-log/e1?start=2026-11-03&end=2026-11-07&format=csv',
+      'freshairiq/ventilation-log/e1?start=2026-11-03&end=2026-11-07']);
+    expect(errors).toEqual([]);
+  });
+});
+
+// 0.26.7.2 (owner order 21.11.): a pure reading update changes the plan's labels and states in place – the plan, the weather and
+// the wind layers stay the same nodes; a change of the floor, the layer, the house (geometry) or anything else in the update draws
+// completely. Focus, scroll, quick updates, a hidden card and the shared loop.
+test('0.26.7.2 a reading update in place; floor, layer, house and other changes draw anew', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const errors = await mount(page);
+  await setup(page);
+  await settle(page, 300);
+  const live = (temperature, extra = {}, rest = {}) => page.evaluate(([temperature, extra, rest]) => window.__subs['freshairiq/dashboard/subscribe'](
+    { rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature, ...extra } }, output_language: 'de', ...rest }), [temperature, extra, rest]);
+  const state = () => impl(page).evaluate(el => { const r = el.shadowRoot, bad = r.querySelector('polygon.room[data-room="r_bad"]');
+    return { same: r.querySelector('.stage') === window.__stage && r.querySelector('svg.plan') === window.__svg && r.querySelector('path[data-wave]') === window.__wave,
+      label: bad ? bad.getAttribute('aria-label') : null, text: r.querySelector('svg.plan') ? r.querySelector('svg.plan').textContent : '',
+      focus: r.activeElement ? r.activeElement.getAttribute('data-floor') : null, scroll: r.querySelector('.map').scrollTop, raf: !!el._windRaf }; });
+  const mark = () => impl(page).evaluate(el => { const r = el.shadowRoot; window.__stage = r.querySelector('.stage'); window.__svg = r.querySelector('svg.plan'); window.__wave = r.querySelector('path[data-wave]'); });
+  await mark();
+  await impl(page).evaluate(el => { const r = el.shadowRoot, map = r.querySelector('.map'); map.style.maxHeight = '200px'; map.style.overflow = 'auto'; map.scrollTop = 40;
+    r.querySelector('[data-floor]').focus(); });
+  const before = await state();
+  await live(21.3);
+  await settle(page, 150);
+  let now = await state();
+  expect([now.same, now.label.includes('21.3 °C'), now.text.includes('21.3 °C'), now.focus, now.scroll, now.raf]).toEqual([true, true, true, before.focus, before.scroll, true]);
+  // quick readings within one frame: the last one is shown, still in place
+  await page.evaluate(() => { for (const t of [21.1, 21.2, 21.4]) window.__subs['freshairiq/dashboard/subscribe']({ rooms: { ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: t } }, output_language: 'de' }); });
+  await settle(page, 150);
+  now = await state();
+  expect([now.same, now.label.includes('21.4 °C'), now.text.includes('21.2 °C')]).toEqual([true, true, false]);
+  // a room's state: a shade of the same drawing in place (the climate tint follows the reading) …
+  const tint = () => impl(page).evaluate(el => el.shadowRoot.querySelector('g.climate polygon.cl').getAttribute('fill-opacity') || el.shadowRoot.querySelector('g.climate polygon.cl').getAttribute('stroke-opacity'));
+  await live(23.4);                                                     // warm: the tint appears (drawn completely)
+  await settle(page, 150);
+  await mark();
+  const tint0 = await tint();
+  await live(24.1);
+  await settle(page, 150);
+  now = await state();
+  expect([now.same, (await tint()) !== tint0, now.label.includes('24.1 °C')]).toEqual([true, true, true]);
+  // … another action (other symbols on the plan) is drawn completely and shown
+  await live(21.4, { action: 'Okay', house_aligned_action: 'okay' });
+  await settle(page, 150);
+  now = await state();
+  expect([now.label === before.label, now.label.includes('21.4 °C'), now.focus]).toEqual([false, true, before.focus]);
+  await mark();
+  // something else in the update (outdoor values): drawn completely
+  await live(21.4, { action: 'Okay', house_aligned_action: 'okay' }, { outdoor_temperature: 3.2 });
+  await settle(page, 150);
+  expect((await state()).same).toBe(false);
+  // the house (layout, openings, air paths): drawn completely
+  await mark();
+  await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, airflow: { ...window.__HOUSE.airflow,
+    openings: { ...window.__HOUSE.airflow.openings, o_wohnen: { ...window.__HOUSE.airflow.openings.o_wohnen, state: 'open', size: 'large' } } } }));
+  await settle(page, 150);
+  expect((await state()).same).toBe(false);
+  // another layer and another floor: drawn completely; a reading there is in place again
+  await mark();
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-layer="humidity"]') ? el.shadowRoot.querySelector('[data-layer="humidity"]').click() : (el._layer = 'humidity', el._render()));
+  expect((await state()).same).toBe(false);
+  await mark();
+  await impl(page).evaluate(el => el.shadowRoot.querySelector('[data-floor]').click());
+  await settle(page, 150);
+  expect((await state()).same).toBe(false);
+  await mark();
+  await live(21.2, { action: 'Okay', house_aligned_action: 'okay' }, { outdoor_temperature: 3.2 });
+  await settle(page, 150);
+  expect((await state()).same).toBe(true);
+  // a hidden card (out of view: paused, no loop) still takes the reading; back in view it runs again
+  await impl(page).evaluate(el => { el._layer = 'action'; el._chooseFloor('f_eg'); });
+  await page.evaluate(() => { document.getElementById('m').style.marginTop = '4000px'; });
+  await expect.poll(() => impl(page).evaluate(el => el.hasAttribute('data-paused'))).toBe(true);
+  await settle(page, 300);
+  await mark();
+  await live(21.1, { action: 'Okay', house_aligned_action: 'okay' }, { outdoor_temperature: 3.2 });
+  await settle(page, 150);
+  now = await state();
+  expect([now.same, now.label.includes('21.1 °C'), now.raf]).toEqual([true, true, false]);
+  await page.evaluate(() => { document.getElementById('m').style.marginTop = '0px'; });
+  await expect.poll(() => impl(page).evaluate(el => !el.hasAttribute('data-paused') && !!el._windRaf)).toBe(true);
+  const loop = await page.evaluate(async () => (await import(performance.getEntriesByType('resource').map(e => e.name).find(n => n.includes('/freshairiq-house-motion.js')))).loopSize());
+  expect(loop).toBe(1);
+  // an open room window: drawn completely, its values follow
+  await impl(page).evaluate(el => { const r = el._layout().layout.rooms.find(x => x.room_key === 'bad'); el._selected = { type: 'room', id: r.id }; el._render(); });
+  await live(21.3, { action: 'Okay', house_aligned_action: 'okay' }, { outdoor_temperature: 3.2 });
+  await settle(page, 150);
+  expect(await impl(page).evaluate(el => /21[.,]3\s?°C/.test(el.shadowRoot.querySelector('dialog.roomdlg[open]').textContent))).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+// 0.26.7.2 (owner order 21.11., third): the complete coordinator payload of a live update – readings and house values
+// (temperature, humidity, total_water_ml, the removable moisture) change together and are updated in place; the scene keeps its
+// nodes (plan, weather layer and canvas, wind paths, air canvas) and the loop. A wind reading that only got older stays in place;
+// openings, air paths, the weather and both channels in one frame draw completely.
+const FULL = (rooms, extra = {}) => ({
+  freshairiq_live_api: 'dashboard_ws_v1', freshairiq_entry_id: 'e1', freshairiq_version: '0.26.7.2', output_language: 'de', status: 'ok', status_text: 'Alles im grünen Bereich',
+  rooms, levels: ['ground_floor', 'upper_floor'], total_water_ml: 1840, potential_total_ml: 420, live_balance_ml: null, moisture_balance_today_ml: -260,
+  recommended_duration_min: 12, remaining_duration_min: null, remaining_duration_state: null, prognosis_confidence: 72, forecast_horizon_min: 15,
+  forecast_moisture_effect_ml: -210, forecast_temperature_change_c: -0.6, ventilation_threshold_ml: 300, overnight_forecast_ml: 380, night_model_samples: 9,
+  effective_occupants: 2, outdoor_temperature: 6.5, outdoor_humidity: 81, outdoor_absolute_humidity: 6.1, wind_speed: 4.2, wind_bearing: 250,
+  weather_now: { condition: 'rainy', raining: true, outdoor_temperature: 6.5 }, pollen_enabled: false,
+  intelligent_recommendation: { kind: 'close', title: 'Bad schließen', instruction: 'Fenster im Bad schließen', room_keys: ['bad'], status: 'action' },
+  night_strategy: { action: 'closed', summary: 'Nachts geschlossen lassen' }, history_summary: { days: 14 }, ...extra });
+test('0.26.7.2 a complete live payload: readings and house values in place, the scene keeps its nodes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const errors = await mount(page);
+  await setup(page, { weather_effects: 'full' });
+  const send = (bad, extra = {}) => page.evaluate(([bad, extra, full]) => window.__subs['freshairiq/dashboard/subscribe'](
+    eval(full)({ ...window.__ROOMS, bad: { ...window.__ROOMS.bad, ...bad } }, extra)), [bad, extra, FULL.toString()]);
+  await send({});
+  await settle(page, 400);
+  const mark = () => impl(page).evaluate(el => { const r = el.shadowRoot;
+    window.__nodes = [r.querySelector('.stage'), r.querySelector('svg.plan'), r.querySelector('.wxu'), r.querySelector('path[data-wave]'), el._wx.canvas, el._flowCanvas, r.querySelector('.moist')]; });
+  const same = () => impl(page).evaluate(el => { const r = el.shadowRoot, now = [r.querySelector('.stage'), r.querySelector('svg.plan'), r.querySelector('.wxu'), r.querySelector('path[data-wave]'), el._wx.canvas, el._flowCanvas, r.querySelector('.moist')];
+    return now.every((n, i) => n === window.__nodes[i]) && (!el._wx.canvas || el._wx.canvas.isConnected) && !!el._windRaf; });
+  const label = () => impl(page).evaluate(el => el.shadowRoot.querySelector('polygon.room[data-room="r_bad"]').getAttribute('aria-label'));
+  const chip = () => impl(page).evaluate(el => (el.shadowRoot.querySelector('.moist') || {}).textContent || '');
+  const menu = () => impl(page).evaluate(el => { const d = el.shadowRoot.querySelector('dialog.menudlg'); return { same: d === window.__menu, text: d.textContent.replace(/\s+/g, ' ') }; });
+  await mark();
+  await impl(page).evaluate(el => { window.__menu = el.shadowRoot.querySelector('dialog.menudlg'); });
+  expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('path[data-wave]') && !!el._wx.canvas && !!el._windRaf)).toBe(true);
+  const chip0 = await chip();
+  await send({ temperature: 21.3, humidity: 57 }, { total_water_ml: 1915, potential_total_ml: 465, moisture_balance_today_ml: -300,
+    status_text: 'Stand 21:30', intelligent_recommendation: { kind: 'close', title: 'Bad jetzt schließen', instruction: 'Fenster im Bad schließen', room_keys: ['bad'], status: 'action' } });
+  await settle(page, 1200);                                              // the removable moisture glides to its new value
+  expect(await same()).toBe(true);
+  const now = await label();
+  expect([now.includes('21.3 °C'), now.includes('57 %'), (await chip()) !== chip0, (await chip()).includes('465')]).toEqual([true, true, true, true]);
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('svg.plan').textContent.includes('21.3 °C · 57 %'))).toBe(true);
+  // the menu window carries the recommendation and the house values: it follows in place as well (a narrow card shows them only there)
+  expect(await menu()).toEqual(expect.objectContaining({ same: true }));
+  expect([(await menu()).text.includes('Stand 21:30'), (await menu()).text.includes('Bad jetzt schließen')]).toEqual([true, true]);
+  // the house values in the house window (drawn when it opens)
+  await impl(page).evaluate(el => { el._go('house', ''); });
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg[open]').textContent.replace(/\s+/g, ' '))).toContain('1915 ml');
+  // an update while the window is open: its content follows (drawn completely), the window stays open
+  await send({ temperature: 21.3, humidity: 57 }, { total_water_ml: 1960, potential_total_ml: 465 });
+  await settle(page, 200);
+  expect(await impl(page).evaluate(el => el.shadowRoot.querySelector('dialog.roomdlg[open]').textContent.replace(/\s+/g, ' '))).toContain('1960 ml');
+  await impl(page).evaluate(el => el._closeDialog());
+  await settle(page, 200);
+  await mark();
+  // the house channel: only the age of the wind reading – in place
+  await impl(page).evaluate(el => { window.__menu = el.shadowRoot.querySelector('dialog.menudlg'); });
+  await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, wind: { ...window.__HOUSE.wind, age_s: 300 } }));
+  await settle(page, 200);
+  expect(await same()).toBe(true);
+  expect((await menu()).same).toBe(true);
+  // an opening changes: drawn completely
+  const opened = () => ({ ...window.__HOUSE, wind: { ...window.__HOUSE.wind, age_s: 360 }, airflow: { ...window.__HOUSE.airflow, openings: { ...window.__HOUSE.airflow.openings, o_bad: { ...window.__HOUSE.airflow.openings.o_bad, pending: false, state: 'open' } } } });
+  await page.evaluate(`window.__subs['freshairiq/house_map/subscribe']((${opened.toString()})())`);
+  await settle(page, 200);
+  expect(await same()).toBe(false);
+  // both channels in one frame (a reading and a new air path): drawn completely, both shown
+  await mark();
+  await page.evaluate(([full]) => { const make = eval(full);
+    window.__subs['freshairiq/dashboard/subscribe'](make({ ...window.__ROOMS, bad: { ...window.__ROOMS.bad, temperature: 21.1, humidity: 57 } }, { total_water_ml: 1960, potential_total_ml: 465 }));
+    window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, wind: { ...window.__HOUSE.wind, age_s: 400 }, airflow: { ...window.__HOUSE.airflow, paths: [] } }); }, [FULL.toString()]);
+  await settle(page, 200);
+  expect([await same(), (await label()).includes('21.1 °C')]).toEqual([false, true]);
+  // another weather (the weather layer's source): drawn completely
+  await mark();
+  await send({ temperature: 21.1, humidity: 57 }, { total_water_ml: 1960, potential_total_ml: 465, weather_now: { condition: 'snowy', raining: false, outdoor_temperature: -1 } });
+  await settle(page, 200);
+  expect(await same()).toBe(false);
+  expect(errors).toEqual([]);
+});

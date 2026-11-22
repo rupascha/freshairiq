@@ -296,18 +296,6 @@ def _close_released(large_return: bool, proven_cooling: bool, *, still_closing: 
 # internal load in balance with the airing, not a reason to close.
 
 
-def _co2_airing_done(room: RoomInput, options: dict[str, Any], moisture_candidate: bool, *, keep_open: bool) -> bool:
-    """0.26.5.4 (review A07): an airing asked for CO2 alone has done its job once CO2 is down again.
-
-    "Down" means 50 ppm below the warning threshold (the hysteresis). It stays open
-    when the room has meanwhile become a humidity case of its own, a moisture source
-    runs, cooling is still useful or protection is urgent.
-    """
-    return bool(room.session_co2_only and room.session_active and not moisture_candidate and not keep_open
-                and not room.co2_sensor_missing  # audit P1-04: no value is no "CO2 is down"
-                and not co2_lead(room.co2, options, room.co2_lead_latched))
-
-
 def _source_postrun(room: RoomInput, options: dict[str, Any], *, running: bool, delta: float, mins: float) -> bool:
     """Keep airing after a moisture source while the reference air is still drier.
 

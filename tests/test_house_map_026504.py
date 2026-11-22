@@ -43,8 +43,7 @@ def test_concave_hit_testing_and_boundaries() -> None:
     assert hl.point_in_polygon((3, 4), pts) == "outside"  # the notch of the U
     assert hl.point_in_polygon((1, 4), pts) == "inside"
     assert hl.point_in_polygon((0, 2), pts) == "boundary"
-    assert hl.ccw([[0, 0], [0, 4], [4, 4], [4, 0]]) == [[4, 0], [4, 4], [0, 4], [0, 0]]
-    assert hl.ccw(SQUARE) == SQUARE
+    assert hl.signed_area([(0, 0), (0, 4), (4, 4), (4, 0)]) < 0 < hl.signed_area(pts)
 
 
 def test_interior_point_falls_back_to_the_mean() -> None:
@@ -63,9 +62,9 @@ def test_shared_walls_and_neighbours() -> None:
     assert hl.shared_length((0, 0), (4, 0), (0, 1), (4, 1)) == 0.0
     assert hl.shared_length((0, 0), (0, 0), (0, 0), (1, 0)) == 0.0
     layout = _layout([("a", "a", "f_g", SQUARE), ("b", "b", "f_g", [[4, 0], [8, 0], [8, 4], [4, 4]])])
-    assert hl.neighbour_at(layout, "a", (4, 2)) == "b"
-    assert hl.neighbour_at(layout, "a", (0, 2)) is None
-    assert hl.neighbour_at(layout, "missing", (0, 0)) is None
+    assert hl.opening_neighbour(layout, "a", {"edge": 1, "offset": 0.5}) == "b"
+    assert hl.opening_neighbour(layout, "a", {"edge": 3, "offset": 0.5}) is None
+    assert hl.opening_neighbour(layout, "missing", {"edge": 0, "offset": 0.5}) is None
 
 
 @pytest.mark.parametrize(("polygon", "code"), [
@@ -230,9 +229,7 @@ def test_proposal_is_deterministic_valid_and_honest() -> None:
     # every window sits on an outside wall, at a free stretch of it
     for opening in layout["openings"]:
         if opening["kind"] == "window":
-            room = next(r for r in layout["rooms"] if r["id"] == opening["room_id"])
-            point = hl.edge_point([tuple(p) for p in room["polygon"]], opening["edge"], opening["offset"])
-            assert hl.neighbour_at(layout, room["id"], point) is None, opening
+            assert hl.opening_neighbour(layout, opening["room_id"], opening) is None, opening
     wohnen = [o for o in layout["openings"] if o["room_id"] == "r_wohnen"]
     assert len(wohnen) == 2 and wohnen[0]["offset"] != wohnen[1]["offset"]
     bad_window = next(o for o in layout["openings"] if o["id"] == "o_bad_0")

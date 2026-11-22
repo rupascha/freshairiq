@@ -1,6 +1,6 @@
 # Tag-driven release. Restored 2026-10-16 from contract tests.
-# Every release carries the installation ZIP freshairiq.zip (manual install; GitHub counts its
-# downloads). HACS and the Marketplace keep installing from the source archive (no zip_release, A-236).
+# Every release carries the installation ZIP freshairiq.zip: HACS and the Marketplace install it
+# (hacs.json zip_release/filename at this tag, A-243) and GitHub counts its downloads.
 # The release is created as a draft, both assets are attached, and only then is it published. Assets are only built after all required checks (quality.yml, tag = manifest, source gate).
 name: Release
 
@@ -62,5 +62,7 @@ jobs:
           cp release-artifact/freshairiq.zip freshairiq.zip
           RELEASE_ASSET="$ASSET"
           gh release create "$GITHUB_REF_NAME" "$RELEASE_ASSET" freshairiq.zip --draft --verify-tag --title "FreshAirIQ $VERSION" --notes-file "docs/releases/RELEASE_NOTES_${VERSION}.md"
-          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -qx freshairiq.zip
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' > draft-assets.txt
+          grep -qx freshairiq.zip draft-assets.txt
+          grep -qxF "$ASSET" draft-assets.txt
           gh release edit "$GITHUB_REF_NAME" --draft=false

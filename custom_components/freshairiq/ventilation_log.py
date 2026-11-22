@@ -104,20 +104,14 @@ def filter_ventilation_log(history: Any, start: datetime, end: datetime) -> list
         except TypeError:
             continue
         if overlaps:
-            rows.append(dict(item))
-    return sorted(rows, key=lambda x: str(x.get("started_at") or ""))
+            rows.append((started.timestamp(), dict(item)))
+    # 0.26.7.2: by the absolute start – the text sorted 02:50 summer time after 02:10 winter time (25.10.)
+    return [row for _key, row in sorted(rows, key=lambda x: (x[0], str(x[1].get("started_at") or "")))]
 
 
 def _pdf_escape(text: Any) -> str:
     raw = str(text or "").replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
     return raw.encode("cp1252", "replace").decode("latin1")
-
-
-def _fmt_dt(value: Any) -> str:
-    try:
-        return datetime.fromisoformat(str(value)).strftime("%d.%m.%Y %H:%M")
-    except (TypeError, ValueError):
-        return "–"
 
 
 def _fmt(value: Any, digits: int = 1) -> str:

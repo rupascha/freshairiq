@@ -503,7 +503,7 @@ def test_post_stabilization_timezone_mix_and_continued_drying():
 
 
 def test_presence_unknown_zero_household_and_pet_soft_sensor():
-    assert presence._state_kind("unknown") == "unknown"
+    assert presence.normalize_presence_state("person.a", "unknown") == "unknown"
     empty = presence.resolve_occupancy({}, lambda _: None)
     assert empty["presence_confidence"] == 100
 

@@ -13,7 +13,7 @@ from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.live_coach import r07_time_fields
 from custom_components.freshairiq.decision_brain import build_unified_decision
 from custom_components.freshairiq.live_coach import align_live_coach_state, refine_live_recommendation
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 
 OPTIONS = {**DEFAULT_OPTIONS, "min_duration_min": 5, "max_duration_min": 20}
 
@@ -69,7 +69,7 @@ def test_close_reason_follows_the_rooms_close_kind(kind, text):
     rooms = {"bad": _room("bad", 12.0, close_recommended=True, close_kind=kind, action="Close")}
     out = refine_live_recommendation(rooms, OPTIONS, {**REC, "kind": "close"})
     assert out["live_coach_reason"].startswith(text)
-    assert to_english(out["live_coach_reason"]) != out["live_coach_reason"]
+    assert Translator().text(out["live_coach_reason"]) != out["live_coach_reason"]
 
 
 def test_physical_close_keeps_its_wording_and_unknown_kinds_add_nothing():
@@ -122,6 +122,6 @@ def test_decision_brain_shows_reassessing_instead_of_a_countdown():
     brain = build_unified_decision(rec, rooms, OPTIONS)["decision_brain"]
     # the planned target is over: no outdated "Ziel etwa 8 min", the reason why no remaining time can be given
     assert brain["action_line"] == "Restzeit nicht bestimmbar – FreshAirIQ bewertet jeden Zyklus neu"
-    assert to_english(brain["action_line"]) == "Remaining time cannot be determined – FreshAirIQ reassesses every cycle"
+    assert Translator().text(brain["action_line"]) == "Remaining time cannot be determined – FreshAirIQ reassesses every cycle"
     rec["live_coach_time_reason"] = "Restzeit nicht bestimmbar – eine Feuchtequelle ist noch aktiv"
     assert build_unified_decision(rec, rooms, OPTIONS)["decision_brain"]["action_line"] == rec["live_coach_time_reason"]

@@ -339,6 +339,10 @@ def decide_fan(
     all_on: bool | None = None,
     all_off: bool | None = None,
     source_hold: bool = False,
+    held: bool = False,
+    renewed: bool = False,
+    idle: bool = True,
+    evaluated: bool = True,
 ) -> str | None:
     """"on", "off" or None for the exhaust fan(s) of one room; ``mem`` is updated.
 
@@ -356,6 +360,17 @@ def decide_fan(
     0.26.5.4 (review): with several fans ``fan_on`` means "any on"; a switch-on
     is only confirmed when ``all_on`` (every fan reports on). A device that is
     unavailable cannot confirm a command – it still fails after the timeout.
+
+    0.26.7.2 (support diagnosis 20.11., laundry room): after a run FreshAirIQ ended (goal reached, maximum
+    runtime, moisture coming in) or someone switched off by hand, the recommendation mode starts again only
+    for a demand that is valid now – not for the old one the repeat lock merely held back (``held``: the
+    room's own recommendation still asks for air, the lock shows "wait"). The old demand is over once the
+    room, with no airing running (``idle``), really asks for nothing any more; a new reason that lifts the
+    repeat lock (``renewed``: critical air, a strong new moisture source, clearly drier air) or an urgent
+    case starts at once as before (``await_new_demand``).
+
+    0.26.7.2 (support diagnosis 21.11., Harald): only a valid room evaluation (``evaluated``) can end the old
+    demand – "check sensor", missing room data or implausible readings say nothing about it and keep the lock.
     """
     command = mem.get("command")
     if fan_on is None:
@@ -390,11 +405,14 @@ def decide_fan(
             mem["blocked"] = False
     else:
         mem.pop("demand_lost_since", None)
+    if mem.get("await_new_demand") and not demand and not held and idle and evaluated:
+        mem.pop("await_new_demand", None)  # the room really asks for nothing any more: the old demand is over
     if mem.get("owned") and not fan_on:
         mem["owned"] = False
         mem["blocked"] = demand
         mem.pop("off_pending_since", None)
         mem["reason"] = "manual_off"
+        _await_new_demand(mem, mode)
         return None
     if demand:
         mem["last_demand"] = now.isoformat()
@@ -406,6 +424,7 @@ def decide_fan(
         if now - since >= timedelta(minutes=max_runtime_min):
             mem["blocked"] = demand
             mem["completed_at"] = now.isoformat()
+            _await_new_demand(mem, mode)
             return _fan_command(mem, "off", now, "max_runtime")
         if not demand:
             if mode == FAN_CONTROL_MOISTURE_SOURCE:
@@ -418,10 +437,12 @@ def decide_fan(
                 return None
             if safety_off:
                 mem["completed_at"] = now.isoformat()
+                _await_new_demand(mem, mode)
                 return _fan_command(mem, "off", now, "moisture_ingress")
             pending = _parse(mem.setdefault("off_pending_since", now.isoformat())) or now
             if now - pending >= timedelta(seconds=off_confirm_s):
                 mem["completed_at"] = now.isoformat()
+                _await_new_demand(mem, mode)
                 return _fan_command(mem, "off", now, "goal_reached")
             mem["reason"] = "off_confirming"
         return None
@@ -430,11 +451,20 @@ def decide_fan(
         if not urgent and completed is not None and now - completed < timedelta(minutes=restart_lock_min):
             mem["reason"] = "restart_locked"
             return None
+        if mem.get("await_new_demand") and not urgent and not renewed:
+            mem["reason"] = "demand_unchanged"
+            return None
+        mem.pop("await_new_demand", None)
         mem["owned"] = True
         mem["since"] = now.isoformat()
         mem.pop("group_retry", None)
         return _fan_command(mem, "on", now, "moisture_source" if mode == FAN_CONTROL_MOISTURE_SOURCE else "recommendation")
     return None
+
+
+def _await_new_demand(mem: dict[str, Any], mode: str) -> None:
+    if mode == FAN_CONTROL_RECOMMENDATION:
+        mem["await_new_demand"] = True
 
 
 def settle_removed_off(mem: dict[str, Any], fan_on: bool | None, now: datetime, *, all_off: bool | None = None,

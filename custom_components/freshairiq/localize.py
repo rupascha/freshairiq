@@ -276,8 +276,3 @@ def protected_names(entry_data: Mapping[str, Any] | None, options: Mapping[str, 
         names.update(str(item).strip() for item in items if str(item).strip())
     # Legacy floor codes are displayed as translated labels, so do not protect them.
     return {n for n in names if n and n not in {"ground_floor", "upper_floor", "basement", "attic", "other", "Unzugeordnet"}}
-
-
-def to_english(text: str, protected: Iterable[str] = ()) -> str:
-    """Translate one German text (convenience wrapper for notifications/APIs)."""
-    return Translator(protected).text(text)

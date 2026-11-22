@@ -1,4 +1,3 @@
-from tests.release_version import CURRENT_RELEASE_VERSION
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -66,9 +65,3 @@ def test_moisture_source_contaminates_stabilization():
                                                window_open=False, moisture_source_active=False)
     assert outcome["contaminated"] is True
     assert outcome["valid_for_analysis"] is False
-
-
-def test_release_version_020304():
-    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

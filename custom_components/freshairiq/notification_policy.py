@@ -210,27 +210,62 @@ def record_room_push(mem: dict[str, Any], message: dict[str, Any], accepted: boo
 
 
 NOTIFY_TARGET_ATTEMPTS = 3
+_ACTION_EVENTS = {"ventilate", "cool", "close", "fan_auto"}
 
 
-def delivery_ledger(store_data: dict[str, Any], key: str, signature: str) -> dict[str, Any]:
+def delivery_ledger(store_data: dict[str, Any], key: str, signature: str, now: datetime | None = None,
+                    recipient: Any = str, episode: Any = None) -> dict[str, Any]:
     """F14: the recipients that already accepted one message, and the failed attempts per recipient.
 
-    A new message (another signature) under the same key starts a new ledger, so every recipient gets it.
+    A new message (another signature) under the same key starts a new ledger, so every recipient gets it. 0.26.7.2:
+    so does a new recommendation with the same text (``episode``: the house recommendation it follows, the start of the
+    room's action). The first attempt (``first_at``) is kept apart from the last round (``attempt_at``) – further
+    rounds, a restart or another spelling of a recipient never move it. The lists are read by ``recipient``; ledgers
+    written before keep their spelling ("phone" and "notify.phone" are one recipient), no episode (theirs is the
+    current one) and no first attempt (their earliest known time counts).
     """
     deliveries = store_data.get("notification_deliveries")
     if not isinstance(deliveries, dict):
         deliveries = store_data["notification_deliveries"] = {}
     entry = deliveries.get(key)
-    if not isinstance(entry, dict) or entry.get("signature") != signature:
+    if not isinstance(entry, dict) or entry.get("signature") != signature or entry.get("episode", episode) != episode:
         entry = deliveries[key] = {"signature": signature, "accepted": [], "failed": {}}
+    failed: dict[str, int] = {}
+    for target, count in (entry.get("failed") if isinstance(entry.get("failed"), dict) else {}).items():
+        failed[recipient(target)] = max(failed.get(recipient(target), 0), _count(count))
+    unavailable: dict[str, Any] = {}
+    for target, since in (entry.get("unavailable") if isinstance(entry.get("unavailable"), dict) else {}).items():
+        unavailable.setdefault(recipient(target), since)
+    first = entry.get("first_at") if _parse(entry.get("first_at")) else None
+    if first is None:
+        known = [t for t in (_parse(x) for x in (entry.get("attempt_at"), *unavailable.values())) if t is not None]
+        first = min(known).isoformat() if known else now.isoformat() if now is not None else None
+    entry.update(accepted=sorted({recipient(target) for target in entry.get("accepted") or []}), failed=failed, unavailable=unavailable,
+                 episode=episode, first_at=first)
     return entry
 
 
-def settle_delivery(store_data: dict[str, Any], key: str, accepted: list[str], failed: dict[str, Any]) -> bool:
+def delivery_late(entry: dict[str, Any], now: datetime | None) -> bool:
+    """0.26.7.2: the retry window since the first attempt is over – the message is sent to nobody any more."""
+    first = _parse(entry.get("first_at"))
+    return now is not None and first is not None and now - first > timedelta(minutes=PUSH_RETRY_WINDOW_MIN)
+
+
+def push_episode(store: Any, room_key: str | None, event: str, reminder: bool) -> Any:
+    """0.26.7.2: the recommendation a room push belongs to – an action message and its reminder to the start of the
+    room's action (``action_notified_at``); other room messages are not tied to one."""
+    return store.room(room_key).get("action_notified_at") if room_key and (reminder or event in _ACTION_EVENTS) else None
+
+
+def settle_delivery(store_data: dict[str, Any], key: str, accepted: list[str], failed: dict[str, Any],
+                    unavailable: Any = (), now: datetime | None = None) -> bool:
     """F14: one sending round of a message – True when it is done (no recipient left to try again).
 
     A recipient whose service failed is tried again with the next rounds, at most ``NOTIFY_TARGET_ATTEMPTS`` times.
-    A finished message leaves no ledger behind.
+    0.26.7.2: a recipient allowed to get it whose service or entity is not there (yet) keeps the message open – also
+    after another one accepted it – until it appears within the retry window (``PUSH_RETRY_WINDOW_MIN``) counted from
+    the first attempt; after the window the message is done. A recipient no longer tried (away, filtered out) is no
+    longer waited for. A finished message leaves no ledger behind.
     """
     entry = store_data["notification_deliveries"][key]
     entry["accepted"] = sorted({*entry["accepted"], *accepted})
@@ -238,10 +273,22 @@ def settle_delivery(store_data: dict[str, Any], key: str, accepted: list[str], f
     for target in failed:
         counts[target] = int(counts.get(target) or 0) + 1
     entry["failed"] = counts
-    done = all(count >= NOTIFY_TARGET_ATTEMPTS for count in counts.values())
+    since = entry.get("unavailable") if isinstance(entry.get("unavailable"), dict) else {}
+    stamp = now.isoformat() if now is not None else None
+    entry["unavailable"] = {target: since.get(target) or stamp for target in unavailable}
+    entry["attempt_at"] = stamp
+    late = delivery_late(entry, now)
+    done = late or (all(count >= NOTIFY_TARGET_ATTEMPTS for count in counts.values()) and not (now is not None and entry["unavailable"]))
     if done:
         store_data["notification_deliveries"].pop(key, None)
     return done
+
+
+def _count(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _reopen_held(action: Any, room: dict[str, Any], mem: dict[str, Any], now: datetime, options: dict[str, Any]) -> bool:

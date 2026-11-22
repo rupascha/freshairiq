@@ -10,8 +10,8 @@ from __future__ import annotations
 import pytest
 
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
-from custom_components.freshairiq.localize import to_english
-from custom_components.freshairiq.model import RoomInput, _co2_airing_done, co2_lead, co2_release_ppm, evaluate_room
+from custom_components.freshairiq.localize import Translator
+from custom_components.freshairiq.model import RoomInput, co2_lead, co2_release_ppm, evaluate_room
 from custom_components.freshairiq.room_recommendation import _recommendation
 from custom_components.freshairiq.settings_contract import NATIVE_OPTION_KEYS
 from custom_components.freshairiq.validation import option_relationship_error, repair_option_relationships
@@ -52,10 +52,10 @@ def test_release_never_sits_at_or_above_the_warning_threshold_at_runtime():
 def test_co2_only_airing_is_not_closed_at_1450_ppm_any_more():
     options = {**BASE, "co2_release": 750}
     running = dict(session_active=True, session_co2_only=True)
-    assert _co2_airing_done(_room(1127, latched=True, **running), options, False, keep_open=False) is False
-    assert _co2_airing_done(_room(740, latched=True, **running), options, False, keep_open=False) is True
+    assert evaluate_room(_room(1127, latched=True, **running), options, False).co2_airing is True
+    assert evaluate_room(_room(740, latched=True, **running), options, False).co2_airing is False
     # without the option the previous behaviour stays: done below 1450 ppm
-    assert _co2_airing_done(_room(1127, latched=True, **running), BASE, False, keep_open=False) is True
+    assert evaluate_room(_room(1127, latched=True, **running), BASE, False).co2_airing is False
 
 
 def test_room_keeps_asking_for_air_inside_the_release_band_with_the_level_in_the_reason():
@@ -66,7 +66,7 @@ def test_room_keeps_asking_for_air_inside_the_release_band_with_the_level_in_the
                                                wind_speed=None, co2_latched=True)
     assert action == "Ventilate"
     assert reasons[0] == "CO₂ 1127 ppm liegt unter der Warnschwelle 1500 ppm; die Empfehlung endet erst unter 750 ppm"
-    assert to_english(reasons[0]) == "CO₂ 1127 ppm is below the warning threshold of 1500 ppm; the recommendation only ends below 750 ppm"
+    assert Translator().text(reasons[0]) == "CO₂ 1127 ppm is below the warning threshold of 1500 ppm; the recommendation only ends below 750 ppm"
 
 
 def test_default_reason_text_is_unchanged():

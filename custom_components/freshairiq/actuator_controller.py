@@ -49,7 +49,7 @@ from .actuator_control import (
     still_holding,
 )
 from .const import CONF_AUTOMATION_LOCK_ENTITY, DOMAIN
-from .fan_automation import fan_restart_lock_min, fan_trace_row
+from .fan_automation import fan_restart_lock_min, fan_trace_row, settle_failed_off, starting_rooms
 from .opening_state import normalize_opening_state
 
 _LOGGER = logging.getLogger(__name__)
@@ -427,7 +427,7 @@ class ActuatorController:
             "reason": mem.get("reason"),
             "off_pending_since": mem.get("off_pending_since"),
             "completed_at": mem.get("completed_at"),
-            "restart_locked": self._restart_locked(key, mem),
+            "restart_locked": self._restart_locked(key, mem), "await_new_demand": bool(mem.get("await_new_demand")),
             **self._sharing(key, mem),
             "own_off": (mem.get("own_off") or {}).get("state"),
             "automation_lock": self.automation_lock()["active"],
@@ -437,12 +437,8 @@ class ActuatorController:
         }
 
     def _sharing(self, key: str, mem: dict[str, Any]) -> dict[str, Any]:
-        """0.26.5.5: one picture of a fan several rooms share (no entity IDs).
-
-        ``shared_owner``: another room's control switched this room's fan on – FreshAirIQ runs it,
-        not the user. ``shared_for``: this room switched it on and it runs on for another room.
-        ``external_lock``: another automation controls the fans right now.
-        """
+        """0.26.5.5: one picture of a fan several rooms share (no entity IDs). ``shared_owner``: another room's control started it (FreshAirIQ's,
+        not the user's); ``shared_for``: this room started it, it runs on for another room; ``external_lock``: another automation controls it now."""
         room = next((r for r in self._rooms if str(r.get("key")) == str(key)), {})
         fans = set(_fan_entities(room)) if room else set()
         if not fans or not _room_controls_fan(room):
@@ -452,6 +448,7 @@ class ActuatorController:
         holding = self._fan_holding_by_room()
         others = any(str(r["key"]) in holding for r in sharers)
         return {"shared_owner": bool(owner and not mem.get("owned")), "shared_for": bool(mem.get("owned") and others and str(key) not in holding),
+                "shared_started_by": starting_rooms(mem, fans, [(r, _fan_entities(r)) for r in sharers], self._memory["fans"], self.hass.states),
                 "external_lock": fans <= self._locked_fans(), **self._timing([room, *sharers])}
 
     def _timing(self, rooms: list[dict[str, Any]]) -> dict[str, Any]:
@@ -597,6 +594,8 @@ class ActuatorController:
         mem = self._memory["fans"].setdefault(str(room["key"]), {})
         before = dict(mem)
         now = dt_util.now()
+        for row in settle_failed_off(mem, _fan_entities(room), lambda group: self._fan_states(group)[3]):
+            self._trace(str(room["key"]), mode, row, now)
         if not fans:
             # 0.26.5.5: another automation (Alexa, washing machine …) controls the fans – FreshAirIQ
             # sends nothing and gives up its ownership: it never switches off what the other one runs
@@ -645,7 +644,8 @@ class ActuatorController:
             safety_off=_moisture_coming_in(data),
             all_on=all_on,
             all_off=all_off,
-            source_hold=self._source_hold(room, data),
+            source_hold=self._source_hold(room, data), held=bool(data.get("repeat_cooldown_demoted")),
+            renewed=bool(data.get("repeat_cooldown_override")), idle=not data.get("active"), evaluated=data.get("data_quality") == "ok",
         )
         if decision == "off" and mem.get("reason") == "max_runtime":
             self._block_sharers(room, fans)  # 0.26.5.5: the maximum runtime protects the device, not one room
@@ -659,6 +659,7 @@ class ActuatorController:
         elif decision == "off":
             group = view
         if decision is not None:
+            mem.update(off_targets=list(group) if decision == "off" else None, trigger=str(data.get("house_aligned_action") or "unknown"))
             if not await self._async_call("homeassistant", f"turn_{decision}", {"entity_id": group}):
                 mem["command_state"] = "failed"
                 if decision == "on":

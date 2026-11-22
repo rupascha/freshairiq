@@ -1,4 +1,3 @@
-from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 import json
 from tests._source import module_source
@@ -6,15 +5,14 @@ from tests._source import module_source
 ROOT=Path(__file__).resolve().parents[1]
 COMP=ROOT/'custom_components/freshairiq'
 
-def test_release_version():
-    assert json.loads((COMP/'manifest.json').read_text())['version']==CURRENT_RELEASE_VERSION
-    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (COMP/'const.py').read_text()
 
 def test_native_level_labels_are_localized():
     s=module_source("config_flow")
-    # 0.26.4.5: the labels follow the Home Assistant language.
-    assert 'vol.Required(_level_label(level, _flow_language(self.hass)), default=idx)' in s
-    assert 'user_input.get(_level_label(level, _flow_language(self.hass))' in s
+    # 0.26.4.5: the labels follow the Home Assistant language (0.26.7.2: one unique field per stored level id).
+    assert 'keys = _level_form_keys(levels, _flow_language(self.hass))' in s
+    assert 'label = _level_label(level, language)' in s
+    assert 'vol.Required(keys[level], default=idx)' in s
+    assert 'int(user_input.get(keys[level], indexed[level] + 1))' in s
 
 def test_decision_clarity_contracts():
     s=(COMP/'frontend/freshairiq-card.js').read_text()

@@ -38,8 +38,7 @@ jobs:
           node-version: "22"
       - name: Install test dependencies
         run: python -m pip install pytest pytest-asyncio pytest-cov coverage aiohttp
-      - name: Pure-logic correctness (hard 100 % line coverage)
-        run: python -m pytest -q -p no:cacheprovider tests --cov=custom_components/freshairiq --cov-config=.coveragerc-pure --cov-fail-under=100
+      # runs the Python suite once, with the hard 100 % pure-logic line coverage (tools/pure_logic_coverage_gate.py)
       - name: Continuous quality gate
         run: python tools/quality_gate.py --profile local
       - name: GitHub/HACS release gate (source)

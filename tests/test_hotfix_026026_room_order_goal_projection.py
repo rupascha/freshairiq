@@ -8,12 +8,7 @@ FLOW=module_source("config_flow")
 
 # test_dashboard_room_order_remains_immediate_tile_controls: retired — dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services); covered by ha_tests/test_cov_options_flow.py::test_sort_rooms
 
-def test_dashboard_goal_order_is_immediate_tile_controls_and_server_validated():
-    assert 'settings-goal-order-list' in CARD
-    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
-    # removed: dashboard-side check (dashboard settings removed in 0.26.4.3 (single settings surface: Devices & services)).
-    # removed: dashboard-side check (dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services)).
-    # removed: dashboard-side check (dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services)).
+# test_dashboard_goal_order_is_immediate_tile_controls_and_server_validated: retired — it pinned only the stylesheet of the dashboard goal order removed in 0.26.4.3; covered by test_native_priority_flow_persists_once_without_reload_and_returns_to_room_choice
 
 def test_native_priority_flow_persists_once_without_reload_and_returns_to_room_choice():
     block=FLOW[FLOW.index('async def async_step_recommendation_priority_order'):FLOW.index('async def async_step_cross_ventilation')]

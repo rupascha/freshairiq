@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from custom_components.freshairiq.opening_state import advertises_three_states, normalize_opening_state, room_opening_mode
+from custom_components.freshairiq.opening_state import advertises_three_states, aggregate_opening_mode, normalize_opening_state, opening_contact_profile
 from tests._source import module_source
 
 class States:
@@ -12,30 +12,36 @@ def st(value, **attrs): return SimpleNamespace(state=value, attributes=attrs)
 def test_binary_contact_stays_binary_even_when_open():
     state=st('on', device_class='window')
     assert not advertises_three_states('binary_sensor.window', state)
-    mode, proven=room_opening_mode(Hass({'binary_sensor.window':state}), ['binary_sensor.window'])
+    modes, proven = opening_contact_profile(Hass({'binary_sensor.window':state}), ['binary_sensor.window'])
+    mode = aggregate_opening_mode(modes)
     assert mode == 'open' and proven == set()
 
 def test_native_enum_three_state_is_automatic_before_first_tilt():
     state=st('closed', options=['closed','open','tilted'])
     assert advertises_three_states('sensor.window_position', state)
-    mode, proven=room_opening_mode(Hass({'sensor.window_position':state}), ['sensor.window_position'])
+    modes, proven = opening_contact_profile(Hass({'sensor.window_position':state}), ['sensor.window_position'])
+    mode = aggregate_opening_mode(modes)
     assert mode == 'closed' and proven == {'sensor.window_position'}
 
 def test_helper_three_way_contact_is_compatible():
     state=st('gekippt', options=['zu','auf','gekippt'])
-    mode, proven=room_opening_mode(Hass({'input_select.window_state':state}), ['input_select.window_state'])
+    modes, proven = opening_contact_profile(Hass({'input_select.window_state':state}), ['input_select.window_state'])
+    mode = aggregate_opening_mode(modes)
     assert mode == 'tilted' and proven == {'input_select.window_state'}
 
 def test_observed_tilt_proves_sensor_without_options_and_persists():
     hass=Hass({'sensor.window':st('tilted')})
-    mode, proven=room_opening_mode(hass,['sensor.window'])
+    modes, proven = opening_contact_profile(hass,['sensor.window'])
+    mode = aggregate_opening_mode(modes)
     assert mode == 'tilted' and proven == {'sensor.window'}
     hass.states.rows['sensor.window']=st('open')
-    mode, proven2=room_opening_mode(hass,['sensor.window'],proven)
+    modes, proven2 = opening_contact_profile(hass,['sensor.window'],proven)
+    mode = aggregate_opening_mode(modes)
     assert mode == 'open' and proven2 == proven
 
 def test_unknown_fails_safe_instead_of_guessing():
-    mode, proven=room_opening_mode(Hass({'sensor.window':st('half_open')}),['sensor.window'])
+    modes, proven = opening_contact_profile(Hass({'sensor.window':st('half_open')}),['sensor.window'])
+    mode = aggregate_opening_mode(modes)
     assert mode == 'unknown' and not proven
 
 def test_german_and_english_normalization():
@@ -60,7 +66,8 @@ def test_mode_specific_learning_and_recommendation_are_wired():
 
 
 def test_missing_entity_and_malformed_options_fail_safe():
-    mode, proven = room_opening_mode(Hass({}), ['sensor.missing'])
+    modes, proven = opening_contact_profile(Hass({}), ['sensor.missing'])
+    mode = aggregate_opening_mode(modes)
     assert mode == 'unknown' and not proven
     state = st('closed', options='closed,open,tilted')
     assert not advertises_three_states('sensor.bad_options', state)

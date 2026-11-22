@@ -193,6 +193,61 @@ export function velocity(field, x, y, t, eddies = null, gust = null) {
   return [vx, vy];
 }
 
+// ---------------------------------------------------------------------------------------------- the drawn wind (0.26.7.2)
+// The visible ribbons and storm gusts take their pace from this field: the air's speed relative to the free wind at a point –
+// slower in front of the windward wall, faster along the sides and past the corners, calmer in the wake. Steady (no meander
+// time, no gust, no eddy), so it can be computed once per way and kept with it.
+export function relativeSpeed(field) {
+  if (!field) return () => 1;
+  return p => { const v = velocity(field, p[0], p[1], 0, [], 0); return v ? clamp(Math.hypot(v[0], v[1]) / (field.vis || 1), 0.35, 1.7) : 1; };
+}
+// The field and its speed profile, kept while the house and the wind stay the same: a new reading of the rooms reuses them (and
+// with them the prepared ways of the ribbons and gusts); a new layout, floor, north, wind or mood builds them again.
+export class FlowCache {
+  constructor() { this.hit = null; }
+  get(layout, { floorId, ...args }) {
+    const w = args.wind, mood = args.mood ? args.mood.name : "";
+    const key = w && w.available && w.from_deg != null ? `${floorId}|${w.from_deg}|${args.northDeg}|${w.speed_ms}|${w.gust_ms}|${mood}` : null;
+    if (this.hit && this.hit.layout === layout && this.hit.key === key) return this.hit;
+    const field = key == null ? null : buildField(args);
+    return (this.hit = { layout, key, field, speed: { key: `${mood}|${strengthClass(Number(w && w.speed_ms) || 0)}`, of: relativeSpeed(field) } });
+  }
+}
+// How much stronger the wind is at time t than its mean (0 most of the time): the gust envelope sized by the measured gust.
+export const gustBoost = (field, t) => (field ? gustAt(field, t) * field.gust.amp : 0);
+
+// The lee's curls: a weak edge ribbon that has passed the house rolls up for a moment – the curl (view outerLanes ``curls``) starts
+// on the ribbon behind the house and is drawn from there onwards as the air peels off, then drifts with the wind and fades. Irregular
+// (a cycle only when the field's eddy chance says so), at most ``count`` (none at "minimal" and when still). Its way is prepared
+// once per scene; each frame only sets its drawn share, its drift and its opacity.
+export class LeeCurls {
+  constructor() { this.items = []; this.els = []; }
+  plan({ curls = null, count = 0, opacity = 0.2 }) {
+    this.items = (curls || []).slice(0, Math.max(count, 0)).map((c, i) => ({ ...c, i, opacity, period: 9 + 6 * hash(i, 41), offset: hash(i, 43) * 9,
+      d: c.points.map((q, k) => `${k ? "L" : "M"} ${q[0].toFixed(3)},${(-q[1]).toFixed(3)}`).join(" ") }));
+    return this;
+  }
+  svg(stroke) {
+    return this.items.map((e, i) => `<path class="eddy" data-eddy="${i}" d="${e.d}" pathLength="100" stroke-width="${stroke}" stroke-dasharray="0 100" opacity="0"/>`).join("");
+  }
+  bind(els) { this.els = [...els].map(el => ({ el, e: this.items[Number(el.dataset.eddy)] })).filter(x => x.e); }
+  // at time t (s) of the wind's clock: peeling off (drawn along its way), drifting downwind, fading – one movement
+  at(field, e, t) {
+    const k = Math.floor((t + e.offset) / e.period), tau = t + e.offset - k * e.period, life = e.period * 0.7;
+    const on = !!field && hash(k, e.i + 5) < field.eddyChance && tau < life, x = on ? tau / life : 0;
+    const drawn = on ? smooth(x / 0.4) : 0, fade = on ? smooth(x / 0.05) * (1 - smooth((x - 0.45) / 0.55)) : 0, drift = e.drift * Math.pow(x, 1.3);
+    return { x, drawn, opacity: fade * e.opacity, dx: e.dir[0] * drift, dy: e.dir[1] * drift };
+  }
+  step(field, t) {
+    for (const { el, e } of this.els) {
+      const s = this.at(field, e, t);
+      el.setAttribute("stroke-dasharray", `${(s.drawn * 100).toFixed(1)} 100`);
+      el.setAttribute("opacity", s.opacity.toFixed(3));
+      el.setAttribute("transform", `translate(${s.dx.toFixed(3)} ${(-s.dy).toFixed(3)})`);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------------------------- air in the house
 // A route through the house (an inflow stream: from the edge of the drawing to the open window, through the room and
 // the doors, out of the other window) as evenly sampled points with the half width the air may take there: narrow at

@@ -26,6 +26,15 @@ export const reasonDE = value => {
     }
     return ({ "Target reached or additional ventilation benefit is too low": "Ziel erreicht oder zusätzlicher Lüftungsnutzen zu gering", "Reference air no longer removes moisture": "Die Referenzluft nimmt keine nennenswerte Feuchtigkeit mehr auf", "Room goals were reached; the close is kept while humidity stays inside the hysteresis band": "Die Ziele dieses Raums wurden in dieser Lüftung erreicht; die Schließempfehlung bleibt innerhalb der Feuchte-Hysterese bestehen", "Room goals reached; the room is set to close once its goals are reached": "Die Ziele dieses Raums sind erreicht; für diesen Raum ist „Schließen, wenn die Ziele erreicht sind“ gewählt", "Room air is already dry; further airing would dry it out too much": "Die Raumluft ist bereits trocken; weiteres Lüften würde sie zu stark austrocknen", "Configured temperature limit for airing reached; close because of the temperature, not because enough moisture was removed": "Temperaturgrenze beim Lüften erreicht – Schließen wegen der Temperatur, nicht weil genug Feuchtigkeit entfernt wurde", "Reference air would add moisture": "Referenzluft würde zusätzliche Feuchtigkeit eintragen", "Potential exists, but ventilation threshold is not reached": "Potenzial vorhanden, Lüftungsschwelle noch nicht erreicht", "No meaningful ventilation demand": "Kein sinnvoller Lüftungsbedarf", "Missing or implausible measurements": "Messwerte fehlen oder sind unplausibel", "Room is visible but excluded from FreshAirIQ calculations": "Raum wird angezeigt, beeinflusst die Berechnungen aber nicht" }[s] || s);
 };
+// Today minus ``daysBack`` as YYYY-MM-DD in Home Assistant's time zone (the browser's when it is unknown or invalid).
+export const ventLogDay = (hass, daysBack = 0) => {
+    const zone = hass?.config?.time_zone, options = { year: "numeric", month: "2-digit", day: "2-digit" };
+    let parts;
+    try { parts = new Intl.DateTimeFormat("en-US", zone ? { ...options, timeZone: zone } : options).formatToParts(new Date()); }
+    catch (_) { parts = new Intl.DateTimeFormat("en-US", options).formatToParts(new Date()); }
+    const part = type => Number(parts.find(p => p.type === type).value);
+    return new Date(Date.UTC(part("year"), part("month") - 1, part("day") - daysBack)).toISOString().slice(0, 10);
+};
 // 0.26.5.4: what sharing diagnostics is good for (admin hint while undecided).
 export const consentHint = de => de
     ? { label: "Diagnosen teilen", title: "Diagnosen teilen?", text: "Damit lernen neue Räume schneller und Prognosen werden für alle genauer – aus echten Lüftungen vieler Häuser. Pseudonymisiert, ohne Namen oder Standort; ohne Zustimmung wird nichts gesendet. Festlegen unter Geräte & Dienste → FreshAirIQ → Konfigurieren.", later: "Später", open: "Öffnen" }
@@ -177,6 +186,16 @@ export const FAIQ_EXPORT_METHODS = {
             : rest === null || rest === undefined ? "" : (de ? `bis 95 % noch ca. ${Math.max(1, Math.round(rest))} min` : `about ${Math.max(1, Math.round(rest))} min to 95 %`);
         const estimate = a.estimate ? (de ? " · Schätzung" : " · estimate") : "";
         return `<div class="muted air-exchange">${de ? "Luftaustausch" : "Air exchange"} ${pct} %${tail ? ` · ${tail}` : ""}${estimate}</div>`;
+    },
+    // 0.26.7.2 (support diagnosis 21.11.): the period as calendar dates in Home Assistant's time zone, the one the export
+    // endpoint uses (at 00:20 in Berlin "to" is already the new day); a date the user chose stays during live updates,
+    // one left untouched follows the current day (only "from" changed before midnight: "to" is the new day after it)
+    _ventLogRange() {
+        const kept = this._ventLogChosen || {};
+        return { start: kept.start || ventLogDay(this._hass, 30), end: kept.end || ventLogDay(this._hass) };
+    },
+    _keepVentLogRange(field, id) {
+        this._ventLogChosen = { ...(this._ventLogChosen || {}), [field]: this.shadowRoot?.getElementById(id)?.value || "" };
     },
     _ventLogExtras() {
         const de = this._uiLanguage() === "de";

@@ -276,7 +276,7 @@ test('geometry and wind helpers agree with the server rules', async ({ page }) =
       overlap: G.validateLayout({ floors: [{ id: 'f' }], rooms: [{ id: 'a', floor_id: 'f', polygon: sq }, { id: 'b', floor_id: 'f', polygon: [[1, 1], [3, 1], [3, 3], [1, 3]] }], openings: [] })[0].code,
       parse: ['NW', 'nno', '307.5', 'unknown', null, 361].map(G.parseBearing), speed: [G.speedMs(18, 'km/h'), G.speedMs(10, 'Bft'), G.speedMs(36, null)],
       label: [G.compass(307, 'de'), G.compass(100, 'de'), G.compass(100, 'en')], smooth: Math.round(G.smoothBearing(350, 10, 0.5)),
-      ccw: G.ccw([[0, 0], [0, 4], [4, 4], [4, 0]])[0], inside: G.pointInPolygon([3, 4], [[0, 0], [6, 0], [6, 5], [4, 5], [4, 2], [2, 2], [2, 5], [0, 5]]),
+      clockwise: G.signedArea([[0, 0], [0, 4], [4, 4], [4, 0]]) < 0 && G.signedArea(sq) > 0, inside: G.pointInPolygon([3, 4], [[0, 0], [6, 0], [6, 5], [4, 5], [4, 2], [2, 2], [2, 5], [0, 5]]),
     };
   });
   expect(r.bearings).toEqual([180, 90, 0, 270]);
@@ -286,7 +286,7 @@ test('geometry and wind helpers agree with the server rules', async ({ page }) =
   expect(r.parse).toEqual([315, 22.5, 307.5, null, null, null]);
   expect(r.speed[0]).toBeCloseTo(5); expect(r.speed[1]).toBe(null); expect(r.speed[2]).toBeCloseTo(10);
   expect(r.label).toEqual(['NW', 'O', 'E']); expect(r.smooth).toBe(0);
-  expect(r.ccw).toEqual([4, 0]); expect(r.inside).toBe('outside');
+  expect(r.clockwise).toBe(true); expect(r.inside).toBe('outside');
 });
 
 test('the Lovelace editor emits config-changed; the classic card is untouched by the house map', async ({ page }) => {
@@ -374,7 +374,8 @@ test('wind streams: bounce off closed walls, enter through a confirmed open wind
   const inside = await impl(page).evaluate(el => {
     const svg = el.shadowRoot.querySelector('svg.plan');
     const [x, y, w, h] = svg.getAttribute('viewBox').split(' ').map(Number);
-    return [...svg.querySelectorAll('path.stream')].every(p => { const [sx, sy] = p.getAttribute('d').split(' ')[1].split(',').map(Number); return sx >= x && sx <= x + w && sy >= y && sy <= y + h; });
+    // Test note 0.26.7.2: the streams around the house lie in the air layer under the plan (svg.wxair, the same viewBox)
+    return [...el.shadowRoot.querySelectorAll('path.stream')].every(p => { const [sx, sy] = p.getAttribute('d').split(' ')[1].split(',').map(Number); return sx >= x && sx <= x + w && sy >= y && sy <= y + h; });
   });
   expect(inside).toBe(true);
   await page.evaluate(() => window.__subs['freshairiq/house_map/subscribe']({ ...window.__HOUSE, revision: 3, wind: { ...window.__HOUSE.wind, available: false, reason: 'calm', calm: true } }));
@@ -1500,7 +1501,7 @@ for (const [w, h] of [[320, 568], [375, 667], [390, 844], [820, 1180]]) {
       const buttons = [...el.shadowRoot.querySelectorAll('.floors button, [data-menu]')].map(R);
       const card = R(el.shadowRoot.querySelector('ha-card')), bar = R(el.shadowRoot.querySelector('.mapbar'));
       const house = plan.reduce((b, r) => ({ bottom: Math.max(b.bottom, r.bottom) }), { bottom: -Infinity });
-      const waves = [...el.shadowRoot.querySelectorAll('svg.plan path.wave')].map(R);
+      const waves = [...el.shadowRoot.querySelectorAll('svg.plan path.wave, svg.wxair path.wave')].map(R);   // 0.26.7.2: the air layer under the plan
       return { plan, buttons, card, bar, houseBottom: house.bottom, windBelow: waves.some(r => r.bottom > house.bottom + 4 && r.top < bar.top),
         count: buttons.length, overflowX: document.documentElement.scrollWidth - window.innerWidth };
     });
@@ -1983,22 +1984,32 @@ test('order 7 / 1: Schlafzimmer and Badezimmer keep their readings; labels avoid
 
 test('order 7 / 10: weather, climate and air pause with the card, stop with "reduce motion" and with the animation off', async ({ page }) => {
   const anim = sel => impl(page).evaluate((el, sel) => { const n = el.shadowRoot.querySelector(sel); return n ? { name: getComputedStyle(n).animationName, state: getComputedStyle(n).animationPlayState } : null; }, sel);
+  // Test note 0.26.7.2: snow is a set of single flakes on the card's weather canvas, moved by the card's shared loop – not a CSS sheet
   const busy = async () => { await windward(page); await push(page, { weather_now: { condition: 'snowy', snowing: true }, rooms: { ...await page.evaluate(() => window.__ROOMS), bad: { ...await page.evaluate(() => window.__ROOMS.bad), humidity: 80, moisture_source_active: true } } });
-    await expect.poll(() => impl(page).evaluate(el => !!el.shadowRoot.querySelector('.wx .fall') && !!el.shadowRoot.querySelector('.steam path'))).toBe(true); };   // under load: wait for the drawing, not a fixed time
+    await expect.poll(() => impl(page).evaluate(el => !!el.shadowRoot.querySelector('.wx.snow canvas.wxfx') && !!el.shadowRoot.querySelector('.steam path'))).toBe(true); };   // under load: wait for the drawing, not a fixed time
+  const flakes = () => impl(page).evaluate(el => ({ loop: !!el._windRaf, n: el._wx.layer ? el._wx.layer.p.length : 0, at: el._wx.layer ? el._wx.layer.p.slice(0, 5).map(q => Math.round(q.y * 10)).join() : '',
+    ink: (() => { const cv = el.shadowRoot.querySelector('canvas.wxfx'); if (!cv || !cv.width) return 0; const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let k = 0; for (let i = 3; i < d.length; i += 16) if (d[i]) k++; return k; })() }));
   // Test note 0.26.7.0(2): animation levels – on a phone or a narrow card "auto" is now "minimal" (owner order: less load on
   // small devices); this test checks the motion of the normal level, so it asks for it
   await mount(page, { config: { animation_level: 'normal' } });
   await busy();
   // order 8: 'path.particles' moved to the canvas air layer – its pause and stillness are checked in 'order 8 / 9'
-  for (const sel of ['.wx .fall', '.cl.mist', '.steam path', 'g.plume']) expect((await anim(sel)).name, sel).not.toBe('none');
+  for (const sel of ['.cl.mist', '.steam path', 'g.plume']) expect((await anim(sel)).name, sel).not.toBe('none');
+  const a = await flakes(); await page.waitForTimeout(300); const b = await flakes();
+  expect([a.loop, a.n > 0, b.ink > 0, a.at !== b.at]).toEqual([true, true, true, true]);   // the flakes fall
   await impl(page).evaluate(el => el.setAttribute('data-paused', ''));
-  for (const sel of ['.wx .fall', '.cl.mist', '.steam path', 'g.plume']) expect((await anim(sel)).state, sel).toBe('paused');
+  for (const sel of ['.cl.mist', '.steam path', 'g.plume']) expect((await anim(sel)).state, sel).toBe('paused');
+  await expect.poll(async () => (await flakes()).loop).toBe(false);                         // the loop ends with the pause
+  const p1 = await flakes(); await page.waitForTimeout(250); expect((await flakes()).at).toBe(p1.at);
   await mount(page, { reducedMotion: 'reduce' });
   await busy();
-  for (const sel of ['.wx .fall', '.cl.mist', '.steam path', 'g.plume', 'polygon.room']) expect((await anim(sel)).name, sel).toBe('none');
+  for (const sel of ['.cl.mist', '.steam path', 'g.plume', 'polygon.room']) expect((await anim(sel)).name, sel).toBe('none');
+  const r = await flakes(); await page.waitForTimeout(250);
+  expect([r.loop, r.ink > 0, (await flakes()).at === r.at]).toEqual([false, true, true]);    // a still picture of the snow
   await mount(page, { config: { animation: false } });
   await busy();
-  for (const sel of ['.wx .fall', '.cl.mist', 'g.plume', 'polygon.room']) expect((await anim(sel)).name, sel).toBe('none');
+  for (const sel of ['.cl.mist', 'g.plume', 'polygon.room']) expect((await anim(sel)).name, sel).toBe('none');
+  expect((await flakes()).loop).toBe(false);
 });
 
 test('order 7 / 7+10: a calm palette (no yellow rooms), slim walls, and 40 rooms with weather draw quickly', async ({ page }) => {
@@ -5104,4 +5115,31 @@ test.describe('order "acht Probleme": touch', () => {
       expect(await impl(page).evaluate(el => !!el.shadowRoot.querySelector('freshairiq-house-layout-editor'))).toBe(false);
     });
   }
+});
+
+// 0.26.7.2 (support diagnosis 20.11.): a shared fan another room's automation started names that room in the room's window;
+// several rooms are all named, without one the general wording stays; a fan switched on by hand keeps its own text
+test('0.26.7.2 a shared fan names the room whose automation started it – German, English, several rooms, none', async ({ page }) => {
+  await mount(page);
+  const rooms = await page.evaluate(() => window.__ROOMS);
+  const general = 'Gemeinsamer Ablüfter läuft – FreshAirIQ steuert ihn über einen anderen Raum';
+  const fanTile = async (automation, extra = {}) => {
+    await push(page, { rooms: { ...rooms, bad: { ...rooms.bad, configured_actuators: { exhaust_fan: ['switch.fan'], mechanical_exhaust_active: true, window_open: false },
+      fan_automation: { mode: 'recommendation', ...automation } } }, ...extra });
+    await settle(page, 80);
+    await impl(page).evaluate(el => { el._selected = { type: 'room', id: 'r_bad' }; el._render(); });
+    return impl(page).evaluate(el => [...el.shadowRoot.querySelectorAll('dialog.roomdlg .ptile')].map(t => t.textContent).find(t => /^(Ablüfter|Exhaust fan)/.test(t)) || '');
+  };
+  const shared = started => ({ state: 'shared', label_key: 'shared_owner', label: general, started_by: started });
+  const one = { room_keys: ['waschkuche'], room_names: ['Waschküche'] };
+  expect(await fanTile(shared(one))).toContain('Gemeinsamer Ablüfter läuft · gestartet von Waschküche');
+  expect(await fanTile(shared({ room_keys: ['waschkuche', 'buro', 'flur'], room_names: ['Waschküche', 'Büro', 'Flur'] })))
+    .toContain('Gemeinsamer Ablüfter läuft · gestartet von Waschküche, Büro und Flur');
+  expect(await fanTile(shared(null))).toContain(general);                               // nobody to name: the general text
+  const english = await fanTile({ ...shared(one), label: 'Shared exhaust fan running – FreshAirIQ controls it through another room' }, { output_language: 'en' });
+  expect(english).toContain('Shared exhaust fan running · started by Waschküche');
+  expect(english).not.toContain('gestartet');
+  // a fan switched on by hand or by another automation keeps its own wording, also with a name in the payload
+  const external = 'Ablüfter wird gerade von einer anderen Automation gesteuert – FreshAirIQ schaltet ihn nicht aus';
+  expect(await fanTile({ state: 'external', label_key: 'external', label: external, started_by: one }, { output_language: 'de' })).toContain(external);
 });

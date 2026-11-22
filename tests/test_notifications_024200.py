@@ -110,3 +110,87 @@ def test_personalised_message_respects_room_and_thermal_context():
     personal = hass.services.calls[0][2]["message"]
     assert "hinterlegten Räume" in personal
     assert "warmes Komfortprofil" in personal
+
+
+# 0.26.7.2 (support diagnosis 21.11.): residents sharing one phone, one of them away. Who may get the message is decided per
+# profile first; the recipients are merged afterwards by the service they reach (notify.phone is phone).
+import pytest  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+
+from custom_components.freshairiq.notifications import _send  # noqa: E402
+
+
+class _PresenceHass(_Hass):
+    def __init__(self, available=(), states=None):
+        super().__init__(available)
+        self.states = SimpleNamespace(get=lambda entity_id: SimpleNamespace(state=(states or {})[entity_id]) if entity_id in (states or {}) else None)
+
+
+def _shared(order, *, anna="not_home", ben="home", anna_targets=("notify.phone",), ben_targets=("phone",), rooms=("bad",)):
+    profiles = {
+        "adult:0": {"name": "Anna", "room_keys": list(rooms), "notification_targets": list(anna_targets)},
+        "adult:1": {"name": "Ben", "room_keys": list(rooms), "notification_targets": list(ben_targets)},
+    }
+    options = {"notify_only_when_home": True, "adult_presence_entities": ["person.anna", "person.ben"],
+               "adult_resident_names": "Anna, Ben", "notification_targets": [],
+               "resident_room_profiles": {slot: profiles[slot] for slot in order}}
+    return _PresenceHass({"phone", "tablet"}, {"person.anna": anna, "person.ben": ben}), options
+
+
+ORDERS = [("adult:0", "adult:1"), ("adult:1", "adult:0")]
+SENDERS = {
+    "room": lambda hass, options, event=None: _send_room_personalised(hass, options, "T", "Lüften", "bad", event),
+    "house": lambda hass, options, event=None: _send_personalised(hass, options, "T", "Lüften", {"room_keys": ["bad"]}, event),
+    "household": lambda hass, options, event=None: _send(hass, options, "T", "Lüften", event),
+}
+
+
+@pytest.mark.parametrize("ben_targets", [("notify.phone",), ("phone",)], ids=["same_spelling", "service_name"])
+@pytest.mark.parametrize("scope", list(SENDERS))
+@pytest.mark.parametrize("order", ORDERS, ids=["away_first", "home_first"])
+def test_shared_target_reaches_the_present_resident_whatever_the_order(scope, order, ben_targets):
+    hass, options = _shared(order, ben_targets=ben_targets)
+    assert asyncio.run(SENDERS[scope](hass, options))
+    assert [call[1] for call in hass.services.calls] == ["phone"]
+    if scope != "household":
+        assert hass.services.calls[0][2]["message"].startswith("Ben, ")
+
+
+@pytest.mark.parametrize("scope", list(SENDERS))
+@pytest.mark.parametrize("order", ORDERS, ids=["anna_first", "ben_first"])
+def test_shared_target_of_absent_residents_only_gets_nothing(scope, order):
+    hass, options = _shared(order, ben="not_home")
+    options["notification_targets"] = ["notify.phone"]  # the shared phone also as a global target: the household is away
+    assert not asyncio.run(SENDERS[scope](hass, options))
+    assert hass.services.calls == []
+
+
+@pytest.mark.parametrize("scope", list(SENDERS))
+def test_an_absent_residents_own_phone_stays_quiet_and_important_events_go_out(scope):
+    hass, options = _shared(ORDERS[0], ben_targets=("tablet",))
+    options["notification_targets"] = ["phone"]  # Anna's phone as a global target while Ben is at home
+    assert asyncio.run(SENDERS[scope](hass, options))
+    assert [call[1] for call in hass.services.calls] == ["tablet"]
+    hass, options = _shared(ORDERS[0], ben_targets=("tablet",))
+    assert asyncio.run(SENDERS[scope](hass, options, "mould"))  # important while away: everyone, once each
+    assert sorted(call[1] for call in hass.services.calls) == ["phone", "tablet"]
+
+
+@pytest.mark.parametrize("scope", list(SENDERS))
+def test_a_notify_entity_is_its_own_recipient(scope):
+    hass, options = _shared(ORDERS[0], anna="home", anna_targets=("entity:notify.phone",), ben_targets=("notify.phone", "phone"))
+    hass.services.available.add("send_message")
+    hass.states = SimpleNamespace(get=lambda entity_id: SimpleNamespace(state="home"))
+    assert asyncio.run(SENDERS[scope](hass, options))
+    assert sorted(call[1] for call in hass.services.calls) == ["phone", "send_message"]
+    entity = next(call for call in hass.services.calls if call[1] == "send_message")
+    assert entity[2]["entity_id"] == "notify.phone"
+
+
+def test_the_room_filter_of_a_profile_still_applies():
+    hass, options = _shared(ORDERS[0], anna="home", rooms=("kueche",))
+    assert not asyncio.run(_send_room_personalised(hass, options, "T", "Lüften", "bad"))
+    assert hass.services.calls == []
+    options["resident_room_profiles"]["adult:1"]["room_keys"] = ["bad"]
+    assert asyncio.run(_send_room_personalised(hass, options, "T", "Lüften", "bad"))
+    assert [call[2]["message"] for call in hass.services.calls] == ["Ben, Lüften"]

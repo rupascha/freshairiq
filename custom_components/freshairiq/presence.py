@@ -82,18 +82,6 @@ def _unique_entities(values: Any) -> list[str]:
     return result
 
 
-def _state_kind(value: Any) -> str:
-    """Legacy value-only helper retained for compatibility with older callers/tests."""
-    if value is None:
-        return "unknown"
-    state = str(getattr(value, "state", value) or "").strip().lower()
-    if state in _UNKNOWN_STATES:
-        return "unknown"
-    if state == "home":
-        return "home"
-    return "away"
-
-
 def _parse_clock(value: Any, default: str) -> tuple[int, int]:
     text = str(value or default).strip()
     try:

@@ -1105,6 +1105,32 @@ def test_f12_the_night_rain_distance_of_the_coordinator_uses_real_minutes():
     assert data["night_strategy"]["minutes_until_rain"] == 89                            # 02:11 (+02) → 02:40 (+01)
 
 
+def test_f12_the_dry_summer_hour_counts_before_the_rain_in_the_repeated_hour():
+    # 0.26.7.2 (owner order 21.11.): 25.10.2026, 02:00 summer time dry, 02:00 winter time rainy – by the wall clock both are
+    # "02:00", so the dry hour fell out of the night before the rain and out of the night rows.
+    from custom_components.freshairiq.coordinator_night import NightStageMixin
+
+    summer, winter = datetime(2026, 10, 25, 2, 0, tzinfo=TZ), datetime(2026, 10, 25, 2, 0, tzinfo=TZ, fold=1)
+    after = datetime(2026, 10, 25, 3, 0, tzinfo=TZ)
+    rows = [{"datetime": summer, "absolute_humidity": 6.0, "temperature_c": 8.0, "humidity": 80.0, "condition": "cloudy"},
+            {"datetime": winter, "absolute_humidity": 7.5, "temperature_c": 8.0, "humidity": 95.0, "condition": "rainy",
+             "precipitation_mm": 1.2},
+            {"datetime": after, "absolute_humidity": 7.5, "temperature_c": 8.0, "humidity": 95.0, "condition": "rainy"}]
+    now = datetime(2026, 10, 25, 1, 30, tzinfo=TZ)
+    night = SimpleNamespace(_hourly_forecast_cache=rows, store=SimpleNamespace(data={}))
+    options = {**NIGHT, "night_start_hour": "02:00", "night_end_hour": "03:00"}     # 02:00 summer time → 03:00 winter time
+    forecast = NightStageMixin._night_forecast(
+        night, actionable_potential=0, calc_volume_total=0, cross=False, daily_generation_prior=0, effective_adults=0,
+        effective_children=0, now=now, occupancy={}, options=options, outdoor_rh=None, outdoor_t=None, valid=[])
+    night_hours, night_rows = forecast[4], forecast[5]
+    assert night_hours == 2.0 and [row["datetime"] for row in night_rows] == [summer, winter, after]
+    weather = NightStageMixin._night_weather(night, night_rows=night_rows, now=now, outdoor_rh=None, outdoor_t=None, valid=[])
+    first_rain_dt, minutes_until_rain, pre_rain_avg_ah, rain_start_label = weather[2], weather[3], weather[13], weather[14]
+    assert first_rain_dt is winter and minutes_until_rain == 90.0                  # 01:30 (+02) → 02:00 (+01)
+    assert pre_rain_avg_ah == 6.0                                                    # before: None (no row before the rain)
+    assert rain_start_label == "02:00" and night_rows[0]["datetime"].strftime("%H:%M") == "02:00"   # local display
+
+
 # ------------------------------------------------------------------------------------------------ F14 notifications
 
 def _notify(order, *, cycles=2, kind="close", store=None, gap=10, broken=("broken",), later_min=0, rooms=("r",)):

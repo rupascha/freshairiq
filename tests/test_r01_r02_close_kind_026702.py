@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 from custom_components.freshairiq.model import (
     GOALS_HELD_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, VENTILATION_HYSTERESIS_RH, RoomInput, evaluate_room,
 )
@@ -165,7 +165,7 @@ def test_held_goal_close_inside_the_hysteresis_keeps_its_true_reason():
     assert "bis die Luftfeuchte über 60 % steigt (jetzt 60 %, Ziel 58 %)" in text
     assert "kaum noch trockener" not in " ".join(reasons)   # no false "≤ 0.4 g/m³" claim (real delta ≈ 2.9)
     assert result.delta_g_m3 > 2.5
-    english = to_english(text)
+    english = Translator().text(text)
     assert english != text and "60 %" in english and "58 %" in english
 
 
@@ -193,7 +193,7 @@ def test_fan_stop_push_names_the_real_cause(kind, start):
     room = {"delta_g_m3": 2.95, "close_recommended": True, "close_kind": kind}
     text = fan_stop_message(room)
     assert text == f"{start} Lüfter ausschalten." and "kaum noch trockener" not in text
-    assert to_english(text) != text
+    assert Translator().text(text) != text
 
 
 @pytest.mark.parametrize("room,expected", [

@@ -12,8 +12,10 @@ def test_current_release_notes_live_in_docs_folder():
 def test_readme_has_english_counterpart_and_language_switch():
     de = (ROOT / "README_DE.md").read_text(encoding="utf-8")
     en = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "[English](README.md)" in de
-    assert "[Deutsch](README_DE.md)" in en
+    # 0.26.7.2: README_DE.md keeps its path for existing links, its content is English and points to the main page
+    assert "[README.md](README.md)" in de
+    assert "[Deutsch](README_DE.md)" not in en
+    assert "Installation via HACS" in de
     assert "Installation via HACS" in en
     assert "Diagnostics & privacy" in en
     assert "Technical principles" in en

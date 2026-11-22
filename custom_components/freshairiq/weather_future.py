@@ -38,8 +38,19 @@ def forecast_retry_delay_seconds(consecutive_failures: int) -> int:
     return FORECAST_RETRY_SCHEDULE_SECONDS[index]
 
 
+# 0.26.7.2: forecast precipitation comes in the weather entity's ``precipitation_unit`` (Home Assistant: mm, cm, in);
+# rows without a unit stay as they were read before (millimetres)
+_PRECIPITATION_TO_MM = {"mm": 1.0, "cm": 10.0, "in": 25.4}
+
+
 def _f(value: Any) -> float | None:
     return finite_float(value)
+
+
+def _precipitation_mm(value: float | None, unit: Any) -> float | None:
+    if value is None:
+        return None
+    return value * _PRECIPITATION_TO_MM.get(str(unit or "").strip().lower(), 1.0)
 
 
 def _dt(value: Any) -> datetime | None:
@@ -105,6 +116,7 @@ async def async_hourly_forecast(
         rows = _extract_rows(state.attributes.get("forecast") if state else None, entity_id)
     # F09: forecast rows come in the weather entity's ``temperature_unit``
     unit = state.attributes.get("temperature_unit") if state is not None else None
+    precipitation_unit = state.attributes.get("precipitation_unit") if state is not None else None
     if not rows and reason is None:
         reason = "no_hourly_rows"
 
@@ -119,7 +131,7 @@ async def async_hourly_forecast(
                 rh = _rh_from_dewpoint(temp, dew)
         if when is None or temp is None or rh is None or not (-40 <= temp <= 60 and 0 <= rh <= 100):
             continue
-        precip = _f(row.get("precipitation"))
+        precip = _precipitation_mm(_f(row.get("precipitation")), precipitation_unit)
         precip_prob = _f(row.get("precipitation_probability"))
         wind_speed = _f(row.get("wind_speed"))
         wind_bearing = _f(row.get("wind_bearing"))
@@ -134,7 +146,8 @@ async def async_hourly_forecast(
             "wind_speed": round(wind_speed, 2) if wind_speed is not None else None,
             "wind_bearing": round(wind_bearing, 1) if wind_bearing is not None else None,
         })
-    out.sort(key=lambda x: x["datetime"])
+    # 0.26.7.2: by the absolute time – rows in one local zone compare by wall clock (the repeated hour of the DST change)
+    out.sort(key=lambda x: x["datetime"].timestamp())
     if status is not None:
         status["reason"] = None if out else (reason or "rows_without_temperature_or_humidity")
     return out[:48]
@@ -167,7 +180,7 @@ def future_boundaries(
         "temperature_c": current_temp,
         "humidity": current_humidity,
         "absolute_humidity": current_ah,
-    }] + [x for x in valid_rows if x["datetime"] > now]
+    }] + sorted((x for x in valid_rows if x["datetime"].timestamp() > now.timestamp()), key=lambda x: x["datetime"].timestamp())
     if len(points) < 2:
         return {}
 

@@ -18,7 +18,6 @@ export const signedArea = pts => {
   }
   return total / 2;
 };
-export const ccw = pts => (signedArea(pts) >= 0 ? pts.map(p => [p[0], p[1]]) : pts.slice().reverse().map(p => [p[0], p[1]]));
 const orient = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
 const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 export const onSegment = (a, b, p, tol = EPS) => {

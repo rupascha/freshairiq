@@ -10,6 +10,13 @@ const W = await import(new URL(`./freshairiq-house-weather.js${Q}`, import.meta.
 const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 const num = v => (v == null || v === "" || typeof v === "boolean" ? NaN : Number(v));
 const fin = v => Number.isFinite(num(v));
+// 0.26.7.2: a shared fan another room's automation started names that room (several: all of them); without one the general text
+const fanStartedBy = (fa, lang) => {
+  const names = Array.isArray(fa?.started_by?.room_names) ? fa.started_by.room_names.filter(Boolean).map(String) : [];
+  if (fa?.state !== "shared" || fa?.label_key !== "shared_owner" || !names.length) return null;
+  const de = lang === "de", list = names.length > 1 ? `${names.slice(0, -1).join(", ")} ${de ? "und" : "and"} ${names[names.length - 1]}` : names[0];
+  return de ? `Gemeinsamer Ablüfter läuft · gestartet von ${list}` : `Shared exhaust fan running · started by ${list}`;
+};
 
 export const TXT = {
   de: {
@@ -151,7 +158,7 @@ export function roomBody(c, H, layout, lr, room) {
     room.passive_ventilation_active && Number.isFinite(pv) ? tile(t.passive, `≈ ${Math.round(pv)} ml`) : "",
   ]);
   const source = room.moisture_source_active ? `<div class="pnote">💧 <b>${esc(room.moisture_source_label || c._t("source_on"))}</b>${room.moisture_source_message ? ` – ${esc(room.moisture_source_message)}` : ""}${fin(room.moisture_source_rate_ml_min) ? ` · ${n(c, room.moisture_source_rate_ml_min, 1)} ml/min` : ""}</div>` : "";
-  const fan = room.fan_automation ? grid([tile(c._t("tile_fan"), esc(room.fan_automation.label || "–"), esc(H.fanCountdown(room.fan_automation, Date.now(), k => c._t(k), lang)))]) : "";
+  const fan = room.fan_automation ? grid([tile(c._t("tile_fan"), esc(fanStartedBy(room.fan_automation, lang) || room.fan_automation.label || "–"), esc(H.fanCountdown(room.fan_automation, Date.now(), k => c._t(k), lang)))]) : "";
   const learning = grid([
     tile(t.samples, fin(room.learning_samples) ? String(Math.round(num(room.learning_samples))) : null, room.learning_status ? esc(room.learning_status) : ""),
     tile(t.rate, fin(room.learned_exchange_rate_per_min) ? `${n(c, room.learned_exchange_rate_per_min, 3)}/min` : null),
@@ -275,11 +282,20 @@ export function classicBody(c, html) {
 }
 
 // ----------------------------------------------------------------------------------------------------------- the airing log
+// 0.26.7.2: calendar dates in Home Assistant's time zone, the one of the export endpoint (the browser's when it is unknown)
+const logDay = (hass, daysBack = 0) => {
+  const zone = hass && hass.config && hass.config.time_zone, options = { year: "numeric", month: "2-digit", day: "2-digit" };
+  let parts;
+  try { parts = new Intl.DateTimeFormat("en-US", zone ? { ...options, timeZone: zone } : options).formatToParts(new Date()); }
+  catch (_) { parts = new Intl.DateTimeFormat("en-US", options).formatToParts(new Date()); }
+  const part = type => Number(parts.find(p => p.type === type).value);
+  return new Date(Date.UTC(part("year"), part("month") - 1, part("day") - daysBack)).toISOString().slice(0, 10);
+};
 // The FreshAirIQ card's own export (freshairiq-card-data.js _exportVentilationLog) – the same fields and ids, in the map's style
 export function ventLogBody(c) {
-  const t = tx(c), end = new Date(), start = new Date(end.getTime() - 30 * 86400000), iso = d => d.toISOString().slice(0, 10);
-  return `<p class="pmuted">${esc(t.log_hint)}</p><div class="pgrid"><label class="field"><b>${esc(t.log_from)}</b><input type="date" id="ventlog-start" value="${iso(start)}"></label>`
-    + `<label class="field"><b>${esc(t.log_to)}</b><input type="date" id="ventlog-end" value="${iso(end)}"></label></div>`
+  const t = tx(c);
+  return `<p class="pmuted">${esc(t.log_hint)}</p><div class="pgrid"><label class="field"><b>${esc(t.log_from)}</b><input type="date" id="ventlog-start" value="${logDay(c._hass, 30)}"></label>`
+    + `<label class="field"><b>${esc(t.log_to)}</b><input type="date" id="ventlog-end" value="${logDay(c._hass)}"></label></div>`
     + `<label class="pcheck"><input type="checkbox" id="ventlog-daily"> ${esc(t.log_daily)}</label>`
     + `<div class="row"><button id="ventlog-export">📄 ${esc(t.log_pdf)}</button><button id="ventlog-csv" class="small">${esc(t.log_csv)}</button></div>`;
 }
@@ -348,16 +364,15 @@ header .navback:focus-visible{outline:3px solid var(--fq-focus,#ffd27a);outline-
    breathing rooms, glowing rims, mist, plumes, light rays or flashes; each part can be switched off on its own */
 :host([data-motion="minimal"]) .room,:host([data-motion="minimal"]) .rim,:host([data-motion="minimal"]) .cl,:host([data-motion="minimal"]) .steam path,
 :host([data-motion="minimal"]) .plume:not(.fade),:host([data-motion="minimal"]) .particles,:host([data-motion="minimal"]) .floorbtn.pulse,
-:host([data-motion="minimal"]) .wx.flash,:host([data-motion="minimal"]) .wx.sunlight .ray,:host([data-motion="minimal"]) .wx.stars > *,:host([data-motion="minimal"]) .wx.world *,:host([data-motion="minimal"]) .wx.splash>svg,:host([data-motion="minimal"]) .wx.sweep>*{animation:none}
-:host([data-motion="minimal"]) .wx.clouds > *{animation-duration:140s}
-:host([data-no-weather]) .wx .fall,:host([data-no-weather]) .wx.clouds > *,:host([data-no-weather]) .wx.fog > *,:host([data-no-weather]) .wx.world *,:host([data-no-weather]) .wx.splash>svg,:host([data-no-weather]) .wx.sweep>*{animation:none}
+:host([data-motion="minimal"]) .wx.flash,:host([data-motion="minimal"]) .wx.sunlight .ray,:host([data-motion="minimal"]) .wx.stars > *,:host([data-motion="minimal"]) .wx.world *{animation:none}
+/* 0.26.7.2: the speed of clouds and fog by the level is part of their own timing (freshairiq-house-atmos.js weatherSvg); rain, snow,
+   rings and the storm's gusts move in the card's shared loop and follow the same switches there */
+:host([data-no-weather]) .wx.clouds > *,:host([data-no-weather]) .wx.fog > *,:host([data-no-weather]) .wx.world *{animation:none}
 :host([data-no-light]) .wx.flash,:host([data-no-light]) .wx.sunlight .ray,:host([data-no-light]) .wx.stars > *{animation:none}
 :host([data-no-ambient]) .room,:host([data-no-ambient]) .rim,:host([data-no-ambient]) .cl,:host([data-no-ambient]) .steam path,:host([data-no-ambient]) .plume:not(.fade),
 :host([data-no-ambient]) .particles,:host([data-no-ambient]) .fan .blades,:host([data-no-ambient]) .floorbtn.pulse{animation:none}
-/* "intense": livelier weather and light – quicker clouds and rain, stronger sun rays, a livelier flash in a thunderstorm */
-:host([data-motion="intense"]) .wx.clouds > *{animation-duration:calc(var(--cloud-dur,60s) * .6)}
+/* "intense": livelier weather and light – quicker clouds and rain (their own timing), stronger sun rays */
 :host([data-motion="intense"]) .wx.sunlight .ray{fill-opacity:calc(var(--ray-o,.07) * 1.6)}
-:host([data-motion="intense"]) .wx .fall{animation-duration:calc(var(--fall-dur,.55s) * .85 * var(--k,1))}
 /* the room chosen on the plan: its outline drawn clearly, the rest of the floor quieter (windows and doors stay visible) */
 svg.plan.focus polygon.room:not(.sel){filter:saturate(.55) brightness(.72)}
 svg.plan.focus polygon.room.sel{stroke:#fff;stroke-opacity:1}

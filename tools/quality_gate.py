@@ -179,7 +179,8 @@ def main() -> int:
 
         reliability = _run(
             "reliability foundation contracts",
-            [sys.executable, "tools/reliability_foundation_gate.py"],
+            # the suite itself already ran once above, under coverage
+            [sys.executable, "tools/reliability_foundation_gate.py", "--skip-suite"],
             env=env,
         )
         results.append(reliability)

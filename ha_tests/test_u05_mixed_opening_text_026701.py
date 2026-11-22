@@ -7,7 +7,7 @@ ventilation model – a specialist model needs one uniform, proven mode – and 
 from __future__ import annotations
 
 from custom_components.freshairiq.coordinator_room_model import MIXED_OPENING_REASON
-from custom_components.freshairiq.localize import to_english as translate_text
+from custom_components.freshairiq.localize import Translator
 from ha_tests.test_cov_coordinator_b import HUM, _cleanup_coordinators, _data, _make, _rooms, _with  # noqa: F401
 
 LAGE = {"options": ["closed", "tilted", "open"], "device_class": "enum"}
@@ -17,8 +17,8 @@ A, B = "sensor.schlaf_fenster_lage", "sensor.schlaf_fenster2_lage"
 
 def _texts(room):
     reasons = list(room.get("recommendation_reasons") or [])
-    return {"tilt": any(r in (TILT, translate_text(TILT)) for r in reasons),
-            "mixed": any(r in (MIXED_OPENING_REASON, translate_text(MIXED_OPENING_REASON)) for r in reasons)}
+    return {"tilt": any(r in (TILT, Translator().text(TILT)) for r in reasons),
+            "mixed": any(r in (MIXED_OPENING_REASON, Translator().text(MIXED_OPENING_REASON)) for r in reasons)}
 
 
 async def _room(hass, freezer, extra_contacts=()):
@@ -56,7 +56,7 @@ async def test_open_plus_tilted_is_explained_as_mixed_and_never_teaches_the_tilt
     room = d.room("schlaf")
     assert room["action"] not in {"Close", "Check sensor"}
     assert _texts(room) == {"tilt": False, "mixed": True}
-    assert translate_text(MIXED_OPENING_REASON).startswith("Windows open and tilted at the same time")
+    assert Translator().text(MIXED_OPENING_REASON).startswith("Windows open and tilted at the same time")
     for i in range(6):
         await d.step(60, sensor__schlaf_h=round(68 - 0.8 * (i + 1), 1))
     await d.step(60, **{A.replace(".", "__"): ("closed", LAGE), B.replace(".", "__"): ("closed", LAGE)})

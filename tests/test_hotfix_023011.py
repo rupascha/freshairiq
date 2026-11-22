@@ -1,6 +1,5 @@
 """Regression tests for FreshAirIQ 0.25.0.7 mixed-source correctness hotfix."""
 from __future__ import annotations
-from tests.release_version import CURRENT_RELEASE_VERSION
 
 import ast
 from copy import deepcopy
@@ -75,7 +74,6 @@ def test_close_with_still_good_room_gradient_is_not_overridden():
     rec = {"kind": "close", "status": "close_windows", "instruction": "Raum schließen", "room_keys": ["r"], "reasons": []}
     out = enrich_opening_recommendation(deepcopy(rec), rooms, {"close_delta": 0.4})
     assert out == rec
-
 
 
 def test_running_source_below_close_delta_is_selectively_closed_even_if_slightly_drier():
@@ -160,9 +158,3 @@ def test_partial_local_reference_never_mixes_with_outdoor_pair():
     )
     assert te == "sensor.wg_temp" and he is None
     assert tv is None and hv is None
-
-
-def test_release_version_023011():
-    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

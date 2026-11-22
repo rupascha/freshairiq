@@ -7,8 +7,8 @@
 **Tagline (English):** Ventilate smarter. Live healthier. Save energy.
 
 ## Assets
-- `docs/freshairiq-branding-official.png` — full approved branding artwork, German (README_DE.md)
-- `docs/freshairiq-branding-official-en.png` — the same artwork in English (README.md / README_EN.md); identical pixel for pixel except the tagline and the four labels
+- `docs/freshairiq-branding-official.png` — full approved branding artwork, German
+- `docs/freshairiq-branding-official-en.png` — the same artwork in English (README.md / README_EN.md / README_DE.md); identical pixel for pixel except the tagline and the four labels
 - `docs/freshairiq-logo.png` — language-neutral logo card (the artwork without tagline and labels)
 - `docs/freshairiq-social-preview.png` — language-neutral GitHub social preview, 1280 × 640 (upload under **Settings → General → Social preview** of the public repository)
 - `docs/freshairiq-icon-512.png` — reduced symbol for small UI contexts

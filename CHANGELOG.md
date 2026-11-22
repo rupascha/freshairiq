@@ -1,3 +1,305 @@
+## 0.26.7.2
+
+Release after 0.26.7.1: the close on an exhausted benefit with slowly reporting sensors (GitHub #30), the room push naming
+the real close reason, and the wind and weather animations of the house map. No change to entity IDs, services, events or
+card options; the new room fields `close_check` and `close_benefit_basis` are additive. Forecast, learning model, sensor
+contracts and stored settings are unchanged.
+
+### Close on an exhausted benefit with staggered sensor reports (`room_close_strategy.py`, #30)
+- Second confirmation path for `benefit_exhausted`: a new value of one room channel next to an older value of the other
+  (frame `uncertain` or `held`) counts once when the uncut `benefit_next5_ml()` plus `held_benefit_margin_ml()` stays
+  below the room's threshold. The margin combines the possible drift of the older room channel (temperature: reporting step
+  plus rate; humidity: reporting step plus rate) and the age and pair offset of the reference; the readings must stay usable
+  for the five minutes the benefit refers to.
+- Both constant-channel cases: new humidity values with an unchanged temperature, and new temperature values with an
+  unchanged humidity. Only a new value of the running airing counts (time stamp after the opening and after the last counted
+  report of that channel, value different from the report before); repeated values, coordinator refreshes, substituted time
+  stamps and reports after the close are no evidence. Two different real reports remain the safeguard; a report is counted
+  once, also when a later report of the other channel makes the pair excellent.
+- A working sensor is not blocked by the time stamp of its unchanged channel alone: when the same logical sensor has just
+  reported the other channel, the older channel's age no longer rejects the frame (a frame `stale` only by that age is
+  accepted); its drift is counted up to the age a held pair may reach. Detected outages keep their rules.
+- A clear counter-measurement ends the series: a staggered report whose benefit minus its margin reaches the threshold
+  resets the confirmations (8 → 60 → 8 ml, threshold 24 ml: the last report is the first new confirmation). A report whose
+  possible error reaches across the threshold is unclear and decides nothing. Regular frames keep their rule.
+- The extra path never lifts a close and never resets or skips regular confirmations. The stored check records the path
+  (`basis` `regular`/`staggered`); a close with basis `staggered` is withdrawn with its extra-path confirmations when its
+  readings turn stale or unavailable; other close causes keep their priority.
+- Grade boundary: `uncertain` (pair up to 180 s apart) is accepted like `held`. The regular path keeps
+  `excellent`/`acceptable`, the 90 s limit and two confirmations.
+- New per-room state `session_close_check` (code of the check; per room channel the report seen last and whether its
+  value was new).
+
+### Exhaust fans shared by several rooms (support diagnosis 19./20.11.)
+- A failed switch-off ends once every device it was sent to reports off (`settle_failed_off`, `off_targets`): the old
+  "could not be switched off automatically" no longer returns when another room starts a shared fan later. The failure
+  stays in the fan trace (`failed`, later `confirmed`); a device still on or without a state keeps it failed, also when
+  only part of a room's group is shared. The same for a room's own fans switched off next to a shared one (`own_off`).
+- `fan_automation.started_by` (`room_keys`, `room_names`): the rooms whose automatic control started the shared fans that
+  run now. Both cards show "Gemeinsamer Ablüfter läuft · gestartet von Waschküche" / "Shared exhaust fan running · started
+  by …" (several rooms: all named); without a room the general wording stays; manual and external starts keep theirs.
+- Recommendation mode: after a run FreshAirIQ ended (goal reached, maximum runtime, moisture coming in) or a switch-off by
+  hand, a new start needs a demand that is valid now (`decide_fan`: `held`, `renewed`, `idle`, `await_new_demand`). The
+  replay of the laundry room (20.11.) showed the trigger of its 6-minute runs at 07:26, 09:32, 11:38 (and 13:44, 16:25):
+  each start came exactly when the 120-minute repeat lock after the previous end ran out, with unchanged readings – the
+  lock had only held back the old demand (`repeat_cooldown_demoted`). Restarts stay for a demand that really ended and
+  came back, for a reason that lifts the repeat lock (critical air, strong new moisture source, clearly drier air) and for
+  urgent cases; the moisture-source mode, its follow-up, the runtime limit and external locks are unchanged. Meanwhile the
+  room shows the state `settled` ("Automatische Lüftung abgeschlossen", no task for the user). The fan trace records the recommendation a command followed (`trigger`).
+
+### Support fixes (support diagnosis 21.11.)
+- Exhaust fan, recommendation mode (`decide_fan`, new argument `evaluated`): the lock `await_new_demand` after a finished
+  run ends only on a valid room evaluation (`data_quality` "ok") that says the old demand is over. "Check sensor",
+  missing room data and implausible readings keep it. Replay: stop 09:38, sensor dropout 10:18, valid readings with the
+  unchanged demand, end of the repeat lock 11:38 – no new switch-on. A new reason, urgency, follow-up, runtime limit and
+  shared fans unchanged.
+- Push: room and house messages decide per resident profile whether it may get the message (room filter, presence rule)
+  and only then merge the recipients by the service they reach – `notify.phone` and `phone` are one recipient,
+  `entity:notify.…` stays its own type. A shared phone of an absent and a present resident reaches the present one once,
+  whatever the order of the profiles; a phone only absent residents use gets nothing, also as a global target. Retries
+  unchanged.
+- Ventilation log: both cards prefill "From"/"To" as calendar dates in Home Assistant's time zone, the one the export
+  endpoint uses (at 00:20 in Europe/Berlin "To" is the new day). The classic card keeps only the date the user changed
+  through live updates; a date left untouched follows the current day when the dialog opens again. CSV and PDF request
+  exactly that period. Export contract unchanged.
+- Weather (`weather_future.py`): hourly rows are sorted and filtered by their absolute time – on 25.10.2026 at 02:30 CEST
+  the hour 02:00 CET still lies 30 minutes ahead (30-minute value 8 °C in the replay). Forecast precipitation follows the
+  entity's `precipitation_unit` (in, cm, mm) before `precipitation_mm` is formed (0.1 in = 2.54 mm); rows without a unit
+  stay as before. Interpolation unchanged.
+- Floors: "Reorder levels" has one field per stored level id (`_level_form_keys`); two levels with the same visible name
+  (`ground_floor` and an own "Erdgeschoss") are separate, the second reads "Erdgeschoss (2)". Stored ids and room
+  assignments unchanged; `quality/ui_configuration_contract.json` records the approved change.
+
+### Pre-release fixes (21.11., second order)
+- House map, three cards in a storm: a reading update of the same rooms changes only the plan's labels and states in place
+  (`_onRooms` → `_queue(values)` → `_render(values)`, `morph` in `freshairiq-house-view.js`); the unchanged plan, the weather
+  layer and the moving wind paths are not rebuilt through `main.innerHTML`. A change of floor, layer, width, motion level,
+  air routes or the house (layout, openings), anything else in the update, a different structure of the drawing (a new
+  tint or symbol) and an open window draw completely as before. Focus, scroll, the shared loop and paused cards unchanged.
+- Push, delivery ledger: accepted recipients, failed attempts and dedup use one recipient key (`_target_identity`:
+  `notify.phone` and `phone` are `notify.phone`, `entity:notify.…` stays an entity). Ledgers written before in another
+  spelling are read by recipient. A retry that names an accepted recipient by its alias no longer sends it twice.
+- Push, recipients that appear later: an allowed, configured target whose service or entity is missing is noted as
+  unavailable; another recipient's success no longer closes the message. It gets the message once when it appears within
+  the retry window (30 min); afterwards, after the recommendation is done or overtaken, or when the recipient is no longer
+  allowed (away, filtered, quiet hours) it is not waited for. Attempt limit (`NOTIFY_TARGET_ATTEMPTS`) unchanged; the
+  window itself is final since the third order below.
+- Night weather (`coordinator_night.py`): night rows and the rows before the first rain compare by absolute time; on
+  25.10.2026 the dry 02:00 CEST counts before the rainy 02:00 CET. Local labels, the night window and the formulas unchanged.
+- Ventilation log (`filter_ventilation_log`): sorted by the absolute start, entries without an offset read in the report's
+  zone as when filtering; 02:50 CEST comes before 02:10 CET in PDF and CSV. Stored entries and local times unchanged.
+
+### Final pre-release fixes (21.11., third order)
+- Push, retry window (`notification_policy.py`, `notifications.py`): the 30 minutes count from the first delivery attempt
+  of a message (`first_at` in the ledger), no longer from the last round. Every retry checks the window before it sends
+  (`delivery_late`); after it nothing is sent, the message is settled. Intermediate cycles, a restart and the spelling
+  `notify.phone` / `phone` neither restart the window nor forget a recipient that already accepted. Ledgers written
+  before are read: without `first_at` the earliest stored attempt or absence counts. A new recommendation of the room
+  (new `action_notified_at`) or a new house recommendation starts a new ledger (`episode`), also with the same text.
+  Room and house: a recipient that appears at minute 29 gets the message once, at minute 31 none; one that already
+  accepted never again.
+- House map, complete live payload: a reading update whose temperature, humidity and `total_water_ml` change together is
+  drawn in place when the rooms and what the weather layer is drawn from stay the same (`_onRooms`); a house update that
+  only ages the wind reading too (`_onHouse`). The menu window, which carries the recommendation and the house values (on
+  a narrow card the only place), is updated in place in the same step (`_patch`, `_menuHtml`); if either part changes its
+  structure, the card draws completely. Both channels in one frame, an opening, the layout, the floor, air paths and
+  weather effects still draw completely. SVG, weather canvas, wind nodes and the shared loop stay; focus, scroll, dialogs
+  and separate card instances unchanged. Storm load, three cards, 30 s, 5 updates per window (ms/s, first → last window,
+  three runs): Chromium 77/69/69 → 67/71/66 before, 67/71/69 → 62/65/69 after; Android WebView 67/62/63 → 64/64/59
+  before, 66/69/66 → 67/62/58 after. Limit 400 ms/s, card and update counts, look and motion levels unchanged.
+- Classic card: the room merge of the full render and of the live update of an open dialog is one function
+  (`_mergedRooms`); room order, source priority (the room entity of the same config entry), fallback display and entry
+  mapping unchanged. The `ha-card` node and styles added by card-mod / UIX stay through both paths, with a named and a
+  transparent theme.
+- Removed unused code after a reference check: `_CROSS_PAIR_TEXT`; in the card `goalNames`, `learningTitle`,
+  `supportSendLabel`, `timeText`, `moistureMain` and the values only they used; 107 stylesheet rules (and 4 selectors of
+  shared rules) of the dashboard settings and resident profile removed in 0.26.4.3 – active, dynamic and theme / card-mod /
+  UIX selectors stay, the computed styles of all card views are identical (Chromium and Android WebView); the
+  helpers `_state_kind`, `_fmt_dt`, `_co2_airing_done`, `neighbour_at`, `ccw` (Python and JavaScript), `to_english`,
+  `room_opening_mode` and `automation_label`. Their checks now use the functions the integration calls.
+  `remaining_night_hours` stays: `forecast.py` is pinned by the production formula id.
+- Tests and gates: 94 redundant cases removed (three copies of one result in the model parity test, the unused `path`
+  parameter of the two weather reversal tests, nine repeated version / endpoint checks). The quality gate runs the Python
+  suite once, under coverage; `reliability_foundation_gate.py --skip-suite` keeps its other checks there, without the flag
+  it still runs the suite on its own. `quality.yml` (core-quality) no longer runs the same suite a second time before the
+  quality gate.
+
+### Room push
+- The first line of a room's close push names the cause the room model decided on (`ROOM_CLOSE_TEXT` in
+  `language_confidence.py`, English in `text_en.py`): "Weiteres Lüften entfernt kaum noch Feuchtigkeit – das Feuchteziel
+  ist noch nicht erreicht" for `benefit_exhausted`, "Feuchteziel erreicht" only for reached goals, the temperature limit,
+  outdoor air that no longer dries, summer warming and the model fallback each with their own sentence. Unchanged
+  deduplication: one push per action change.
+
+### Diagnostics
+- Running rooms publish `close_check` (fixed codes such as `waiting_for_report`, `confirming`, `confirmed`,
+  `confirmed_staggered`, `moisture_source`, `released_stale`) and, once confirmed, `close_benefit_basis`; routine samples
+  keep both, full records additionally `forecast_5_min_benefit_ml`, `close_benefit_threshold_ml`,
+  `close_benefit_confirmations`. Other rooms and idle samples are unchanged; no new sampling.
+
+### Live coach
+- Below the threshold but not yet confirmed, the remaining-time reason names the readings the confirmation needs.
+
+### House map – wind along the house
+- The streams come a little closer to the windward facade and start to turn later (`traceStream`: the part of the local
+  distance beyond the ribbon's own half width shrinks by up to 50 % in front of a windward wall, so the streams keep their
+  order and their own distances there; the turn begins up to 50 % nearer); inner and outer corners keep the full
+  distance, so the air still passes them in wide curves. Same house, same wind (rectangle and L, frontal and oblique): the
+  first turn about 3–30 % and the least distance in front of the windward walls about 15–40 % nearer than before; lanes,
+  distances and ways stay individual.
+- Least distance from the walls (`minClear`, `ribbonClear`): the widest ribbon's half width with a margin; every strand
+  keeps its own half width free (`pad`), so the drawn ribbon – with its swing, breathing and smoothing – stays outside the
+  house also at inner and outer corners.
+- The 2D flow model (`freshairiq-house-flow.js`) sets the pace along each ribbon and storm gust (`relativeSpeed`): slower
+  and bunched in front of the windward wall, faster along the sides, calmer in the wake; prepared once per way
+  (`waveFrame` travel coordinate, `GustRunner` time table). Mean wind, measured gust (`gustBoost`), direction and north
+  come from the existing weather source choice and its fallback. The ribbon drawing moved from the card into `ribbonsSvg`
+  (view module).
+- Outer ways (`outerLanes`): the ribbons are traced in one order around the house, the storm gusts run on them. The wind
+  divides at the middle of the house's windward-most part; each way keeps its side and a distance that grows with its distance
+  from that split (neighbours at least 3.5 % of the half diagonal apart). A way that would cross one already laid moves outwards
+  and is traced again – none is cut at the facade, every ribbon that meets the house reaches its run-out. As soon as the way
+  along the wind passes the rest of the house on its side, it lets go and runs on with the wind, keeping its distance to the
+  house's outline (`envelope`): it glides down a step of the facade and, behind the house, closes in towards the wake in a
+  wide, calm arc (at most about 27° to the wind, the wake keeps 45 % of the house's width) – long ribbons as in 0.26.7.3, no
+  wrapping around the back of the house, the ribbons of a side keep their order. A narrow notch (a U's courtyard; openings up to the house's half diagonal) is passed over like a wall; an L keeps its
+  walls. The turn-in starts nearer (`reach0` 0.24–0.39 R, bend at most 0.2 rad per step).
+- Swing: the visible line of every ribbon keeps its wave within half the way to the next ribbon and within the wall's
+  distance (`near`, `clear`); there the swing gets smaller and is never cut flat. The broad, nearly clear air mass only keeps
+  its half width from the walls. Behind the house the wave calms down to 55 % (`damp`, `wavePath`).
+- Joining gusts: two gusts on neighbouring ribbons of one side, more than a stroke apart, join behind the house where the
+  drawing has room: in the run-out the outer one is led onto the inner one's way – its distance to it only ever shrinking –
+  until the two touch and meet; both
+  ways start equally far before the meeting point (`GustRunner` moves them in step with the same stretch of air). Each stroke
+  carries its opacity along the wind (a gradient): full while apart, both at half where they lie on each other, then the
+  joined gust back to full and the other one out – the sum stays that of one gust, no gap, no second track, no X. Where the
+  ribbons lie close (a narrow card) the two are drawn narrower so they stay two until they touch. Storm gusts a little
+  brighter.
+- Lee curls replace the separate spiral eddies (`LeeCurls` instead of `LeeEddies`): the innermost ribbon of a side may roll
+  up behind the house – an open curl of about three quarters of a turn that starts on the ribbon, is drawn from there
+  onwards, drifts with the wind and fades (irregular by the flow model's eddy chance), clear of the house all the time it
+  drifts. None at "minimal" and when still, at most one at "normal" and on phones, two at "intense".
+- Ways, joins, curls and speed profiles stay in the card's cache (`FacadeCache.outer`, `FlowCache`, `GustRunner.plan`); a
+  reading of the rooms reuses them, the loop only plays the prepared movements.
+- The ribbons keep their 0.26.7.3 widths at every level; the existing budgets (frame rate, points per ribbon, resolution,
+  ribbons, gusts) and the phone ceiling for a chosen "Intense" (24 fps, 72 points per ribbon) are unchanged.
+- U-shaped houses (wind from 0° and 350°): a stream that had used up its contacts in the notch ran on in the wind through
+  the wing at the notch's end, and the even resampling to the ribbon's point budget cut the corner at the end of the notch.
+  `traceStream` now ends such a stream in front of the wall (`facadeField` `inside`/`crosses` on the outside walls; also
+  after smoothing), and `waveFrame` keeps the bends (Douglas–Peucker keys, the rest of the budget evenly between them), so
+  the lines between the drawn points keep the distance as well. Approach, slowing in front, faster sides and lee unchanged.
+
+### House map – weather animation
+- Rain, snow, sleet and hail: independent particles on one canvas per card under the plan (`WeatherLayer` in
+  `freshairiq-house-atmos.js`) replace the tiled background and the SVG pattern `wx-fall`. Start, speed, size,
+  brightness and lifetime vary per particle; a particle that leaves the picture or ends its life starts again outside
+  the visible area with new values; snow drifts sideways. Slant from the wind as before (data-tilt unchanged), strength
+  from the graded amount (`precipitation`) or the condition (`pouring` = heavy). Sleet (`snowy-rainy`) and hail by the
+  reported condition, the summary's `raining`/`snowing` flags only without one; unknown values draw nothing.
+- No restart on live updates: the particles survive every redraw; clouds, fog, stars, sun rays and the flash continue
+  from the card's own animation clock (negative delays; the clock stands while the card is paused).
+- Wind (`windStreams` / `streamVariety`): decorative streams are traced through a soft distance field of the real
+  outside contour (`facadeField`, outer wall parts of `G.wallSegments`). A gust turns before the wall, keeps its own
+  distance along the facade, winds around convex and inner corners and returns gradually to the wind after them; the
+  bend per step is limited and every point is kept clear of the facade. The wave swing is capped by the free distance
+  at each sample (`waveFrame` clearance, `wavePath` pad), so an animated ribbon never reaches into a wall. New per-gust
+  values `gap`, `hug`, `release`, `form`; lanes and lengths of a house stay as before. Inflow through confirmed open
+  openings and published air paths are unchanged.
+- The streams are traced only when the floor, the wind direction (whole degrees), the plan's north, the drawing frame
+  or the number of streams change; live updates reuse them.
+- Storm gusts (`worldSvg`, weather effects "full", strong wind and storm) follow the same facade ways and run along
+  them in the card's loop instead of straight bands across the house.
+- Fog: a few soft wisps of different sizes, each with its own drift and fade rhythm. Clouds pass with the wind, each
+  with its own size, height, speed and direction, and re-enter outside the picture. Stars and sun rays have their own
+  durations and phases. Lightning: five flashes at uneven moments in a 47 s cycle (on average not more often than one
+  in 9 s as before), at most the earlier brightness. Rain rings appear one by one where drops land instead of two
+  alternating groups.
+- Decorative streams and storm gusts lie in their own layer under the plan (`svg.wxair`); moving them no longer
+  repaints rooms, labels, walls and the house's shadow.
+
+### Load
+- Three storm cards and phones: the weather canvas clears only drawn areas, its pixel budget is capped per motion profile
+  (`wxPixels`), and the shared scheduler lets due animations join one frame. Lightning of the "full" weather effect uses
+  the uneven flash sequence.
+- Budgets per motion profile (`PROFILES`, `SMALL_CAPS` in `freshairiq-house-motion.js`): particles (Minimal 90,
+  Normal 260, Intense 400; phone or narrow card: Normal 160, Intense 220), weather canvas resolution (1×, Intense
+  1.5×, phone 1×), points per ribbon (48 / 72 / 96, phone 72), storm gusts (1 / 2 / 3); "Intense" on a phone also runs
+  at 24 fps with the canvas of the incoming air at 1.5× instead of 2×.
+- One shared loop (the existing scheduler) drives ribbons, gusts and falling weather; precipitation runs in calm air.
+  No extra loops, no layout queries, filters or geometry per frame.
+- A new reading of the rooms reuses the flow field with its speed profile (`FlowCache`) and the gusts' prepared time
+  tables (`GustRunner.plan`) besides the traced ways; a new layout, floor, north, wind, mood, scale or animation profile
+  prepares them again.
+- Still picture with "Off", reduced motion and `animation: false`; the wind and weather switches stop their part down to
+  the drawn layer; hidden, scrolled out, covered or removed cards stop the loop.
+
+### Marketplace install and download statistics
+- `hacs.json`: `"zip_release": true`, `"filename": "freshairiq.zip"` (A-243). HACS 2.0.5 (`async_download_repository` →
+  `async_get_hacs_json(ref=version_to_download())`) and the Marketplace of Home Assistant 2026.11.2 (GitHub API path
+  `async_get_repository_manifest(params={"ref": version_to_install()})`, catalog path `get_repository_manifest(version=…)`)
+  read `hacs.json` at the tag they install: v0.26.7.2 and later install the asset, older tags without `zip_release` keep
+  their source archive. Historical tags and releases are unchanged.
+- `tools/github_release_gate.py`: instead of the ban, the contract `zip_release: true` + `filename: freshairiq.zip` and a
+  release workflow that checks the asset, creates the draft, finds `freshairiq.zip` (and the CLEAN package) on it and only
+  then publishes.
+- `tools/release_downloads.py` / `downloads.yml`: per release where installs come from (asset, source archive – not
+  counted, asset missing), downloads of `freshairiq.zip`, the CLEAN package and other assets; totals; `hacs.json` of each
+  tag read from `raw.githubusercontent.com` like the Marketplace; one API run per workflow, Markdown from the JSON.
+- Tests: install with the asset, missing or wrongly built asset, older version without asset, download table.
+
+### Documentation and release
+- README.md and README_EN.md identical and English; README_DE.md keeps its path with the English text, artwork and
+  screenshots; misleading language links removed; BRANDING.md reference corrected.
+- `tools/bump_release_version.py`: the template for new release notes is English.
+
+### Tests
+- `tests/test_useful_close_02671.py`: the held → excellent regression, single counting, 8 → 60 → 8, an unclear report,
+  both constant-channel cases, a working sensor with an old unchanged channel, withdrawal on stale or unavailable
+  readings, priority of the temperature limit, no second close event; replays of the wellness room (19.11.) and the
+  bathroom (20.11.) from the recorded value changes. `tests/test_notification_hotfix_026505.py`: the close push in German
+  and English for each cause, sent once.
+- Frontend: the facade test checks the drawn ribbons (all strands, several phases, breathing and gust swing, the lines
+  between the drawn points) against the walls of rectangular, angled and U-shaped houses for frontal and oblique wind, and the nearer approach against the previous
+  traces; curls per animation level; the pause/still test checks the particle layer and the loop; a room update keeps field,
+  outer ways, joins, curls and gust profiles, a wind or layout change renews them. Outer ways: calm run-out past the last
+  edge that closes in towards the wake and never moves away from it, no crossing, joins that come nearer steadily and meet
+  in step (rectangle, L, U; frontal and oblique); the drawn lines of the ribbons, each at its own phase and with the gust
+  swing, cross neither each other nor a gust (rectangle, L, U, the card's house); regression for wind from 270° on the
+  card's house in a narrow and a wide drawing at every level; in the browser two joining gusts fade into one without a jump,
+  and a curl is followed from the ribbon to its fading.
+- `tests/test_fan_automation_026504.py`: replay of the laundry room's runs (20.11.) – the end of the repeat lock alone
+  restarted the fans, no restart for the old demand, restarts for a new reason, an urgent case and a demand that ended and
+  came back, moisture-source follow-up and runtime limit unchanged. `tests/test_shared_fan_wording_026505.py` and
+  `ha_tests/test_shared_fans_026505.py`: the office's failed switch-off and the laundry room's start with the fan control
+  itself (both fans shared and part of the group shared, a fan still on or unavailable, a new failure, several starting
+  rooms, a start by hand). Frontend: both cards name the starting room (German, English, several rooms, none, manual).
+- Support fixes (21.11.): `tests/test_fan_automation_026504.py` and `tests/test_shared_fan_wording_026505.py` replay the
+  sensor dropout with `decide_fan` and the real fan control (check sensor, missing room data, invalid readings; new reason,
+  urgency, follow-up, runtime limit, shared fan). `tests/test_notifications_024200.py` and
+  `tests/test_notification_hotfix_026505.py`: shared phone in both profile orders, room and house, nobody at home, notify
+  entity, room filter, retry. `tests/test_weather_future_024100.py`: DST change and precipitation units.
+  `tests/test_hotfix_026405_english_output.py`: levels with the same name in both directions. Frontend
+  (`ventlog.spec.mjs`, `house_next.spec.mjs`): 00:20 in Europe/Berlin and 3–7 November through a live update into CSV and
+  PDF. `tests/test_diagnostics_client_runtime_025022.py` imports telemetry with its stand-ins only for the import and sets
+  the fakes per test on the names `telemetry.py` imported; green alone and next to `tests/test_useful_close_02671.py` in
+  both orders.
+- Pre-release fixes (21.11., second order): `frontend_tests/house_frames.spec.mjs` keeps every active subscription per
+  message type (before: only the last card got data) and checks that all three cards show the last reading; the live
+  updates of the 30 s storm test start before the first measuring window, both windows carry the same load (5 updates
+  every 2 s, logged with the work per second), the relative limit compares these two windows, the absolute limit of
+  400 ms/s and the checks of loop, memory, DOM and clean-up are unchanged;
+  `frontend_tests/house_next.spec.mjs`: a reading update in place (same nodes, label, tint, focus, scroll, quick updates,
+  a paused card, the shared loop), full drawing for floor, layer, house, other payload changes, a new symbol and an open
+  window. `tests/test_notification_hotfix_026505.py` and `tests/test_notification_policy_026503.py`: alias on retry, a
+  ledger in the old spelling, a service and a notify entity that appear later, the end of the window, a done
+  recommendation, presence and quiet hours, room and house (`test_f4_two_targets_one_accepted_means_no_duplicate` now
+  waits for the missing second target within the window). `tests/test_stability_audit_02671.py`: the dry summer hour
+  before the rain. `tests/test_ventilation_log.py`, `tests/test_ventilation_daily_026503.py`: order across the DST change
+  in PDF and CSV. `frontend_tests/ventlog.spec.mjs`: only "From" changed before midnight, "To" follows the new day.
+- Golden master re-recorded: new fields, the kind-specific close push, and the bedroom of the tilt scenario now closing on
+  staggered reports (`benefit_exhausted`) – the case of #30; forecasts and learning identical to the previous build. IQ2
+  comparison (30 houses) identical.
+
 ## 0.26.7.1
 
 Hotfix after 0.26.7.0. No change to entity IDs, services, events or the room action contract; new fields are optional

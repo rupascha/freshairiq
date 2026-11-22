@@ -149,3 +149,43 @@ test('the notice stays when only a payload of another entry is left', async ({ p
   expect(await page.locator('#card').evaluate(card => card.shadowRoot.querySelector('ha-card').innerText)).toContain('Live-Verbindung zu FreshAirIQ gestört');
   expect(errors).toEqual([]);
 });
+
+// 0.26.7.2 (owner order 21.11., third): the full render and the live update of an open dialog merge the rooms the same way
+// (_mergedRooms) – the room's own payload of the same entry wins over the dashboard's room, another entry and a room_v1 payload
+// next to an entry are left out, the order stays the canonical one, total_water_ml is filled when missing.
+test('room payloads merge the same way in the full render and in the live update of an open dialog', async ({ page }) => {
+  const errors = await mount(page);
+  await page.evaluate(() => {
+    const payload = window.__payload('Bad');
+    payload.rooms.flur = { ...window.__room('Flur'), key: 'flur', sort_order: -1, temperature: 19.5, water_in_air_ml: 300 };
+    payload.rooms.bad.water_in_air_ml = 500;
+    payload.room_sort_order = ['flur', 'bad'];
+    window.__subs[0].callback(payload);
+    const card = document.getElementById('card');
+    const entity = (id, transport, entry, room) => ({ entity_id: id, state: 'x', attributes: { freshairiq_transport: transport, freshairiq_entry_id: entry, freshairiq_room_key: room.key, freshairiq_room_payload: room } });
+    window.__entities = temp => ({
+      'sensor.bad_aktion': entity('sensor.bad_aktion', 'room_v2', 'entry1', { ...window.__room('Bad'), temperature: temp, water_in_air_ml: 500 }),
+      'sensor.bad_other': entity('sensor.bad_other', 'room_v2', 'entry2', { ...window.__room('Bad (anderer Eintrag)'), temperature: 30.5 }),
+      'sensor.bad_old': entity('sensor.bad_old', 'room_v1', null, { ...window.__room('Bad (alt)'), temperature: 31.5 }),
+    });
+    card.hass = { ...card._hass, states: { ...card._hass.states, ...window.__entities(23.5) } };
+    card._invalidateEntityCaches(); card._render();
+  });
+  await page.waitForTimeout(80);
+  const merged = () => page.locator('#card').evaluate(card => { const data = card._collectLiveViewData();
+    return { keys: data.rooms.map(r => r.key), bad: data.rooms.find(r => r.key === 'bad').temperature, name: data.rooms.find(r => r.key === 'bad').name, water: data.st.total_water_ml }; });
+  expect(await merged()).toEqual({ keys: ['flur', 'bad'], bad: 23.5, name: 'Bad', water: 800 });
+  expect(await page.locator('#card').evaluate(card => card.shadowRoot.querySelector('ha-card').textContent)).toContain('800 ml');
+  // the rooms window drawn by the full render, then following a new reading of the room entity (live update, no full render)
+  await page.locator('#card').evaluate(card => { card._info = 'rooms'; card._render(); });
+  const full = await page.locator('#card').evaluate(card => card.shadowRoot.querySelector('.subdialog').textContent);
+  expect(/23[,.]5/.test(full) && /19[,.]5/.test(full) && !/3[01][,.]5/.test(full)).toBe(true);
+  expect(full.indexOf('Flur') < full.indexOf('Bad')).toBe(true);
+  await page.locator('#card').evaluate(card => { window.__dialog = card.shadowRoot.querySelector('.subdialog'); card.hass = { ...card._hass, states: { ...card._hass.states, ...window.__entities(24.5) } }; });
+  await page.waitForTimeout(200);
+  const dialog = await page.locator('#card').evaluate(card => ({ text: card.shadowRoot.querySelector('.subdialog').textContent, same: card.shadowRoot.querySelector('.subdialog') === window.__dialog }));
+  expect(dialog.same && /24[,.]5/.test(dialog.text) && !/3[01][,.]5/.test(dialog.text)).toBe(true);
+  expect(dialog.text.indexOf('Flur') < dialog.text.indexOf('Bad')).toBe(true);
+  expect(await merged()).toEqual({ keys: ['flur', 'bad'], bad: 24.5, name: 'Bad', water: 800 });
+  expect(errors).toEqual([]);
+});

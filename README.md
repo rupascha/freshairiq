@@ -1,6 +1,6 @@
 # FreshAirIQ
 
-🌐 Language / Sprache: [Deutsch](README_DE.md) · **English**
+🌐 In Home Assistant FreshAirIQ speaks English and German; this documentation is written in English.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official-en.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
@@ -79,7 +79,7 @@ An **additional** card, `custom:freshairiq-house-card`, draws your FreshAirIQ ro
 
 - Floor plan proposal from your FreshAirIQ rooms, floor plan template (upload a picture, tap the rooms), floors as buttons, readable floor names.
 
-Guide: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)** · Deutsch: **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)**
+Guide: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)** · German guide: **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)**
 
 <sub>Pictures: rendered from the card code of this release with demo data (demo rooms, no real installation).</sub>
 
@@ -93,6 +93,7 @@ Guide: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)** · Deutsch: **[doc
 | **Dynamic ventilation recommendations** | Evaluates the expected real benefit instead of relying only on a fixed RH threshold. |
 | **Room, floor & whole-home ventilation** | Determines whether rooms should be handled individually or as a coordinated group. |
 | **Live balance** | Tracks actual humidity and temperature changes during ventilation. |
+| **Closing at the right time** | Closes once the room's goals are reached or the benefit of the next five minutes is confirmed used up – also with battery sensors that report temperature and humidity at different times. While the window stays open, the room says what the close is still waiting for. |
 | **Short-term forecast** | Simulates 5–120 minutes and estimates the efficient endpoint within the forecast window. |
 | **Night strategy** | Forecasts conditions through the night using occupancy, outdoor air, and learned night patterns. |
 | **Mould IQ** | Provides a conservative surface-RH indicator and highlights rooms that deserve attention. |
@@ -182,7 +183,7 @@ For energy estimates, heat pumps, gas, heating oil, district heating, or direct 
 
 ## Your own automations (Node-RED, Alexa, fans)
 
-FreshAirIQ does not switch devices on its own – only covers and exhaust fans, and only if you enable "Automatic control" for a room (opening the cover with its window, a passage-door lock-out guard, sun protection, exhaust fan after showering or following the recommendation). Besides that you can react to every recommendation: via the room entities (e.g. `sensor.bedroom_action`) or via the events `freshairiq_room_action`, `freshairiq_house_recommendation`, `freshairiq_mould_risk` and `freshairiq_moisture_source`, which carry a ready-to-speak sentence. Texts follow the FreshAirIQ output language (your Home Assistant system language; English for every language except German). Full English guide with examples for Alexa, exhaust fans and Node-RED, plus tips for tilt contacts and rooms without windows: **[docs/AUTOMATIONS.md](docs/AUTOMATIONS.md)**. Ready-made English blueprints: [announce_room_action_en.yaml](blueprints/automation/freshairiq/announce_room_action_en.yaml) (announce room recommendations, e.g. via Alexa) and [device_follows_room_action_en.yaml](blueprints/automation/freshairiq/device_follows_room_action_en.yaml) (a fan follows the room recommendation) and [fan_after_moisture_source_en.yaml](blueprints/automation/freshairiq/fan_after_moisture_source_en.yaml) (the bathroom fan runs only after showering) and [covers_follow_sun_protection_en.yaml](blueprints/automation/freshairiq/covers_follow_sun_protection_en.yaml) (covers close against the sun in summer cooling mode and open when it is gone) – import them via **Settings → Automations & scenes → Blueprints → Import blueprint** with the file's raw GitHub URL. Deutsch: [docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md).
+FreshAirIQ does not switch devices on its own – only covers and exhaust fans, and only if you enable "Automatic control" for a room (opening the cover with its window, a passage-door lock-out guard, sun protection, exhaust fan after showering or following the recommendation). Besides that you can react to every recommendation: via the room entities (e.g. `sensor.bedroom_action`) or via the events `freshairiq_room_action`, `freshairiq_house_recommendation`, `freshairiq_mould_risk` and `freshairiq_moisture_source`, which carry a ready-to-speak sentence. Texts follow the FreshAirIQ output language (your Home Assistant system language; English for every language except German). Full English guide with examples for Alexa, exhaust fans and Node-RED, plus tips for tilt contacts and rooms without windows: **[docs/AUTOMATIONS.md](docs/AUTOMATIONS.md)**. Ready-made English blueprints: [announce_room_action_en.yaml](blueprints/automation/freshairiq/announce_room_action_en.yaml) (announce room recommendations, e.g. via Alexa) and [device_follows_room_action_en.yaml](blueprints/automation/freshairiq/device_follows_room_action_en.yaml) (a fan follows the room recommendation) and [fan_after_moisture_source_en.yaml](blueprints/automation/freshairiq/fan_after_moisture_source_en.yaml) (the bathroom fan runs only after showering) and [covers_follow_sun_protection_en.yaml](blueprints/automation/freshairiq/covers_follow_sun_protection_en.yaml) (covers close against the sun in summer cooling mode and open when it is gone) – import them via **Settings → Automations & scenes → Blueprints → Import blueprint** with the file's raw GitHub URL. German guide: [docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md).
 
 ## Requirements
 
@@ -291,7 +292,7 @@ python tools/build_release.py
 
 ### Updates
 
-For Marketplace and HACS installations, published GitHub releases are the update source: the Marketplace and HACS install the release from its source archive, as before; every release additionally carries the installation archive `freshairiq.zip` for manual installs. The release tag and `custom_components/freshairiq/manifest.json` use the same version. Older releases can still be installed from the repository menu. Learning and history data are stored separately in Home Assistant storage and remain intact during normal updates.
+For Marketplace and HACS installations, published GitHub releases are the update source: the Marketplace and HACS install the installation archive `freshairiq.zip` of every release whose `hacs.json` names it (GitHub counts its downloads) and earlier releases from their source archive as before; `freshairiq.zip` can also be unpacked into `custom_components/freshairiq` by hand. The release tag and `custom_components/freshairiq/manifest.json` use the same version. Older releases can still be installed from the repository menu. Learning and history data are stored separately in Home Assistant storage and remain intact during normal updates.
 
 ### Removal
 

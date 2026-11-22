@@ -8,6 +8,13 @@ here; tests/test_hotfix_026405_english_output.py fails until every text is cover
 from __future__ import annotations
 
 EXACT: dict[str, str] = {
+    'Deine Temperaturgrenze beim Lüften ist erreicht – Schließen wegen der Temperatur, nicht weil genug Feuchtigkeit entfernt wurde. Jetzt schließen.': 'Your temperature limit for airing is reached – close because of the temperature, not because enough moisture was removed. Close now.',
+    'Feuchteziel erreicht – die Ziele des Raums sind erfüllt. Jetzt schließen.': "Humidity target reached – the room's goals are met. Close now.",
+    'Feuchteziel in dieser Lüftung erreicht. Jetzt schließen.': 'Humidity target reached during this airing. Close now.',
+    'Weiteres Lüften entfernt kaum noch Feuchtigkeit – das Feuchteziel ist noch nicht erreicht. Jetzt schließen.': 'Further airing hardly removes moisture any more – the humidity target is not reached yet. Close now.',
+    'Die Außenluft trocknet den Raum nicht mehr. Jetzt schließen.': 'The outdoor air no longer dries the room. Close now.',
+    'Die Außenluft ist nicht mehr kühler als der Raum. Jetzt schließen.': 'The outdoor air is no longer cooler than the room. Close now.',
+    'Neue Messwerte fehlen; laut Modell bringt weiteres Lüften kaum noch etwas. Jetzt schließen.': 'New readings are missing; according to the model further airing hardly helps any more. Close now.',
     ' Auch die aktuelle Situation lässt sich mit hoher Sicherheit bewerten.': ' The current situation can also be assessed with high confidence.',
     ' Der auffällige Raum wird weiter überwacht.': ' The conspicuous room keeps being monitored.',
     ' Die aktuelle Situation ist jedoch ungewöhnlich oder messtechnisch unsicher, deshalb bleibt die Einschätzung bewusst vorsichtig.': ' However, the current situation is unusual or uncertain in terms of measurements, so the assessment deliberately stays cautious.',

@@ -290,6 +290,6 @@ def test_presence_weird_state_and_deduplication():
     assert presence._unique_entities("bad") == ["bad"]
     assert presence._unique_entities(123) == []
     assert presence._unique_entities(["person.a", "person.a", "", None]) == ["person.a"]
-    assert presence._state_kind(None) == "unknown"
-    assert presence._state_kind(object()) == "away"
+    assert presence.normalize_presence_state("person.a", None) == "unknown"
+    assert presence.normalize_presence_state("device_tracker.a", object()) == "unknown"
 

@@ -8,8 +8,6 @@ from itertools import product
 from pathlib import Path
 import json
 
-import pytest
-
 from tests.release_version import CURRENT_RELEASE_VERSION
 
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
@@ -17,16 +15,6 @@ from custom_components.freshairiq.model import RoomInput, evaluate_room
 from tests._source import module_source
 
 ROOT = Path(__file__).resolve().parents[1]
-
-# Contact-independent outputs are physical/state quantities. They must remain
-# invariant whether the room has its own opening, an assigned opening in another
-# room, or no opening. Opening ownership is intentionally not an input to the
-# pure physical model.
-PHYSICAL_FIELDS = (
-    "data_quality", "temperature", "humidity", "absolute_humidity",
-    "reference_humidity", "delta_g_m3", "potential_ml", "surface_rh",
-    "mould_level", "water_in_air_ml", "future_moisture_risk_15",
-)
 
 TEMPERATURES = (16.0, 21.5, 27.0)
 HUMIDITIES = (45.0, 62.0, 78.0)
@@ -42,26 +30,8 @@ def _physical_result(temp, rh, volume, ref_temp, ref_rh):
     )
     return asdict(evaluate_room(room, DEFAULT_OPTIONS, False))
 
-@pytest.mark.parametrize(
-    "temp,rh,volume,reference",
-    list(product(TEMPERATURES, HUMIDITIES, VOLUMES, REFERENCES)),
-)
-def test_physical_moisture_state_is_invariant_across_ventilation_paths(temp, rh, volume, reference):
-    ref_temp, ref_rh = reference
-    baseline = _physical_result(temp, rh, volume, ref_temp, ref_rh)
-
-    # These three configurations deliberately feed the exact same climate frame
-    # to the physical model. own/assigned/unassigned opening metadata belongs to
-    # coordinator routing and therefore may not change any PHYSICAL_FIELDS.
-    own_opening = dict(baseline)
-    assigned_opening = dict(baseline)
-    contactless = dict(baseline)
-
-    for field in PHYSICAL_FIELDS:
-        assert own_opening[field] == assigned_opening[field] == contactless[field], (
-            field, temp, rh, volume, reference,
-            own_opening[field], assigned_opening[field], contactless[field],
-        )
+# test_physical_moisture_state_is_invariant_across_ventilation_paths: retired — it compared three copies of one result;
+# the physics reference is the 81-case golden master in test_hotfix_025140_golden_weather_reversal.py
 
 def test_water_content_identity_matches_absolute_humidity_times_volume():
     for temp, rh, volume, reference in product(TEMPERATURES, HUMIDITIES, VOLUMES, REFERENCES):

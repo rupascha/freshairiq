@@ -7,43 +7,78 @@ from __future__ import annotations
 from tests.release_version import CURRENT_RELEASE_VERSION
 
 import asyncio
+from contextlib import contextmanager
 from datetime import datetime, timezone
+import importlib
 import json
 import sys
 import types
 
-# Minimal Home Assistant surface required by telemetry.py.
-ha = sys.modules.setdefault("homeassistant", types.ModuleType("homeassistant"))
-core = types.ModuleType("homeassistant.core")
-class HomeAssistant: ...
-def callback(func): return func
-core.HomeAssistant = HomeAssistant
-core.callback = callback
-sys.modules["homeassistant.core"] = core
+import pytest
 
-helpers = sys.modules.setdefault("homeassistant.helpers", types.ModuleType("homeassistant.helpers"))
-aio = types.ModuleType("homeassistant.helpers.aiohttp_client")
-aio.async_get_clientsession = lambda hass: hass.session
-sys.modules["homeassistant.helpers.aiohttp_client"] = aio
+# Minimal Home Assistant surface telemetry.py needs to be imported. 0.26.7.2: these stand-ins exist only while telemetry is
+# imported; the module is imported fresh and taken out of sys.modules again, so no other test module sees them (and none
+# of theirs reaches these tests). Each test sets its fakes on the names telemetry.py actually imported (fixture below).
+_MISSING = object()
+_TELEMETRY_MODULES = ("custom_components.freshairiq.telemetry", "custom_components.freshairiq.telemetry_reports")
 
-event = types.ModuleType("homeassistant.helpers.event")
-def async_track_time_interval(hass, action, interval):
-    hass.tracked = (action, interval)
-    return lambda: setattr(hass, "unsubscribed", True)
-event.async_track_time_interval = async_track_time_interval
+
+def _unpatched(*_args, **_kwargs):
+    raise AssertionError("telemetry used a Home Assistant name the test did not provide")
+
+
+def _stub_modules() -> dict[str, types.ModuleType]:
+    modules = {name: types.ModuleType(name) for name in (
+        "homeassistant", "homeassistant.core", "homeassistant.helpers", "homeassistant.helpers.aiohttp_client",
+        "homeassistant.helpers.event", "homeassistant.helpers.storage", "homeassistant.util", "homeassistant.util.dt")}
+    modules["homeassistant.core"].HomeAssistant = type("HomeAssistant", (), {})
+    modules["homeassistant.core"].callback = lambda func: func
+    modules["homeassistant.helpers.aiohttp_client"].async_get_clientsession = _unpatched
+    modules["homeassistant.helpers.event"].async_track_time_interval = _unpatched
+    modules["homeassistant.helpers.event"].async_track_point_in_time = _unpatched
+    modules["homeassistant.helpers.storage"].Store = _unpatched
+    modules["homeassistant.util.dt"].now = _unpatched
+    for name, module in modules.items():
+        parent, _, child = name.rpartition(".")
+        if parent:
+            setattr(modules[parent], child, module)
+    return modules
+
+
+@contextmanager
+def _isolated_import():
+    stubs = _stub_modules()
+    names = (*stubs, *_TELEMETRY_MODULES)
+    saved = {name: sys.modules.get(name, _MISSING) for name in names}
+    package = importlib.import_module("custom_components.freshairiq")
+    attributes = {name: getattr(package, name.rpartition(".")[2], _MISSING) for name in _TELEMETRY_MODULES}
+    for name in _TELEMETRY_MODULES:
+        sys.modules.pop(name, None)
+    sys.modules.update(stubs)
+    try:
+        yield
+    finally:
+        for name, module in saved.items():
+            if module is _MISSING:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+        for name, value in attributes.items():
+            attribute = name.rpartition(".")[2]
+            if value is _MISSING:
+                package.__dict__.pop(attribute, None)
+            else:
+                setattr(package, attribute, value)
+
+
+with _isolated_import():
+    telemetry = importlib.import_module("custom_components.freshairiq.telemetry")
+    telemetry_reports = sys.modules["custom_components.freshairiq.telemetry_reports"]
+FreshAirIQDiagnosticsClient = telemetry.FreshAirIQDiagnosticsClient
 TRACKED_POINTS = []
 
 
-def async_track_point_in_time(hass, action, point):
-    TRACKED_POINTS.append(point)
-    return lambda: None
-
-
-event.async_track_point_in_time = async_track_point_in_time
-sys.modules["homeassistant.helpers.event"] = event
-
-storage = types.ModuleType("homeassistant.helpers.storage")
-class Store:
+class _Store:
     def __init__(self, hass, version, key):
         self.hass = hass; self.version = version; self.key = key
     async def async_load(self):
@@ -54,16 +89,29 @@ class Store:
         if getattr(self.hass, "save_raises", False):
             raise OSError("broken storage")
         self.hass.stored = dict(value)
-storage.Store = Store
-sys.modules["homeassistant.helpers.storage"] = storage
 
-util = sys.modules.setdefault("homeassistant.util", types.ModuleType("homeassistant.util"))
-dt = types.ModuleType("homeassistant.util.dt")
-dt.now = lambda: datetime(2026, 9, 16, 23, 0, tzinfo=timezone.utc)
-sys.modules["homeassistant.util.dt"] = dt
-util.dt = dt
 
-from custom_components.freshairiq.telemetry import FreshAirIQDiagnosticsClient
+def _track_time_interval(hass, action, interval):
+    hass.tracked = (action, interval)
+    return lambda: setattr(hass, "unsubscribed", True)
+
+
+def _track_point_in_time(hass, action, point):
+    TRACKED_POINTS.append(point)
+    return lambda: None
+
+
+@pytest.fixture(autouse=True)
+def _home_assistant(monkeypatch):
+    """The fakes on the names telemetry.py imported – set for each test, restored after it."""
+    clock = types.SimpleNamespace(now=lambda: datetime(2026, 9, 16, 23, 0, tzinfo=timezone.utc))
+    for module in (telemetry, telemetry_reports):
+        monkeypatch.setattr(module, "async_get_clientsession", lambda hass: hass.session)
+        monkeypatch.setattr(module, "dt_util", clock)
+    monkeypatch.setattr(telemetry, "async_track_time_interval", _track_time_interval)
+    monkeypatch.setattr(telemetry, "async_track_point_in_time", _track_point_in_time)
+    monkeypatch.setattr(telemetry, "Store", _Store)
+    TRACKED_POINTS.clear()
 
 
 class _Entry:

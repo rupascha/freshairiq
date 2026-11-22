@@ -28,7 +28,7 @@ def test_v1_coverage_policy_is_a_hard_gate_not_a_reporting_hint():
     reporter = (ROOT / "tools" / "report_ha_coverage.py").read_text(encoding="utf-8")
 
     assert "fail_under = 100" in coverage_cfg
-    assert "--cov-fail-under=100" in workflow
+    assert "python tools/quality_gate.py --profile local" in workflow  # pure-logic 100 % gate, one suite run per job
     assert "--cov-append" in workflow
     assert "--min-total 100" in workflow
     assert "--min-module 100" in workflow

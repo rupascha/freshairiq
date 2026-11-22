@@ -281,3 +281,49 @@ test('the card editor offers the theme', async ({ page }) => {
   expect(result.options).toEqual(['freshairiq', 'auto']);
   expect(result.events).toEqual(['auto']);
 });
+
+// 0.26.7.2 (owner order 21.11., third): the user's theme and the card-mod / UIX styles stay through the normal render and
+// through a live update of an open dialog – a named Home Assistant theme and a transparent one.
+for (const [name, config, theme, look] of [
+  ['named theme', { theme: 'FrostedGlass' }, GLASS, { background: 'rgba(255, 255, 255, 0.07)', radius: '18px', blur: 'blur(18px)', color: 'rgb(255, 255, 255)' }],
+  ['transparent theme', { theme: 'auto' }, { ...GLASS, '--ha-card-background': 'transparent', '--ha-card-backdrop-filter': 'none' },
+    { background: 'rgba(0, 0, 0, 0)', radius: '18px', blur: 'none', color: 'rgb(255, 255, 255)' }],
+]) {
+  test(`theme and card-mod / UIX styles stay through render and a live dialog update – ${name}`, async ({ page }) => {
+    const errors = await mount(page, config, theme);
+    await page.locator('#card').evaluate(card => {
+      window.__haCard = card.shadowRoot.querySelector('ha-card');
+      const style = document.createElement('style');
+      style.id = 'uix-style';
+      style.textContent = '.card{padding:3px!important}';
+      card.shadowRoot.appendChild(style);
+      window.__haCard.appendChild(document.createElement('card-mod'));
+      window.__haCard.setAttribute('style', 'outline:1px solid red');
+    });
+    const read = () => page.locator('#card').evaluate(card => {
+      const haCard = card.shadowRoot.querySelector('ha-card'), cs = getComputedStyle(haCard), dialog = card.shadowRoot.querySelector('.subdialog');
+      return {
+        kept: { same: haCard === window.__haCard, cards: card.shadowRoot.querySelectorAll('ha-card').length, uix: !!card.shadowRoot.getElementById('uix-style'),
+          cardMod: !!haCard.querySelector(':scope > card-mod'), inline: haCard.getAttribute('style'),
+          padding: getComputedStyle(card.shadowRoot.querySelector('.card')).paddingTop },
+        look: { background: cs.backgroundColor, radius: cs.borderTopLeftRadius, blur: cs.backdropFilter || cs.webkitBackdropFilter || 'none', color: cs.color },
+        dialog: dialog ? { same: dialog === window.__dialog, text: dialog.textContent } : null,
+      };
+    });
+    const kept = { same: true, cards: 1, uix: true, cardMod: true, inline: 'outline:1px solid red', padding: '3px' };
+    for (let i = 0; i < 2; i++) await refresh(page);
+    const rendered = await read();
+    expect([rendered.kept, rendered.look, rendered.dialog]).toEqual([kept, look, null]);
+    await page.locator('#card').evaluate(card => { card._info = 'rooms'; card._render(); window.__dialog = card.shadowRoot.querySelector('.subdialog'); });
+    expect(/21[,.]0?/.test((await read()).dialog.text)).toBe(true);
+    await page.locator('#card').evaluate(card => {
+      const rooms = { ...window.__status.attributes.rooms, bad: { ...window.__status.attributes.rooms.bad, temperature: 23.5 } };
+      window.__status = { ...window.__status, attributes: { ...window.__status.attributes, rooms } };
+      card.hass = { states: { [window.__status.entity_id]: window.__status } };
+    });
+    await page.waitForTimeout(200);
+    const live = await read();
+    expect([live.kept, live.look, live.dialog.same, /23[,.]5/.test(live.dialog.text)]).toEqual([kept, look, true, true]);
+    expect(errors).toEqual([]);
+  });
+}

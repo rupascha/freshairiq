@@ -85,15 +85,12 @@ def test_hysteresis_50_ppm_below_the_warning_threshold() -> None:
 
 
 def test_a_co2_airing_ends_once_co2_is_down_unless_something_else_needs_the_air() -> None:
-    from custom_components.freshairiq.model import _co2_airing_done
-
     running = dict(session_active=True, session_co2_only=True)
-    assert _co2_airing_done(_room(940, **running), OPTIONS, False, keep_open=False) is True
-    assert _co2_airing_done(_room(970, latched=True, **running), OPTIONS, False, keep_open=False) is False  # hysteresis band
-    assert _co2_airing_done(_room(940, **running), OPTIONS, True, keep_open=False) is False  # now a humidity case
-    assert _co2_airing_done(_room(940, **running), OPTIONS, False, keep_open=True) is False  # cooling / source / protection
-    assert _co2_airing_done(_room(940, session_active=True), OPTIONS, False, keep_open=False) is False  # not a CO2 airing
-    assert _co2_airing_done(_room(None, **running), OPTIONS, False, keep_open=False) is True  # goal switched off meanwhile
+    assert evaluate_room(_room(940, **running), OPTIONS, False).co2_airing is False
+    assert evaluate_room(_room(970, latched=True, **running), OPTIONS, False).co2_airing is True  # hysteresis band
+    humid = evaluate_room(_room(940, rh=70.0, ref_rh=60.0, **running), OPTIONS, False)  # now a humidity case
+    assert humid.ventilation_candidate and humid.co2_airing is False
+    assert evaluate_room(_room(None, **running), OPTIONS, False).co2_airing is False  # goal switched off meanwhile
 
 
 def test_a_finished_co2_airing_is_not_released_again_by_its_drying_effect() -> None:

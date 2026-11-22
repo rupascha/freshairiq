@@ -15,6 +15,9 @@ import sys
 import types
 from datetime import datetime, timezone
 from pathlib import Path
+
+import pytest
+
 from tests._source import module_source
 
 if "homeassistant" not in sys.modules:  # pure-logic CI runs without Home Assistant
@@ -30,7 +33,7 @@ if "homeassistant" not in sys.modules:  # pure-logic CI runs without Home Assist
     sys.modules["homeassistant.core"] = _core
 
 from custom_components.freshairiq import localize
-from custom_components.freshairiq.localize import Translator, is_german, protected_names, to_english
+from custom_components.freshairiq.localize import Translator, is_german, protected_names
 from custom_components.freshairiq.notifications import notification_translator, process_notifications
 from custom_components.freshairiq.text_en import EXACT, TEMPLATES
 from custom_components.freshairiq.ventilation_log import build_ventilation_pdf
@@ -151,7 +154,7 @@ def test_protected_names_cover_rooms_floors_and_residents():
     )
     assert names == {"Bad", "bad", "Büro", "Dachgeschoss", "Anna", "Ben", "Carla", "Dora"}
     assert protected_names(None, None) == set()
-    assert to_english("Fenster schließen", {"Fenster"}) == "Close Fenster"
+    assert Translator({"Fenster"}).text("Fenster schließen") == "Close Fenster"
 
 
 def test_template_variants_only_trim_real_fragments():
@@ -318,6 +321,39 @@ def test_setup_flow_labels_follow_the_home_assistant_language():
     assert ns["_flow_language"](None) == "de"
     assert ns["_flow_language"](types.SimpleNamespace()) == "de"
     assert ns["_flow_language"](types.SimpleNamespace(config=types.SimpleNamespace(language="en"))) == "en"
+
+
+@pytest.mark.parametrize("language", ["de", "en"])
+def test_levels_with_the_same_name_keep_their_own_sort_fields(language):
+    # 0.26.7.2 (support diagnosis 21.11.): the stored "ground_floor" and an own level "Erdgeschoss" both read "Erdgeschoss";
+    # one form field for both left only one of them sortable
+    ns = _load({"_LEGACY_LEVEL_LABELS", "_LEGACY_LEVEL_LABELS_EN", "_is_de", "_level_label", "_level_form_keys", "_reorder_levels"})
+    levels = ["ground_floor", "Erdgeschoss", "upper_floor"]
+    assert len({ns["_level_label"](level, "de") for level in levels}) == 2       # the labels alone clash
+    keys = ns["_level_form_keys"](levels, language)
+    assert len(set(keys.values())) == 3 and set(keys) == set(levels)
+    if language == "de":
+        assert keys == {"ground_floor": "Erdgeschoss", "Erdgeschoss": "Erdgeschoss (2)", "upper_floor": "Obergeschoss"}
+    else:
+        assert keys == {"ground_floor": "Ground floor", "Erdgeschoss": "Erdgeschoss", "upper_floor": "Upper floor"}
+    reorder = ns["_reorder_levels"]
+    form = {keys["ground_floor"]: 2, keys["Erdgeschoss"]: 1, keys["upper_floor"]: 3}
+    assert reorder(levels, keys, form) == ["Erdgeschoss", "ground_floor", "upper_floor"]
+    back = ["Erdgeschoss", "ground_floor", "upper_floor"]
+    keys = ns["_level_form_keys"](back, language)
+    assert reorder(back, keys, {keys["ground_floor"]: 1, keys["Erdgeschoss"]: 2, keys["upper_floor"]: 3}) == levels
+    assert reorder(levels, keys, {}) == levels                                    # an empty form keeps the order
+    # without a clash the field is the label as before; a level that is itself called "Erdgeschoss (2)" stays apart too
+    assert ns["_level_form_keys"](["ground_floor", "Dach"], "de") == {"ground_floor": "Erdgeschoss", "Dach": "Dach"}
+    odd = ns["_level_form_keys"](["Erdgeschoss (2)", "ground_floor", "Erdgeschoss"], "de")
+    assert odd == {"Erdgeschoss (2)": "Erdgeschoss (2)", "ground_floor": "Erdgeschoss", "Erdgeschoss": "Erdgeschoss (3)"}
+
+
+def test_level_reorder_keeps_the_stored_ids_and_room_floors():
+    flow = module_source("config_flow")
+    step = flow[flow.index("async def async_step_level_reorder"):flow.index("async def async_step_level_remove")]
+    assert "_reorder_levels(levels, keys, user_input)" in step and "vol.Required(keys[level], default=idx)" in step
+    assert "CONF_ROOM_FLOOR" not in step                                          # rooms keep their stored level id
 
 
 def test_resident_slots_are_english_for_other_languages_too():

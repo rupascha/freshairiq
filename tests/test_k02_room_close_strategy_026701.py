@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 from custom_components.freshairiq.model import (
     GOALS_REACHED_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, VENTILATION_HYSTERESIS_RH, RoomInput, evaluate_room,
 )
@@ -72,7 +72,7 @@ def test_goal_mode_closes_once_the_goals_are_reliably_reached():
     assert result.action == "Close" and result.close_recommended and result.reason == GOALS_REACHED_CLOSE_REASON
     text = _close_reason(result, room_close_options(BASE, GOALS))
     assert text.startswith("Die Ziele dieses Raums sind erreicht (Luftfeuchte höchstens 58 %)")
-    assert to_english(text).startswith("The goals of this room are reached (humidity at most 58 %)")
+    assert Translator().text(text).startswith("The goals of this room are reached (humidity at most 58 %)")
 
 
 def test_goal_mode_waits_for_the_rooms_own_minimum_duration():

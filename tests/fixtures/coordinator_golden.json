@@ -162,7 +162,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "f685e96963e4e11f"
+     "store": "215c9ae82267615e"
     },
     {
      "all": "3f0f8186a0a8e219",
@@ -324,7 +324,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "1b3c90139ef2c792"
+     "store": "5473f47ad1e086c1"
     },
     {
      "all": "c20255ad6d9f1bba",
@@ -486,7 +486,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "643ef1edca0af834"
+     "store": "998e53586a036f2b"
     },
     {
      "all": "ed1341c6ec3a4e51",
@@ -648,7 +648,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "0c3603bb9f5cdc94"
+     "store": "b9b86f8a7a71d45a"
     },
     {
      "all": "3abfe2c3c44ffcdb",
@@ -810,10 +810,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "3eec71aec817aa6c"
+     "store": "8876deb9a7a94ea0"
     },
     {
-     "all": "90b9880814dc67b4",
+     "all": "8b73f062f3541570",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -941,7 +941,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d088a5e45029da1b",
+      "rooms": "255ba805d57fdc85",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "36535a3dd0a694a2",
       "runtime_robustness": "af063c6ec3c0026d",
@@ -972,10 +972,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window open",
-     "store": "7776c9e472e3bcc2"
+     "store": "b32998df3de835e9"
     },
     {
-     "all": "e9768f6a88554c79",
+     "all": "54f3224aed564ebd",
      "keys": {
       "actionable_potential_ml": "5ef6fdf32513aa7c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1103,7 +1103,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fdffed2a6f740425",
+      "rooms": "c485386750fe07a7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b7a05d5ee0db8fa",
       "runtime_robustness": "29f115f556de70e4",
@@ -1134,10 +1134,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 1",
-     "store": "b88487ad97d4eb60"
+     "store": "4651250dd476a900"
     },
     {
-     "all": "271d99fc9ad12c58",
+     "all": "91ac482fa8495da1",
      "keys": {
       "actionable_potential_ml": "454f63ac30c83229",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1265,7 +1265,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2b654436cd66b228",
+      "rooms": "5d2e9cd17e822351",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf0dbbf849011a65",
       "runtime_robustness": "6175c0cc419e351a",
@@ -1296,10 +1296,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 2",
-     "store": "645adddefd6fc990"
+     "store": "0b31cdba14491988"
     },
     {
-     "all": "1b5dbd20d4b0370e",
+     "all": "d1b19f13cf812f93",
      "keys": {
       "actionable_potential_ml": "16dc368a89b428b2",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1427,7 +1427,7 @@
       "remaining_duration_reason": "0187a561b3b257c8",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0c415bda8b398105",
+      "rooms": "73d82a680a011187",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "536c0b72bc2a091b",
       "runtime_robustness": "8e834cfa984cf8de",
@@ -1458,10 +1458,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 3",
-     "store": "2aeccdf7ff6a4c67"
+     "store": "dd69dd0f2959a09a"
     },
     {
-     "all": "bfb0a959b7da300b",
+     "all": "6b7494fd6ab47d92",
      "keys": {
       "actionable_potential_ml": "ad57366865126e55",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1589,7 +1589,7 @@
       "remaining_duration_reason": "fd7bb7ba5a49dce2",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7161847641564ddf",
+      "rooms": "94b8d81bc08ba683",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "dcc4dc3ff1cffd4b",
       "runtime_robustness": "9046ea0934315e89",
@@ -1620,10 +1620,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 4",
-     "store": "da76e540884c50c8"
+     "store": "23cf620ac9bde039"
     },
     {
-     "all": "d5bfa96e350e7150",
+     "all": "aa237df06b66d298",
      "keys": {
       "actionable_potential_ml": "8c1f1046219ddd21",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1751,7 +1751,7 @@
       "remaining_duration_reason": "7f642b04b4259ca6",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3e37c55c1255edc4",
+      "rooms": "383e96b21981a8b3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f339fd9756d3812a",
       "runtime_robustness": "62001acfbfdb8e07",
@@ -1782,10 +1782,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 5",
-     "store": "b00402fe8c4bf71c"
+     "store": "da6ded65f7a48968"
     },
     {
-     "all": "f25c991f8b4e342d",
+     "all": "346f08c936eba2d2",
      "keys": {
       "actionable_potential_ml": "29db0c6782dbd500",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -1913,7 +1913,7 @@
       "remaining_duration_reason": "fca1b105bf5ace7a",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e5ebcd639c276af6",
+      "rooms": "0d6e3b3d8e4bc450",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e2faaaf10dbd59f6",
       "runtime_robustness": "584a0f5b2c35c096",
@@ -1944,10 +1944,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 6",
-     "store": "2951d85499549816"
+     "store": "23152442859dd6dc"
     },
     {
-     "all": "bf0ab1b9684faa49",
+     "all": "35c48df9b2c41b22",
      "keys": {
       "actionable_potential_ml": "d6d824abba4afde8",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2075,7 +2075,7 @@
       "remaining_duration_reason": "67214601d7f2eb7b",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5c4df06996eafc6b",
+      "rooms": "47f75c50181553a2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6cf35b2c1e395ce9",
       "runtime_robustness": "c99f3f74a560520f",
@@ -2106,10 +2106,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 7",
-     "store": "071c0cbfac01a7d8"
+     "store": "a1ff96f27e5d3245"
     },
     {
-     "all": "3e88756b9a5434d2",
+     "all": "e28169428e266fc8",
      "keys": {
       "actionable_potential_ml": "7b1a278f5abe8e9d",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2237,7 +2237,7 @@
       "remaining_duration_reason": "05e95cd47a3f6331",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "d14becbc2017df3e",
+      "rooms": "2c2e2c207f93b7ac",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3b3109139a92478b",
       "runtime_robustness": "b9ee76288d12dcba",
@@ -2268,10 +2268,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 8",
-     "store": "d5af7ba1d29865b9"
+     "store": "cf2b08001906cbc4"
     },
     {
-     "all": "0b9fa5ed7b564bdf",
+     "all": "e862c192b12102da",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2337,8 +2337,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "1c1ffc8112d9b134",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "2e9f8b9dd1d2a9f3",
-      "iq_state": "27a09ef888f33e37",
+      "intelligent_recommendation": "ccf564a279136d87",
+      "iq_state": "c39b165af719751c",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "aebf867f050218bc",
@@ -2396,10 +2396,10 @@
       "recommendation_quality": "c66ba028b3718701",
       "recommended_duration_min": "1c1ffc8112d9b134",
       "remaining_duration_min": "74234e98afe7498f",
-      "remaining_duration_reason": "5c3ce3fb77aed5d2",
+      "remaining_duration_reason": "6bd9ee166da33f00",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5f90cd4311a46771",
+      "rooms": "0f95fe999035c673",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8fd33fe261916427",
       "runtime_robustness": "83416cc5a28d64cc",
@@ -2410,7 +2410,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "14d85c8f7af0cb3c",
+      "status_text": "26d078cf13b8a191",
       "system_check": "e946cdf357551fbc",
       "temperature_change_live_c": "2dafff8e10345757",
       "theoretical_actionable_potential_ml": "00bebc5be79d19e1",
@@ -2430,10 +2430,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 9",
-     "store": "b859cf7621a217a8"
+     "store": "0eb235de268da93a"
     },
     {
-     "all": "e3950349ba2d35d2",
+     "all": "40edf9138a9faad8",
      "keys": {
       "actionable_potential_ml": "e3d6c4d4599e0088",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2561,7 +2561,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1741706dec1e4c5c",
+      "rooms": "6cec2b1321ba6d15",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "7a1ac79ce6e853d0",
       "runtime_robustness": "183527c6a35fb29d",
@@ -2592,10 +2592,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 10",
-     "store": "c07b80e48e5ac8a6"
+     "store": "cbaa6b9e87756970"
     },
     {
-     "all": "b9ab7d790f0d7035",
+     "all": "44b2f806356fef08",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2723,7 +2723,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ac104c6c55bc17b9",
+      "rooms": "c69a28242ffef70d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "365374ee0c913ef8",
       "runtime_robustness": "c3391ce856cb1f86",
@@ -2754,10 +2754,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 11",
-     "store": "cadd2a8b7b3297e1"
+     "store": "0f0ecf04e06b8138"
     },
     {
-     "all": "f5f2b34761a3ae54",
+     "all": "bee7fca960f07d0d",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -2885,7 +2885,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "dceda0b003469a1f",
+      "rooms": "e94c9fb06b894d10",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "979d3963472ee30a",
       "runtime_robustness": "badf571473761219",
@@ -2916,10 +2916,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "airing 12",
-     "store": "1f6fc11c80db9b3d"
+     "store": "9aede0d781dfae53"
     },
     {
-     "all": "82d9054aea4fabd7",
+     "all": "b9ce6b2db5284a27",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -3047,7 +3047,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8a355ead7a5cade0",
+      "rooms": "9fe045c1ef205129",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "21d5bf759c22e809",
       "runtime_robustness": "612fae74d584a339",
@@ -3078,7 +3078,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath window closed",
-     "store": "edcdf0c4434332c4"
+     "store": "a961823948ea4ade"
     },
     {
      "all": "58428ea9ebdd50ef",
@@ -3240,7 +3240,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 1",
-     "store": "7c8f87ae1819e561"
+     "store": "6c5f34a3f8ee4d74"
     },
     {
      "all": "4cd4a0b1ee3dd456",
@@ -3402,7 +3402,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 2",
-     "store": "6dbb05dbe38b0041"
+     "store": "68623e977ce7ff20"
     },
     {
      "all": "5b714d05c6001c37",
@@ -3564,7 +3564,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 3",
-     "store": "c1b1958c815d85c0"
+     "store": "1c84b4c02ee7b62d"
     },
     {
      "all": "2c1ff3d81ada9770",
@@ -3726,7 +3726,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 4",
-     "store": "918118f5fd4e2585"
+     "store": "55a248cda30ddc8f"
     },
     {
      "all": "38ec62d4dcb00670",
@@ -3888,7 +3888,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 5",
-     "store": "61759f7d3dd232d0"
+     "store": "17249bbf00fab63c"
     },
     {
      "all": "5f9a9622b09e8712",
@@ -4050,7 +4050,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 6",
-     "store": "f9ca7be9e08f3b73"
+     "store": "ceda5ba2d7437d51"
     },
     {
      "all": "7e98d7cc0cb34a1a",
@@ -4212,7 +4212,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 7",
-     "store": "abfe996fe57120ef"
+     "store": "28bc71668a0e78ba"
     },
     {
      "all": "9ff0b9e518b411f2",
@@ -4374,10 +4374,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "post close 8",
-     "store": "4264b09778caad0c"
+     "store": "39fff3cc4a07564f"
     },
     {
-     "all": "84f4c93af84cd010",
+     "all": "cb76a2f2d3f539a1",
      "keys": {
       "actionable_potential_ml": "454f63ac30c83229",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4505,7 +4505,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f0ada5cceb7c2ecc",
+      "rooms": "4466aa40bf9d5e0e",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "3ec07059a3609942",
       "runtime_robustness": "29aef4daf3caeb1a",
@@ -4536,10 +4536,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cross ventilation kitchen",
-     "store": "d57e4e8a56715b65"
+     "store": "15bda7febdcec6d3"
     },
     {
-     "all": "1947858097f236da",
+     "all": "15d8bdaa6e97a4d4",
      "keys": {
       "actionable_potential_ml": "8c1f1046219ddd21",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4667,7 +4667,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "853e13ed0d742629",
+      "rooms": "9ff94d73c7ca0841",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "fd0669d55425a613",
       "runtime_robustness": "2a4afe4c553b813a",
@@ -4698,10 +4698,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 1",
-     "store": "069b6e67533d533f"
+     "store": "07c1d8e45f642061"
     },
     {
-     "all": "4db949bfd573321a",
+     "all": "e48cec87fc77602c",
      "keys": {
       "actionable_potential_ml": "ad48ff99415b2f00",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4829,7 +4829,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "9698694564ce5da3",
+      "rooms": "b8fc36f724942be8",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "92d7ed9f7dea543b",
       "runtime_robustness": "91456cd274b8b20d",
@@ -4860,10 +4860,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 2",
-     "store": "8365311e78861058"
+     "store": "d568ed6f06e8eded"
     },
     {
-     "all": "428884d956a12495",
+     "all": "f0f742c4e7a930ea",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -4991,7 +4991,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8479b9db083d6494",
+      "rooms": "ec37696690d2cf79",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "263a79372faddb09",
       "runtime_robustness": "0762eac2d3e31f30",
@@ -5022,10 +5022,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 3",
-     "store": "3bd02397e2124a14"
+     "store": "c63b454688ea2983"
     },
     {
-     "all": "bbd0ab46544f208c",
+     "all": "2d106f737136f59e",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5153,7 +5153,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "97959247360c5f0b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ecd49e4a04e25665",
+      "rooms": "2c0b1ecbf6b1cd2b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a704e2dfb0d530d2",
       "runtime_robustness": "6fdc1570e079590e",
@@ -5184,10 +5184,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 4",
-     "store": "d08bc44b7f74982d"
+     "store": "c8c31aa79e0b01e2"
     },
     {
-     "all": "c8168537efa537ff",
+     "all": "58dddcdfb4774d1d",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5315,7 +5315,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "97959247360c5f0b",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "22060baed01540fb",
+      "rooms": "2b36a6dd45528da6",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9f5e21358ad1f7e3",
       "runtime_robustness": "1f46a0627a2c45bd",
@@ -5346,10 +5346,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 5",
-     "store": "3f3dbf3432c5a2d3"
+     "store": "f9f2740f63a191e9"
     },
     {
-     "all": "6acd044fa69e0837",
+     "all": "5ae76f2f66968766",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5477,7 +5477,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "aefd3c90edacd366",
+      "rooms": "703ea7f29ab1d2bc",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0e0bed05bf17c095",
       "runtime_robustness": "1811b552db020b0f",
@@ -5508,10 +5508,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen airing 6",
-     "store": "db4c631f5cafe9a7"
+     "store": "b289554063ed0e24"
     },
     {
-     "all": "4300422008c743ed",
+     "all": "3757d653d2f1c508",
      "keys": {
       "actionable_potential_ml": "86e5014965866131",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -5639,7 +5639,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "438d559fbb8c32f1",
+      "rooms": "4567c7e474f94aae",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "1f0625426901fb5b",
       "runtime_robustness": "194f78e585b3330a",
@@ -5670,7 +5670,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen closed",
-     "store": "f61d95bd696858ee"
+     "store": "d374d78b25ce5cb6"
     },
     {
      "all": "104d03188b113a4a",
@@ -5832,7 +5832,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 1",
-     "store": "9f96aec295867cc3"
+     "store": "8da611768949ea3f"
     },
     {
      "all": "99151591859ae037",
@@ -5994,7 +5994,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 2",
-     "store": "7e1ed92daf3baa53"
+     "store": "5257054369592ea4"
     },
     {
      "all": "10c41e024fe5ad65",
@@ -6156,7 +6156,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 3",
-     "store": "2a8ca0acb7e4fffa"
+     "store": "cff4079666d089d0"
     },
     {
      "all": "f99881dbde104274",
@@ -6318,7 +6318,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 4",
-     "store": "e56dfb70947d8428"
+     "store": "65ea64bcce38dc19"
     },
     {
      "all": "57d90ef591ad73d5",
@@ -6480,7 +6480,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 5",
-     "store": "591dd87a7976d600"
+     "store": "9f91e0db708c7a41"
     },
     {
      "all": "2cbd03d93bbdf1fa",
@@ -6642,7 +6642,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 6",
-     "store": "7b07ba6a37c1418d"
+     "store": "c2f7a52f2cb67515"
     },
     {
      "all": "3a7957d1b20f25b9",
@@ -6804,7 +6804,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 7",
-     "store": "6660d62645497083"
+     "store": "aba599d084ace705"
     },
     {
      "all": "6a2fb07fc8c61791",
@@ -6966,7 +6966,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 8",
-     "store": "4212f9483702455f"
+     "store": "b8ae8704d2aa4da7"
     },
     {
      "all": "7b5c0b4d03db58cf",
@@ -7128,7 +7128,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 9",
-     "store": "263d914ab0576571"
+     "store": "4b12b61609e26f4e"
     },
     {
      "all": "83c14b63a6d19546",
@@ -7290,7 +7290,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "night 10",
-     "store": "4abb8a7d1dd1539e"
+     "store": "d20c53487f0da0d8"
     },
     {
      "all": "86ecf27d3e01f585",
@@ -7452,10 +7452,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "morning",
-     "store": "708cdca23991cc7b"
+     "store": "8406c49a5b15b898"
     },
     {
-     "all": "43be743a103c59db",
+     "all": "9b687ae1c5cdf004",
      "keys": {
       "actionable_potential_ml": "48449a14a4ff7d79",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7583,7 +7583,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "08acaa9d6d374bf8",
+      "rooms": "a59940b68a315247",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b952e26248c9a503",
       "runtime_robustness": "822ee4da2e790cbc",
@@ -7614,10 +7614,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom window open",
-     "store": "3b99b01c014cb006"
+     "store": "ca25afcfa4974247"
     },
     {
-     "all": "2e13cd953522cbd1",
+     "all": "691e9e46729ff94e",
      "keys": {
       "actionable_potential_ml": "349c41201b62db85",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7745,7 +7745,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8b9372b0fccf9d81",
+      "rooms": "b817de298d258561",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "6d8095dd7bfbbe34",
       "runtime_robustness": "520adb9b972149d5",
@@ -7776,10 +7776,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 1",
-     "store": "2600120406784f77"
+     "store": "3a665088e77bac37"
     },
     {
-     "all": "f1ed0c38f3563a36",
+     "all": "bee15c3f0079de4a",
      "keys": {
       "actionable_potential_ml": "f74efabef12ea619",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -7907,7 +7907,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f674c584c308180c",
+      "rooms": "0d190ca57f526476",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3777a57a9303f097",
       "runtime_robustness": "c21fb23b4427ed6b",
@@ -7938,10 +7938,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 2",
-     "store": "a44a4f10f9a45001"
+     "store": "d94aa0a5e1cf1078"
     },
     {
-     "all": "686906f89ea119c4",
+     "all": "01a39bfc72cb6357",
      "keys": {
       "actionable_potential_ml": "25fc0e7096fc6537",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8069,7 +8069,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7147b421692b991c",
+      "rooms": "5d1419b9c5470210",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "f34f677401960db1",
       "runtime_robustness": "dd180db36af86cef",
@@ -8100,10 +8100,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 3",
-     "store": "29bc5a00b6d28ddb"
+     "store": "49aafdc15d6f5b1e"
     },
     {
-     "all": "a72b258d1d201e95",
+     "all": "24b1ba583acda3c3",
      "keys": {
       "actionable_potential_ml": "25fc0e7096fc6537",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8231,7 +8231,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e64080bd2e2b04a2",
+      "rooms": "922240461ee60d1d",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c0037b9f217a481c",
       "runtime_robustness": "7c0a9ab5bc84c462",
@@ -8262,10 +8262,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 4",
-     "store": "e3de05ef348120ca"
+     "store": "a18b52b104f62993"
     },
     {
-     "all": "6346c3f8ca9eda2a",
+     "all": "ac336906447768b5",
      "keys": {
       "actionable_potential_ml": "25fc0e7096fc6537",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8331,8 +8331,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "cc811c81659039ef",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "5da42e1ffb1f5621",
-      "iq_state": "06384b633b17d8b5",
+      "intelligent_recommendation": "ffe6a6dd6621a270",
+      "iq_state": "5bbc16a0629bc749",
       "last_learning_diagnosis": "42b9a5832e91a4dd",
       "last_ventilation": "67fba36f9ad66475",
       "learning_components": "ef746016a020d0f3",
@@ -8390,10 +8390,10 @@
       "recommendation_quality": "6f1e3db1de352df0",
       "recommended_duration_min": "5cc31a244d7ddd1e",
       "remaining_duration_min": "74234e98afe7498f",
-      "remaining_duration_reason": "c7b5661cf043d91f",
+      "remaining_duration_reason": "9757ba8c83252010",
       "remaining_duration_state": "9171355adb80bef4",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "b7cc4da42136b1f3",
+      "rooms": "b88481eb419a246b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cf2b91501dbb236e",
       "runtime_robustness": "e0efe11766928737",
@@ -8404,7 +8404,7 @@
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
       "status": "654499b4c64a7d5b",
-      "status_text": "872efc9e7540f771",
+      "status_text": "491560bfb03ee9d7",
       "system_check": "f756bce33d45fdb9",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "27d719c754aacd49",
@@ -8424,10 +8424,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom airing 5",
-     "store": "b3a8cacdae1a68ca"
+     "store": "faa52d4fed7eecba"
     },
     {
-     "all": "ffee3328f68f4acc",
+     "all": "cbcbcb3c3b6a048c",
      "keys": {
       "actionable_potential_ml": "25fc0e7096fc6537",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -8555,7 +8555,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bf9f4133d92ba921",
+      "rooms": "114af57afd57faf3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "62d1ebf23f4c8e42",
       "runtime_robustness": "0c3c414f22a70229",
@@ -8586,11 +8586,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed",
-     "store": "bd41d85c105d873e"
+     "store": "200b294b82adcbc6"
     }
    ],
    "network_calls": [],
-   "persisted": "ce4da5721dfdcf0d"
+   "persisted": "92c53c20427dc868"
   },
   "no_rooms": {
    "cycles": [
@@ -9246,7 +9246,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "cd36c2ea1cf9248b"
+     "store": "372b401071fb2fbe"
     },
     {
      "all": "05b318a5ffaad6c4",
@@ -9408,7 +9408,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "a013a7ddf39b5ce2"
+     "store": "341cefc5319ee34b"
     },
     {
      "all": "b0e007e6f82598da",
@@ -9570,7 +9570,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "25cbd56e30c985fd"
+     "store": "8756da897fe93ddc"
     },
     {
      "all": "c81a950e68b9635f",
@@ -9732,7 +9732,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity unavailable",
-     "store": "e40097eb1193215f"
+     "store": "31252cec0c92c754"
     },
     {
      "all": "5ddf351cae3cf7b0",
@@ -9894,7 +9894,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "outdoor + one flur sensor gone",
-     "store": "704c798194b10875"
+     "store": "cf7e4e6c554ffa34"
     },
     {
      "all": "f038e614ee5afd61",
@@ -10056,7 +10056,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "implausible values",
-     "store": "00742325e9b01f96"
+     "store": "f3960d045a9a5de0"
     },
     {
      "all": "21714a244ed80741",
@@ -10218,10 +10218,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "window open without humidity",
-     "store": "c3dfe5a6f2c359db"
+     "store": "5d313cef7b6ab23d"
     },
     {
-     "all": "f8eb6b2915960e9c",
+     "all": "abf75888826169ac",
      "keys": {
       "actionable_potential_ml": "aea92132c4cbeb26",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10349,7 +10349,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3c6b0c26bca0b448",
+      "rooms": "36646c133341ddd4",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "fcf85fbe7b7816b2",
       "runtime_robustness": "c665f053af038172",
@@ -10380,10 +10380,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bath humidity back",
-     "store": "758d2dbab3b1dc69"
+     "store": "be711d3821b16921"
     },
     {
-     "all": "1093e3802a843b47",
+     "all": "cfea440323837afe",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10511,7 +10511,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "bf2ebd2e02890ef9",
+      "rooms": "93db8146524ab4d3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e5e883a00b3914a8",
       "runtime_robustness": "da109e8d31626854",
@@ -10542,10 +10542,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "all recovered",
-     "store": "e1ea2e3553463084"
+     "store": "5c9c6927f0827217"
     },
     {
-     "all": "a4d4feb7bb732317",
+     "all": "0bf5ee573e560c8c",
      "keys": {
       "actionable_potential_ml": "0b918943df0962bc",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -10673,7 +10673,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2686a9f772337282",
+      "rooms": "0f63ffba1baf1f08",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b5aec4de78298bee",
       "runtime_robustness": "578449656bc8f9c7",
@@ -10704,7 +10704,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "74956c0f13e248f5"
+     "store": "506545fed0079d96"
     },
     {
      "all": "ec9ac08e9f119fd7",
@@ -10866,7 +10866,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 1",
-     "store": "89b864c482fa3b2e"
+     "store": "c6742b695e4432a0"
     },
     {
      "all": "64513ce302aff8ad",
@@ -11028,7 +11028,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 2",
-     "store": "64424f424e2522f0"
+     "store": "23f4782ef03c48ec"
     },
     {
      "all": "85be16e63b6b45f5",
@@ -11190,11 +11190,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "recovery 3",
-     "store": "4714803b21b3994e"
+     "store": "cfff7e79d3862fad"
     }
    ],
    "network_calls": [],
-   "persisted": "f577ddcd2b922596"
+   "persisted": "81a0596932dd2f33"
   },
   "structure_room_only": {
    "cycles": [
@@ -11358,7 +11358,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "0b4f08cef8363ad0"
+     "store": "7420f88d4bf431d7"
     },
     {
      "all": "36303e488030ce07",
@@ -11520,7 +11520,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "0b4f08cef8363ad0"
+     "store": "7420f88d4bf431d7"
     },
     {
      "all": "c82bfb0b162298b4",
@@ -11682,7 +11682,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "0b4f08cef8363ad0"
+     "store": "7420f88d4bf431d7"
     },
     {
      "all": "aff6ac3b5d7d9256",
@@ -11844,11 +11844,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "structure only",
-     "store": "0b4f08cef8363ad0"
+     "store": "7420f88d4bf431d7"
     }
    ],
    "network_calls": [],
-   "persisted": "951b894641b82d4e"
+   "persisted": "c43c3244aa18189c"
   },
   "summer_cooling_and_exhaust": {
    "cycles": [
@@ -12012,7 +12012,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "8215abb11e6cd4fd"
+     "store": "8c56320a2295e414"
     },
     {
      "all": "7266c843d146af9a",
@@ -12174,7 +12174,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "warm afternoon",
-     "store": "90e099ae2eb8abb3"
+     "store": "8ad8996b79be75c1"
     },
     {
      "all": "390397a30c277dff",
@@ -12336,7 +12336,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "warm afternoon",
-     "store": "7bc750726d2397fb"
+     "store": "0c41dc27caf26b1f"
     },
     {
      "all": "99c65f4fb2c138f6",
@@ -12498,10 +12498,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "evening cools",
-     "store": "ad967a254ecab5d8"
+     "store": "8da6d197c548620a"
     },
     {
-     "all": "5010c3af9e4f73bc",
+     "all": "6c9ea2f62dd14d55",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12629,7 +12629,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "564f40da352f3e4e",
+      "rooms": "8c5ba23f2424e5ed",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a4a34d87e9773d8c",
       "runtime_robustness": "c9ce073f15c893cc",
@@ -12660,10 +12660,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom open for cooling",
-     "store": "9c00f03ae075e815"
+     "store": "09c1bb993f23049d"
     },
     {
-     "all": "573ffc1dc257bc02",
+     "all": "1e315cae7c72a3f5",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12791,7 +12791,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "eeedb7fdef45ad90",
+      "rooms": "ba6415a7ade0a988",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "a2dea3f5a6f05df0",
       "runtime_robustness": "abd452f44d916490",
@@ -12822,10 +12822,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 1",
-     "store": "64ee3eac385fd4d1"
+     "store": "fe25762ef572794c"
     },
     {
-     "all": "7e1d0be90e103668",
+     "all": "b4dcf1efdd2bbea0",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -12953,7 +12953,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "2ebcbc1a2576c2b9",
+      "rooms": "3aa7c1e74a29b331",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9ac17e4c1cd838d9",
       "runtime_robustness": "2896163e6a16e4b4",
@@ -12984,10 +12984,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 2",
-     "store": "6c364c27f1f2a04d"
+     "store": "3bd14fe72422128f"
     },
     {
-     "all": "ce5aada2aac8801e",
+     "all": "1dc5f14c1a8c1021",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13115,7 +13115,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "62774cfb3e62c9b2",
+      "rooms": "96fe8e5185f1f787",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c52f9cfd6f0012c7",
       "runtime_robustness": "6950951f9083173f",
@@ -13146,10 +13146,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 3",
-     "store": "7f8bc8517eb69b24"
+     "store": "2b52b213f83b7654"
     },
     {
-     "all": "80f645485b28f075",
+     "all": "7522538e74f4f9e4",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13277,7 +13277,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3156c4fdec4a0fcf",
+      "rooms": "5fdf17403c497adf",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "1b92e10a6ffb4256",
       "runtime_robustness": "3515e236671554de",
@@ -13308,10 +13308,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 4",
-     "store": "3ce8ea8336077846"
+     "store": "9f894af16d7c9196"
     },
     {
-     "all": "8daf2c7329bf64b5",
+     "all": "1a981f200fce6a06",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13439,7 +13439,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5af1f3d92e78d740",
+      "rooms": "fb4809d6e9733a8b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4beacf82b98e0114",
       "runtime_robustness": "83b63f300d9a4e22",
@@ -13470,10 +13470,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 5",
-     "store": "4fa84a2c7f458513"
+     "store": "07f5026370a8ea58"
     },
     {
-     "all": "0bc61237cc53d467",
+     "all": "1e1a1d551593d099",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13601,7 +13601,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1f49762f1bedef5f",
+      "rooms": "ef496fdc4f1914e9",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "c54b2ee90c7abbb8",
       "runtime_robustness": "ccff539bee9e2a01",
@@ -13632,10 +13632,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "cooling 6",
-     "store": "e32739661c64cf01"
+     "store": "bfa78799f69f19fe"
     },
     {
-     "all": "2fa86fd8d793a0d2",
+     "all": "0dc41e43d9798d3f",
      "keys": {
       "actionable_potential_ml": "5d389f5e2e34c6b0",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13763,7 +13763,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "0808967fa674c29b",
+      "rooms": "b9b8f67f93bf78e2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "4f2e5aed6d40eaa7",
       "runtime_robustness": "7e07a4f9f45b36f6",
@@ -13794,10 +13794,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom closed, exhaust on",
-     "store": "b6aead71e16b2fd2"
+     "store": "5f4c921444755248"
     },
     {
-     "all": "4283cb823acbd582",
+     "all": "43693cb021d1e3b0",
      "keys": {
       "actionable_potential_ml": "eeca91fd439b6d5e",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -13925,7 +13925,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "dbf9868785714c25",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "f880bec90b0ef0b0",
+      "rooms": "a84a5f1ae073ad9b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "628d8583b58eb649",
       "runtime_robustness": "0c31da2060437b42",
@@ -13956,10 +13956,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 1",
-     "store": "41e5321a9bd8e22b"
+     "store": "c45efd6b93fed373"
     },
     {
-     "all": "0a1ccd3a31f85e93",
+     "all": "cd7bb95e99cd40d9",
      "keys": {
       "actionable_potential_ml": "6566230e3a3ce377",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14087,7 +14087,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "dbf9868785714c25",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "cd8d4c6b4e3a1318",
+      "rooms": "9d8d4d854762a35b",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "bf453b995f807f0e",
       "runtime_robustness": "103857733e7d6d3a",
@@ -14118,10 +14118,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 2",
-     "store": "a2484c4b2dacc0e3"
+     "store": "370135df130e3352"
     },
     {
-     "all": "3ff17d81d4c61f23",
+     "all": "52dc6c29baf138db",
      "keys": {
       "actionable_potential_ml": "2747b7c718564ba5",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14249,7 +14249,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "dbf9868785714c25",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5f75e117b28d29e2",
+      "rooms": "66465979e3515eb2",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb5ba45004137509",
       "runtime_robustness": "8dfecc3f5379d32b",
@@ -14280,10 +14280,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 3",
-     "store": "6831278d56f80935"
+     "store": "bc51f4f4202fc074"
     },
     {
-     "all": "7bbfc35042e9fe34",
+     "all": "7a9ed5629ad44d59",
      "keys": {
       "actionable_potential_ml": "65a699905c026193",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14411,7 +14411,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "dbf9868785714c25",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fc736861f098943d",
+      "rooms": "591e1fb47a37b5c9",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d6d28f26d58bebc5",
       "runtime_robustness": "55ed83c7dc52c5b1",
@@ -14442,10 +14442,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust 4",
-     "store": "ede46d1628ddce10"
+     "store": "2781e9095be3feb9"
     },
     {
-     "all": "d4f69fffa037ccd9",
+     "all": "041fdf769fc1f8dc",
      "keys": {
       "actionable_potential_ml": "922c7954216ccfe7",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -14573,7 +14573,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "dbf9868785714c25",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c2a82fca0ca07831",
+      "rooms": "cf870e61f8db5895",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "578c3747b2f10a50",
       "runtime_robustness": "d4e1b602a576d7d2",
@@ -14604,7 +14604,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "exhaust off",
-     "store": "1806537ff5bae1b0"
+     "store": "19b143978855dc19"
     },
     {
      "all": "d05b6f29530c6bec",
@@ -14766,11 +14766,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "ab4a66c781b4e923"
+     "store": "5cabd6541cdbce67"
     }
    ],
    "network_calls": [],
-   "persisted": "babe75cd65013023"
+   "persisted": "e52eaa32a4e3fe4c"
   },
   "tilt_dropout_and_passive": {
    "cycles": [
@@ -14934,7 +14934,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "first refresh",
-     "store": "20bf556b72eedd05"
+     "store": "96baabba5eaf02ff"
     },
     {
      "all": "9969f9011d59b03e",
@@ -15096,7 +15096,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "93c34add699ed357"
+     "store": "17f9fa24576b7406"
     },
     {
      "all": "32555ce46d1672ff",
@@ -15258,7 +15258,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "idle",
-     "store": "58764971916aa236"
+     "store": "1792230e6c169a97"
     },
     {
      "all": "3ae8a577b824cd88",
@@ -15420,10 +15420,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "bedroom tilted",
-     "store": "0eeb97cd26efaebe"
+     "store": "609886d37505cfdc"
     },
     {
-     "all": "b05db89fd744bd05",
+     "all": "fe44f12f69ccecac",
      "keys": {
       "actionable_potential_ml": "28dae7c8bde2f3ca",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15551,7 +15551,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "6758787307fe465e",
+      "rooms": "3fabcd4f82567d88",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "e48a6f5e99404c59",
       "runtime_robustness": "304014a5a55ce7d7",
@@ -15582,10 +15582,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 1",
-     "store": "8d625036bfe15536"
+     "store": "3b6eb048e335d475"
     },
     {
-     "all": "57e07da8e63e7a25",
+     "all": "7ed90f79d6a0680c",
      "keys": {
       "actionable_potential_ml": "28dae7c8bde2f3ca",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15713,7 +15713,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "edcd8079e516fad7",
+      "rooms": "59bb703559813a9c",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "3153e63227b3a900",
       "runtime_robustness": "c12eb79b5c11f584",
@@ -15744,10 +15744,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 2",
-     "store": "b37cc97a21068204"
+     "store": "c37357425c16eb46"
     },
     {
-     "all": "6c1842fd327d1fbf",
+     "all": "7621361ece45b904",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -15875,7 +15875,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "fc424a3b3a5953d9",
+      "rooms": "d895137f43eb84c1",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "cb79aecf4df1e37a",
       "runtime_robustness": "3adec81b28e0eab3",
@@ -15906,10 +15906,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 3",
-     "store": "031fd931dd125484"
+     "store": "6e027d2a64c20a0f"
     },
     {
-     "all": "18d937456be3b262",
+     "all": "df178eea86cc1149",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16037,7 +16037,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c3273260a92e49d6",
+      "rooms": "aa71bb15c730b447",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "64e0b4f2b119f7be",
       "runtime_robustness": "5d9a8ddd94c35957",
@@ -16068,10 +16068,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 4",
-     "store": "50180126fb567102"
+     "store": "9864806e2f2701ee"
     },
     {
-     "all": "492ea19b493a657f",
+     "all": "39c51c9504b059c3",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16079,7 +16079,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -16087,7 +16087,7 @@
       "day_night_plan": "76fa688a50937402",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "c3fa051aaa045301",
+      "decision_trace": "44a2a313190735c9",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "37f2523a6254731b",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -16137,8 +16137,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "d64b1e30783e970d",
-      "iq_state": "46f00f35afa209c7",
+      "intelligent_recommendation": "149613c8a8272c4f",
+      "iq_state": "839386370fd8a377",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "805a039524b1aba1",
@@ -16197,9 +16197,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6ca219f0eea2235b",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "eaed7bc38de70691",
+      "rooms": "33e1a238d0b99f84",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "47e53707c7a75b55",
       "runtime_robustness": "17b79560ff51f352",
@@ -16209,8 +16209,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "9ee359a871cc8d38",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -16230,10 +16230,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 5",
-     "store": "1ce43d1fbf01ace6"
+     "store": "3e0ac9394f05e98f"
     },
     {
-     "all": "9a9a3b45303e4005",
+     "all": "518a940fff7430e5",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16241,7 +16241,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -16249,7 +16249,7 @@
       "day_night_plan": "a9a8f277cafa01bb",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "1e7779536fff1fe6",
+      "decision_trace": "913b6aa2b166b747",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "05642852f38acae9",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -16299,8 +16299,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "e4d55bc091116d6d",
-      "iq_state": "63f469018233d647",
+      "intelligent_recommendation": "702859f230014a2f",
+      "iq_state": "aecd6f9fc86a05d4",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "bb9cf0dad4a05d4c",
@@ -16359,9 +16359,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "6d5bcc98d1457497",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "859f8c61f710fc41",
+      "rooms": "5ab73f709888022e",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9e06c1f6089b0f9e",
       "runtime_robustness": "9e6804bf3ee52eab",
@@ -16371,8 +16371,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "44e10097016e5447",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -16392,10 +16392,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "tilted 6",
-     "store": "5e79c746f06cca85"
+     "store": "9afa428f9ab3c904"
     },
     {
-     "all": "a866ead4a4b42061",
+     "all": "f6234e50a9fe1212",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16403,7 +16403,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -16411,7 +16411,7 @@
       "day_night_plan": "a9a8f277cafa01bb",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "1e7779536fff1fe6",
+      "decision_trace": "913b6aa2b166b747",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "05642852f38acae9",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -16461,8 +16461,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "2cfaae87d6f257e4",
-      "iq_state": "50d331cd608e4595",
+      "intelligent_recommendation": "09c25774a163bf77",
+      "iq_state": "49406fa4188961c2",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "bb9cf0dad4a05d4c",
@@ -16521,9 +16521,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "579325314ca47adc",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "72c1a45008670634",
+      "rooms": "1ada6459385007b8",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "2dda91c6b026cbc3",
       "runtime_robustness": "a3b389038701f9c6",
@@ -16533,8 +16533,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "44e10097016e5447",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -16554,10 +16554,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "radio drop-out",
-     "store": "d7702b3282c11cae"
+     "store": "fbe47758fa4d00fb"
     },
     {
-     "all": "f58ffcf1c17105d8",
+     "all": "dfc661eeac7683c4",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16565,7 +16565,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -16573,7 +16573,7 @@
       "day_night_plan": "9396519cf94dae2b",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "5055b0fe358dba8a",
+      "decision_trace": "67b519143eda857a",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "7b3e6970de738c61",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -16623,8 +16623,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "e3c1e7e571967f5f",
-      "iq_state": "053721e90494886d",
+      "intelligent_recommendation": "9172b33f9790f541",
+      "iq_state": "ac30e9da073627a3",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "cbfe0254a278e74d",
@@ -16683,9 +16683,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "5e6443ddd6800c4e",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "c14038e686ad89d0",
+      "rooms": "8443fd8a90b627e6",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "b25cf99a433ff49a",
       "runtime_robustness": "87acfe6c096e7998",
@@ -16695,8 +16695,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "b76a11413e864502",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -16716,10 +16716,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "still dropped",
-     "store": "c87163513c0c6a7f"
+     "store": "33d050ba1f7519c1"
     },
     {
-     "all": "3a7decaeb18c7a3b",
+     "all": "91cc329aed2974f0",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16727,7 +16727,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -16735,7 +16735,7 @@
       "day_night_plan": "89497b897c81a8a6",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "5055b0fe358dba8a",
+      "decision_trace": "67b519143eda857a",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "7b3e6970de738c61",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -16785,8 +16785,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "44443abc3a4f355a",
-      "iq_state": "1ed199a827067422",
+      "intelligent_recommendation": "ef397f0d44a8eca0",
+      "iq_state": "ab8df977dc7f478c",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "cbfe0254a278e74d",
@@ -16845,9 +16845,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "7803d0c9e1cf80ff",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a17fc66630a6426f",
+      "rooms": "7e489264cd1995da",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "f3ab3867b131b82c",
       "runtime_robustness": "3b0a45bbd9f04342",
@@ -16857,8 +16857,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "b76a11413e864502",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -16878,10 +16878,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "back: fully open",
-     "store": "7b9a819a80c76484"
+     "store": "454c355e6b1b5225"
     },
     {
-     "all": "9d7dfbe51f5c6e74",
+     "all": "f2a21e99bcb6ebdd",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -16889,7 +16889,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -16897,7 +16897,7 @@
       "day_night_plan": "0ea0a36d1025e48b",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "7ad4145588e52f5f",
+      "decision_trace": "7333341dfbf2fdf3",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2bbb9e7d56486958",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -16947,8 +16947,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "af880d4ad30e415b",
-      "iq_state": "32caf561912d4ee8",
+      "intelligent_recommendation": "2ec6dbafa44a2f8a",
+      "iq_state": "45e1aa11c17398a5",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "ca04186a8f178cde",
@@ -17007,9 +17007,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "8dd63c1b40fb8cb9",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "89d4aaec5b5ee67b",
+      "rooms": "f412d76728e1b355",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "5db7b502c75558cc",
       "runtime_robustness": "b019d3325d318b06",
@@ -17019,8 +17019,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "44e10097016e5447",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -17040,10 +17040,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 1",
-     "store": "54709b7fe029d6e2"
+     "store": "7a86429b11b40b55"
     },
     {
-     "all": "e26c768e977d18fe",
+     "all": "e1a04ee860954838",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17051,7 +17051,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -17059,7 +17059,7 @@
       "day_night_plan": "550a89a0a0677331",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "54827953b57d5a7d",
+      "decision_trace": "f7180d1ce0d700af",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "2bbb9e7d56486958",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -17109,8 +17109,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "557a69234b6b24bc",
-      "iq_state": "c1baf00416734d24",
+      "intelligent_recommendation": "162f56f80a18eddb",
+      "iq_state": "b803127e8266239a",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "ca04186a8f178cde",
@@ -17169,9 +17169,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "982de196341a7abc",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3d328a3a60743dbd",
+      "rooms": "3b698f46cffd49a7",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8c1d4fa7980060cc",
       "runtime_robustness": "98658b60e1e5947b",
@@ -17181,8 +17181,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "44e10097016e5447",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -17202,10 +17202,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 2",
-     "store": "f8df0b1a44209910"
+     "store": "18962884cc70785f"
     },
     {
-     "all": "39428009f3722753",
+     "all": "b0a69f236d7a6368",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17213,7 +17213,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -17221,7 +17221,7 @@
       "day_night_plan": "696b7095d89472a3",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "2aa4f114ed0ef91a",
+      "decision_trace": "20c3c3d6c26f42b5",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "35b8bd2ce8240958",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -17271,8 +17271,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "c9fb3e943cbf4551",
-      "iq_state": "b2d58da2efa33d2f",
+      "intelligent_recommendation": "4dcd926dbaa1ab20",
+      "iq_state": "6b8b9b55c3020bd3",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "ca04186a8f178cde",
@@ -17331,9 +17331,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "fd300b638b165a75",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "7d7b467348373ff7",
+      "rooms": "6f9bce566469c143",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "005f9bcab578c86b",
       "runtime_robustness": "1fdba1069c171a33",
@@ -17343,8 +17343,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "44e10097016e5447",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -17364,10 +17364,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 3",
-     "store": "3abbc892f7cb3f39"
+     "store": "424a5a6723ecf868"
     },
     {
-     "all": "f597535cce3b82d3",
+     "all": "54ec5c9967b48404",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17375,7 +17375,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -17383,7 +17383,7 @@
       "day_night_plan": "aff45747dd9ab89d",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "de8a63b18c86cc4f",
+      "decision_trace": "6bf192e75ea52a4d",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "35b8bd2ce8240958",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -17433,8 +17433,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "ba33c159d297d7b4",
-      "iq_state": "2bcb8a9f5a860922",
+      "intelligent_recommendation": "c08af8db1d014faf",
+      "iq_state": "d704a0f73732a8de",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "ca04186a8f178cde",
@@ -17493,9 +17493,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "9db1813de0d989e3",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3c8bf942c1d595e1",
+      "rooms": "0080da69fffd6b01",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "0bb2e900d31e40a0",
       "runtime_robustness": "2f936f4a73351a60",
@@ -17505,8 +17505,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -17526,10 +17526,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "open 4",
-     "store": "471edda66fb5c020"
+     "store": "0f3eec1ac20a5b4f"
     },
     {
-     "all": "211318fcc782414f",
+     "all": "93a323d777f3e0da",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17537,7 +17537,7 @@
       "anticipation_engine": "161078e42e8fef3b",
       "away_tracked_occupants": "5feceb66ffc86f38",
       "child_occupants": "6b86b273ff34fce1",
-      "close_reason_kind": "74234e98afe7498f",
+      "close_reason_kind": "adeca0bd3ce951fe",
       "configured_moisture_generation_day_ml": "7a00c776e0af1135",
       "consolidation_engine": "161078e42e8fef3b",
       "cooling_rooms": "5feceb66ffc86f38",
@@ -17545,7 +17545,7 @@
       "day_night_plan": "fda7943efd494467",
       "decision_brain_engine": "161078e42e8fef3b",
       "decision_engine": "422a18c77c54a5d5",
-      "decision_trace": "de8a63b18c86cc4f",
+      "decision_trace": "6bf192e75ea52a4d",
       "decision_trace_engine": "161078e42e8fef3b",
       "diagnostics": "21ad148b8080c91e",
       "diagnostics_upload": "9bf19186dfd208d5",
@@ -17595,8 +17595,8 @@
       "house_ventilation_mode": "fcbcf165908dd18a",
       "initial_duration_estimate_min": "74234e98afe7498f",
       "intelligence_engine": "0ac875d28fe84771",
-      "intelligent_recommendation": "e2d286c52422ff0a",
-      "iq_state": "ff89d43c979b28d3",
+      "intelligent_recommendation": "4513c819e612a235",
+      "iq_state": "c715edf052ebe6ec",
       "last_learning_diagnosis": "12ae32cb1ec02d01",
       "last_ventilation": "74234e98afe7498f",
       "learning_components": "ca04186a8f178cde",
@@ -17655,9 +17655,9 @@
       "recommended_duration_min": "ef2d127de37b942b",
       "remaining_duration_min": "1df50ac4d1434c2a",
       "remaining_duration_reason": "74234e98afe7498f",
-      "remaining_duration_state": "7b4dd2fddf7f69ad",
+      "remaining_duration_state": "a1aade04deb0f91e",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "3bca52b9f7543d08",
+      "rooms": "77800394c0db85f3",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9d2b57769645cfa9",
       "runtime_robustness": "db0099342b52b50d",
@@ -17667,8 +17667,8 @@
       "sign_convention": "94bb4216397d1857",
       "soft_presence_score": "16522468b17d5af6",
       "statistics_days": "8527a891e2241369",
-      "status": "654499b4c64a7d5b",
-      "status_text": "36c02543ec2de6ef",
+      "status": "9211b1a9cd06ce4e",
+      "status_text": "c262905ce9a22e89",
       "system_check": "a7dbb6879039ae28",
       "temperature_change_live_c": "16522468b17d5af6",
       "theoretical_actionable_potential_ml": "ccbcd0d62f439eac",
@@ -17688,10 +17688,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "closed",
-     "store": "c82e230469597e88"
+     "store": "f8c52591e17389c9"
     },
     {
-     "all": "11d9213e3b485281",
+     "all": "ecd462f087022309",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17819,7 +17819,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "e5345ceb2b5fe058",
+      "rooms": "04d213f399ec51f5",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "b339243d23188143",
       "runtime_robustness": "cf13f235fcfd5d45",
@@ -17850,10 +17850,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap open",
-     "store": "46155ad20d564d09"
+     "store": "f1553391bc6289e1"
     },
     {
-     "all": "e5cae66850f1d330",
+     "all": "d91c8d6f243eff25",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -17981,7 +17981,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "1752a4a96e562067",
+      "rooms": "8019d69538e509ee",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "40f92d9cbdc8550f",
       "runtime_robustness": "5e8f155db98f9058",
@@ -18012,10 +18012,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "kitchen flap closed",
-     "store": "f836eabd903a175b"
+     "store": "ac7f8c0517055a42"
     },
     {
-     "all": "3d74dc99bccf3b95",
+     "all": "010107276a3078a6",
      "keys": {
       "actionable_potential_ml": "1253e9373e781b75",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -18143,7 +18143,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "444cf2025e7330ad",
+      "rooms": "2a26dd954f9653af",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "8f0c27aaa8d9e55f",
       "runtime_robustness": "173980f570e02aed",
@@ -18174,10 +18174,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door open",
-     "store": "f3b5e9f72f472496"
+     "store": "f6a44b5871f3c41e"
     },
     {
-     "all": "62f936177c831098",
+     "all": "3ba6551c95457a75",
      "keys": {
       "actionable_potential_ml": "5ef6fdf32513aa7c",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -18305,7 +18305,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "a1c22952908f1822",
+      "rooms": "3569767bac9570ad",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "9293e1554a9005d3",
       "runtime_robustness": "49602fa27226135a",
@@ -18336,10 +18336,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 1",
-     "store": "52babbe201b13514"
+     "store": "c2c3d7f80655a7a5"
     },
     {
-     "all": "652a4dd3c80c3282",
+     "all": "7b189b85d81a35ec",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -18467,7 +18467,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "ec733fbd7b5cf8d1",
+      "rooms": "dd434421013ebdcf",
       "routine_night_maturity": "5feceb66ffc86f38",
       "runtime_health": "d80f2fc3fa621228",
       "runtime_robustness": "b66a7962adaf8785",
@@ -18498,10 +18498,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 2",
-     "store": "eb5d444875bb2947"
+     "store": "7f23cd5b98dbb1e3"
     },
     {
-     "all": "fb0731000fdf8087",
+     "all": "1fa5ad052d2d4069",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -18629,7 +18629,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "5a3ecf448eedc751",
+      "rooms": "e1beb7b57a0168b7",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "63e4c8db9cf6bbf7",
       "runtime_robustness": "332122901293bbf0",
@@ -18660,10 +18660,10 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "door open 3",
-     "store": "8c08addab1b82ddb"
+     "store": "e446279e61993bb3"
     },
     {
-     "all": "1dc6944e42a0973c",
+     "all": "a20fa83b4d27ec89",
      "keys": {
       "actionable_potential_ml": "bdd2d3af3a5a1213",
       "active_presence_sensors": "4f53cda18c2baa0c",
@@ -18791,7 +18791,7 @@
       "remaining_duration_reason": "74234e98afe7498f",
       "remaining_duration_state": "7b4dd2fddf7f69ad",
       "room_sort_order": "3f1fef185f2d4284",
-      "rooms": "8b087f96ef2f7530",
+      "rooms": "4fb8d6b0fb8e3aa6",
       "routine_night_maturity": "6b86b273ff34fce1",
       "runtime_health": "e11a89b24eed3a60",
       "runtime_robustness": "3288db0c7d86ad37",
@@ -18822,7 +18822,7 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "front door closed",
-     "store": "8e47b239884f4e12"
+     "store": "ef8f29e92b306b88"
     },
     {
      "all": "606d49d2db3996eb",
@@ -18984,11 +18984,11 @@
       "wind_speed": "2894248d90b05c55"
      },
      "label": "settle",
-     "store": "09024ec0089f57ed"
+     "store": "ee811ab975ba3914"
     }
    ],
    "network_calls": [],
-   "persisted": "58b0457de9d6166c"
+   "persisted": "7326c4304cd8f5f5"
   }
  },
  "schema": 1

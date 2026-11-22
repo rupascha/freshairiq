@@ -113,8 +113,9 @@ def _images(readme: str) -> list[str]:
 
 def test_readmes_use_the_artwork_of_their_language_and_every_image_exists():
     assert (ROOT / "README.md").read_text(encoding="utf-8") == (ROOT / "README_EN.md").read_text(encoding="utf-8")
+    # 0.26.7.2: every README is English (README_DE.md keeps its path for existing links) and shows the English artwork
     for readme, own, other in (("README_EN.md", "freshairiq-branding-official-en.png", "freshairiq-branding-official.png"),
-                               ("README_DE.md", "freshairiq-branding-official.png", "freshairiq-branding-official-en.png")):
+                               ("README_DE.md", "freshairiq-branding-official-en.png", "freshairiq-branding-official.png")):
         images = _images(readme)
         assert any(i.endswith("/" + own) for i in images) and not any(i.endswith("/" + other) for i in images), readme
         for image in images:
@@ -123,7 +124,8 @@ def test_readmes_use_the_artwork_of_their_language_and_every_image_exists():
             local = ROOT / (image[len(RAW):] if image.startswith(RAW) else image)
             assert local.is_file(), (readme, image)
     de_text = (ROOT / "README_DE.md").read_text(encoding="utf-8")
-    assert "Sprache / Language" in de_text and "Language / Sprache" in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "Sprache" not in de_text and "Sprache" not in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "/docs/screenshots/de/" not in de_text and "_de.png" not in de_text
 
 
 def test_branding_guide_names_both_languages_and_the_neutral_assets():

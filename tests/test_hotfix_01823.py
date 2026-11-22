@@ -46,8 +46,10 @@ def test_version_is_consistent():
 def test_room_payload_merge_is_scoped_to_current_config_entry():
     text = (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")
     assert 'const activeEntryId = st.freshairiq_entry_id || null' in text
-    assert 'a.freshairiq_entry_id !== activeEntryId' in text
-    assert 'a.freshairiq_transport !== "room_v2"' in text
+    assert 'attrs.freshairiq_transport !== "room_v2" || attrs.freshairiq_entry_id !== activeEntryId' in text
+    # one merge for the full render and the live view (frontend_tests/live.spec.mjs checks the behaviour)
+    assert text.count("const activeEntryId = st.freshairiq_entry_id || null") == 1
+    assert "rooms = this._mergedRooms(st);" in text and "this._orderedRooms(this._mergedRooms(st))" in text
 
 
 def test_explicit_current_status_entity_is_authoritative():

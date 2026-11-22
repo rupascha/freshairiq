@@ -107,6 +107,7 @@ def _room_session_defaults() -> dict[str, Any]:
         "session_learning_reset_at": None,
         # confirmation of an exhausted airing benefit (room_close_strategy.apply_benefit_close)
         "session_benefit_check": None,
+        "session_close_check": None,
     }
 
 

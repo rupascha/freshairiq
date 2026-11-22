@@ -36,7 +36,6 @@ def test_presence_diagnostics_is_aggregate_and_privacy_safe():
 def test_presence_normalization_unknown_missing_and_legacy_home_edges():
     assert normalize_presence_state("device_tracker.x", None) == "unknown"
     assert normalize_presence_state("device_tracker.x", State("unavailable")) == "unknown"
-    from custom_components.freshairiq import presence
-    assert presence._state_kind(State("home")) == "home"
+    assert normalize_presence_state("person.x", State("home")) == "home"
     d = presence_diagnostics({"adult_presence_entities": ["device_tracker.missing"]}, lambda _eid: None)
     assert d["raw_state_classes"]["missing"] == 1

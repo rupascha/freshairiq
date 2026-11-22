@@ -62,11 +62,29 @@ from .settings_contract import native_option_key
 from .validation import option_relationship_error
 
 # v0.26.6.1 (#25): what is wrong with a cross-ventilation pair, in the user's language (shared with the repair notice)
-_CROSS_PAIR_TEXT = cross_pairs.TEXT
 
 
 def _cross_pair_problems(problems, language: str) -> str:
     return cross_pairs.describe(problems, language)
+
+
+def _level_form_keys(levels: list[str], language: str) -> dict[str, str]:
+    """Form key of every stored level id, unique also when two levels show the same name (0.26.7.2).
+
+    Home Assistant shows the keys as labels: the stored "ground_floor" and an own level "Erdgeschoss" both read
+    "Erdgeschoss", the second one gets "(2)". The stored ids themselves never change and stay hidden.
+    """
+    keys: dict[str, str] = {}
+    for level in levels:
+        label = _level_label(level, language)
+        candidates = (f"{label} ({n})" if n > 1 else label for n in range(1, len(levels) + 2))
+        keys[level] = next(key for key in candidates if key not in keys.values())
+    return keys
+
+
+def _reorder_levels(levels: list[str], keys: dict[str, str], user_input: dict) -> list[str]:
+    indexed = {level: i for i, level in enumerate(levels)}
+    return sorted(levels, key=lambda level: (int(user_input.get(keys[level], indexed[level] + 1)), indexed[level]))
 
 
 class OptionsSettingsMixin:
@@ -126,20 +144,13 @@ class OptionsSettingsMixin:
         levels = list(self._working_data.get(CONF_LEVELS, []))
         # Home Assistant renders dynamic schema keys literally. Localized labels
         # therefore become the form keys, while stored level ids stay unchanged.
+        keys = _level_form_keys(levels, _flow_language(self.hass))
         if user_input is not None:
-            indexed = {level: i for i, level in enumerate(levels)}
-            ordered = sorted(
-                levels,
-                key=lambda level: (
-                    int(user_input.get(_level_label(level, _flow_language(self.hass)), indexed[level] + 1)),
-                    indexed[level],
-                ),
-            )
-            self._working_data[CONF_LEVELS] = ordered
+            self._working_data[CONF_LEVELS] = _reorder_levels(levels, keys, user_input)
             self._persist_working_state()
             return await self.async_step_levels()
         fields = {
-            vol.Required(_level_label(level, _flow_language(self.hass)), default=idx): _number(
+            vol.Required(keys[level], default=idx): _number(
                 1, max(len(levels), 1), 1
             )
             for idx, level in enumerate(levels, start=1)

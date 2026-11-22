@@ -17,8 +17,11 @@ that was not carried out leaves the action to the user (``failed``).
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
+
+from .actuator_control import own_fans
 
 FAN_ON_RECOMMENDATIONS = frozenset({"ventilate", "continue_ventilating", "ventilate_indirectly"})
 # FreshAirIQ carries out the action itself: no manual instruction for these.
@@ -28,7 +31,9 @@ FAN_ON_RECOMMENDATIONS = frozenset({"ventilate", "continue_ventilating", "ventil
 # "external" – another automation (Alexa, washing machine …) controls it: no request to the user either.
 # 0.26.5.5: "blocked_time" – the room's lock period: FreshAirIQ keeps the fan off on purpose, no request either way.
 AUTO_STOP_STATES = frozenset({"stopping", "follow_up", "source", "completed", "shared", "external", "blocked_time"})
-AUTO_START_STATES = frozenset({"recommended", "requested", "running", "waiting", "partial", "shared", "external", "blocked_time"})
+# 0.26.7.2: "settled" – FreshAirIQ's run is over and the room's demand has not changed since; it starts again only for a new
+# one, so the unchanged recommendation is no "switch on the fan" for the user either.
+AUTO_START_STATES = frozenset({"recommended", "requested", "running", "waiting", "partial", "shared", "external", "blocked_time", "settled"})
 
 _LABELS = {
     "recommended": "Automatische Lüftung empfohlen – Ablüfter wird automatisch eingeschaltet",
@@ -91,10 +96,52 @@ def fan_restart_lock_min(options: dict[str, Any]) -> float:
 
 def fan_trace_row(room_key: str, mode: str, mem: dict[str, Any], now: datetime) -> dict[str, Any]:
     """One privacy-safe row of the fan command trace (no entity IDs)."""
-    return {
+    row = {
         "at": now.isoformat(), "room_key": room_key, "mode": mode, "command": mem.get("command"),
         "reason": mem.get("reason"), "result": mem.get("command_state"),
     }
+    if mem.get("trigger"):
+        row["trigger"] = mem["trigger"]  # 0.26.7.2: the room's recommendation the command followed (fixed code)
+    return row
+
+
+def settle_failed_off(mem: dict[str, Any], fans: list[str], all_off: Callable[[list[str]], bool]) -> list[dict[str, Any]]:
+    """0.26.7.2 (support diagnosis 19./20.11.): a switch-off that failed is over once every device it was sent to reports off.
+
+    The warning ends (also when another room starts a shared fan later), the trace keeps the failure: the rows returned
+    record the late confirmation. A device still on or without a state keeps it failed. ``fans``: the room's fans, for a
+    switch-off from before the record of its devices (``off_targets``); ``all_off``: every one of them reports off. The same
+    for the room's own fans switched off next to a shared one (``own_off``).
+    """
+    rows, sent_to = [], list(mem.get("off_targets") or own_fans(mem, fans) or fans)
+    if mem.get("command") == "off" and mem.get("command_state") == "failed" and all_off(sent_to):
+        mem["command_state"] = "confirmed"
+        mem.pop("off_targets", None)
+        rows.append(mem)
+    own = mem.get("own_off")
+    if isinstance(own, dict) and own.get("state") == "failed" and own.get("entities") and all_off(list(own["entities"])):
+        own["state"] = "confirmed"
+        rows.append({"command": "off", "reason": "shared_fan_kept", "command_state": "confirmed"})
+    return rows
+
+
+def starting_rooms(mem: dict[str, Any], fans: set[str], sharers: list[tuple[dict[str, Any], list[str]]], memory: dict[str, Any],
+                   states: Any) -> list[dict[str, str]]:
+    """0.26.7.2: the rooms whose automatic control started the shared fans that run now (key and name, no entity IDs).
+
+    Only a room that owns its run and switched on one of these fans itself (F08 record) that is on now; none for the room's
+    own run or when nobody can be named (switched on by hand, by another automation, unknown state).
+    """
+    if mem.get("owned"):
+        return []
+    started = []
+    for room, room_fans in sharers:
+        other = memory.get(str(room["key"]))
+        running = isinstance(other, dict) and other.get("owned") and any(
+            fan in fans and getattr(states.get(fan), "state", None) == "on" for fan in own_fans(other, room_fans))
+        if running:
+            started.append({"key": str(room["key"]), "name": str(room.get("name") or room["key"])})
+    return started
 
 
 def room_fan_automation(room: dict[str, Any], snapshot: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -125,8 +172,17 @@ def room_fan_automation(room: dict[str, Any], snapshot: dict[str, Any] | None) -
         # 0.26.5.5: fixed points in time for a real countdown – only while the follow-up runs
         "follow_up_until": snap.get("follow_up_until") if fan_on and state in {"follow_up", "shared"} else None,
         "runtime_limit_at": snap.get("runtime_limit_at") if fan_on else None,
+        # 0.26.7.2: the rooms whose automatic control started the shared fan that runs here (none: the general wording)
+        "started_by": _started_by(snap) if (state, label_key) == ("shared", "shared_owner") else None,
         **_group(snap),
     }
+
+
+def _started_by(snap: dict[str, Any]) -> dict[str, list[str]] | None:
+    rooms = [r for r in snap.get("shared_started_by") or [] if isinstance(r, dict) and r.get("key")]
+    if not rooms:
+        return None
+    return {"room_keys": [str(r["key"]) for r in rooms], "room_names": [str(r.get("name") or r["key"]) for r in rooms]}
 
 
 def _group(snap: dict[str, Any]) -> dict[str, Any]:
@@ -206,6 +262,9 @@ def _own_state(mode, fan_on, owned, aligned, room, snap, command, command_state)
         return "manual_off", None  # switched off by hand: no automatic restart until the demand ends
     if snap.get("restart_locked") and not room.get("moisture_source_active"):
         return "waiting", "waiting"
+    if snap.get("await_new_demand") and not room.get("moisture_source_active"):
+        # 0.26.7.2: the last run is over and the demand has not changed since – no automatic restart for it
+        return "settled", "completed"
     return "recommended", "recommended"
 
 
@@ -222,11 +281,6 @@ def auto_stop(room: Any) -> bool:
 def auto_start(room: Any) -> bool:
     """FreshAirIQ starts (or runs) this fan itself – no "switch on the fan" for the user."""
     return fan_automation(room).get("state") in AUTO_START_STATES
-
-
-def automation_label(room: Any) -> str | None:
-    label = fan_automation(room).get("label")
-    return str(label) if label else None
 
 
 def handled_label(room: Any, code: str, language: str = "de") -> str | None:

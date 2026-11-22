@@ -17,8 +17,8 @@ def test_live_freshy_has_no_external_wind_stripes():
 def test_hacs_readme_is_english_with_german_link_and_freshy_screenshot():
     readme=(ROOT / "README.md").read_text(encoding="utf-8")
     german=(ROOT / "README_DE.md").read_text(encoding="utf-8")
-    assert "[Deutsch](README_DE.md) · **English**" in readme
+    assert "this documentation is written in English" in readme   # 0.26.7.2: no language switch to a German page
     assert "Your home can tell you" in readme
-    assert "Dein Zuhause kann dir sagen" in german
+    assert "Your home can tell you" in german   # 0.26.7.2: README_DE.md is English as well
     assert "docs/screenshots/00-freshy-dashboard.jpeg" in readme
     assert (ROOT / "docs/screenshots/00-freshy-dashboard.jpeg").is_file()

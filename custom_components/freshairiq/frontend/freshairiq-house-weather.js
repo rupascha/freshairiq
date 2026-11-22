@@ -240,8 +240,10 @@ export function worldDefs(model, light, px) {
   if (!light) return "";
   return `<radialGradient id="wx-ambient" cx=".5" cy=".5" r=".75"><stop offset=".25" stop-color="${light.color}" stop-opacity="${r3(0.12 * light.strength)}"/><stop offset="1" stop-color="${light.color}" stop-opacity="0"/></radialGradient>`;
 }
-// ``under``: see freshairiq-house-atmos.js weatherSvg – the storm's gusts move in the composed layer under the plan
-export function worldSvg({ model, light, frame, rooms, northDeg = 0, px, mask, small = false, under = null }) {
+// ``under``: see freshairiq-house-atmos.js weatherSvg. 0.26.7.2: the rings of the rain are drawn on the card's weather canvas
+// (``under.splash`` = how many at most); ``gusts``: the storm gusts' ways along the facade (view freshairiq-house-view.js
+// facadeStreams: [{points, clear}] in plan coordinates) – each gust is one bright stretch of air that the card moves along its way
+export function worldSvg({ model, light, frame, rooms, northDeg = 0, px, mask, small = false, under = null, gusts = null }) {
   if (!model) return "";
   const W = frame.maxX - frame.minX, H = frame.maxY - frame.minY, rnd = seq(Math.round(W * 997 + H * 13));
   // ``moving``: the animated parts, unmasked – they lie behind the opaque rooms anyway, and a masked layer would have to be
@@ -257,24 +259,23 @@ export function worldSvg({ model, light, frame, rooms, northDeg = 0, px, mask, s
   if (model.frost && !model.precip.kind) out += `<rect class="wx frost" x="${r3(frame.minX)}" y="${r3(-frame.maxY)}" width="${r3(W)}" height="${r3(H)}" fill="#bfe6ff" fill-opacity=".08"/>`;
   // rain on the ground: soft rings where drops land (moderate and heavy rain only)
   if (model.precip.kind === "rain" && model.precip.level >= 2) {
-    // two groups that fade in turn (opacity only – cheap to draw, smooth also on weak devices); a few rings only: twice as
-    // many measured 30 instead of 60 fps in a storm on a large, software-rendered screen
+    // a few rings only: twice as many measured 30 instead of 60 fps in a storm on a large, software-rendered screen
     const n = (small ? 4 : 6) * (model.precip.level - 1), ring = () => `<circle cx="${r3(frame.minX + rnd() * W)}" cy="${r3(-(frame.minY + rnd() * H))}" r="${px(3 + rnd() * 3)}" stroke-width="${px(1)}"/>`;
-    if (under) {   // every ring a tiny element of its own that fades (composed – no sheet over the whole scene)
-      const one = cls => { const x = frame.minX + rnd() * W, y = -(frame.minY + rnd() * H), d = r3(2 * (3 + rnd() * 3) * px(1) * under.ppu);
-        return `<i class="${cls}" style="left:${r3(((x - under.vb[0]) / under.vb[2]) * 100)}%;top:${r3(((y - under.vb[1]) / under.vb[3]) * 100)}%;width:${d}px;height:${d}px;margin:-${r3(d / 2)}px 0 0 -${r3(d / 2)}px"></i>`; };
-      under.html += `<div class="wx splash">${Array.from({ length: Math.ceil(n / 2) }, () => one("ring-a")).join("")}${Array.from({ length: Math.floor(n / 2) }, () => one("ring-b")).join("")}</div>`;
-    } else moving += `<g class="wx splash"><g class="ring-a">${Array.from({ length: Math.ceil(n / 2) }, ring).join("")}</g><g class="ring-b">${Array.from({ length: Math.floor(n / 2) }, ring).join("")}</g></g>`;
+    if (under) { under.splash = n; under.html += '<div class="wx splash"></div>'; }   // 0.26.7.2: each ring comes and goes on its own
+    else moving += `<g class="wx splash"><g class="ring-a">${Array.from({ length: Math.ceil(n / 2) }, ring).join("")}</g><g class="ring-b">${Array.from({ length: Math.floor(n / 2) }, ring).join("")}</g></g>`;
   }
-  // storm: broad gusts sweep across the garden in the wind's direction
-  if ((model.level === "storm" || model.level === "strong") && Number.isFinite(model.bearing)) {
+  // storm: broad gusts sweep across the garden in the wind's direction – 0.26.7.2: along the same facade as the wind's streams,
+  // around the corners of the house (never through it); without their ways no gusts are drawn
+  if ((model.level === "storm" || model.level === "strong") && Number.isFinite(model.bearing) && Array.isArray(gusts) && gusts.length) {
     const to = planVector((model.bearing + 180) % 360, northDeg), ang = Math.atan2(-to[1], to[0]) * 180 / Math.PI;
-    const c = [(frame.minX + frame.maxX) / 2, (frame.minY + frame.maxY) / 2];
-    if (under) {
-      const box = `left:${r3(((frame.minX - under.vb[0]) / under.vb[2]) * 100)}%;top:${r3(((-frame.maxY - under.vb[1]) / under.vb[3]) * 100)}%;width:${r3((W / under.vb[2]) * 100)}%;height:${r3((H / under.vb[3]) * 100)}%`;
-      under.html += `<div class="wxarea" style="${box}"><div class="wx sweep${model.level === "storm" ? " storm" : ""}" data-tilt="${r3(ang)}" style="left:-25%;top:-25%;width:150%;height:150%;transform:rotate(${r3(ang)}deg)">`
-        + [0.3, 0.55, 0.8].map((k, i) => `<i style="left:-50%;width:50%;top:${r3(16.7 + k * 66.6)}%;height:${r3(Math.max(4, px(10) * under.ppu))}px;animation-delay:-${i * 1.7}s"></i>`).join("") + "</div></div>";
-    } else moving += `<g class="wx sweep${model.level === "storm" ? " storm" : ""}" transform="rotate(${r3(ang)} ${r3(c[0])} ${r3(-c[1])})">${[0.3, 0.55, 0.8].map((k, i) => `<rect x="${r3(c[0] - W)}" y="${r3(-c[1] - H / 2 + k * H)}" width="${r3(W * 0.5)}" height="${px(10)}" rx="${px(5)}" style="animation-delay:-${i * 1.7}s"/>`).join("")}</g>`;
+    const storm = model.level === "storm";
+    moving += `<g class="wx sweep${storm ? " storm" : ""}" data-tilt="${r3(ang)}">` + gusts.map((g, i) => {
+      const d = g.points.map((q, k) => `${k ? "L" : "M"} ${P(q)}`).join(" "), dash = r3(14 + rnd() * 12);
+      // two gusts that join: their strokes' opacity along the wind (view outerLanes ``fade``) – full while apart, cross-fading into one
+      // on the shared stretch
+      const fade = g.fade ? `<linearGradient id="gj${i}" gradientUnits="userSpaceOnUse" x1="${r3(g.fade.from[0])}" y1="${r3(-g.fade.from[1])}" x2="${r3(g.fade.to[0])}" y2="${r3(-g.fade.to[1])}">${g.fade.stops.map(([o, a]) => `<stop offset="${o}" stop-color="#e9f6ff" stop-opacity="${a}"/>`).join("")}</linearGradient>` : "";
+      return `${fade}<path class="gust" data-gust="${i}" d="${d}" pathLength="100" stroke-width="${g.width ? r3(Math.min(g.width, px(storm ? 11 : 9))) : px(storm ? 11 : 9)}" stroke-dasharray="${dash} 100" stroke-dashoffset="${dash}"${fade ? ` style="stroke:url(#gj${i})"` : ""}/>`;
+    }).join("") + "</g>";
   }
   // the moon: only with a moon-phase entity (Home Assistant's moon integration) – an illustration of its phase in the
   // corner of the sky, never a calculated position
@@ -289,22 +290,87 @@ export function worldSvg({ model, light, frame, rooms, northDeg = 0, px, mask, s
   }
   // a plain rectangle keeps the moving parts inside the drawing (a clip is cheap, unlike the mask)
   const clip = `<clipPath id="wx-frame"><rect x="${r3(frame.minX)}" y="${r3(-frame.maxY)}" width="${r3(W)}" height="${r3(H)}"/></clipPath>`;
-  return (moving ? `${clip}<g class="weather world moving" clip-path="url(#wx-frame)" pointer-events="none">${moving}</g>` : "") + (out ? `<g class="weather world" mask="url(#${mask})" pointer-events="none">${out}</g>` : "");
+  const motion = moving ? `${clip}<g class="weather world moving" clip-path="url(#wx-frame)" pointer-events="none">${moving}</g>` : "";
+  // 0.26.7.2: with ``under`` the moving parts go to the card's air layer under the plan (``under.air``) – redrawn there alone
+  if (under && motion) { under.air = (under.air || "") + motion; return out ? `<g class="weather world" mask="url(#${mask})" pointer-events="none">${out}</g>` : ""; }
+  return motion + (out ? `<g class="weather world" mask="url(#${mask})" pointer-events="none">${out}</g>` : "");
+}
+// 0.26.7.2: the storm's gusts on the card – each a bright stretch of air that runs along its way around the house (pathLength 100,
+// moved by its dash offset in the card's loop) and then rests a while of its own; the state survives redraws (no restart).
+// Two gusts that join (view outerLanes ``merge``) run as one: the joining one keeps the same distance from its start as the one it
+// joins (their ways start equally far before the meeting point) and carries the same stretch of air, so both reach the meeting
+// point together; their strokes' opacity along the way (``fade``) lets the two pictures cross-fade into one on the shared stretch.
+export class GustRunner {
+  constructor() { this.state = []; this.gusts = []; this.next = []; this.ways = []; this.links = []; }
+  // before a drawing: the ways (plan points) and the screen pixels per plan unit; ``speedOf`` (point → the air's speed relative to the
+  // free wind, the 2D flow model): the gust is slower in front of the house and faster past its sides – its time along the way is
+  // prepared here once (``way``: travel time share → way share), the loop only looks it up
+  plan(gusts, ppu, speedOf = null) {
+    if (gusts === this.planned && ppu === this.ppu && speedOf === this.speedOf) return;   // a room update: the same ways, the same pace
+    this.planned = gusts; this.ppu = ppu; this.speedOf = speedOf;
+    this.next = (gusts || []).map(g => g.points.reduce((sum, q, k) => sum + (k ? Math.hypot(q[0] - g.points[k - 1][0], q[1] - g.points[k - 1][1]) : 0), 0) * ppu);
+    this.links = (gusts || []).map(g => (g.merge ? { lead: g.merge.into, at: g.merge.at * ppu, blend: g.merge.blend * ppu, overlap: g.merge.overlap * ppu } : null));
+    this.ways = (gusts || []).map(g => {
+      if (!speedOf || g.points.length < 2) return null;
+      const v = g.points.map(q => Math.max(speedOf(q), 0.05)), tab = [[0, 0]];
+      let s = 0, t = 0;
+      for (let k = 1; k < g.points.length; k++) { const l = Math.hypot(g.points[k][0] - g.points[k - 1][0], g.points[k][1] - g.points[k - 1][1]); s += l; t += l * 2 / (v[k] + v[k - 1]); tab.push([t, s]); }
+      return t > 0 && s > 0 ? tab.map(([a, b]) => [a / t, b / s]) : null;
+    });
+  }
+  bind(els, still) {
+    const all = [...els].map(el => {
+      const i = Number(el.dataset.gust), s = this.state[i] || (this.state[i] = { phase: Math.random() * 1.5, rest: 0.2 + Math.random() * 0.9, pace: 0.8 + Math.random() * 0.5 });
+      return { el, i, length: Math.max(this.next[i] || 0, 1), dash: parseFloat(el.getAttribute("stroke-dasharray")) || 20, s, way: this.ways[i] || null, link: this.links[i] || null };
+    });
+    // a joining gust follows the one it joins: its clock, the same stretch of air in screen pixels
+    for (const g of all) {
+      const lead = g.link && all.find(x => x.i === g.link.lead && !x.link);
+      if (!lead) { g.link = null; continue; }
+      g.lead = lead; g.s = lead.s; g.dash = r3(lead.dash * lead.length / g.length);
+      g.el.setAttribute("stroke-dasharray", `${g.dash} 100`);
+      g.el.removeAttribute("opacity");
+    }
+    this.gusts = [...all.filter(g => !g.lead), ...all.filter(g => g.lead)];
+    for (const g of this.gusts) this.draw(g, still);
+  }
+  draw(g, still) {
+    let head;
+    if (g.lead) head = g.lead.head;
+    else {
+      let x = still ? 0.45 : Math.min(g.s.phase, 1);
+      if (g.way && !still) { const w = g.way; let k = 1; while (k < w.length - 1 && w[k][0] < x) k++; const a = w[k - 1], b = w[k]; x = a[1] + (b[1] - a[1]) * (b[0] > a[0] ? (x - a[0]) / (b[0] - a[0]) : 0); }
+      head = x * (g.dash + 100) * g.length / 100;   // the front of the stretch, screen pixels from the start of its way
+    }
+    g.head = head;
+    g.el.setAttribute("stroke-dashoffset", r3(g.dash - head * 100 / g.length));
+  }
+  // screen pixels per second along the facade, faster in stronger wind; ``boost``: the current gust of the flow model (0 = mean)
+  step(dt, windMs, pace, boost = 0) {
+    const v = (60 + 9 * Math.min(Number(windMs) || 12, 30)) * pace * (1 + 0.6 * boost);
+    for (const g of this.gusts) {
+      if (!g.lead) {
+        g.s.phase += dt * v * g.s.pace / g.length;
+        if (g.s.phase >= 1 + g.s.rest) { g.s.phase = 0; g.s.rest = 0.15 + Math.random() * 1.1; g.s.pace = 0.8 + Math.random() * 0.5; }
+      }
+      this.draw(g, false);
+    }
+  }
 }
 // the house's own shadow, cast away from the sun (its length follows the sun's elevation)
 export const shadowOffset = (light, px, span) => (light && light.shadow ? [r3(light.shadow.dx * Math.min(light.shadow.length, 2.5) * span * 0.025 + px(2)), r3(-light.shadow.dy * Math.min(light.shadow.length, 2.5) * span * 0.025 + px(2)), light.shadow.opacity] : null);
 
 export const WORLD_STYLE = `
 .wx.ambient{pointer-events:none}
-.wx.splash circle{fill:none;stroke:#d8efff;stroke-opacity:.55}.wx.splash g,.map .wxu .wx.splash>i{animation:splash 1.6s ease-in-out infinite alternate;will-change:opacity}.map .wxu .wx.splash>i{border-radius:50%;border:1px solid rgba(216,239,255,.55)}.wx.splash .ring-b{animation-delay:-1.6s}
-.wx.sweep > *{fill:#e9f6ff;fill-opacity:.07;animation:sweep 6s linear infinite}.map .wxu .wx.sweep>i{border-radius:999px;background:rgba(233,246,255,.07);will-change:transform}.map .wxu .wx.sweep.storm>i{background:rgba(233,246,255,.12)}.wx.sweep.storm > *{fill-opacity:.12;animation-duration:3.2s}
+.wx.splash circle{fill:none;stroke:#d8efff;stroke-opacity:.55}.wx.splash g{animation:splash 1.6s ease-in-out infinite alternate;will-change:opacity}.wx.splash .ring-b{animation-delay:-1.6s}
+/* 0.26.7.2: the storm's gusts follow the facade; the card moves each along its way in its shared loop (no CSS animation) */
+.wx.sweep .gust{fill:none;stroke:#e9f6ff;stroke-opacity:.13;stroke-linecap:round;stroke-linejoin:round}.wx.sweep.storm .gust{stroke-opacity:.21}
 .wx.haze{animation:haze 30s ease-in-out infinite alternate}
 @keyframes splash{0%{opacity:.85}100%{opacity:.08}}
-@keyframes sweep{0%{transform:translateX(0)}100%{transform:translateX(200%)}}
 @keyframes haze{0%{fill-opacity:.1}100%{fill-opacity:.18}}
 :host([data-paused]) .wx.world *,:host([data-paused]) .wxv *{animation-play-state:paused}
 :host([data-still]) .wx.world *,:host([data-still]) .wxv *{animation:none}
-@media (prefers-reduced-motion:reduce){.wx.world *,.wx.splash g,.wx.sweep > *,.wx.haze,.wxv *{animation:none}}
+@media (prefers-reduced-motion:reduce){.wx.world *,.wx.splash g,.wx.haze,.wxv *{animation:none}}
 /* the weather window and the side column (0.26.7.0(2)): one world with the house map – its sky, its light, calm glass panels */
 .wxv{display:grid;gap:12px;color:#fff;min-width:0}
 .wxv .sub{color:#d6ecff;font-size:13px}

@@ -284,7 +284,7 @@ class RoomResultMixin:
             "forecast_5_min_net_moisture_change_ml": int(dynamic5.get("net_moisture_change_ml", dynamic5["moisture_effect_ml"])),
             "forecast_5_min_temperature_change_c": round(float(dynamic5["temperature_change_c"]), 2),
             "forecast_5_min_confidence": int(dynamic5["confidence"]),
-            **benefit_close_state(mem, dynamic5, options, cfg[CONF_ROOM_VOLUME]),
+            **benefit_close_state(mem, dynamic5, options, cfg[CONF_ROOM_VOLUME], result),
             "forecast_temperature_change_c": round(float(dynamic["temperature_change_c"]), 2), "forecast_confidence": int(dynamic["confidence"]),
             "forecast_source_rate_ml_min": float(dynamic["source_rate_ml_min"]), "forecast_method": dynamic["method"],
             "forecast_simulation_steps": int(dynamic.get("simulation_steps", 1)), "forecast_simulated_final_ah": dynamic.get("simulated_final_ah"),

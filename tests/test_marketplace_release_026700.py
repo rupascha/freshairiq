@@ -1,21 +1,24 @@
-"""Marketplace/HACS release contract (0.26.7.0): installation ZIP, hacs.json, workflows, download statistics.
+"""Marketplace/HACS release contract (0.26.7.0, install asset from 0.26.7.2): installation ZIP, hacs.json, workflows, download statistics.
 
-Every release carries ``freshairiq.zip`` (manual install, downloads counted by GitHub). HACS and the
-Marketplace keep installing from the source archive: with ``zip_release`` both would look for the asset
-in every release a user picks, also older ones without it (HACS ``repositories/base.py``
-``download_zip_files`` with the current ``repository_manifest``; Marketplace API path the same), so going
-back to an older version would fail (A-236). The ZIP has the layout they would extract with
-``zipfile.ZipFile.extractall`` into ``custom_components/<domain>/``; these tests extract it that way and
-require the files of the integration folder as released.
+Every release carries ``freshairiq.zip``. From 0.26.7.2 on ``hacs.json`` sets ``zip_release``/``filename``:
+HACS (``async_download_repository`` → ``async_get_hacs_json(ref=version_to_download())``) and the
+Marketplace (``async_get_repository_manifest(params={"ref": version_to_install()})``, catalog path
+``get_repository_manifest(version=...)``) read ``hacs.json`` at the tag they install and download the asset
+only when that tag asks for it (A-243). Older tags have no ``zip_release`` and keep installing from their
+source archive. The ZIP has the layout they extract with ``zipfile.ZipFile.extractall`` into
+``custom_components/<domain>/``; these tests extract it that way and require the files of the integration
+folder as released.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import io
 import json
 import shutil
 import subprocess
 import sys
+import urllib.error
 import zipfile
 from pathlib import Path
 
@@ -55,16 +58,95 @@ def _tracked() -> list[str]:
     return sorted(n for n in names if _released(n))
 
 
-def test_hacs_json_keeps_the_source_archive_install_so_older_releases_stay_installable(tmp_path):
-    """Changed expectation (review before publication, A-236): no zip_release – hacs.json as published so far."""
+HACS_0267X = {"name": "FreshAirIQ", "render_readme": True, "homeassistant": "2026.8.0"}   # hacs.json of v0.26.7.1 and older
+
+
+def _gate(tmp_path, hacs=None, release=None):
+    src = tmp_path / "src"
+    shutil.copytree(ROOT, src, ignore=shutil.ignore_patterns(".git", "node_modules", "__pycache__", "*.zip", "test-results"))
+    if hacs is not None:
+        (src / "hacs.json").write_text(json.dumps(hacs), encoding="utf-8")
+    if release is not None:
+        (src / ".github/workflows/release.yml").write_text(release, encoding="utf-8")
+    result = subprocess.run([sys.executable, "tools/github_release_gate.py", "--source", "."], cwd=src, text=True, capture_output=True)
+    return result.returncode, result.stdout + result.stderr
+
+
+def _install(config: Path, hacs: dict, assets: dict[str, Path], source: Path) -> Path:
+    """What HACS and the Marketplace write for one tag: the asset its hacs.json names, else the source archive's folder."""
+    target = config / "custom_components" / "freshairiq"
+    if target.exists():
+        shutil.rmtree(target)
+    target.mkdir(parents=True)
+    if rd.install_source(hacs) == "asset":
+        if hacs["filename"] not in assets:
+            raise FileNotFoundError(f"releases/download/<tag>/{hacs['filename']}")
+        with zipfile.ZipFile(assets[hacs["filename"]]) as zf:
+            zf.extractall(target)
+    else:
+        shutil.copytree(source / "custom_components/freshairiq", target, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.gz", "*.br", ".precompressed.json"))
+    return target
+
+
+def test_hacs_json_installs_the_counted_asset():
+    """Changed expectation (A-243, 0.26.7.2): zip_release with the asset every release carries."""
     hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
-    assert hacs == {"name": "FreshAirIQ", "render_readme": True, "homeassistant": "2026.8.0"}
-    assert biz.ASSET_NAME == rd.INSTALL_ASSET == "freshairiq.zip"
-    # the gate refuses zip_release/filename, so it cannot come back unnoticed
-    shutil.copytree(ROOT, tmp_path / "src", ignore=shutil.ignore_patterns(".git", "node_modules", "__pycache__", "*.zip", "test-results"))
-    (tmp_path / "src/hacs.json").write_text(json.dumps({**hacs, "zip_release": True, "filename": "freshairiq.zip"}), encoding="utf-8")
-    result = subprocess.run([sys.executable, "tools/github_release_gate.py", "--source", "."], cwd=tmp_path / "src", text=True, capture_output=True)
-    assert result.returncode != 0 and "must not set zip_release" in result.stdout + result.stderr
+    assert hacs == {**HACS_0267X, "zip_release": True, "filename": "freshairiq.zip"}
+    assert biz.ASSET_NAME == rd.INSTALL_ASSET == hacs["filename"]
+    assert rd.install_source(hacs) == "asset"
+
+
+def test_install_with_the_asset_gives_the_released_integration_folder(tmp_path):
+    hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
+    asset = tmp_path / "release" / "freshairiq.zip"
+    biz.build(ROOT, asset)
+    version = json.loads((COMP / "manifest.json").read_text(encoding="utf-8"))["version"]
+    assert biz.check(asset, version) == (version, [])
+    target = _install(tmp_path / "config", hacs, {"freshairiq.zip": asset}, ROOT)
+    got = sorted(p.relative_to(target).as_posix() for p in target.rglob("*") if p.is_file())
+    assert got == _tracked()
+    assert json.loads((target / "manifest.json").read_text(encoding="utf-8"))["version"] == version
+
+
+def test_missing_or_wrongly_built_asset_never_reaches_a_public_release(tmp_path):
+    hacs = json.loads((ROOT / "hacs.json").read_text(encoding="utf-8"))
+    with pytest.raises(FileNotFoundError):
+        _install(tmp_path / "config", hacs, {}, ROOT)
+    s = rd.summarize([{"tag_name": "v0.26.7.2", "published_at": "2026-11-21T10:00:00Z", "assets": []}], {"v0.26.7.2": hacs})
+    assert s["releases_with_missing_install_asset"] == ["v0.26.7.2"]
+    assert "**Missing freshairiq.zip:** v0.26.7.2" in rd.markdown(s)
+    wrong = tmp_path / "wrong.zip"
+    with zipfile.ZipFile(wrong, "w") as zf:                                    # folder inside the ZIP: would nest on install
+        for name in _tracked()[:20] + ["manifest.json"]:
+            zf.writestr(f"freshairiq/{name}", (COMP / name).read_bytes())
+    assert any("missing manifest.json" in e for e in biz.check(wrong)[1])
+    publish = _wf("release.yml")
+    publish = publish[publish.index("  publish:"):]
+    assert publish.index("build_install_zip.py --check") < publish.index("--draft") < publish.index("grep -qx freshairiq.zip") < publish.index("--draft=false")
+    unchecked = _wf("release.yml").replace("grep -qx freshairiq.zip draft-assets.txt\n", "")
+    code, out = _gate(tmp_path / "a", release=unchecked)
+    assert code != 0 and "on the draft before publishing" in out
+    for bad in ({**hacs, "filename": "other.zip"}, {**hacs, "zip_release": False}, {k: v for k, v in hacs.items() if k != "filename"}, HACS_0267X):
+        code, out = _gate(tmp_path / str(len(str(bad))), hacs=bad)
+        assert code != 0 and "zip_release: true and filename: freshairiq.zip" in out
+
+
+def test_older_version_without_asset_installs_from_its_source_archive(tmp_path):
+    """Going back: the tag's own hacs.json has no zip_release, so the installers use its source archive."""
+    assert rd.install_source(HACS_0267X) == "source archive"
+    assert rd.install_source(None) == "unknown"
+    old = tmp_path / "v0.26.6.0"
+    (old / "custom_components/freshairiq").mkdir(parents=True)
+    (old / "custom_components/freshairiq/manifest.json").write_text(json.dumps({"domain": "freshairiq", "version": "0.26.6.0"}))
+    (old / "custom_components/freshairiq/__init__.py").write_text("")
+    config = tmp_path / "config"
+    asset = tmp_path / "freshairiq.zip"
+    biz.build(ROOT, asset)
+    _install(config, json.loads((ROOT / "hacs.json").read_text(encoding="utf-8")), {"freshairiq.zip": asset}, ROOT)
+    target = _install(config, HACS_0267X, {}, old)                              # no asset in the old release
+    assert sorted(p.name for p in target.iterdir()) == ["__init__.py", "manifest.json"]
+    assert json.loads((target / "manifest.json").read_text())["version"] == "0.26.6.0"
 
 
 def test_manifest_meets_hassfest_and_the_catalog():
@@ -191,7 +273,7 @@ def test_no_workflow_changes_an_existing_release():
 
 RELEASES = [
     {"tag_name": "v0.26.8.0", "published_at": "2026-12-01T10:00:00Z", "prerelease": True, "draft": False,
-     "assets": [{"name": "freshairiq.zip", "download_count": 3}]},
+     "assets": [{"name": "freshairiq.zip", "download_count": 3}, {"name": "notes.txt", "download_count": 2}]},
     {"tag_name": "v0.26.7.0", "published_at": "2026-11-10T10:00:00Z", "prerelease": False, "draft": False,
      "assets": [{"name": "freshairiq.zip", "download_count": 120}, {"name": "FreshAirIQ-v0.26.7.0-CLEAN.zip", "download_count": 7}]},
     {"tag_name": "v0.26.6.0", "published_at": "2026-11-03T10:00:00Z", "prerelease": False, "draft": False, "assets": []},
@@ -199,16 +281,26 @@ RELEASES = [
 ]
 
 
+MANIFESTS = {"v0.26.8.0": {**HACS_0267X, "zip_release": True, "filename": "freshairiq.zip"}, "v0.26.7.0": HACS_0267X, "v0.26.6.0": HACS_0267X}
+
+
 def test_download_summary_counts_only_what_github_counts():
-    s = rd.summarize(RELEASES)
+    s = rd.summarize(RELEASES, MANIFESTS)
     assert [r["tag"] for r in s["releases"]] == ["v0.26.8.0", "v0.26.7.0", "v0.26.6.0"]       # drafts are not public
-    assert (s["total_install_downloads"], s["total_other_downloads"], s["total_asset_downloads"]) == (123, 7, 130)
-    assert s["releases_without_counted_downloads"] == ["v0.26.6.0"]                          # nothing invented
-    assert "not an installation" in s["note"]
+    assert [r["install_source"] for r in s["releases"]] == ["asset", "source archive", "source archive"]
+    assert (s["total_install_downloads"], s["total_install_downloads_marketplace_releases"]) == (123, 3)
+    assert (s["total_clean_downloads"], s["total_other_downloads"], s["total_asset_downloads"]) == (7, 2, 132)
+    assert s["releases_installed_from_source_archive"] == ["v0.26.7.0", "v0.26.6.0"]
+    assert s["releases_without_counted_downloads"] == ["v0.26.6.0"] and s["releases_with_missing_install_asset"] == []
+    assert "not an installation" in s["note"] and "manual and repeated downloads" in s["note"] and "not zero" in s["note"]
     md = rd.markdown(s)
-    assert "| v0.26.8.0 (pre-release) | 2026-12-01 | 3 | 0 |" in md
-    assert "| v0.26.6.0 | 2026-11-03 | – | – (no assets: not counted by GitHub) |" in md
-    assert "**Total:** 123 × freshairiq.zip, 7 × other assets (130 asset downloads)." in md
+    assert "| v0.26.8.0 (pre-release) | 2026-12-01 | freshairiq.zip | 3 | – | 2 |" in md
+    assert "| v0.26.7.0 | 2026-11-10 | source archive (not counted) | 120 | 7 | 0 |" in md
+    assert "| v0.26.6.0 | 2026-11-03 | source archive (not counted) | – | – | – (no assets: not counted by GitHub) |" in md
+    assert ("**Total:** 123 × freshairiq.zip (installation asset downloads, 3 of them in releases the Marketplace/HACS install from), "
+            "7 × CLEAN package, 2 × other assets (132 asset downloads).") in md
+    assert "| 0 |" not in md.split("v0.26.6.0", 1)[1].splitlines()[0]          # source archive installs never read as 0
+    assert rd.summarize(RELEASES)["releases"][0]["install_source"] == "unknown"
 
 
 class _Response(io.BytesIO):
@@ -232,12 +324,46 @@ def test_download_fetch_reads_every_page_and_the_command_line(capsys, monkeypatc
     assert seen[0] == ("https://api.github.com/repos/o/r/releases?per_page=100&page=1", "Bearer tok") and len(seen) == 2
     with pytest.raises(ValueError):
         rd.fetch_releases("o/r", None, lambda request: _Response(b'{"message": "Not Found"}'))
+
+    asked = []
+
+    def raw(request):
+        asked.append((request.full_url, request.get_header("Authorization")))
+        if "/v0.26.6.0/" in request.full_url or "ref=v0.26.6.0" in request.full_url:
+            raise urllib.error.HTTPError(request.full_url, 404, "Not Found", {}, None)
+        if "/contents/hacs.json?ref=" in request.full_url:                    # the API: base64 content
+            tag = request.full_url.rsplit("ref=", 1)[1]
+            return _Response(json.dumps({"content": base64.b64encode(json.dumps(MANIFESTS[tag]).encode()).decode()} if tag in MANIFESTS else {}).encode())
+        if "/v0.26.7.0/" in request.full_url:                                  # raw host not reachable: the API answers
+            raise urllib.error.URLError("tunnel refused")
+        tag = request.full_url.split("/")[-2]
+        return _Response(json.dumps(MANIFESTS.get(tag, [])).encode())
+
+    got = rd.fetch_hacs_manifests("o/r", ["v0.26.8.0", "v0.26.7.0", "v0.26.6.0", "v1"], raw, "tok")
+    assert got == {"v0.26.8.0": MANIFESTS["v0.26.8.0"], "v0.26.7.0": HACS_0267X, "v0.26.6.0": None, "v1": None}
+    assert asked[0] == ("https://raw.githubusercontent.com/o/r/v0.26.8.0/hacs.json", None)               # no token to the raw host
+    assert ("https://api.github.com/repos/o/r/contents/hacs.json?ref=v0.26.7.0", "Bearer tok") in asked
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
-    one = lambda request: _Response(json.dumps(RELEASES).encode())  # noqa: E731
+    urls = []
+
+    def one(request):
+        urls.append(request.full_url)
+        if request.full_url.startswith("https://raw.githubusercontent.com/"):
+            return raw(request)
+        return _Response(json.dumps(RELEASES).encode())
+
     assert rd.main(["--json"], opener=one) == 0
-    assert json.loads(capsys.readouterr().out)["total_install_downloads"] == 123
+    out = json.loads(capsys.readouterr().out)
+    assert out["total_install_downloads"] == 123 and out["total_install_downloads_marketplace_releases"] == 3
+    assert "https://raw.githubusercontent.com/rupascha/freshairiq/v0.26.8.0/hacs.json" in urls
+    assert not any("v9.9.9" in u for u in urls)                                 # drafts: no lookup
     assert rd.main([], opener=one) == 0
-    assert "## FreshAirIQ release downloads" in capsys.readouterr().out
+    md = capsys.readouterr().out
+    assert "## FreshAirIQ release downloads" in md and "| v0.26.6.0 | 2026-11-03 | unknown (hacs.json not readable) |" in md
+    summary = json.loads(json.dumps(rd.summarize(RELEASES, MANIFESTS)))           # the workflow renders the JSON artefact
+    assert rd.markdown(summary) == rd.markdown(rd.summarize(RELEASES, MANIFESTS))
+    downloads = _wf("downloads.yml")
+    assert "--json > release-downloads.json" in downloads and "rd.markdown(json.load(open('release-downloads.json')))" in downloads
 
 
 def test_installation_zip_follows_the_clean_policy_and_home_assistant_writes_the_compressed_files(tmp_path):

@@ -348,8 +348,13 @@ def _open_time_reason(active: list[dict[str, Any]], options: dict[str, Any]) -> 
         checked = [r for r in active if r.get("close_benefit_threshold_ml") is not None and r.get("forecast_5_min_benefit_ml") is not None]
         if checked:
             room = min(checked, key=lambda r: _f(r.get("forecast_5_min_benefit_ml")) - _f(r.get("close_benefit_threshold_ml")))
-            cause = (f"geschlossen wird, sobald zwei neue Messungen unter {round(_f(room.get('close_benefit_threshold_ml')))} ml "
-                     f"in 5 min liegen (jetzt etwa {max(round(_f(room.get('forecast_5_min_benefit_ml'))), 0)} ml)")
+            limit, now = round(_f(room.get("close_benefit_threshold_ml"))), max(round(_f(room.get("forecast_5_min_benefit_ml"))), 0)
+            if _f(room.get("forecast_5_min_benefit_ml")) < _f(room.get("close_benefit_threshold_ml")):
+                # Issue #30: already below, the confirmation is missing – it needs suitable readings, not more time
+                cause = (f"geschlossen wird, sobald zwei neue, geeignete Feuchtemeldungen weniger als {limit} ml in 5 min bestätigen "
+                         f"(jetzt etwa {now} ml, noch unbestätigt: nötig sind frische Feuchtewerte und ausreichend aktuelle Raum- und Außentemperaturen)")
+            else:
+                cause = f"geschlossen wird, sobald zwei neue Messungen unter {limit} ml in 5 min liegen (jetzt etwa {now} ml)"
         else:
             cause = "geschlossen wird, sobald die Außenluft nicht mehr trocknet"
     return f"Restzeit nicht bestimmbar – {cause}"

@@ -16,7 +16,7 @@ import pytest
 from custom_components.freshairiq.const import DEFAULT_OPTIONS
 from custom_components.freshairiq.forecast import horizon_forecast
 from custom_components.freshairiq.live_coach import refine_live_recommendation
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 from custom_components.freshairiq.model import RoomInput, evaluate_room
 from custom_components.freshairiq.room_close_strategy import room_close_options
 from custom_components.freshairiq.room_recommendation import _recommendation
@@ -107,7 +107,7 @@ def test_past_the_planned_time_the_coach_names_the_measured_reason():
     reason = out["live_coach_reason"]
     assert reason.startswith("Geplante Zeit erreicht; die Außenluft ist noch 2.9 g/m³ trockener (nächste 5 min etwa 40 ml)")
     assert "Raum -0.4 °C seit Start" in reason and out["reasons"][0] == reason
-    assert to_english(reason).startswith("Planned time reached; the outdoor air is still 2.9 g/m³ drier")
+    assert Translator().text(reason).startswith("Planned time reached; the outdoor air is still 2.9 g/m³ drier")
 
 
 def test_inside_the_planned_time_the_countdown_and_its_reason_stay():

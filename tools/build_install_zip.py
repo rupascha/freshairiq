@@ -1,12 +1,11 @@
 """Build and check the installation ZIP attached to every release (``freshairiq.zip``).
 
-It is the manual installation package: extracted into ``custom_components/freshairiq/`` it gives an
-install, and GitHub counts its downloads. HACS and the Marketplace keep installing from the source
-archive (``hacs.json`` sets no ``zip_release``, A-236). The layout is the one HACS and the Marketplace
-would use with ``zip_release`` (``zipfile.ZipFile.extractall(<integration folder>)``), so the archive
-can later serve them unchanged. It holds the files of the integration folder at its root – exactly the files of ``custom_components/freshairiq`` in the
-release without generated files (see GENERATED_*) – so an install from the asset gives the same files
-as an install from the source archive did before.
+HACS and the Marketplace install it from 0.26.7.2 on (``hacs.json``: ``zip_release``/``filename``, read at
+the installed tag, A-243); extracted into ``custom_components/freshairiq/`` by hand it is the manual install,
+and GitHub counts its downloads. It holds the files of the integration folder at its root
+(``zipfile.ZipFile.extractall(<integration folder>)``) – exactly the files of ``custom_components/freshairiq``
+in the release without generated files (see GENERATED_*) – so an install from the asset gives the same files
+as an install from the source archive.
 
 The archive is reproducible: files in sorted order, a fixed timestamp and fixed permissions, so the
 same source gives the same bytes (and the same SHA-256) on every build.

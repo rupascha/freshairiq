@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 from datetime import timedelta
 from types import SimpleNamespace
 
@@ -336,10 +337,14 @@ def test_f4_with_pushes_off_close_is_stored_with_the_event() -> None:
 
 
 def test_f4_two_targets_one_accepted_means_no_duplicate() -> None:
+    # 0.26.7.2: the configured "tablet" without a service is waited for within the retry window (not given up at once)
     hass, store = _hass(), _Store()
     options = _push_options(notification_targets=["phone", "tablet"])
     rooms = {"bad": _room()}
     for minute in (0, 2, 4):
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), options)
+    assert len(hass.services.calls) == 1 and PUSH_PENDING in store.room("bad")
+    for minute in (31, 33, 35):                                                       # the window is over: done, nothing more
         _run(hass, store, rooms, T0 + timedelta(minutes=minute), options)
     assert len(hass.services.calls) == 1 and PUSH_PENDING not in store.room("bad")
 
@@ -396,3 +401,255 @@ def test_f4_record_and_damaged_state() -> None:
     store.room("bad").update(last_action="Ventilate", action_notified_at=T0.isoformat(), **{PUSH_PENDING: "broken"})
     _run(hass, store, {"bad": _room()}, T0 + timedelta(minutes=1))
     assert PUSH_PENDING not in store.room("bad") and hass.services.calls == []
+
+
+# --- 0.26.7.2 (#30): the room push names the cause the room model decided on ----------------------------------------
+
+from custom_components.freshairiq.room_recommendation import benefit_close_text  # noqa: E402
+
+_BENEFIT_REASON = benefit_close_text(8.0, 24.15, 65.0, {"target_rh": 58.0})
+
+
+@pytest.mark.parametrize(("kind", "language", "lead"), [
+    ("benefit_exhausted", "de", "Weiteres Lüften entfernt kaum noch Feuchtigkeit – das Feuchteziel ist noch nicht erreicht. Jetzt schließen."),
+    ("benefit_exhausted", "en", "Further airing hardly removes moisture any more – the humidity target is not reached yet. Close now."),
+    ("goals_reached", "de", "Feuchteziel erreicht – die Ziele des Raums sind erfüllt. Jetzt schließen."),
+    ("goals_reached", "en", "Humidity target reached – the room's goals are met. Close now."),
+    ("temperature_limit", "en", "Your temperature limit for airing is reached – close because of the temperature, not because enough moisture was removed. Close now."),
+    ("air_no_longer_helps", "de", "Die Außenluft trocknet den Raum nicht mehr. Jetzt schließen."),
+])
+def test_the_room_close_push_names_the_actual_cause(kind, language, lead) -> None:
+    hass, store = _hass(language), _Store()
+    room = _room(action="Close", active=True, close_recommended=True, close_kind=kind, configured_actuators={"window_open": True},
+                 recommendation_reasons=[_BENEFIT_REASON] if kind == "benefit_exhausted" else [])
+    _run(hass, store, {"bad": room}, T0)
+    push = _push(hass)
+    assert push["message"].split("\n")[0] == lead
+    if kind == "benefit_exhausted":
+        assert "Feuchteziel erreicht" not in push["message"] and "target reached" not in push["message"].lower()
+        assert ("Feuchteziel von 58 % noch nicht erreicht" if language == "de" else "humidity target of 58 % is not reached yet") in push["message"]
+    event = _events(hass)[0]
+    assert event["message"] == push["message"] and event["speech"].startswith(f"Bad: {lead}")
+    # the same close is pushed once: further cycles, also with a new variant signature, send nothing more
+    for minutes in (1, 2, 30):
+        _run(hass, store, {"bad": {**room, "learning_samples": 90}}, T0 + timedelta(minutes=minutes))
+    assert len(hass.services.calls) == 1
+
+
+# --- 0.26.7.2 (support diagnosis 21.11.): one phone for two residents, one of them away ------------------------------------
+def _shared_phone_options(order, ben_target="notify.phone"):
+    profiles = {"adult:0": {"name": "Anna", "room_keys": ["bad"], "notification_targets": ["notify.phone"]},
+                "adult:1": {"name": "Ben", "room_keys": ["bad"], "notification_targets": [ben_target]}}
+    return _push_options(notification_targets=[], notify_only_when_home=True, adult_presence_entities=["person.anna", "person.ben"],
+                         adult_resident_names="Anna, Ben", resident_room_profiles={slot: profiles[slot] for slot in order})
+
+
+def _presence(ben="home"):
+    return {"person.anna": SimpleNamespace(state="not_home", entity_id="person.anna"),
+            "person.ben": SimpleNamespace(state=ben, entity_id="person.ben")}
+
+
+HOUSE_IQ = {"kind": "ventilate", "title": "Jetzt lüften", "instruction": "Bad öffnen", "room_keys": ["bad"]}
+
+
+@pytest.mark.parametrize("ben_target", ["notify.phone", "phone"])
+@pytest.mark.parametrize("order", [("adult:0", "adult:1"), ("adult:1", "adult:0")], ids=["away_first", "home_first"])
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_shared_phone_the_present_resident_gets_the_push_once_also_after_a_retry(order, scope, ben_target) -> None:
+    hass, store = _hass(available=(), states=_presence()), _Store()
+    options = _shared_phone_options(order, ben_target)
+    options["notification_scope"] = scope
+    iq = HOUSE_IQ if scope == "house" else None
+    _run(hass, store, {"bad": _room()}, T0, options, iq)
+    assert hass.services.calls == []                                                   # the service is missing
+    hass.services.available.add("phone")
+    for minute in (2, 4, 6):
+        _run(hass, store, {"bad": _room()}, T0 + timedelta(minutes=minute), options, iq)
+    assert [(c[1], c[2]["message"][:5]) for c in hass.services.calls] == [("phone", "Ben, ")]
+
+
+@pytest.mark.parametrize("order", [("adult:0", "adult:1"), ("adult:1", "adult:0")], ids=["anna_first", "ben_first"])
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_shared_phone_nobody_at_home_gets_nothing(order, scope) -> None:
+    hass, store = _hass(states=_presence(ben="not_home")), _Store()
+    options = _shared_phone_options(order)
+    options["notification_scope"] = scope
+    for minute in (0, 2, 4):
+        _run(hass, store, {"bad": _room()}, T0 + timedelta(minutes=minute), options, HOUSE_IQ if scope == "house" else None)
+    assert hass.services.calls == [] and PUSH_PENDING not in store.room("bad")
+
+
+# --- 0.26.7.2 (owner order 21.11.): one recipient key in the delivery ledger, recipients that appear later -------------
+def _close_room():
+    return _room(action="Close", house_aligned_action="close", active=True)
+
+
+CLOSE_IQ = {"kind": "close", "title": "Fenster schließen", "instruction": "Bad schließen", "room_keys": ["bad"]}
+
+
+class _Flaky(_Services):
+    """``a`` accepts, ``b`` raises (until healed)."""
+    def __init__(self, available, broken=("b",)):
+        super().__init__(available)
+        self.broken = set(broken)
+
+    async def async_call(self, domain, service, data=None, blocking=False):
+        self.calls.append((domain, service, data))
+        if service in self.broken:
+            raise RuntimeError("Service unavailable")
+
+
+def _scoped(scope, targets):
+    return _push_options(notification_targets=targets, notification_scope=scope, notify_close=True)
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_retry_reaches_the_failed_recipient_and_never_the_accepted_one_under_its_alias(scope) -> None:
+    hass, store = _hass(available=("a", "b")), _Store()
+    hass.services = _Flaky({"a", "b"})
+    iq = CLOSE_IQ if scope == "house" else None
+    rooms = {"bad": _close_room()}
+    _run(hass, store, rooms, T0, _scoped(scope, ["notify.a", "notify.b"]), iq)
+    hass.services.broken.clear()
+    for minute in (2, 4, 6):                                                           # "a" now listed as "a" (alias)
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), _scoped(scope, ["a", "notify.b"]), iq)
+    assert [c[1] for c in hass.services.calls] == ["a", "b", "b"]
+    assert store.data.get("notification_deliveries") == {}
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_a_ledger_in_the_old_spelling_is_read_by_recipient(scope) -> None:
+    hass, store = _hass(), _Store()
+    hass.services = _Flaky({"a", "b"})
+    iq = CLOSE_IQ if scope == "house" else None
+    rooms = {"bad": _close_room()}
+    _run(hass, store, rooms, T0, _scoped(scope, ["a", "b"]), iq)
+    (key, entry), = store.data["notification_deliveries"].items()
+    assert entry["accepted"] == ["notify.a"] and entry["failed"] == {"notify.b": 1}
+    # as written before 0.26.7.2: the spelling of the options, no start time
+    store.data["notification_deliveries"][key] = {"signature": entry["signature"], "accepted": ["a"], "failed": {"b": 2}}
+    _run(hass, store, rooms, T0 + timedelta(minutes=2), _scoped(scope, ["notify.a", "notify.b"]), iq)
+    assert [c[1] for c in hass.services.calls] == ["a", "b", "b"]                      # "a" not again, "b" its third try
+    assert store.data["notification_deliveries"] == {}                                 # the attempt limit is unchanged
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_a_recipient_whose_service_appears_later_gets_the_message_once(scope) -> None:
+    hass, store = _hass(available=("a",)), _Store()
+    iq = CLOSE_IQ if scope == "house" else None
+    rooms, options = {"bad": _close_room()}, _scoped(scope, ["notify.a", "notify.b"])
+    _run(hass, store, rooms, T0, options, iq)
+    assert [c[1] for c in hass.services.calls] == ["a"]
+    (entry,) = store.data["notification_deliveries"].values()
+    assert entry["unavailable"] == {"notify.b": T0.isoformat()}                        # noted, the message stays open
+    _run(hass, store, rooms, T0 + timedelta(minutes=2), options, iq)
+    hass.services.available.add("b")
+    for minute in (10, 12, 14):
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), options, iq)
+    assert [c[1] for c in hass.services.calls] == ["a", "b"] and store.data["notification_deliveries"] == {}
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_a_notify_entity_that_appears_later_gets_it_once(scope) -> None:
+    states = {}
+    hass, store = _hass(available=("a", "send_message"), states=states), _Store()
+    iq = CLOSE_IQ if scope == "house" else None
+    rooms, options = {"bad": _close_room()}, _scoped(scope, ["notify.a", "entity:notify.tablet"])
+    _run(hass, store, rooms, T0, options, iq)
+    states["notify.tablet"] = SimpleNamespace(state="unknown", entity_id="notify.tablet")
+    for minute in (3, 5):
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), options, iq)
+    assert [c[1] for c in hass.services.calls] == ["a", "send_message"]
+    assert hass.services.calls[1][2]["entity_id"] == "notify.tablet"
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_the_late_recipient_gets_nothing_after_the_window_or_for_a_done_recommendation(scope) -> None:
+    iq = CLOSE_IQ if scope == "house" else None
+    options = _scoped(scope, ["notify.a", "notify.b"])
+    hass, store = _hass(available=("a",)), _Store()
+    rooms = {"bad": _close_room()}
+    for minute in (0, 10, 20, 31):
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), options, iq)
+    hass.services.available.add("b")
+    for minute in (33, 35):                                                           # after the retry window
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), options, iq)
+    assert [c[1] for c in hass.services.calls] == ["a"]
+    # done: the window closed while the service was missing; then the recommendation is over
+    hass, store = _hass(available=("a",)), _Store()
+    _run(hass, store, rooms, T0, options, iq)
+    done_rooms = {"bad": _room(action="Wait", house_aligned_action="wait", active=False)}
+    done_iq = {"kind": "wait", "title": "Warten", "instruction": "", "room_keys": []} if iq else None
+    _run(hass, store, done_rooms, T0 + timedelta(minutes=2), options, done_iq)
+    hass.services.available.add("b")
+    for minute in (4, 6, 8):
+        _run(hass, store, done_rooms, T0 + timedelta(minutes=minute), options, done_iq)
+    assert [c[1] for c in hass.services.calls] == ["a"]
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_filters_presence_and_quiet_hours_stay_for_the_late_recipient(scope) -> None:
+    iq = CLOSE_IQ if scope == "house" else None
+    rooms = {"bad": _close_room()}
+    states = {"person.anna": SimpleNamespace(state="home", entity_id="person.anna"),
+              "person.ben": SimpleNamespace(state="home", entity_id="person.ben")}
+    profiles = {"adult:0": {"name": "Anna", "room_keys": ["bad"], "notification_targets": ["notify.a"]},
+                "adult:1": {"name": "Ben", "room_keys": ["bad"], "notification_targets": ["notify.b"]}}
+    options = _push_options(notification_targets=[], notification_scope=scope, notify_close=True, notify_only_when_home=True,
+                            adult_presence_entities=["person.anna", "person.ben"], adult_resident_names="Anna, Ben",
+                            resident_room_profiles=profiles)
+    hass, store = _hass(available=("a",), states=states), _Store()
+    _run(hass, store, rooms, T0, options, iq)
+    states["person.ben"] = SimpleNamespace(state="not_home", entity_id="person.ben")   # Ben leaves: no longer waited for
+    hass.services.available.add("b")
+    for minute in (2, 4):
+        _run(hass, store, rooms, T0 + timedelta(minutes=minute), options, iq)
+    assert [c[1] for c in hass.services.calls] == ["a"] and store.data["notification_deliveries"] == {}
+    quiet = {**_scoped(scope, ["notify.a", "notify.b"]), "suppress_notifications_at_night": True,
+             "night_start_hour": "09:30", "night_end_hour": "11:00"}
+    hass, store = _hass(available=("a",)), _Store()
+    _run(hass, store, rooms, T0, _scoped(scope, ["notify.a", "notify.b"]), iq)
+    hass.services.available.add("b")
+    _run(hass, store, rooms, T0 + timedelta(minutes=2), quiet, iq)                     # quiet hours: held back
+    assert [c[1] for c in hass.services.calls] == ["a"]
+
+
+# --- 0.26.7.2 (owner order 21.11., third): the retry window counts from the first attempt, before every retry ----------
+def _restarted(store):
+    fresh = _Store()
+    fresh.data, fresh.rooms = json.loads(json.dumps(store.data)), json.loads(json.dumps(store.rooms))
+    return fresh
+
+
+@pytest.mark.parametrize("restart", [False, True], ids=["running", "after_restart"])
+@pytest.mark.parametrize("rounds", [False, True], ids=["no_rounds_between", "rounds_between"])
+@pytest.mark.parametrize("minute,b_gets", [(29, 1), (31, 0)])
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_the_late_recipient_once_within_the_window_never_after_it_and_a_never_again(scope, minute, b_gets, rounds, restart) -> None:
+    iq = CLOSE_IQ if scope == "house" else None
+    rooms = {"bad": _close_room()}
+    hass, store = _hass(available=("a",)), _Store()
+    _run(hass, store, rooms, T0, _scoped(scope, ["notify.a", "notify.b"]), iq)
+    for between in (range(2, minute - 1, 3) if rounds else ()):                       # B still missing; "a" also as "a"
+        _run(hass, store, rooms, T0 + timedelta(minutes=between), _scoped(scope, ["a" if between % 2 else "notify.a", "notify.b"]), iq)
+    if restart:
+        store, calls = _restarted(store), hass.services.calls
+        hass = _hass(available=("a",)); hass.services.calls = calls
+    hass.services.available.add("b")
+    for late in (minute, minute + 1, minute + 3):
+        _run(hass, store, rooms, T0 + timedelta(minutes=late), _scoped(scope, ["a", "notify.b"]), iq)
+    sent = [c[1] for c in hass.services.calls]
+    assert (sent.count("a"), sent.count("b")) == (1, b_gets)
+
+
+@pytest.mark.parametrize("scope", ["room", "house"])
+def test_a_new_recommendation_with_the_same_text_is_delivered_again(scope) -> None:
+    iq = CLOSE_IQ if scope == "house" else None
+    hass, store = _hass(available=("a",)), _Store()
+    options = _scoped(scope, ["notify.a", "notify.b"])
+    _run(hass, store, {"bad": _close_room()}, T0, options, iq)                          # "b" missing: not done
+    wait_iq = {"kind": "wait", "title": "Warten", "instruction": "", "room_keys": []} if iq else None
+    _run(hass, store, {"bad": _room(action="Wait", house_aligned_action="wait", active=False)}, T0 + timedelta(minutes=5), options, wait_iq)
+    later = T0 + timedelta(minutes=200)                                                 # after the cooldown: the same close again
+    _run(hass, store, {"bad": _close_room()}, later, options, iq)
+    assert [c[1] for c in hass.services.calls] == ["a", "a"]

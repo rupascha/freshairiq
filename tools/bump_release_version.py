@@ -64,9 +64,9 @@ def main() -> int:
     if not notes.exists():
         notes.write_text(
             f'# FreshAirIQ {new}\n\n## Reliability Foundation v1\n\n'
-            '- Release-Metadaten zentral synchronisiert.\n'
-            '- Verhaltensbasierte Regression-Gates konsolidiert.\n'
-            '- Release wird bei roten Pflichtprüfungen blockiert.\n',
+            '- Release metadata synchronised from one place.\n'
+            '- Behaviour-based regression gates consolidated.\n'
+            '- The release is blocked while a mandatory check is red.\n',
             encoding='utf-8',
         )
     print(f'FreshAirIQ version: {old} -> {new}')

@@ -1,4 +1,3 @@
-from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 from tests._source import module_source
 
@@ -34,7 +33,6 @@ def test_020307_native_options_flow_avoids_reload_for_non_structural_changes():
     assert "await coordinator.async_request_refresh()" in CONFIG_FLOW
 
 
-
 def test_020307_forecast_and_profile_controls_publish_immediately_then_refresh_background():
     number = (ROOT / "custom_components/freshairiq/number.py").read_text(encoding="utf-8")
     select = (ROOT / "custom_components/freshairiq/select.py").read_text(encoding="utf-8")
@@ -47,8 +45,3 @@ def test_020307_forecast_and_profile_controls_publish_immediately_then_refresh_b
 
 
 # test_020307_settings_http_ack_does_not_wait_for_full_recalculation: retired — dashboard settings and their write API removed in 0.26.4.3 (single settings surface: Devices & services); intent now covered by ha_tests/test_retired_replacements_20261016.py::test_options_page_returns_before_the_runtime_recalculation_finishes
-
-def test_020307_version_is_consistent():
-    assert f'VERSION = "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/const.py").read_text(encoding="utf-8")
-    assert f'"version": "{CURRENT_RELEASE_VERSION}"' in (ROOT / "custom_components/freshairiq/manifest.json").read_text(encoding="utf-8")
-    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in (ROOT / "custom_components/freshairiq/frontend/freshairiq-card.js").read_text(encoding="utf-8")

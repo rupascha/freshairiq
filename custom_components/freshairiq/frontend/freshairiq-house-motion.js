@@ -19,13 +19,22 @@ const list = v => (v == null ? null : (Array.isArray(v) ? v : String(v).split(",
 // What the loop and the drawing may do at each level. fps: how often the wind is drawn (the browser's 60 is never needed for
 // soft air); streams / strands: decorative wind ribbons around the house and the layers of each (more in strong wind, fewer in
 // calm air); routeParts: the share of the canvas air through an open window (there are no threads around the house any more); pace: how fast the air seems to move (calmer < 1).
+// 0.26.7.2: the weather layer's budget – particles: most rain drops or snowflakes at once, wxDpr: the resolution of the weather
+// canvas, wxPixels: the most pixels of that canvas (a phone's drawing stays below it at full resolution), pathPoints: most points of one wind ribbon, gusts: storm gusts along the facade;
+// eddies: soft eddies in the wake behind the house (none at "minimal")
 export const PROFILES = {
-  off: { dpr: 1, fps: 0, streams: 7, strands: 1, routeParts: 0, pace: 0 },
-  minimal: { dpr: 1, fps: 12, streams: 3, strands: 1, routeParts: 0.4, pace: 0.7 },
-  normal: { dpr: 1.5, fps: 20, streams: 5, strands: 2, routeParts: 0.65, pace: 0.8 },
+  off: { dpr: 1, fps: 0, streams: 7, strands: 1, routeParts: 0, pace: 0, particles: 140, wxDpr: 1, wxPixels: 300000, pathPoints: 48, gusts: 2, eddies: 0 },
+  minimal: { dpr: 1, fps: 12, streams: 3, strands: 1, routeParts: 0.4, pace: 0.7, particles: 90, wxDpr: 1, wxPixels: 300000, pathPoints: 48, gusts: 1, eddies: 0 },
+  normal: { dpr: 1.5, fps: 20, streams: 5, strands: 2, routeParts: 0.65, pace: 0.8, particles: 260, wxDpr: 1, wxPixels: 600000, pathPoints: 72, gusts: 2, eddies: 1 },
   // 0.26.7.0 UI hotfix: "intense" is the lively picture again – more ribbons in three layers (the stream, a bright companion,
   // the broad air mass), a stronger swing and brightness, a quicker pace; still no shooting-star strokes and 30 frames a second
-  intense: { dpr: 2, fps: 30, streams: 8, strands: 3, routeParts: 1, pace: 1.1, amp: 1.35, glow: 1.25 },
+  intense: { dpr: 2, fps: 30, streams: 8, strands: 3, routeParts: 1, pace: 1.1, amp: 1.35, glow: 1.25, particles: 400, wxDpr: 1.5, wxPixels: 1200000, pathPoints: 96, gusts: 3, eddies: 2 },
+};
+// 0.26.7.2: a phone or a narrow card keeps a lower ceiling also when a level was chosen explicitly (iPhone: the card warmed the
+// device in a storm) – fewer drops, a coarser weather canvas and air layer, fewer frames for "intense"
+export const SMALL_CAPS = {
+  normal: { dpr: 1.25, particles: 160, wxPixels: 350000 },
+  intense: { dpr: 1.5, fps: 24, particles: 220, wxDpr: 1, wxPixels: 350000, pathPoints: 72, eddies: 1 },
 };
 
 // The level the user asked for. ``animation: false`` (older cards) means off; nothing chosen means auto.
@@ -47,8 +56,8 @@ export function effectiveLevel({ config = {}, reduced = false, small = false, id
 // The full profile: the level's numbers plus each part on or off ("rest" draws like "off" but says why)
 export function motionProfile(args = {}) {
   const level = effectiveLevel(args), parts = chosenParts(args.config), still = level === "off" || level === "rest";
-  const base = PROFILES[still ? "off" : level];
-  return { level, still, ...base, parts: Object.fromEntries(MOTION_PARTS.map(p => [p, !still && parts.includes(p)])) };
+  const base = PROFILES[still ? "off" : level], cap = args.small && !still ? SMALL_CAPS[level] : null;
+  return { level, still, ...base, ...(cap || {}), parts: Object.fromEntries(MOTION_PARTS.map(p => [p, !still && parts.includes(p)])) };
 }
 // A phone or a small card: a narrow card, or a touch screen of phone size
 export function isSmallDevice(width, env = typeof window !== "undefined" ? window : null) {
@@ -63,6 +72,8 @@ export function isSmallDevice(width, env = typeof window !== "undefined" ? windo
 const seeded = seed => { let x = (seed >>> 0) || 7; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); };
 // ``count`` streams across the house: their positions are spread, never on an even grid; each has its own length (start and end
 // along its line), amplitude, wave length, pace, phase offset, opacity and width – so no two look alike or move in step.
+// 0.26.7.2: and its own way around the house – gap: distance kept from the facade, hug: how far it follows the facade before it
+// returns to the wind, release: how slowly it returns, form: the shape of its wave
 export function streamVariety(count, seed = 1) {
   const rnd = seeded(Math.round(seed * 9973) + count * 31), out = [];
   for (let i = 0; i < count; i++) {
@@ -74,6 +85,8 @@ export function streamVariety(count, seed = 1) {
       offset: rnd(), opacity: 0.45 + rnd() * 0.45, width: 0.75 + rnd() * 0.6,
     });
   }
+  // drawn after the first values, so the lanes and lengths of a house stay what they were
+  for (const v of out) Object.assign(v, { gap: rnd(), hug: rnd(), release: rnd(), form: rnd() });
   return out;
 }
 
@@ -81,19 +94,27 @@ export function streamVariety(count, seed = 1) {
 // own frame rate; between frames nothing runs – the loop sleeps until the next card is due (a timer, then one animation frame),
 // instead of waking the browser 60 times a second for air that moves softly.
 const LOOP = { subs: new Map(), timer: null, raf: null };
+// 0.26.7.2: each card keeps its own timetable (``next``): it runs on the first animation frame that is at most EARLY ms before its
+// time, and the timer wakes the loop just for that frame – no animation frame is requested only to find nothing due (at 24 fps on a
+// 60 Hz screen every second frame was such an empty frame, each with its own redraw of the page)
+const EARLY = 9;
 function schedule() {
   if (LOOP.raf || LOOP.timer || !LOOP.subs.size) return;
   const now = performance.now();
   let wait = Infinity;
-  for (const s of LOOP.subs.values()) wait = Math.min(wait, s.last ? s.last + 1000 / s.fps - now : 0);
+  for (const s of LOOP.subs.values()) wait = Math.min(wait, s.last ? s.next - EARLY - now : 0);
   const go = () => { LOOP.timer = null; LOOP.raf = requestAnimationFrame(run); };
-  if (wait <= 14) go(); else LOOP.timer = setTimeout(go, wait - 10);
+  if (wait <= 2) go(); else LOOP.timer = setTimeout(go, wait);
 }
 function run(now) {
   LOOP.raf = null;
+  // a card due later within half of its interval joins this frame: several cards always share their frames
+  const due = [...LOOP.subs.values()].some(s => !s.last || now >= s.next - EARLY);
   for (const [owner, s] of [...LOOP.subs]) {
-    if (!LOOP.subs.has(owner) || (s.last && now - s.last < 1000 / s.fps - 6)) continue;
-    const dt = s.last ? now - s.last : 0;
+    if (!LOOP.subs.has(owner) || (s.last && now < s.next - (due ? Math.max(EARLY, 1000 / s.fps / 2) : EARLY))) continue;
+    const dt = s.last ? now - s.last : 0, step = 1000 / s.fps;
+    // on time: the next frame one interval after this one's time (the frame rate holds on average); late: from now
+    s.next = s.last && now - s.next < step ? s.next + step : now + step;
     s.last = now;
     try { s.fn(now, dt); } catch (err) { console.error("FreshAirIQ house map animation", err); }
   }
@@ -102,7 +123,7 @@ function run(now) {
 // register ``owner``'s frame function at ``fps``; returns a handle (truthy) – the same owner registered again replaces itself
 export function tick(owner, fn, fps) {
   const old = LOOP.subs.get(owner);
-  const handle = { fps, fn, last: old ? old.last : 0 };
+  const handle = { fps, fn, last: old ? old.last : 0, next: old ? old.next : 0 };
   LOOP.subs.set(owner, handle);
   schedule();
   return handle;

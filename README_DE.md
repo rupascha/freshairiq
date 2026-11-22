@@ -1,318 +1,319 @@
 # FreshAirIQ
 
-🌐 Sprache / Language: **Deutsch** · [English](README.md)
+📄 This page keeps its earlier address so that existing links still work. The FreshAirIQ documentation is written in English; the main page is **[README.md](README.md)**.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/freshairiq-branding-official-en.png" alt="FreshAirIQ – Intelligent Home Climate" width="720">
 </p>
 
-<p align="center"><strong>Dein Zuhause kann dir sagen, wann Lüften wirklich sinnvoll ist.</strong></p>
+<p align="center"><strong>Your home can tell you when ventilation is actually worthwhile.</strong></p>
 
-FreshAirIQ ist eine Home-Assistant-Integration für intelligente, nachvollziehbare Lüftungsentscheidungen. Statt nur Luftfeuchtigkeit anzuzeigen, verbindet FreshAirIQ **absolute Feuchte, Wassermenge in der Raumluft, Innen-/Außenklima, Raumvolumen, Fensterzustände, Wetter, Temperaturentwicklung, Anwesenheit und gelerntes Gebäudeverhalten** zu einer konkreten Empfehlung.
+FreshAirIQ is a Home Assistant integration for intelligent, explainable ventilation decisions. Instead of merely displaying relative humidity, it combines **absolute humidity, the amount of water in room air, indoor/outdoor climate, room volume, window states, weather, temperature trends, presence, and learned building behavior** into a concrete recommendation.
 
-**Warten → Lüften → Weiterlüften → Schließen.** Für einzelne Räume, Etagen oder das ganze Haus.
+**Wait → Ventilate → Keep ventilating → Close.** For individual rooms, floors, or the whole home.
 
 > [!IMPORTANT]
-> ## 🧪 Öffentliche Beta
-> FreshAirIQ startet in die öffentliche Beta. Gesucht werden zunächst rund 20 deutschsprachige Home-Assistant-Haushalte mit unterschiedlichen Gebäuden, Sensoren und Lüftungsgewohnheiten. Feedback und Fehler können direkt aus FreshAirIQ an den Diagnose-Hub gesendet werden.
+> ## 🧪 Public beta
+> FreshAirIQ is starting its public beta. To begin with, we are looking for around 20 German-speaking Home Assistant households with different buildings, sensors, and ventilation habits. Feedback and errors can be submitted directly from FreshAirIQ to the diagnostics hub.
 >
-> **Beta-Diagnostik:** Automatische, pseudonymisierte Diagnosen werden **nur nach deiner ausdrücklichen Zustimmung** gesendet. Nach dem Update fragt dich die Dashboard-Karte (nur Admins) einmal: „Diagnosen teilen?“ – bis dahin wird nichts automatisch übertragen. Die Entscheidung lässt sich jederzeit unter Einstellungen → Datenschutz & Diagnose oder Geräte & Dienste → FreshAirIQ → Konfigurieren ändern. Nach deiner Zustimmung gilt standardmäßig **„Täglich nachts“**, und der grobe **Geräte-/Browser-Kontext** wird mitgesendet, damit sich Android-, iOS-, Browser- und Darstellungsprobleme unterscheiden lassen; beides ist änderbar.
+> **Beta diagnostics:** pseudonymized automatic diagnostics are sent **only after your explicit consent**. After the update the dashboard card asks admins once: “Share diagnostics?” – until then nothing is uploaded automatically. You can change the decision at any time under Settings → Privacy & diagnostics or Devices & services → FreshAirIQ → Configure. Once you agree, the default cadence is **“Daily at night”** and coarse **device/browser context** is included so Android, iOS, browser and rendering problems can be told apart; both can be changed.
 
 ---
 
-## Zwei Dashboard-Stile – mit Freshy an deiner Seite
+## Two dashboard styles – with Freshy by your side
 
-Die FreshAirIQ Community-Dashboard-Karte bringt **zwei Dashboard-Darstellungen** mit. In der Dashboard-Konfiguration kannst du jederzeit zwischen **Classic** und **FreshAirIQ IQ** wechseln. So kannst du entweder die vertraute klassische Ansicht nutzen oder die stärker visuelle FreshAirIQ-Oberfläche – beide Darstellungen bleiben verfügbar.
+The FreshAirIQ Community Dashboard card includes **two dashboard views**. In the dashboard configuration you can switch at any time between **Classic** and **FreshAirIQ IQ**. You can keep the familiar classic presentation or use the more visual FreshAirIQ interface – both views remain available.
 
 > [!NOTE]
-> **Experimentelles FreshAirIQ IQ / Freshy Dashboard:** Dieses Dashboard befindet sich noch in einer experimentellen Phase. Grafik, Animationen, Layout und Darstellung können sich von Version zu Version verändern, während das Design weiterentwickelt wird. Das **Classic** Dashboard bleibt als etabliertere Ansicht weiterhin verfügbar.
+> **Experimental FreshAirIQ IQ / Freshy dashboard:** This dashboard is still in an experimental phase. Its graphics, animations, layout, and visual presentation may change from version to version while the design is being refined. The **Classic** dashboard remains available as the more established view.
 
-### Farben & Theme
+### Colours & theme
 
-Standardmäßig behält die Karte ihr eigenes dunkles FreshAirIQ-Design. Mit **Farben & Theme → Home-Assistant-Theme** im Karten-Editor (YAML: `freshairiq_design: auto`; das bisherige `theme: auto` funktioniert weiter, und ein benanntes Home-Assistant-Theme unter `theme:` – z. B. `theme: FrostedGlass` – lässt die Karte jetzt ebenfalls diesem Theme folgen) übernimmt sie Hintergrund, Rand, Rundung, Schatten, Text- und Akzentfarben deines aktiven Home-Assistant-Themes – auch transparente Glas-Themes. Farbige Hinweise werden dabei an die Textfarbe des Themes angeglichen, damit sie auf hellen und dunklen Themes lesbar bleiben.
+By default the card keeps its own dark FreshAirIQ design. With **Colours & theme → Home Assistant theme** in the card editor (YAML: `freshairiq_design: auto`; the older `theme: auto` still works, and a named Home Assistant theme in `theme:` – e.g. `theme: FrostedGlass` – now also makes the card follow that theme) it uses background, border, radius, shadow, text and accent colours of your active Home Assistant theme – glass themes with a transparent background included. Coloured hints are adjusted to the theme's text colour so they stay readable on light and dark themes.
 
-Für eigene Anpassungen (Theme, card-mod, UIX) liest die Karte CSS-Variablen, z. B. `--freshairiq-card-background`, `--freshairiq-card-border-radius`, `--freshairiq-text-color`, `--freshairiq-secondary-text-color`, `--freshairiq-overlay-rgb` (Kacheln und Linien, z. B. `255,255,255`), `--freshairiq-accent` sowie `--freshairiq-color-ventilate`, `-wait`, `-close`, `-ok`, `-alert`. Styles von card-mod und UIX bleiben bei jeder Aktualisierung erhalten.
+For your own styling (theme, card-mod, UIX) the card reads CSS variables such as `--freshairiq-card-background`, `--freshairiq-card-border-radius`, `--freshairiq-text-color`, `--freshairiq-secondary-text-color`, `--freshairiq-overlay-rgb` (tiles and lines, e.g. `255,255,255`), `--freshairiq-accent` and `--freshairiq-color-ventilate`, `-wait`, `-close`, `-ok`, `-alert`. Styles from card-mod and UIX are kept on every refresh.
 
-Mit **Freshy** hat FreshAirIQ außerdem ein eigenes Maskottchen. Freshy behält das Klima deines Hauses im Blick und macht den aktuellen Zustand auf einen Blick verständlicher: Beim Lüften segelt Freshy durch den Wind, kurz vor der Nacht macht er sich mit Schlafmütze bereit und nachts schläft er. Weitere Zustände reagieren passend auf die aktuelle Situation im Haus.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/00-freshy-dashboard.jpeg" alt="FreshAirIQ Dashboard mit Freshy" width="520">
-</p>
-
-## FreshAirIQ in Aktion
+FreshAirIQ also has its own mascot: **Freshy**. Freshy keeps an eye on your home's climate and makes the current situation easier to understand at a glance. During ventilation Freshy rides the wind, shortly before night Freshy gets ready for bed with a sleeping cap, and at night Freshy sleeps. Other states react to the current situation in your home as well.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/01-house-ventilation.jpeg" alt="FreshAirIQ Hauslüftung mit Live-Prognose" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/00-freshy-dashboard.jpeg" alt="FreshAirIQ dashboard with Freshy" width="520">
 </p>
 
-### Eine Entscheidung statt einer Wand aus Messwerten
+## FreshAirIQ in action
 
-FreshAirIQ bewertet die aktuelle Situation fortlaufend und formuliert eine zentrale Handlungsempfehlung. Während einer Lüftung zeigt die Karte, **wie viel Feuchtigkeit bereits entfernt wurde**, welchen zusätzlichen Nutzen die nächsten Minuten voraussichtlich bringen, wie sich die Temperatur entwickelt und wann der sinnvolle Endpunkt erreicht ist.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/01-house-ventilation.jpeg" alt="FreshAirIQ whole-home ventilation with live forecast" width="520">
+</p>
 
-Die Begründung bleibt sichtbar: Schwellenwerte, erwarteter Nettoeffekt, gelernte Muster und Prognosesicherheit werden nicht hinter einem undurchsichtigen „KI sagt …“ versteckt.
+### One decision instead of a wall of measurements
+
+FreshAirIQ continuously evaluates the current situation and presents one primary recommendation. During ventilation it shows **how much moisture has already been removed**, the expected additional benefit of the next few minutes, the temperature trend, and when the useful endpoint is reached.
+
+The reasoning remains visible: thresholds, expected net effect, learned patterns, and forecast confidence are not hidden behind an opaque “AI says …”.
 
 ---
 
-## Hauskarte – dein Zuhause auf einen Blick (optional)
+## House map – your home at a glance (optional)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_cross_ventilation_de.png" alt="Hauskarte: Querlüftung durchs Haus (Demo-Render)" width="620">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_cross_ventilation_en.png" alt="House map: cross ventilation through the house (demo render)" width="620">
 </p>
 
-Eine **zusätzliche** Karte, `custom:freshairiq-house-card`, zeichnet deine FreshAirIQ-Räume auf deinen eigenen Grundriss. Sie ergänzt die Dashboard-Karte – Entities, Empfehlungen, Meldungen und Automationen bleiben genau, wie sie sind.
+An **additional** card, `custom:freshairiq-house-card`, draws your FreshAirIQ rooms on your own floor plan. It adds to the dashboard card – entities, recommendations, notifications and automations stay exactly as they are.
 
 | | |
 | --- | --- |
-| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_sunny_de.png" alt="Sonniger Tag auf der Hauskarte" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_strong_wind_de.png" alt="Starker Wind ums Haus" width="300"> |
-| **Sonne und Wetter** – die Sonne steht dort, wo `sun.sun` sie meldet, gedreht nach der Nordrichtung deines Plans | **Wind** – ein modelliertes Windfeld ums Haus, ruhig bis stürmisch, mit Böen |
-| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_airing_de.png" alt="Aktives Lüften im Bad" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_editor_90_locks_de.png" alt="Editor mit Längen, Winkeln, 90° und Sperren" width="300"> |
-| **Aktives Lüften** – Frischluft am offenen Fenster, entfernbare Feuchte und Restzeit | **Editor** – Wand für Wand, 90°-Ecken, gesperrte Längen und Winkel |
+| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_sunny_en.png" alt="Sunny day on the house map" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_strong_wind_en.png" alt="Strong wind around the house" width="300"> |
+| **Sun and weather** – the sun stands where `sun.sun` reports it, turned by your plan's north | **Wind** – a modelled wind field around the house, calm to stormy, with gusts |
+| <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_airing_en.png" alt="Active airing in the bathroom" width="300"> | <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_editor_90_locks_en.png" alt="Editor with lengths, angles, 90° and locks" width="300"> |
+| **Active airing** – fresh air at the open window, removable moisture and time left | **Editor** – one wall at a time, 90° corners, locked lengths and angles |
 
-- Jeder Raum zeigt seinen Zustand: warten, jetzt lüften, weiterlüften, schließen – die Begründung einen Tipp entfernt.
-- Ehrliche Fenster- und Türzustände (offen, gekippt, geschlossen, Verzögerung) und vermutete Luftwege durch offene Türen; fehlen Daten, wird nichts erfunden.
-- Einzeln ausgemessene Räume lassen sich **zusammenfügen** – erst Vorschau, nichts wird skaliert, gesperrte Maße haben Vorrang:
+- Every room shows its state: wait, air now, keep airing, close – with the reason one tap away.
+- Honest window and door states (open, tilted, closed, delay) and presumed air paths through open doors; nothing is invented when data is missing.
+- Rooms measured one by one can be **fitted together** – preview first, nothing scaled, locked dimensions win:
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_before_de.png" alt="Räume vor dem Zusammenfügen" width="300">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_after_de.png" alt="Räume nach dem Zusammenfügen" width="300">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_before_en.png" alt="Rooms before fitting together" width="300">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/images/house_map_join_after_en.png" alt="Rooms after fitting together" width="300">
 </p>
 
-- Grundrissvorschlag aus deinen FreshAirIQ-Räumen, Grundriss-Vorlage (Bild hochladen, Räume antippen), Etagen als Buttons, lesbare Etagennamen.
+- Floor plan proposal from your FreshAirIQ rooms, floor plan template (upload a picture, tap the rooms), floors as buttons, readable floor names.
 
-Anleitung: **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)** · English: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)**
+Guide: **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)** · German guide: **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)**
 
-<sub>Bilder: aus dem Kartencode dieses Releases mit Demodaten gerendert (Demo-Räume, keine echte Installation).</sub>
+<sub>Pictures: rendered from the card code of this release with demo data (demo rooms, no real installation).</sub>
 
 ---
 
-## Was FreshAirIQ besonders macht
+## What makes FreshAirIQ different
 
-| Funktion | Was FreshAirIQ daraus macht |
+| Feature | What FreshAirIQ does with it |
 | --- | --- |
-| **Absolute Feuchte & Wasserbilanz** | Rechnet Feuchte in g/m³ und – zusammen mit dem Raumvolumen – in verständliche ml Wasserdampf um. |
-| **Dynamische Lüftungsempfehlung** | Entscheidet nicht nur anhand eines starren RH-Grenzwerts, sondern bewertet den tatsächlich erwartbaren Nutzen. |
-| **Raum-, Etagen- & Hauslüftung** | Erkennt, ob einzelne Räume oder mehrere aktive Räume sinnvoll gemeinsam betrachtet werden sollten. |
-| **Live-Bilanz** | Verfolgt die reale Feuchte- und Temperaturänderung während einer Lüftung. |
-| **Kurzzeitprognose** | Simuliert 5–120 Minuten und schätzt den effizienten Endpunkt innerhalb des Prognosefensters. |
-| **Nachtstrategie** | Prognostiziert die Entwicklung bis zum Nachtende und berücksichtigt Belegung, Außenluft und gelernte Nachtmuster. |
-| **Schimmel-IQ** | Liefert einen konservativen Oberflächen-RH-Indikator und macht auffällige Räume sichtbar. |
-| **Energie & Kosten** | Schätzt Temperaturverlust und Wiederaufheizenergie passend zum konfigurierten Heizsystem. |
-| **Anwesenheit & Gäste** | Passt Feuchteprognosen an erwartete Belegung und Übernachtungsgäste an. |
-| **Zusatzsensoren** | Kann CO₂, VOC/TVOC, PM2.5, Pollen, Helligkeit, Wind und weitere Kontextdaten einbeziehen. |
-| **Erklärbare Entscheidungen** | Zeigt Gründe, Datenqualität, Lernstand und Prognosesicherheit statt nur eines Ergebnisses. |
-| **Persistentes Lernen** | Lernt reale Raumwirkung und Routinen aus geeigneten Beobachtungen, ohne deine Grenzwerte heimlich umzuschreiben. |
+| **Absolute humidity & water balance** | Converts humidity to g/m³ and, together with room volume, into an understandable amount of water vapor in ml. |
+| **Dynamic ventilation recommendations** | Evaluates the expected real benefit instead of relying only on a fixed RH threshold. |
+| **Room, floor & whole-home ventilation** | Determines whether rooms should be handled individually or as a coordinated group. |
+| **Live balance** | Tracks actual humidity and temperature changes during ventilation. |
+| **Closing at the right time** | Closes once the room's goals are reached or the benefit of the next five minutes is confirmed used up – also with battery sensors that report temperature and humidity at different times. While the window stays open, the room says what the close is still waiting for. |
+| **Short-term forecast** | Simulates 5–120 minutes and estimates the efficient endpoint within the forecast window. |
+| **Night strategy** | Forecasts conditions through the night using occupancy, outdoor air, and learned night patterns. |
+| **Mould IQ** | Provides a conservative surface-RH indicator and highlights rooms that deserve attention. |
+| **Energy & cost context** | Estimates temperature loss and reheating energy for the configured heating system. |
+| **Presence & guests** | Adapts moisture forecasts to expected occupancy and overnight guests. |
+| **Additional sensors** | Can use CO₂, VOC/TVOC, PM2.5, pollen, illuminance, wind, and other contextual data. |
+| **Explainable decisions** | Shows reasons, data quality, learning maturity, and forecast confidence. |
+| **Persistent learning** | Learns real room behavior and routines from suitable observations without silently changing user thresholds. |
 
 ---
 
-## Jeder Raum hat seine eigene Physik
+## Every room has its own physics
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/02-room-overview.jpeg" alt="FreshAirIQ Raumübersicht" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/02-room-overview.jpeg" alt="FreshAirIQ room overview" width="520">
 </p>
 
-FreshAirIQ betrachtet Räume nicht als identische Kästchen. Volumen, Sensorwerte, Fenster, Ausrichtung, gelernter Luftwechsel und bisherige Lüftungsergebnisse werden raumbezogen geführt. Dadurch kann ein kleines Gäste-WC anders reagieren als eine große Wohnküche oder ein Kellerraum.
+FreshAirIQ does not treat rooms as identical boxes. Volume, sensor readings, windows, orientation, learned air exchange, and previous ventilation results are tracked per room. A small guest WC can therefore behave differently from a large open-plan living area or basement room.
 
-Die Raumansicht bündelt unter anderem Raumklima, absolute Feuchte, Wassermenge, Schimmelindikator und Lernstatus. Räume können auch als reine Beobachtungsräume geführt werden, ohne die Hausentscheidung zu beeinflussen.
+The room view combines room climate, absolute humidity, water content, mould indicator, and learning status. Rooms can also be configured as observation-only rooms without influencing the whole-home decision.
 
 ---
 
 # FreshAirIQ Intelligence 2.0
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/03-intelligence-overview.jpeg" alt="FreshAirIQ Intelligence 2.0 Lernübersicht" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/03-intelligence-overview.jpeg" alt="FreshAirIQ Intelligence 2.0 learning overview" width="520">
 </p>
 
-FreshAirIQ trennt bewusst **Erfahrungsreife** von **Prognosequalität**. Viele Messpunkte allein machen ein Modell nicht automatisch gut. Deshalb zählt FreshAirIQ unabhängige Tage, Lüftungen und belastbare Ergebnisvergleiche und zeigt separat, wie gut Vorhersagen bisher zur Realität passen.
+FreshAirIQ deliberately separates **experience maturity** from **forecast quality**. A large number of measurements does not automatically make a model good. FreshAirIQ therefore counts independent days, ventilation sessions, and robust outcome comparisons, while separately showing how closely forecasts matched reality.
 
-### Vier Lernbereiche
+### Four learning areas
 
-**Dein Zuhause** lernt Raumphysik, Feuchtepuffer und hausweite Lüftungsstrategien. **Prognosen & Lernen** korrigiert Live-Prognosen, vergleicht Forecasts mit realen Ergebnissen und lässt alternative Shadow-Modelle parallel antreten. **Deine Gewohnheiten** erkennt Tagesroutinen, umgesetzte Strategien und persönlichen Kontext. **Langzeitlernen** sammelt Nacht- und Saisonerfahrung bewusst langsam über echte unterschiedliche Tage und Jahreszeiten.
+**Your home** learns room physics, moisture buffering, and whole-home ventilation strategies. **Forecasts & learning** corrects live forecasts, compares predictions with real outcomes, and evaluates alternative shadow models in parallel. **Your habits** learns daily routines, adopted strategies, and personal context. **Long-term learning** collects night and seasonal experience slowly across genuinely different days and seasons.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/05-learning-home.jpeg" alt="FreshAirIQ lernt Raumphysik und Feuchtepuffer" width="430">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/05-learning-home.jpeg" alt="FreshAirIQ learning room physics and moisture buffering" width="430">
   &nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/06-learning-forecast.jpeg" alt="FreshAirIQ Prognosen und Shadow-Lernen" width="430">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/06-learning-forecast.jpeg" alt="FreshAirIQ forecasts and shadow learning" width="430">
 </p>
 
-### Lernen muss messbar besser werden
+### Learning has to become measurably better
 
-FreshAirIQ validiert das gelernte Prognosemodell gegen reale Ergebnisse und gegen ein eingefrorenes Grundmodell. Modellgenerationen können unter vergleichbaren Bedingungen gegeneinander replayt werden. MAE, Richtungsgenauigkeit, unabhängige Lüftungen, unterschiedliche Tage und statistische Unsicherheit bleiben sichtbar.
+FreshAirIQ validates its learned forecast model against real outcomes and a frozen baseline model. Model generations can be replayed under comparable conditions. MAE, directional accuracy, independent ventilation sessions, different days, and statistical uncertainty remain visible.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/04-model-quality.jpeg" alt="FreshAirIQ Modellqualität und Diagnose" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/04-model-quality.jpeg" alt="FreshAirIQ model quality and diagnostics" width="520">
 </p>
 
-Das Lernsystem darf eine Verbesserung nicht einfach behaupten: Für belastbare Lernwirkung sind mehrere unabhängige Lüftungen an unterschiedlichen Tagen und konservative Evidenzregeln erforderlich.
+The learning system is not allowed to simply claim improvement: meaningful learning effectiveness requires multiple independent ventilation sessions on different days and conservative evidence rules.
 
 ---
 
-## Feuchtigkeit wird greifbar
+## Making moisture tangible
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/07-water-balance.jpeg" alt="Wasser in der Hausluft nach Räumen" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/07-water-balance.jpeg" alt="Water in home air by room" width="520">
 </p>
 
-Relative Luftfeuchtigkeit ist temperaturabhängig und allein oft schwer zu interpretieren. FreshAirIQ berechnet zusätzlich die **absolute Feuchte** und die daraus resultierende **Wassermenge in der Raumluft**. Dadurch lässt sich nachvollziehen, wo Feuchtigkeit sitzt und wie viel durch eine Lüftung voraussichtlich tatsächlich entfernt werden kann.
+Relative humidity depends on temperature and can be difficult to interpret by itself. FreshAirIQ additionally calculates **absolute humidity** and the resulting **amount of water in room air**. This makes it easier to understand where moisture is located and how much can realistically be removed through ventilation.
 
-In der FreshAirIQ-Oberfläche gilt konsequent: **Minus = Feuchtigkeit wird entfernt**, **Plus = Feuchtigkeit kommt hinzu**.
+Throughout the FreshAirIQ interface: **minus = moisture removed**, **plus = moisture added**.
 
 ---
 
-## Schimmel-IQ – ein Frühindikator, keine Laboranalyse
+## Mould IQ – an early indicator, not a laboratory diagnosis
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/de/08-mould-iq.jpeg" alt="FreshAirIQ Schimmel-IQ" width="520">
+  <img src="https://raw.githubusercontent.com/rupascha/freshairiq/main/docs/screenshots/08-mould-iq.jpeg" alt="FreshAirIQ Mould IQ" width="520">
 </p>
 
-FreshAirIQ schätzt aus dem verfügbaren Raumklima eine konservative Oberflächen-RH und hebt auffällige Räume hervor. Das hilft, längerfristig problematische Klimabedingungen zu erkennen. Ohne tatsächlich gemessene Oberflächentemperatur an einem konkreten Bauteil kann FreshAirIQ jedoch **kein reales Schimmelwachstum feststellen oder ausschließen**.
+FreshAirIQ estimates a conservative surface RH from the available room climate and highlights noteworthy rooms. This can help identify persistently problematic climate conditions. Without an actual surface-temperature measurement at a specific building component, FreshAirIQ **cannot determine or rule out real mould growth**.
 
 ---
 
-## Weitere Funktionen
+## More features
 
-FreshAirIQ unterstützt frei definierbare Stockwerke und Räume, mehrere Fenster-/Türkontakte je Raum, Öffnungsverzögerungen, Fensterausrichtung und Windkontext, alternative Außen-/Referenzluft, Pollen-Veto, CO₂-Kontext, VOC/TVOC, PM2.5 und Helligkeit. Bewohner können mit `person.*`/`device_tracker.*` verknüpft werden; Kinder oder andere Personen ohne Tracker bleiben unterstützt. Ein schneller Gästemodus passt Kurzzeit- und Nachtprognosen unmittelbar an.
+FreshAirIQ supports freely configurable floors and rooms, multiple window/door contacts per room, opening delays, window orientation and wind context, alternative outdoor/reference air, pollen veto, CO₂ context, VOC/TVOC, PM2.5, and illuminance. Residents can be linked to `person.*`/`device_tracker.*`; children or other people without trackers remain supported. A quick guest mode immediately adjusts short-term and night forecasts.
 
-**Hauskarte (optional):** eine zusätzliche Karte `custom:freshairiq-house-card` zeigt die Räume auf einem frei formbaren Grundriss mit Wind, Fenster-/Türzuständen und vermuteten Luftwegen – mit Grundrissvorschlag, Editor und Grundriss-Vorlage (Bild hochladen, Räume antippen): **[docs/HAUSKARTE.md](docs/HAUSKARTE.md)**.
+**House map (optional):** an additional card `custom:freshairiq-house-card` shows the rooms on a freely shaped floor plan with wind, window/door states and presumed air paths – with a proposed plan, an editor and a floor plan template (upload a picture, tap the rooms): **[docs/HOUSE_MAP_GUIDE.md](docs/HOUSE_MAP_GUIDE.md)**.
 
-Für Energieabschätzungen können Wärmepumpe, Gas, Heizöl, Fernwärme oder Direktstrom mit den jeweils relevanten Parametern konfiguriert werden. Optional konfigurierte Aktoren führen **nicht automatisch** zu autonomer Steuerung: FreshAirIQ bleibt standardmäßig empfehlungsorientiert und führt nur explizit freigegebene, eindeutig abbildbare Interventionen aus.
+For energy estimates, heat pumps, gas, heating oil, district heating, or direct electric heating can be configured with the relevant parameters. Optional actuators do **not** automatically imply autonomous control: FreshAirIQ remains recommendation-oriented by default and only performs explicitly enabled, clearly defined interventions.
 
 ---
 
-# Beta installieren
+# Install the beta
 
-## Eigene Automationen (Node-RED, Alexa, Lüfter)
+## Your own automations (Node-RED, Alexa, fans)
 
-FreshAirIQ schaltet von sich aus keine Geräte – nur Rollos und Ablüfter, und nur, wenn du für einen Raum die „Automatische Steuerung“ einschaltest (Rollo öffnet mit dem Fenster, Aussperrschutz an der Durchgangstür, Sonnenschutz, Ablüfter nach dem Duschen oder nach Empfehlung). Darüber hinaus kannst du auf jede Empfehlung reagieren: über die Raum-Entitäten (z. B. `sensor.schlafzimmer_aktion`) oder über die Ereignisse `freshairiq_room_action`, `freshairiq_house_recommendation`, `freshairiq_mould_risk` und `freshairiq_moisture_source`, die einen fertigen Ansagetext („Schlafzimmer: Bitte Fenster schließen.“) mitliefern. Beispiele für Alexa, Ablüfter und Node-RED, vier fertige Blueprints (Empfehlungen ansagen, Lüfter folgt dem Raum, Lüfter nach Feuchtequelle, Rollos gegen die Sonne) sowie Tipps zu Kipp-Kontakten und Räumen ohne Fenster: **[docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)**. Die Blueprints gibt es zusätzlich auf Englisch (`*_en.yaml`).
+FreshAirIQ does not switch devices on its own – only covers and exhaust fans, and only if you enable "Automatic control" for a room (the cover opens with its window, a lock-out guard at the passage door, sun protection, exhaust fan after showering or following the recommendation). Besides that you can react to every recommendation: via the room entities (e.g. `sensor.bedroom_action`) or via the events `freshairiq_room_action`, `freshairiq_house_recommendation`, `freshairiq_mould_risk` and `freshairiq_moisture_source`, which carry a ready-to-speak sentence (“Bedroom: please close the window.”). Examples for Alexa, exhaust fans and Node-RED, four ready-made blueprints (announce recommendations, a fan follows the room, a fan after a moisture source, covers against the sun) and tips for tilt contacts and rooms without windows: **[docs/AUTOMATIONS.md](docs/AUTOMATIONS.md)** (German: [docs/AUTOMATIONEN.md](docs/AUTOMATIONEN.md)). The blueprints are also available in English (`*_en.yaml`).
 
-## Voraussetzungen
+## Requirements
 
-- Home Assistant **2026.8.0 oder neuer**
-- Den Home-Assistant-Marketplace (ab Home Assistant 2026.11) oder HACS (ältere Versionen) für die empfohlene Installation
-- Für berechnete Räume: Temperatur, relative Luftfeuchtigkeit, Raumvolumen und mindestens ein Fenster-/Türkontakt
-- Außenreferenz: eine lokale `weather.*`-Entität **oder** Außen-Temperatur + Außen-Luftfeuchtigkeit
+- Home Assistant **2026.8.0 or newer**
+- The Home Assistant Marketplace (Home Assistant 2026.11 or newer) or HACS (older versions) for the recommended installation method
+- For calculated rooms: temperature, relative humidity, room volume, and at least one window/door contact
+- Outdoor reference: a local `weather.*` entity **or** outdoor temperature + outdoor relative humidity
 
-## Installation über HACS und den Marketplace
+## Installation via HACS and the Marketplace
 
-[![Öffne deine Home-Assistant-Instanz und das FreshAirIQ-Repository im Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rupascha&repository=freshairiq&category=integration)
+[![Open your Home Assistant instance and open the FreshAirIQ repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rupascha&repository=freshairiq&category=integration)
 
-Der Button öffnet FreshAirIQ in deinem eigenen Home Assistant – ab Home Assistant 2026.11 im **Marketplace**, davor in **HACS**. Solange FreshAirIQ nicht im Standardkatalog steht, bietet er an, das Repository zuerst als benutzerdefiniertes Repository hinzuzufügen. Ohne Button:
+The button opens FreshAirIQ in your own Home Assistant – in the **Marketplace** from Home Assistant 2026.11, in **HACS** before. As long as FreshAirIQ is not listed in the default catalog, it offers to add the repository as a custom repository first. Without the button:
 
-1. Öffne **Einstellungen → Marketplace** (Home Assistant 2026.11+) bzw. **HACS** (ältere Versionen) → **Benutzerdefinierte Repositories**.
-2. Füge `https://github.com/rupascha/freshairiq` als Repository vom Typ **Integration** hinzu.
-3. Installiere **FreshAirIQ**.
-4. Starte Home Assistant neu.
-5. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen → FreshAirIQ**.
-6. Räume, Sensoren und weitere Optionen können anschließend über **Geräte & Dienste** oder das FreshAirIQ-Zahnrad eingerichtet werden.
+1. Open **Settings → Marketplace** (Home Assistant 2026.11+) or **HACS** (older versions) → **Custom repositories**.
+2. Add `https://github.com/rupascha/freshairiq` as an **Integration** repository.
+3. Install **FreshAirIQ**.
+4. Restart Home Assistant.
+5. Open **Settings → Devices & services → Add integration → FreshAirIQ**.
+6. Rooms, sensors, and additional options can then be configured through **Devices & services** or the FreshAirIQ settings icon.
 
-> FreshAirIQ lässt sich zunächst auch ohne fertiges Raumsetup hinzufügen. Solange erforderliche Klimadaten fehlen, werden Berechnungen zurückgehalten statt Werte zu erfinden.
+> FreshAirIQ can initially be added without a completed room setup. If required climate data is missing, calculations are withheld instead of inventing values.
 
-## Manuelle Installation
+## Manual installation
 
-Lade `freshairiq.zip` aus dem [neuesten Release](https://github.com/rupascha/freshairiq/releases/latest) und entpacke es nach `/config/custom_components/freshairiq` (das Archiv enthält die Dateien dieses Ordners), oder kopiere `custom_components/freshairiq` vollständig dorthin. Starte Home Assistant neu und füge FreshAirIQ anschließend unter **Einstellungen → Geräte & Dienste** hinzu.
+Download `freshairiq.zip` from the [latest release](https://github.com/rupascha/freshairiq/releases/latest) and extract it into `/config/custom_components/freshairiq` (the archive holds the files of that folder), or copy the complete `custom_components/freshairiq` folder there. Restart Home Assistant, then add FreshAirIQ under **Settings → Devices & services**.
 
-## Fensterkontakte: 2 Zustände, 3 Zustände – oder zwei Kontakte an einem Fenster
+## Window contacts: 2-state, 3-state – or two contacts on one window
 
-FreshAirIQ erkennt die Art deines Fensterkontakts **automatisch**:
+FreshAirIQ detects the kind of window contact **automatically**:
 
-- **2 Zustände** (`binary_sensor`, auf/zu) – wird ganz normal als Fenster gelesen.
-- **3 Zustände** (geschlossen / gekippt / offen, z. B. Homematic-Drehgriff) – FreshAirIQ lernt *gekippt* und *offen* getrennt.
+- **2-state** (`binary_sensor`, open/closed) – read as a normal window.
+- **3-state** (closed / tilted / open, e.g. a Homematic handle sensor) – FreshAirIQ learns *tilted* and *open* separately.
 
-**Du hast zwei 2-Zustands-Kontakte an einem Fenster** (unten = Fenster gedreht/offen, oben = Fenster gekippt)? Dann fasst du sie in Home Assistant mit einem **Template-Helfer** zu einem 3-Zustands-Sensor zusammen und gibst FreshAirIQ nur diesen Helfer als Fensterkontakt.
+**You have two 2-state contacts on one window** (bottom = window turned open, top = window tilted)? Combine them in Home Assistant with a **template helper** into one 3-state sensor and give FreshAirIQ only that helper as the window contact.
 
-| unterer Kontakt | oberer Kontakt | Helfer zeigt |
+| bottom contact | top contact | helper shows |
 | --- | --- | --- |
-| offen | egal | `open` |
-| zu | offen | `tilted` |
-| zu | zu | `closed` |
+| open | any | `open` |
+| closed | open | `tilted` |
+| closed | closed | `closed` |
 
-**Variante A – per Oberfläche (ohne YAML)**
+**Option A – in the UI (no YAML)**
 
-1. **Einstellungen → Geräte & Dienste → Helfer → Helfer erstellen → Template → Template-Sensor**.
-2. Name, z. B. `Schlafzimmer Fenster`.
-3. Bei **Zustandstemplate** einfügen und die beiden Entitäts-IDs durch deine ersetzen:
+1. **Settings → Devices & services → Helpers → Create helper → Template → Template sensor**.
+2. Name, e.g. `Bedroom window`.
+3. Paste into **State template** and replace both entity IDs with yours:
 
    ```jinja
-   {% if is_state('binary_sensor.schlafzimmer_fenster_unten', 'on') %}open
-   {% elif is_state('binary_sensor.schlafzimmer_fenster_oben', 'on') %}tilted
+   {% if is_state('binary_sensor.bedroom_window_bottom', 'on') %}open
+   {% elif is_state('binary_sensor.bedroom_window_top', 'on') %}tilted
    {% else %}closed{% endif %}
    ```
 
-4. Einheit leer lassen, speichern.
+4. Leave the unit empty and save.
 
-**Variante B – per YAML (`configuration.yaml`)** – mit Verfügbarkeit und Optionsliste, damit FreshAirIQ den Sensor sofort als 3-Zustands-Kontakt erkennt:
+**Option B – YAML (`configuration.yaml`)** – with availability and an options list, so FreshAirIQ recognises the sensor as 3-state right away:
 
 ```yaml
 template:
   - sensor:
-      - name: "Schlafzimmer Fenster"
-        unique_id: schlafzimmer_fenster_zustand
+      - name: "Bedroom window"
+        unique_id: bedroom_window_state
         device_class: enum
         state: >
-          {% if is_state('binary_sensor.schlafzimmer_fenster_unten', 'on') %}open
-          {% elif is_state('binary_sensor.schlafzimmer_fenster_oben', 'on') %}tilted
+          {% if is_state('binary_sensor.bedroom_window_bottom', 'on') %}open
+          {% elif is_state('binary_sensor.bedroom_window_top', 'on') %}tilted
           {% else %}closed{% endif %}
         availability: >
-          {{ states('binary_sensor.schlafzimmer_fenster_unten') not in ['unknown', 'unavailable']
-             and states('binary_sensor.schlafzimmer_fenster_oben') not in ['unknown', 'unavailable'] }}
+          {{ states('binary_sensor.bedroom_window_bottom') not in ['unknown', 'unavailable']
+             and states('binary_sensor.bedroom_window_top') not in ['unknown', 'unavailable'] }}
         attributes:
           options: "{{ ['closed', 'tilted', 'open'] }}"
 ```
 
-Danach Home Assistant neu laden bzw. **Entwicklerwerkzeuge → YAML → Template-Entitäten neu laden**.
+Then restart Home Assistant or use **Developer tools → YAML → Template entities**.
 
-**In FreshAirIQ:** Raum bearbeiten und als Fenster-/Türkontakt **nur den neuen Helfer** (`sensor.schlafzimmer_fenster`) auswählen – nicht zusätzlich die beiden Einzelkontakte, sonst zählt das Fenster doppelt. Mit Variante B erkennt FreshAirIQ die drei Zustände sofort, mit Variante A spätestens beim ersten Kippen.
-
----
-
-# Für Betatester
-
-Wir suchen reale Vielfalt statt möglichst vieler Installationen: Wohnungen und Häuser, Keller, unterschiedliche Sensorhersteller, kleine und große Setups, Android, iOS und Browser. Besonders hilfreich sind Rückmeldungen zu **Ersteinrichtung, Verständlichkeit der Empfehlungen, Prognoseverhalten, Lernfortschritt, mobilen Ansichten und ungewöhnlichen Gebäudesituationen**.
-
-### Diagnose & Datenschutz in der Beta
-
-FreshAirIQ zeichnet lokal eine begrenzte technische Diagnosehistorie auf. Seit 0.26.3 wird sie **nur mit deiner Zustimmung** automatisch an den FreshAirIQ-Diagnoseserver (`diagnostics.freshairiq.com`, HTTPS) übertragen; ohne Entscheidung oder bei „Nein“ wird nichts automatisch gesendet. Nach Zustimmung gilt die gewählte Häufigkeit (Standard: täglich nachts, pro Installation zwischen 02:00 und 03:59 Uhr verteilt). Ein Support-Paket, das du selbst abschickst, gilt als Zustimmung für genau diese Sendung.
-
-Vor dem Upload werden direkte Identifikatoren entfernt oder pseudonymisiert. Die Diagnose ist für technische Analyse, Forecast-/Lernvalidierung und Kompatibilitätsfehler gedacht – nicht für Werbung oder Profilbildung. Freitext-Feedback wird nur übertragen, wenn du es ausdrücklich absendest.
+**In FreshAirIQ:** edit the room and select **only the new helper** (`sensor.bedroom_window`) as the window/door contact – not the two single contacts as well, otherwise the window counts twice. With option B FreshAirIQ detects the three states immediately, with option A at the latest when the window is tilted for the first time.
 
 ---
 
-# Technische Grundsätze
+# For beta testers
 
-FreshAirIQ ist geräteherstellerunabhängig und arbeitet mit Home-Assistant-Entitätssemantik. Die kanonische Lüftungsphysik basiert auf psychrometrischen Größen und bleibt von optionalen Zusatzsensoren getrennt. Sensorlatenz, Datenqualität und Messaktualisierung werden berücksichtigt; ungeeignete Lernmessungen sollen nicht als belastbare Erfahrung eingehen.
+We are looking for real-world variety rather than the largest possible install count: apartments and houses, basements, different sensor manufacturers, small and large setups, Android, iOS, and browsers. Feedback about **initial setup, clarity of recommendations, forecast behavior, learning progress, mobile views, and unusual building situations** is particularly valuable.
 
-Das Projekt enthält ein Continuous Quality System mit Pure-Logic-Tests, Frontend-/Contract-Tests, Release-Hygiene und GitHub/HACS-Release-Gates. Ein Release-ZIP wird erst nach den vorgesehenen Quality Gates erzeugt.
+### Diagnostics & privacy during beta
 
-### Lokale Qualitätsprüfung
+FreshAirIQ keeps a limited technical diagnostic history locally. Since 0.26.3 it is uploaded automatically to the FreshAirIQ diagnostics server (`diagnostics.freshairiq.com`, HTTPS) **only with your consent**; undecided or “No” means nothing is sent automatically. After consent the chosen cadence applies (default: nightly, spread per installation between 02:00 and 03:59). A support package you send yourself counts as consent for that single upload.
+
+Direct identifiers are removed or pseudonymized before upload. Diagnostics are intended for technical analysis, forecast/learning validation, and compatibility issues—not advertising or profiling. Free-text feedback is transmitted only when you explicitly submit it.
+
+---
+
+# Technical principles
+
+FreshAirIQ is vendor-independent and works with Home Assistant entity semantics. Canonical ventilation physics is based on psychrometric quantities and remains separated from optional context sensors. Sensor latency, data quality, and measurement freshness are considered; unsuitable measurements should not become trusted learning evidence.
+
+The project includes a Continuous Quality System with pure-logic tests, frontend/contract tests, release hygiene, and GitHub/HACS release gates. A release ZIP is only generated after the intended quality gates pass.
+
+### Local quality checks
 
 ```bash
 python tools/quality_gate.py --profile local
 python tools/build_release.py
 ```
 
-### Update
+### Updates
 
-Bei Installationen über den Marketplace oder HACS sind veröffentlichte GitHub-Releases die Updatequelle: Marketplace und HACS installieren wie bisher aus dem Quellarchiv des Releases; zusätzlich enthält jedes Release das Installationsarchiv `freshairiq.zip` für die manuelle Installation. Release-Tag und `custom_components/freshairiq/manifest.json` tragen dieselbe Version. Ältere Releases lassen sich weiterhin über das Menü des Repositorys installieren. Lern- und Verlaufsdaten liegen getrennt im Home-Assistant-Storage und bleiben bei normalen Updates erhalten.
+For Marketplace and HACS installations, published GitHub releases are the update source: the Marketplace and HACS install the installation archive `freshairiq.zip` of every release whose `hacs.json` names it (GitHub counts its downloads) and earlier releases from their source archive as before; `freshairiq.zip` can also be unpacked into `custom_components/freshairiq` by hand. The release tag and `custom_components/freshairiq/manifest.json` use the same version. Older releases can still be installed from the repository menu. Learning and history data are stored separately in Home Assistant storage and remain intact during normal updates.
 
-### Entfernen
+### Removal
 
-Lösche zuerst den FreshAirIQ-Integrationseintrag unter **Einstellungen → Geräte & Dienste** und starte Home Assistant anschließend neu. Bei manueller Installation kann danach `/config/custom_components/freshairiq` entfernt werden.
+First remove the FreshAirIQ integration entry under **Settings → Devices & services**, then restart Home Assistant. For manual installations, `/config/custom_components/freshairiq` can then be removed.
 
 ---
 
-## ☕ FreshAirIQ unterstützen
+## ☕ Support FreshAirIQ
 
-FreshAirIQ ist ein unabhängiges Open-Source-Projekt. Wenn dir FreshAirIQ gefällt und du die Weiterentwicklung freiwillig unterstützen möchtest, kannst du mir einen Kaffee ausgeben:
+FreshAirIQ is an independent open-source project. If you like FreshAirIQ and would like to support continued development voluntarily, you can buy me a coffee:
 
 **[☕ Buy me a coffee – FreshAirIQ](https://buymeacoffee.com/freshairiq)**
 
-Feedback, Fehlermeldungen und Beta-Tests sind genauso wertvoll und ausdrücklich willkommen.
+Feedback, bug reports, and beta testing are equally valuable and very welcome.
 
 ---
 
-## Projektstatus
+## Project status
 
 **FreshAirIQ · Public Beta**
 
-FreshAirIQ befindet sich aktiv in Entwicklung. Prognosen und Empfehlungen sind Entscheidungshilfen für das Raumklima und ersetzen keine fachliche Gebäude-, Schimmel-, Gesundheits- oder Sicherheitsdiagnostik.
+FreshAirIQ is under active development. Forecasts and recommendations are decision aids for indoor climate and do not replace professional building, mould, health, or safety assessment.
 
-Entwickelt von **rupascha** für Home Assistant.
+Developed by **rupascha** for Home Assistant.

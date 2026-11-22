@@ -14,6 +14,7 @@ wording of instructions, events and notifications.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -38,14 +39,13 @@ from custom_components.freshairiq.exhaust_reference import exhaust_reference_app
 from custom_components.freshairiq.fan_automation import (
     auto_start,
     auto_stop,
-    automation_label,
     event_fields,
     fan_restart_lock_min,
     fan_trace_row,
     handled_label,
     room_fan_automation,
 )
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 from custom_components.freshairiq.notification_policy import auto_house, auto_room_event, room_notification_events
 
 T0 = datetime(2026, 10, 24, 13, 30, 54, tzinfo=timezone.utc)
@@ -214,7 +214,7 @@ def test_no_automation_without_mode_or_fan() -> None:
     room = _room()
     room["configured_actuators"]["exhaust_fan"] = None
     assert room_fan_automation(room, None) is None
-    assert event_fields({}) is None and automation_label({}) is None and not auto_stop("x") and not auto_start(None)
+    assert event_fields({}) is None and handled_label({}, "close") is None and not auto_stop("x") and not auto_start(None)
 
 
 def _with(room: dict, snap: dict) -> dict:
@@ -305,7 +305,7 @@ def test_new_texts_have_english_translations() -> None:
         ("Vergleichsluft ist die Zuluft aus dem Nebenraum (Ablüfter), nicht die Außenluft",
          "The reference air is the air drawn in from the neighbouring room (exhaust fan), not the outdoor air"),
     ):
-        assert to_english(german, {"Garage", "Bad"}) == english
+        assert Translator({"Garage", "Bad"}).text(german) == english
 
 
 # --------------------------------------------------------------------------- neighbouring-room reference
@@ -317,3 +317,180 @@ def test_neighbour_reference_is_the_basis_before_the_automatic_start() -> None:
     assert not applies(fan_configured=True, fan_active=True, window_open=True, has_contacts=True, auto_start=True)
     assert applies(fan_configured=True, fan_active=False, window_open=False, has_contacts=False)
     assert not applies(fan_configured=False, fan_active=False, window_open=False, has_contacts=False, auto_start=True)
+
+
+# --------------------------------------------------------------------------- 0.26.7.2: support diagnosis 20.11. (laundry room)
+# The laundry room's shared exhaust fans ran 6 minutes at 07:26, 09:32 and 11:38 (recommendation mode). Its fan trace
+# and samples, replayed: FreshAirIQ's own switch-off (or the switch-off by hand at 14:25), then two hours of "wait" with
+# unchanged values (52 % RH, 24 °C, about 83 ml) and the restart exactly when the 120 min repeat lock ended. The lock
+# only held back the room's old demand ("wait" on the dashboard); its end was taken for a new one.
+BERLIN = ZoneInfo("Europe/Berlin")
+LAUNDRY_RUNS = (
+    # start, end, how it ended, restart in the diagnosis
+    ("04:25:55", "05:26:02", "max_runtime", "07:26:21"),
+    ("07:26:21", "07:32:10", "goal_reached", "09:32:28"),
+    ("09:32:28", "09:38:11", "goal_reached", "11:38:31"),
+    ("11:38:31", "11:44:17", "goal_reached", "13:44:31"),
+    ("13:44:31", "14:25:36", "manual_off", "16:25:40"),
+)
+
+
+def _at(clock: str) -> datetime:
+    hour, minute, second = (int(part) for part in clock.split(":"))
+    return datetime(2026, 11, 20, hour, minute, second, tzinfo=BERLIN)
+
+
+def _laundry(started: str, ended: str, how: str, restart: str, *, lock_known: bool = True, at_restart: dict | None = None):
+    """One run of the replay and the two hours after it (samples every 2 min as in the diagnosis); the commands after the end."""
+    mem: dict = {}
+
+    def step(now, *, fan_on, aligned, held=False, active=False, renewed=False, urgent=False):
+        demand = fan_demand(FAN_CONTROL_RECOMMENDATION, source_active=False, recommendation=aligned, window_open=False)
+        return decide_fan(mode=FAN_CONTROL_RECOMMENDATION, fan_on=fan_on, demand=demand, now=now, follow_up_min=10, max_runtime_min=60,
+                          mem=mem, off_confirm_s=FAN_OFF_CONFIRM_S, restart_lock_min=LOCK, urgent=urgent,
+                          held=held and lock_known, renewed=renewed, idle=not active)
+
+    start, end = _at(started), _at(ended)
+    assert step(start, fan_on=False, aligned="ventilate_indirectly") == "on"
+    assert step(start + timedelta(seconds=10), fan_on=True, aligned="continue_ventilating", active=True) is None
+    if how == "manual_off":
+        # the room's own check said "close" at 13:49:44, the office kept the shared fan running; off by hand at 14:25:36
+        assert step(end, fan_on=False, aligned="wait", held=True) is None
+    else:
+        aligned = "close" if how == "goal_reached" else "continue_ventilating"
+        assert step(end - timedelta(seconds=FAN_OFF_CONFIRM_S), fan_on=True, aligned=aligned, active=True) is None
+        assert step(end, fan_on=True, aligned=aligned, active=True) == "off"
+        assert step(end + timedelta(seconds=10), fan_on=False, aligned="wait", held=True) is None  # reported off
+    assert mem["reason"] == how
+    commands, now = [], end + timedelta(seconds=20)
+    while now < _at(restart):
+        commands.append(step(now, fan_on=False, aligned="wait", held=True))  # "wait" only because of the repeat lock
+        now += timedelta(minutes=2)
+    commands.append(step(_at(restart), fan_on=False, aligned="ventilate_indirectly", **(at_restart or {})))  # the lock is over
+    return commands, mem
+
+
+@pytest.mark.parametrize("run", LAUNDRY_RUNS, ids=[row[3] for row in LAUNDRY_RUNS])
+def test_laundry_replay_the_end_of_the_repeat_lock_alone_restarted_the_fans(run) -> None:
+    # without telling the old demand from a new one (0.26.7.1): nothing changes but the lock – and the fans start
+    commands, _mem = _laundry(*run, lock_known=False)
+    assert commands[-1] == "on" and not any(commands[:-1])
+
+
+@pytest.mark.parametrize("run", LAUNDRY_RUNS, ids=[row[3] for row in LAUNDRY_RUNS])
+def test_laundry_replay_no_restart_for_the_old_demand(run) -> None:
+    commands, mem = _laundry(*run)
+    assert not any(commands) and mem["reason"] == "demand_unchanged" and mem["await_new_demand"] is True
+    room = _room(aligned="ventilate_indirectly")
+    automation = room_fan_automation(room, {"await_new_demand": True, "command": "off", "command_state": "confirmed"})
+    # no "is switched on automatically" and no "switch on the fan" for the user either
+    assert (automation["state"], automation["label"], automation["user_action_needed"]) == ("settled", "Automatische Lüftung abgeschlossen", False)
+    assert auto_start({**room, "fan_automation": automation})
+    assert handled_label({**room, "fan_automation": automation}, "ventilate_indirectly", "en") == "Automatic airing finished"
+
+
+@pytest.mark.parametrize("reason", [{"renewed": True}, {"urgent": True}])
+def test_laundry_a_new_reason_still_restarts_when_the_lock_ends(reason) -> None:
+    # critical air, a strong new moisture source or clearly drier air lift the repeat lock; urgent cases start at once
+    commands, mem = _laundry(*LAUNDRY_RUNS[1], at_restart=reason)
+    assert commands[-1] == "on" and not any(commands[:-1]) and "await_new_demand" not in mem
+
+
+def test_laundry_a_demand_that_ended_and_came_back_restarts_after_the_short_pause() -> None:
+    mem: dict = {}
+
+    def step(seconds, *, fan_on, aligned, held=False, active=False):
+        demand = fan_demand(FAN_CONTROL_RECOMMENDATION, source_active=False, recommendation=aligned, window_open=False)
+        return decide_fan(mode=FAN_CONTROL_RECOMMENDATION, fan_on=fan_on, demand=demand, now=T0 + timedelta(seconds=seconds), follow_up_min=10,
+                          max_runtime_min=60, mem=mem, off_confirm_s=FAN_OFF_CONFIRM_S, restart_lock_min=LOCK, held=held, idle=not active)
+
+    assert step(0, fan_on=False, aligned="ventilate") == "on"
+    assert step(5, fan_on=True, aligned="continue_ventilating", active=True) is None
+    assert step(600, fan_on=True, aligned="close", active=True) is None
+    assert step(630, fan_on=True, aligned="close", active=True) == "off"
+    assert step(640, fan_on=False, aligned="wait", held=True) is None
+    assert step(900, fan_on=False, aligned="wait", active=True) is None                 # another room's airing: not over yet
+    assert mem["await_new_demand"] is True
+    assert step(1200, fan_on=False, aligned="wait") is None                             # the room really asks for nothing
+    assert "await_new_demand" not in mem
+    assert step(1300, fan_on=False, aligned="ventilate") is None and mem["reason"] == "restart_locked"
+    assert step(630 + LOCK * 60, fan_on=False, aligned="ventilate") == "on"            # a valid new demand after the pause
+
+
+def test_laundry_the_moisture_source_follow_up_and_the_runtime_limit_stay() -> None:
+    mem: dict = {}
+    source = dict(mode=FAN_CONTROL_MOISTURE_SOURCE, follow_up_min=10, max_runtime_min=60, mem=mem)
+    assert decide_fan(fan_on=False, demand=True, now=T0, **source) == "on"
+    assert decide_fan(fan_on=True, demand=True, now=T0 + timedelta(seconds=5), **source) is None
+    assert decide_fan(fan_on=True, demand=False, now=T0 + timedelta(minutes=5), held=True, **source) is None  # follow-up runs
+    assert decide_fan(fan_on=True, demand=False, now=T0 + timedelta(minutes=16), **source) == "off"
+    assert mem["reason"] == "follow_up_ended" and "await_new_demand" not in mem
+    assert decide_fan(fan_on=False, demand=True, now=T0 + timedelta(minutes=17), **source) == "on"  # a new source starts at once
+    commands, mem = _laundry(*LAUNDRY_RUNS[0])
+    assert mem["reason"] == "demand_unchanged" and mem["completed_at"] == _at("05:26:02").isoformat()
+
+
+# --------------------------------------------------------------------------- 0.26.7.2: support diagnosis 21.11. (Harald)
+# Stop at 09:38 (goal reached), a sensor dropout at 10:18 ("check sensor", no valid evaluation), valid readings with the
+# unchanged demand afterwards and the end of the repeat lock at 11:38: the dropout is no end of the old demand.
+def _harald(*, dropout: dict, at_end: dict | None = None):
+    mem: dict = {}
+
+    def step(now, *, fan_on, aligned, held=False, active=False, evaluated=True, renewed=False, urgent=False):
+        demand = fan_demand(FAN_CONTROL_RECOMMENDATION, source_active=False, recommendation=aligned, window_open=False)
+        return decide_fan(mode=FAN_CONTROL_RECOMMENDATION, fan_on=fan_on, demand=demand, now=now, follow_up_min=10, max_runtime_min=60,
+                          mem=mem, off_confirm_s=FAN_OFF_CONFIRM_S, restart_lock_min=120.0, held=held, idle=not active,
+                          evaluated=evaluated, renewed=renewed, urgent=urgent)
+
+    assert step(_at("09:32:28"), fan_on=False, aligned="ventilate_indirectly") == "on"
+    assert step(_at("09:32:38"), fan_on=True, aligned="continue_ventilating", active=True) is None
+    assert step(_at("09:37:41"), fan_on=True, aligned="close", active=True) is None
+    assert step(_at("09:38:11"), fan_on=True, aligned="close", active=True) == "off"
+    assert step(_at("09:38:21"), fan_on=False, aligned="wait", held=True) is None
+    commands, now = [], _at("09:40:21")
+    while now < _at("11:38:31"):
+        if _at("10:18:00") <= now < _at("10:24:00"):
+            commands.append(step(now, fan_on=False, **dropout))
+        else:
+            commands.append(step(now, fan_on=False, aligned="wait", held=True))
+        now += timedelta(minutes=2)
+    commands.append(step(_at("11:38:31"), fan_on=False, aligned="ventilate_indirectly", **(at_end or {})))
+    return commands, mem
+
+
+@pytest.mark.parametrize("dropout", [
+    {"aligned": "check_sensor", "evaluated": False},
+    {"aligned": "unknown", "evaluated": False},     # no room data
+    {"aligned": "wait", "evaluated": False},        # implausible readings
+], ids=["check_sensor", "missing_room_data", "invalid_readings"])
+def test_harald_a_sensor_dropout_does_not_end_the_old_demand(dropout) -> None:
+    commands, mem = _harald(dropout=dropout)
+    assert not any(commands) and mem["reason"] == "demand_unchanged" and mem["await_new_demand"] is True
+
+
+def test_harald_a_valid_evaluation_without_demand_still_ends_it() -> None:
+    commands, mem = _harald(dropout={"aligned": "wait"})
+    assert commands[-1] == "on" and not any(commands[:-1]) and "await_new_demand" not in mem
+
+
+@pytest.mark.parametrize("reason", [{"renewed": True}, {"urgent": True}])
+def test_harald_a_new_reason_or_urgency_still_starts(reason) -> None:
+    commands, mem = _harald(dropout={"aligned": "check_sensor", "evaluated": False}, at_end=reason)
+    assert commands[-1] == "on" and not any(commands[:-1]) and "await_new_demand" not in mem
+
+
+def test_harald_follow_up_and_runtime_limit_ignore_the_evaluation() -> None:
+    mem: dict = {}
+    source = dict(mode=FAN_CONTROL_MOISTURE_SOURCE, follow_up_min=10, max_runtime_min=60, mem=mem, evaluated=False)
+    assert decide_fan(fan_on=False, demand=True, now=T0, **source) == "on"
+    assert decide_fan(fan_on=True, demand=True, now=T0 + timedelta(seconds=5), **source) is None
+    assert decide_fan(fan_on=True, demand=False, now=T0 + timedelta(minutes=5), **source) is None and mem["reason"] == "follow_up"
+    assert decide_fan(fan_on=True, demand=False, now=T0 + timedelta(minutes=16), **source) == "off"
+    assert mem["reason"] == "follow_up_ended"
+    mem.clear()
+    assert _decide(mem, fan_on=False, demand=True, seconds=0, evaluated=False) == "on"
+    assert _decide(mem, fan_on=True, demand=True, seconds=5, evaluated=False) is None
+    assert _decide(mem, fan_on=True, demand=True, seconds=3600, evaluated=False) == "off"
+    assert mem["reason"] == "max_runtime" and mem["await_new_demand"] is True
+    assert _decide(mem, fan_on=False, demand=False, seconds=3610, evaluated=False) is None
+    assert mem["await_new_demand"] is True

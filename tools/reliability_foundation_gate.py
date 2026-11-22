@@ -6,6 +6,7 @@ not implementation line numbers.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
@@ -62,7 +63,11 @@ def _run_pytest() -> int:
     ).returncode
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    # quality_gate.py runs the same suite once, under coverage, before this gate
+    parser.add_argument("--skip-suite", action="store_true", help="skip the behavioral regression suite")
+    args = parser.parse_args(argv)
     version = _version()
     failures = _check_version_contract(version)
     if failures:
@@ -76,13 +81,13 @@ def main() -> int:
     if _run_migration_contracts():
         print("Reliability Foundation: FAIL - migration contract replay")
         return 1
-    if _run_pytest():
+    if not args.skip_suite and _run_pytest():
         print("Reliability Foundation: FAIL - behavioral regression suite")
         return 1
     print(f"Reliability Foundation: PASS - {version}")
     print("Golden scenario replay: PASS")
     print("Migration contract replay: PASS")
-    print("Behavioral regression suite: PASS")
+    print("Behavioral regression suite: " + ("covered by the coverage run" if args.skip_suite else "PASS"))
     return 0
 
 

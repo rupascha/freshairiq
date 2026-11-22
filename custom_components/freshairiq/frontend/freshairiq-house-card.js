@@ -1,4 +1,4 @@
-const FAIQ_VERSION = "0.26.7.1";
+const FAIQ_VERSION = "0.26.7.2";
 // FreshAirIQ house map card (optional, custom:freshairiq-house-card).
 // Shows the canonical room decisions of FreshAirIQ on a free floor plan, the
 // wind and a clearly marked air-path *hypothesis*. It never decides anything
@@ -335,6 +335,8 @@ class FreshAirIQHouseCard extends HTMLElement {
     // minute without any pointer or touch event.
     this._pointers = new Set(); this._touching = false; this._gestureSeen = 0; this._pending = false;
     this._lastActive = Date.now();   // 0.26.7.1(2): the last touch, click or key – a long untouched card calms its motion
+    this._clock0 = performance.now(); this._pausedMs = 0; this._pausedAt = null;
+    this._wx = {}; this._gustRun = new W.GustRunner(); this._facades = new V.FacadeCache(G); this._eddies = new F.LeeCurls(); this._flow = new F.FlowCache();
     this._onKey = () => this._touched();
     this._onDown = ev => {
       this._gestureSeen = Date.now(); this._touched();
@@ -558,6 +560,8 @@ class FreshAirIQHouseCard extends HTMLElement {
   _syncPaused() {
     // 0.26.7.1(2): also while a window of the card covers the plan (room, rooms, weather, menu, support) – nobody sees it move
     const paused = document.hidden || !!this._offscreen || !!this._covered;
+    if (paused && this._pausedAt == null) this._pausedAt = performance.now();
+    else if (!paused && this._pausedAt != null) { this._pausedMs += performance.now() - this._pausedAt; this._pausedAt = null; }
     this.toggleAttribute("data-paused", paused);
     if (paused) this._windStop(); else this._windSync();
   }
@@ -665,20 +669,24 @@ class FreshAirIQHouseCard extends HTMLElement {
   }
   _onRooms(payload) {
     if (!payload || typeof payload !== "object") return;
+    // 0.26.7.2: readings and house values in place while the rooms and what the weather layer is drawn from stay the same
+    const scene = p => JSON.stringify([Object.keys(p.rooms || {}), p.weather_now, p.outdoor_temperature, p.outdoor_humidity, p.outdoor_absolute_humidity]);
+    const values = !!this._payload && scene(this._payload) === scene(payload);
     this._payload = payload;
     this._rooms = payload.rooms || {};
     this._roomsLang = payload.output_language || null;
     this._updateFocus();
-    this._queue();
+    this._queue(values);
   }
   _onHouse(payload) {
     if (!payload || typeof payload !== "object") return;
-    const known = this._layoutInfo && this._layoutInfo.revision;
+    const known = this._layoutInfo && this._layoutInfo.revision, scene = h => JSON.stringify({ ...h, wind: h.wind && { ...h.wind, age_s: 0 } });
+    const values = !!this._house && scene(this._house) === scene(payload);   // only the age of the wind reading
     this._house = payload;
     this._wantRev = payload.revision;
     if (payload.wind && payload.wind.from_deg != null) this._windSmooth = G.smoothBearing(this._windSmooth, payload.wind.from_deg);
     if (payload.revision !== known && !this._editing) this._refreshLayout();
-    this._queue();
+    this._queue(values);
   }
   // Re-audit F02: one layout request at a time; a revision announced meanwhile is fetched right after it, an
   // older answer never replaces a newer layout, and a request of a previous connection/entry is dropped.
@@ -736,10 +744,11 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (Date.now() - this._gestureSeen > GESTURE_LOST_MS) { this._touching = false; this._pointers.clear(); return false; }  // a release was lost
     return true;
   }
-  _queue() {
+  _queue(values = false) {
+    this._full = this._full || !values;
     if (this._frame || this._editing) return;
     if (this._gestureActive()) { this._pending = true; return; }  // drawn on release
-    this._frame = requestAnimationFrame(() => { this._frame = null; this._render(); });
+    this._frame = requestAnimationFrame(() => { this._frame = null; const full = this._full; this._full = false; this._render(!full); });
   }
   _chooseFloor(id) {
     this._floor = id; this._selected = null; this._hint = null;
@@ -987,11 +996,28 @@ class FreshAirIQHouseCard extends HTMLElement {
     const light = fx === "full" ? W.sunLight({ elevation: sky.elevation, azimuth: sky.azimuth, cover: model.cover, northDeg: north, directional: sky.directional }) : null;
     const skyColors = fx === "full" && sky.elevation != null ? W.skyColors(sky.elevation, model.cover) : null;
     this._skyColors = skyColors || A.skyPalette(sky.phase);
-    const fxVars = fx === "full" ? `;--cloud-dur:${({ calm: 90, light: 70, fresh: 45, strong: 26, storm: 14 })[model.level] || 60}s;--fall-dur:${model.precip.level >= 3 ? 0.35 : model.precip.level === 1 ? 0.8 : 0.55}s;--ray-o:${light ? G.round3(0.03 + 0.09 * light.strength) : 0.07}` : "";
+    const fxVars = fx === "full" ? `;--ray-o:${light ? G.round3(0.03 + 0.09 * light.strength) : 0.07}` : "";
     // 0.26.7.1(2): a room chosen (its window open): its outline drawn clearly, the other rooms of the floor quieter
     const chosen = this._selected && this._selected.type === "room" ? rooms.find(r => r.id === this._selected.id) : null;
     // 0.26.7.1 UI hotfix: the sky and the large moving weather layers lie under the plan (see atmos weatherSvg ``under``)
-    const under = { html: "", vb: vb.slice(), ppu: 1 / scale };
+    const motion = this._motionNow || this._motion();
+    const under = { html: "", vb: vb.slice(), ppu: 1 / scale, t: this._animClock(), level: motion.level, particles: motion.particles, small, seed: rooms.length * 7919 + Math.round(span * 100),
+      precipLevel: model.precip.kind ? model.precip.level : null, flash: fx };
+    // the wind's strength stays readable: a breath of air – a few faint ribbons; a storm – more, livelier, brighter ones
+    const strength = mood.name === "storm" ? 1.45 : ({ calm: 0.6, weak: 0.8, moderate: 1, strong: 1.25 })[F.strengthClass(Number(w && w.speed_ms) || 0)] || 1;
+    const gustCount = fx === "full" && (model.level === "storm" || model.level === "strong") && Number.isFinite(model.bearing) ? motion.gusts || 0 : 0;
+    // 0.26.7.2: the 2D flow model sets the pace of the ribbons and gusts along their ways (slow in front, fast at the sides)
+    const flow = this._flow.get(layout, { floorId, rooms, G, wind: w && { ...w, from_deg: smooth }, northDeg: north, mood }), field = this._flowField = flow.field, speed = flow.speed;
+    // 0.26.7.1(2): fewer, calmer streams that never look alike – their number by the animation level, each its own lane, length,
+    // wave, pace and brightness (the same for the same floor, so a redraw does not shuffle them)
+    const streamCount = Math.max(2, Math.min(9, Math.round(motion.streams * strength))), streamSeed = rooms.length * 7 + String(floorId).length * 13 + Math.round(span);
+    const variety = M.streamVariety(streamCount, streamSeed)
+      .map(v => ({ ...v, amp: v.amp * Math.pow(strength, 0.8) * (motion.amp || 1), opacity: Math.min(0.95, v.opacity * (0.7 + 0.3 * strength) * (motion.glow || 1)) }));
+    // 0.26.7.2: the ribbons' and the storm gusts' outer ways, joins and lee curls – traced together in one order (view outerLanes)
+    const lanes = w && w.available && smooth != null ? this._facades.outer({ layout, floorId, rooms, bearing: smooth, north, frame, count: streamCount, seed: streamSeed, gusts: gustCount,
+      minClear: V.ribbonClear(px, motion), gustClear: px(7), join: px(24), need: px(4.5) }, () => ({ streams: variety, gusts: V.gustVariety(M.streamVariety(gustCount, rooms.length * 5 + 101), rooms.length * 5 + 101) })) : null;
+    const gusts = lanes && lanes.gusts.length ? lanes.gusts : null;
+    this._gustWind = model.gustMs ?? model.windMs; this._gustRun.plan(gusts, 1 / scale, speed.of);
     let out = `<svg class="plan${chosen ? " focus" : ""}" data-mood="${esc(this._windMood || "neutral")}" data-fx="${fx}" viewBox="${vb.map(G.round3).join(" ")}" role="group" aria-label="${esc(this._t("title"))}" style="--dash:${px(10)} ${px(8)};--dot:${px(3)} ${px(7)};--dashlen:${px(54)};--dur:${G.round3(dur)}s${fxVars}">`;
     const marker = (id, color) => `<marker id="${id}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10z" fill="${color}" stroke="${V.BRAND.ink}" stroke-width="1"/></marker>`;
     out += `<defs>${marker("ah", V.BRAND.lime)}${marker("ahx", V.BRAND.orange)}${marker("ahc", V.BRAND.cyan)}
@@ -1000,21 +1026,16 @@ class FreshAirIQHouseCard extends HTMLElement {
       ${V.roomDefs(px)}
       ${A.skyDefs(sky, px, skyColors)}${W.worldDefs(model, light, px)}${A.climateDefs(px)}${A.weatherMask("wx-out", wxFrame, rooms, px)}
       ${rooms.map(r => `<clipPath id="rc-${esc(r.id)}"><polygon points="${r.polygon.map(S).join(" ")}"/></clipPath>`).join("")}</defs>
-      ${fx === "off" ? "" : fx === "full" && light ? A.weatherSvg(sky, wxFrame, w, north, px, "wx-out", under).replace(/#fff4c9/g, light.color) : A.weatherSvg(sky, wxFrame, w, north, px, "wx-out", under)}${fx === "full" ? W.worldSvg({ model, light, frame: wxFrame, rooms, northDeg: north, px, mask: "wx-out", small, under }) : ""}`;
+      ${fx === "off" ? "" : fx === "full" && light ? A.weatherSvg(sky, wxFrame, w, north, px, "wx-out", under).replace(/#fff4c9/g, light.color) : A.weatherSvg(sky, wxFrame, w, north, px, "wx-out", under)}${fx === "full" ? W.worldSvg({ model, light, frame: wxFrame, rooms, northDeg: north, px, mask: "wx-out", small, under, gusts }) : ""}`;
+    this._fxScene = fx !== "off" ? under : null;
     // wind streams behind the house
     const openings = (layout.openings || []).map(o => ({ ...o, ...(opState[o.id] || {}) }));
     // 0.26.6: the air runs only through openings and connections between rooms and streams out of the outlet
     const pathPts = (air && air.paths ? air.paths : []).map(p => { const r = G.airRoute(layout, p, { outside: span * 0.14, strict: true }); return { ...p, points: r.points, exits: r.exits }; });
-    // 0.26.7.1(2): fewer, calmer streams that never look alike – their number by the animation level, each its own lane, length,
-    // wave, pace and brightness (the same for the same floor, so a redraw does not shuffle them)
-    const motion = this._motionNow || this._motion();
-    // the wind's strength stays readable: a breath of air – a few faint ribbons; a storm – more, livelier, brighter ones
-    const strength = mood.name === "storm" ? 1.45 : ({ calm: 0.6, weak: 0.8, moderate: 1, strong: 1.25 })[F.strengthClass(Number(w && w.speed_ms) || 0)] || 1;
-    const variety = M.streamVariety(Math.max(2, Math.min(9, Math.round(motion.streams * strength))), rooms.length * 7 + String(floorId).length * 13 + Math.round(span))
-      .map(v => ({ ...v, amp: v.amp * Math.pow(strength, 0.8) * (motion.amp || 1), opacity: Math.min(0.95, v.opacity * (0.7 + 0.3 * strength) * (motion.glow || 1)) }));
-    const streams = w && w.available && smooth != null
+    const decorative = lanes ? lanes.streams : null;
+    const streams = decorative
       ? V.windStreams({ rooms, openings, fromDeg: smooth, northDeg: north, G, paths: pathPts,
-        frame, variety }) : [];
+        frame, variety, decorative }) : [];
     // Soft wind waves: three translucent strands per stream that fade in and out at its ends. Their phase
     // comes from the card's own clock (_windPhase), so a redraw continues the motion where it was.
     // order 8: the wind field around the house and the routes of the air through it (drawn on the canvas layer)
@@ -1025,33 +1046,13 @@ class FreshAirIQHouseCard extends HTMLElement {
       const profile = F.routeProfile(V.streamLine(s), rooms, G, { openingHalf: half, tilted: !!s.tilted, step: span / 120 });
       return profile && { id: `${s.opening}:${s.tilted ? "t" : "o"}:${s.points.length}`, profile, tilted: !!s.tilted, closing };
     }).filter(Boolean);
-    this._flowScene = { field: w && w.available && smooth != null ? F.buildField({ rooms, G, wind: { ...w, from_deg: smooth }, northDeg: north, mood }) : null,
+    this._flowScene = { field,
       vb, routes: flowRoutes, rooms, key: `${mood.name}|${floorId}|${Math.round((smooth || 0) / 5)}|${F.strengthClass(Number(w && w.speed_ms) || 0)}|${rooms.length}|${G.round3(span)}` };
-    let inflow = "";  // air coming in is drawn over the rooms, the rest behind the house
-    const waves = this._wavesNext || (this._wavesNext = []);
-    const COLORS = { mid: "#bfe9ff", hi: "#e6f7ff", lo: "#7cc8f0" };
-    // the layers of each ribbon: the stream itself, and – from "normal" on – a broad, nearly transparent air mass around it
-    const strands = motion.strands >= 3 ? V.WAVE_STRANDS : motion.strands >= 2 ? [V.WAVE_STRANDS[0], V.WAVE_STRANDS[2]] : [V.WAVE_STRANDS[0]];
-    streams.forEach(s => {
-      const frame = V.waveFrame(V.streamLine(s), px(9));   // 0.26.7.1(2): fewer points per ribbon (the curve stays smooth)
-      if (frame.samples.length < 2) return;
-      const first = frame.samples[0].p, last = frame.samples[frame.samples.length - 1].p;
-      const vr = s.variety != null && variety[s.variety] ? variety[s.variety] : { amp: 1, wave: 1, pace: 1, offset: 0, opacity: 0.85, width: 1 };
-      const base = (s.kind === "inflow" ? (s.tilted ? 5 : 7) : 4.5) * (s.kind === "inflow" ? 1 : vr.width);
-      let line = "";
-      strands.forEach((st, j) => {
-        const index = waves.length;
-        const geo = { amp: px(6.5) * st.amp * vr.amp * (s.kind === "pass" ? 0.8 : 1), wavelength: px(175) * st.wave * vr.wave, shift: st.shift + index * 0.37, pace: vr.pace, offset: vr.offset };
-        waves.push({ frame, geo });
-        const gid = `wg${index}`, color = s.kind === "inflow" && j === 0 ? V.BRAND.white : COLORS[st.cls];
-        const endOpacity = s.kind === "inflow" && !s.exits ? 1 : 0;  // air streaming out fades outside the house
-        line += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${G.round3(first[0])}" y1="${G.round3(-first[1])}" x2="${G.round3(last[0])}" y2="${G.round3(-last[1])}"><stop offset="0" stop-color="${color}" stop-opacity="0"/><stop offset=".2" stop-color="${color}"/><stop offset=".8" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity="${endOpacity}"/></linearGradient>`;
-        const cls = `${j === 0 ? `stream ${s.kind} ` : ""}wave ${st.cls} k-${s.kind}${s.tilted ? " tilted" : ""}${s.exits ? " exits" : ""}`;
-        line += `<path class="${cls}" data-wave="${index}" d="${V.wavePath(frame, geo, this._wavePhase({ geo }))}" stroke="url(#${gid})" stroke-width="${px(base * st.width)}"${s.kind === "inflow" ? "" : ` stroke-opacity="${G.round3(vr.opacity)}"`}${s.kind === "inflow" && j === 0 && !s.exits ? ' marker-end="url(#ahc)"' : ""}/>`;
-      });
-      // order 8: the fine particles of the incoming air are drawn on the canvas air layer (freshairiq-house-flowlayer.js)
-      if (s.kind === "inflow") inflow += line; else out += line;
-    });
+    // the ribbons (freshairiq-house-view.js ribbonsSvg): air coming in over the rooms, the rest behind the house; the wake's eddies
+    this._eddies.plan({ curls: lanes && lanes.curls, count: motion.still ? 0 : motion.eddies, opacity: motion.level === "intense" ? 0.3 : 0.22 });
+    let { inflow, behind } = V.ribbonsSvg(streams, { variety, motion, px, round3: G.round3, waves: this._wavesNext || (this._wavesNext = []), phase: geo => this._wavePhase({ geo }),
+      frameOf: s => this._facades.frame(s, px(9), motion.pathPoints, speed) });
+    behind += this._eddies.svg(px(2.6));
     // 0.26.6.1(2): one comic shadow under the whole house (not one per room – that drew every shared wall thick);
     // the rooms have no outline of their own, the walls come from G.wallSegments exactly as in the editor
     // 0.26.6.1(7): a soft shadow that lifts the house off the ground instead of the hard comic offset
@@ -1129,15 +1130,13 @@ class FreshAirIQHouseCard extends HTMLElement {
     }
     // 0.26.7.1: a compass rose in the corner when the card asks for one (north as drawn on this plan)
     if (this._info().includes("compass") && layout.building.north_confirmed !== false) out += W.compassSvg(north, [planFrame.maxX - px(30), planFrame.minY + px(30)], px, this._lang());
-    const underlay = `<div class="wxu" aria-hidden="true" style="${fxVars.replace(/^;/, "")}"><svg class="wxsky" viewBox="${vb.map(G.round3).join(" ")}" focusable="false">${A.skyBackground(vb)}</svg>${under.html}</div>`;
+    const airLayer = (under.air || "") + behind;
+    const underlay = `<div class="wxu" aria-hidden="true" style="${fxVars.replace(/^;/, "")}"><svg class="wxsky" viewBox="${vb.map(G.round3).join(" ")}" focusable="false">${A.skyBackground(vb)}</svg>${under.html}`
+      + `${airLayer ? `<svg class="wxair" data-mood="${esc(this._windMood || "neutral")}" viewBox="${vb.map(G.round3).join(" ")}" focusable="false">${airLayer}</svg>` : ""}</div>`;
     return underlay + out + markers + "</svg>";
   }
-  // 0.26.6.1(6/7): the room label without a box – the name on the room surface (colour chosen for contrast, a soft
-  // halo against the wind), the state as a small dark capsule (symbol + word), the readings below in large rooms.
-  // Every part stays inside the room's real outline (an L- or U-shaped room is not measured by its bounding box):
-  // the richest variant that fits where the room is widest enough is drawn – all rows, then without the readings,
-  // smaller name, short state word, only the state symbol in the capsule, a shortened name. A room too small even
-  // for that shows a state dot sized to the room, with a thin ring; its name and values are one tap away.
+  // 0.26.6.1(6/7): the room label without a box – name, state capsule, readings – inside the room's real outline;
+  // the richest variant that fits is drawn, down to a state dot with a thin ring in a room too small for any text.
   // where the moisture source symbol sits in a room (steam rises above it)
   _sourceAt(r, px) {
     const p = G.labelPoint(r.polygon), rb = G.bbox([r.polygon]);
@@ -1366,6 +1365,10 @@ class FreshAirIQHouseCard extends HTMLElement {
     return wrap(V.BRAND.lime, "🌬️", t(`k_${p.kind}`), esc(`${t("confidence")}: ${t(p.confidence)}`),
       `<div class="tiles">${this._tile(t("basis"), "", list("b", p.basis))}${this._tile(t("assumptions"), "", list("a", p.assumptions))}${this._tile(t("unknowns"), "", list("u", p.unknowns))}</div><p class="hint">${esc(t("hypothesis"))}</p>`);
   }
+  // ---- 0.26.7.2: the weather's clock (s), standing while paused
+  _animClock() { const now = performance.now(); return (now - this._clock0 - this._pausedMs - (this._pausedAt != null ? now - this._pausedAt : 0)) / 1000; }
+  _weatherStill() { return this._windStill("weather"); }
+  _bindWeather() { A.bindWeather(this._wx, this.shadowRoot.querySelector(".map"), this._fxScene, this._motionNow || this._motion(), this._weatherStill()); }
   // ---- wind clock (owner request 31.10.): one continuous phase per card, never reset by a redraw or new data
   _bindWaves() {
     const els = this.shadowRoot.querySelectorAll("path[data-wave]");
@@ -1400,9 +1403,15 @@ class FreshAirIQHouseCard extends HTMLElement {
   // Hotfix F04: animation off or "reduce motion" stops a running loop at once; switching back continues the
   // same phase. Never two loops per card.
   // 0.26.7.1(2): still with reduced motion, the animation off, the level off or resting, or the wind part switched off
-  _windStill() { if (this._config.animation === false || this._reduced()) return true; const m = this._motionNow || this._motion(); return m.still || !m.parts.wind; }
+  _windStill(part = "wind") { if (this._config.animation === false || this._reduced()) return true; const m = this._motionNow || this._motion(); return m.still || !m.parts[part]; }
+  // 0.26.7.2: ribbons, gusts or the weather canvas (rain also in calm air)
+  _loopParts() {
+    const wind = !this._windStill(), l = this._wx.layer, weather = !this._weatherStill() && !!(l && l.active && this._wx.canvas.isConnected);
+    return { waves: wind && !!(this._waves && this._waves.length), gusts: wind && this._gustRun.gusts.length > 0, weather };
+  }
   _windSync() {
-    if (this._windStill() || !this.isConnected || !this._waves || !this._waves.length || this.hasAttribute("data-paused")) { this._windStop(); return; }  // 0.26.7.1: no loop while paused
+    const run = this._loopParts();
+    if ((!run.waves && !run.gusts && !run.weather) || !this.isConnected || this.hasAttribute("data-paused")) { this._windStop(); return; }  // 0.26.7.1: no loop while paused
     // one loop for every house map on the page (freshairiq-house-motion.js), at this card's frame rate – never two per card
     const fps = (this._motionNow && this._motionNow.fps) || 20;
     if (!this._windRaf || this._windRaf.fps !== fps) { if (this._windRaf) M.untick(this); this._windRaf = M.tick(this, (now, dt) => this._windFrame(now, dt), fps); }
@@ -1411,14 +1420,22 @@ class FreshAirIQHouseCard extends HTMLElement {
   // from it (its own pace and offset), so the streams never move in step
   _wavePhase(w) { return (((this._windClock || 0) / ((this._windDur || 2) / (w.geo.pace || 1)) + (w.geo.offset || 0)) % 1 + 1) % 1; }
   _windFrame(now, dtMs) {
-    if (!this.isConnected || !this._waves || !this._waves.length || this._windStill() || this.hasAttribute("data-paused")) { this._windStop(); return; }
+    const run = this.isConnected && !this.hasAttribute("data-paused") ? this._loopParts() : null;
+    if (!run || (!run.waves && !run.gusts && !run.weather)) { this._windStop(); return; }
     const m = this._motionNow || this._motion(), dt = Math.min(Math.max(dtMs || 0, 0), 250) / 1000, pace = m.pace || 0.8;   // a long gap continues calmly instead of jumping
-    this._windPhase = ((this._windPhase || 0) + dt * pace / (this._windDur || 2)) % 1;
-    this._windClock = (this._windClock || 0) + dt * pace;
-    // order 8: the broad air layers breathe – their bend changes slowly, each layer in its own rhythm
-    const t = this._windClock;
-    for (const w of this._waves) w.el.setAttribute("d", V.wavePath(w.frame, { ...w.geo, amp: w.geo.amp * (1 + 0.3 * Math.sin(t * 0.21 + w.geo.shift * 1.7)) }, this._wavePhase(w)));
-    if (this._flowLayer) this._flowLayer.frame(dt);
+    if (run.waves) {
+      this._windPhase = ((this._windPhase || 0) + dt * pace / (this._windDur || 2)) % 1;
+      // a gust of the flow model (the measured gust when there is one): the air runs faster and swings wider for a while
+      const g = F.gustBoost(this._flowField, this._windClock || 0);
+      this._windClock = (this._windClock || 0) + dt * pace * (1 + 0.5 * g);
+      // order 8: the broad air layers breathe – their bend changes slowly, each layer in its own rhythm
+      const t = this._windClock;
+      for (const w of this._waves) w.el.setAttribute("d", V.wavePath(w.frame, { ...w.geo, amp: w.geo.amp * (1 + 0.3 * Math.sin(t * 0.21 + w.geo.shift * 1.7) + 0.4 * g) }, this._wavePhase(w)));
+      this._eddies.step(this._flowField, t);
+      if (this._flowLayer) this._flowLayer.frame(dt);
+    }
+    if (run.gusts) this._gustRun.step(dt, this._gustWind, pace, F.gustBoost(this._flowField, this._windClock || 0));
+    if (run.weather) this._wx.layer.frame(dt);
     // a long untouched card steps down (calmer) or rests (still): decided here, where the time passes anyway
     if (now - (this._levelCheck || 0) > 5000) { this._levelCheck = now; if (this._motion().level !== m.level) this._queue(); }
   }
@@ -1435,6 +1452,14 @@ class FreshAirIQHouseCard extends HTMLElement {
     let main = card.querySelector(":scope > .faiq-main");
     if (!main) { card.replaceChildren(); main = document.createElement("div"); main.className = "faiq-main"; card.appendChild(main); }
     return { card, main };
+  }
+  _parse(html) { const t = document.createElement("template"); t.innerHTML = html; return t.content; }
+  _patch(body) {   // the plan and the menu window (it carries the recommendation and the house values) together, or neither
+    const { card, main } = this._frameElements(), dlg = card.querySelector(":scope > dialog.menudlg"), cur = this._layout();
+    const next = this._parse(body), menu = dlg && cur && this._parse(this._menuHtml(cur.layout)), out = [];
+    const ok = !!this._shown && !!this._menuShown && !!menu && V.morph(this._shown, next, main, out) && V.morph(this._menuShown, menu, dlg, out);
+    if (ok) { out.forEach(f => f()); this._shown = next; this._menuShown = menu; }
+    return ok;
   }
   // The room window is opened (showModal) once; a live update refreshes its content in place – no new focus,
   // no scroll jump – and a different room replaces it.
@@ -1472,7 +1497,7 @@ class FreshAirIQHouseCard extends HTMLElement {
     if (prev.menu) { this._selected = null; this._menuOpen = true; } else { this._selected = { type: prev.type, id: prev.id }; this._menuOpen = false; }
     this._render();
   }
-  _render() {
+  _render(values = false) {
     if (this._editing) return;
     this._applyMotion();   // 0.26.7.1(2): the level in effect now (device, reduced motion, untouched time)
     this._wavesNext = [];
@@ -1514,6 +1539,11 @@ class FreshAirIQHouseCard extends HTMLElement {
         + `${roomsBtn}<button class="menu-btn fab" data-menu aria-haspopup="dialog" aria-expanded="${menuOpen}">☰ ${esc(this._t("menu"))}</button></div></div>`;
       dialogHtml = this._dialogHtml(layout);
     }
+    // 0.26.7.2: readings only (same view, air routes, no window open): labels and states in place, no new main.innerHTML
+    const fs = this._flowScene, view = [this._floor, this._layer, this._menuOpen, this._lastWidth, this._sideShown, this._motion().level, fs && fs.key,
+      fs && fs.routes.map(r => r.id + [...r.closing])].join("|");
+    if (values && current && !dialogHtml && view === this._view && this._patch(body)) return;
+    this._view = view;
     // Community hotfix: a live update keeps where the user scrolled (map, room window)
     const scroll = [...root.querySelectorAll(".map, dialog.roomdlg .dlg .body")].map(el => [el.scrollLeft, el.scrollTop]);
     const scrollKey = ((root.querySelector("dialog.roomdlg") || {}).dataset || {}).key;
@@ -1521,13 +1551,12 @@ class FreshAirIQHouseCard extends HTMLElement {
     this._wxScroll = this._wxScroll || {};
     const asideBefore = root.querySelector(".wxside");
     if (asideBefore && this._asideViewKey != null) this._wxScroll[this._asideViewKey] = asideBefore.scrollTop;
-    // Hotfix F02 ("the house map keeps jumping up"): <ha-card> and the open room window stay the same elements.
-    // A new <ha-card> has no content until Home Assistant has drawn it (a microtask later); the scroll
-    // restore below measured the page in that moment, the card was a few pixels high and the browser cut the
-    // page scroll back – WebKit keeps that cut. Only the content inside the card is replaced now.
+    // Hotfix F02: <ha-card> and the open room window stay the same elements – a new, still empty <ha-card> made the
+    // browser cut the page scroll back (WebKit keeps that cut). Only the content inside the card is replaced.
     const focus = focusKey(root.activeElement);
     const { card, main } = this._frameElements();
     main.innerHTML = current ? body : `${this._hero(null)}${body}`;
+    this._shown = current ? this._parse(body) : null;
     card.classList.toggle("plan-first", !!current);
     // 0.26.7.1: the weather column changed the plan's width – the labels are fitted again for the new width (once)
     const mapNow = main.querySelector(".map"), mapW = mapNow ? mapNow.getBoundingClientRect().width : 0;
@@ -1552,6 +1581,8 @@ class FreshAirIQHouseCard extends HTMLElement {
       asideNow.addEventListener("scroll", () => { this._wxScroll[key] = asideNow.scrollTop; }, { passive: true });
     }
     this._bindFlow();
+    this._bindWeather();
+    this._gustRun.bind(this.shadowRoot.querySelectorAll("path[data-gust]"), this._windStill()); this._eddies.bind(this.shadowRoot.querySelectorAll("path[data-eddy]"));
     this._bindWaves();
     this._syncMenu(card, current ? current.layout : null);  // before the bindings below: its buttons are bound with the rest
     root.querySelectorAll("[data-floor]").forEach(b => b.addEventListener("click", () => this._chooseFloor(b.dataset.floor)));
@@ -1710,14 +1741,18 @@ class FreshAirIQHouseCard extends HTMLElement {
       card.appendChild(dlg);
     }
     dlg.setAttribute("aria-label", this._t("menu"));
-    const html = `<div class="dlg dark world"><header style="background:${V.BRAND.cyan};color:${D.onColor(V.BRAND.cyan)}"><span class="emo">☰</span><div><h3>${esc(this._t("menu"))}</h3></div></header>`
-      + `<div class="body">${this._menuBody(layout)}</div><div class="foot"><button data-close-menu>${esc(this._t("close"))}</button></div></div>`;
+    const html = this._menuHtml(layout);
     const body = dlg.querySelector(".body"), top = body ? body.scrollTop : 0;
     dlg.innerHTML = html;  // new content every render, so every button is bound exactly once; its scroll is kept
+    this._menuShown = this._parse(html);
     const again = dlg.querySelector(".body");
     if (again) again.scrollTop = top;
     if (this._menuOpen && !dlg.open) { try { dlg.showModal(); } catch (_) { dlg.setAttribute("open", ""); } }
     if (!this._menuOpen && dlg.open) { try { dlg.close(); } catch (_) { dlg.removeAttribute("open"); } }
+  }
+  _menuHtml(layout) {
+    return `<div class="dlg dark world"><header style="background:${V.BRAND.cyan};color:${D.onColor(V.BRAND.cyan)}"><span class="emo">☰</span><div><h3>${esc(this._t("menu"))}</h3></div></header>`
+      + `<div class="body">${this._menuBody(layout)}</div><div class="foot"><button data-close-menu>${esc(this._t("close"))}</button></div></div>`;
   }
   _openMenu() { this._menuOpen = true; this._render(); }
   _closeMenu() { if (!this._menuOpen) return; this._nav = []; this._menuOpen = false; this._render(); }
@@ -1855,8 +1890,8 @@ button.weather:focus-visible{outline:3px solid #ffd27a;outline-offset:2px}
 :host([data-fx="subtle"]) .wx .fall{animation-duration:calc(1.2s * var(--k,1))}:host([data-fx="subtle"]) .wx.snow .fall{animation-duration:calc(9s * var(--k,1))}:host([data-fx="subtle"]) .wx.clouds > *{animation-duration:120s}
 :host([data-fx="full"]) .wx.clouds > *{animation-duration:var(--cloud-dur,60s)}:host([data-fx="full"]) .wx.rain .fall{animation-duration:calc(var(--fall-dur,.55s) * var(--k,1))}
 :host([data-fx="full"]) .wx.sunlight .ray{fill-opacity:var(--ray-o,.07)}
-:host([data-fx="full"]) .wx.flash{animation:flash-soft 13s linear infinite}
-@keyframes flash-soft{0%,93%,100%{opacity:0}94%{opacity:.32}95%{opacity:.04}96%{opacity:.18}97.5%{opacity:0}}
+:host([data-fx="full"]) .wx.flash{animation:flash-soft ${A.FLASH.full.cycle}s linear infinite}
+${A.flashKeyframes("flash-soft", A.FLASH.full.peak)}
 @media (prefers-reduced-motion:reduce){polygon.room.spot{animation:none;stroke:#fff}:host([data-fx="full"]) .wx.flash{animation:none;opacity:0}}
 `;
 

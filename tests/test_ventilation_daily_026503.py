@@ -102,3 +102,15 @@ def test_daily_pdf_german_and_english_with_several_pages():
     assert pdf.count("/Type /Page ") >= 3 and "/Count " in pdf
     empty = _pdf_text(build_daily_pdf([], period_totals([]), start, end, "de"))
     assert "/Count 1" in empty and "- ml" not in empty
+
+
+def test_csv_single_airings_follow_the_absolute_start_across_the_dst_change():
+    # 0.26.7.2 (owner order 21.11.): 02:50 summer time comes before 02:10 winter time (25.10.2026); local times as shown
+    from zoneinfo import ZoneInfo
+    from custom_components.freshairiq.ventilation_log import filter_ventilation_log
+
+    berlin = ZoneInfo("Europe/Berlin")
+    events = [_event("2026-10-25T02:10:00+01:00", 5, "Bad"), _event("2026-10-25T02:50:00+02:00", 5, "Küche")]
+    selected = filter_ventilation_log(events, datetime(2026, 10, 25, tzinfo=berlin), datetime(2026, 10, 25, 23, 59, tzinfo=berlin))
+    rows = _rows(ventilation_csv(selected, date(2026, 10, 25), date(2026, 10, 25), berlin, language="de", daily=False), ";")
+    assert [row[1:4] for row in rows[1:]] == [["02:50", "02:55", "Küche"], ["02:10", "02:15", "Bad"]]

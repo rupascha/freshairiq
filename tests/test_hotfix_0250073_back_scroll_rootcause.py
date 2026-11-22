@@ -1,4 +1,3 @@
-from tests.release_version import CURRENT_RELEASE_VERSION
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,7 +10,3 @@ def test_render_does_not_overwrite_parent_scroll_with_stale_child_dom():
     assert "this._rememberInfoViewport(this._info);" in JS
     assert "this._pendingSubdialogScrollTop = restoreTop; this._render();" in JS
     assert "newSubdialog.scrollTop = oldSubScroll;" in JS
-
-
-def test_current_version():
-    assert f'const FAIQ_VERSION = "{CURRENT_RELEASE_VERSION}";' in JS

@@ -10,7 +10,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .automation_events import notification_category
-from .notification_policy import auto_house as _auto_house, delivery_ledger, house_reopen_held, record_room_push, reminder_interval_min, room_notification_events, settle_delivery, status_messages_wanted
+from .notification_policy import auto_house as _auto_house, delivery_late, delivery_ledger, house_reopen_held, push_episode, record_room_push, reminder_interval_min, room_notification_events, settle_delivery, status_messages_wanted
 from .notification_text import continuation as _continuation, fan_hint as _fan_hint, house_message, room_messages, speech_text
 from .const import NOTIFY_SCOPE_BOTH, NOTIFY_SCOPE_HOUSE, NOTIFY_SCOPE_ROOM
 from .forecast import in_night_window, night_window_hours
@@ -95,6 +95,14 @@ def _target_entity(target: str) -> str | None:
     return None
 
 
+def _target_identity(target: str) -> str:
+    """The recipient a target reaches, also its key in the delivery ledger: ``notify.phone`` and ``phone`` are both
+    ``notify.phone``, ``entity:notify.…`` stays an entity of its own."""
+    value = str(target or "").strip()
+    entity_id = _target_entity(value)
+    return f"entity:{entity_id}" if entity_id is not None else f"notify.{_target_service(value)}"
+
+
 def _target_available(hass: HomeAssistant, target: str) -> bool:
     entity_id = _target_entity(target)
     if entity_id is not None:
@@ -126,22 +134,22 @@ async def _send_target(hass: HomeAssistant, target: str, title: str, message: st
 async def _deliver(hass: HomeAssistant, target: str, title: str, message: str, outcome: dict[str, Any]) -> bool:
     """F14: one recipient – a service error here is recorded for it and never stops the other recipients.
 
-    A recipient that accepted this message in an earlier round is not sent it again.
+    A recipient that accepted it in an earlier round is not sent it again (0.26.7.2: by recipient; a missing one is unavailable).
     """
-    if target in outcome["skip"]:
+    recipient = _target_identity(target)
+    if recipient in outcome["skip"]:
         return True
     try:
         accepted = await _send_target(hass, target, title, message)
     except Exception as err:  # noqa: BLE001 - one broken notify service must not silence the others
-        outcome["failed"][target] = type(err).__name__
+        outcome["failed"][recipient] = type(err).__name__
         return False
-    if accepted:
-        outcome["accepted"].append(target)
+    outcome["accepted" if accepted else "unavailable"].append(recipient)
     return accepted
 
 
 def _outcome(skip: Any = ()) -> dict[str, Any]:
-    return {"skip": set(skip), "accepted": [], "failed": {}}
+    return {"skip": set(skip), "accepted": [], "failed": {}, "unavailable": []}
 
 
 def _allowed_room(room_key: str, options: dict[str, Any]) -> bool:
@@ -383,9 +391,9 @@ async def _send_targets(
     used: set[str] = set()
     for target in targets:
         value = str(target)
-        if not value or value in used:
+        if not value or _target_identity(value) in used:
             continue
-        used.add(value)
+        used.add(_target_identity(value))
         if await _deliver(hass, value, title, message, outcome):
             sent = True
     return sent
@@ -400,9 +408,10 @@ async def _send(hass: HomeAssistant, options: dict[str, Any], title: str, messag
     for profile in _resident_profiles(options):
         values = [str(t) for t in (profile.get("notification_targets") or []) if str(t)]
         (skipped.update if profile_skipped(profile) else targets.extend)(values)
+    blocked = {_target_identity(t) for t in skipped} - {_target_identity(t) for t in targets}
     if not global_skipped:
         targets.extend(str(t) for t in (options.get("notification_targets") or []))
-    ordered = [t for t in _all_notification_targets(options) if t in set(targets) and t not in skipped]
+    ordered = [t for t in _all_notification_targets(options) if t in set(targets) and _target_identity(t) not in blocked]
     return await _send_targets(hass, ordered, title, message, outcome)
 
 
@@ -416,34 +425,37 @@ async def _send_room_personalised(
     outcome: dict[str, Any] | None = None,
 ) -> bool:
     """Route a room event to global targets plus residents assigned to that room."""
-    outcome = _outcome() if outcome is None else outcome
-    sent = False
-    used: set[str] = set()
     profile_skipped, global_skipped = _absence_filter(hass, options, event)
-
+    personal: list[tuple[dict[str, Any], str]] = []
+    away: list[dict[str, Any]] = []
     for profile in _resident_profiles(options):
-        assigned = {str(x) for x in (profile.get("room_keys") or [])}
-        if room_key not in assigned:
+        if room_key not in {str(x) for x in (profile.get("room_keys") or [])}:
             continue
         if profile_skipped(profile):
-            used.update(str(t) for t in (profile.get("notification_targets") or []))
+            away.append(profile)
             continue
         name = str(profile.get("name") or "").strip()
-        personal_message = f"{name}, {message}" if name else message
-        for target in profile.get("notification_targets") or []:
-            value = str(target)
-            if not value or value in used:
-                continue
-            used.add(value)
-            if await _deliver(hass, value, title, personal_message, outcome):
-                sent = True
+        personal.append((profile, f"{name}, {message}" if name else message))
+    return await _send_recipients(hass, options, title, message, personal, away, global_skipped, outcome)
 
-    for target in [] if global_skipped else (options.get("notification_targets") or []):
-        value = str(target)
-        if not value or value in used:
+
+async def _send_recipients(hass: HomeAssistant, options: dict[str, Any], title: str, message: str,
+                           personal: list[tuple[dict[str, Any], str]], away: list[dict[str, Any]], global_skipped: bool,
+                           outcome: dict[str, Any] | None) -> bool:
+    """Allowed residents first (own wording), then global targets, each recipient once – decided per profile before merging,
+    so an absent resident never takes a shared phone from a present one (0.26.7.2); absent-only phones stay quiet."""
+    outcome = _outcome() if outcome is None else outcome
+    rows = [(str(target), text) for profile, text in personal for target in profile.get("notification_targets") or []]
+    reached = {_target_identity(target) for target, _text in rows if target}
+    used = {_target_identity(str(t)) for profile in away for t in profile.get("notification_targets") or [] if str(t)} - reached
+    rows += [] if global_skipped else [(str(target), message) for target in options.get("notification_targets") or []]
+    sent = False
+    for target, text in rows:
+        identity = _target_identity(target)
+        if not target or identity in used:
             continue
-        used.add(value)
-        if await _deliver(hass, value, title, message, outcome):
+        used.add(identity)
+        if await _deliver(hass, target, title, text, outcome):
             sent = True
     return sent
 
@@ -456,15 +468,14 @@ async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title
     and comfort wording differ per resident. Unassigned global targets still
     receive the neutral household message.
     """
-    outcome = _outcome() if outcome is None else outcome
-    sent = False
-    used: set[str] = set()
     selected = set(str(x) for x in (iq.get("room_keys") or []))
     temp = _finite_float(iq.get("expected_temperature_change_c"), 0.0)
     profile_skipped, global_skipped = _absence_filter(hass, options, event)
+    personal: list[tuple[dict[str, Any], str]] = []
+    away: list[dict[str, Any]] = []
     for profile in _resident_profiles(options):
         if profile_skipped(profile):
-            used.update(str(t) for t in (profile.get("notification_targets") or []))
+            away.append(profile)
             continue
         name = str(profile.get("name") or "").strip()
         assigned = set(str(x) for x in (profile.get("room_keys") or []))
@@ -475,24 +486,12 @@ async def _send_personalised(hass: HomeAssistant, options: dict[str, Any], title
             context = "Diese Empfehlung betrifft einen deiner hinterlegten Räume. "
         if thermal == "warm" and temp < -0.2:
             context += "Dein eher warmes Komfortprofil ist beim Temperaturverlust berücksichtigt. "
-        personal = prefix + context + message
-        for target in profile.get("notification_targets") or []:
-            value = str(target)
-            if not value or value in used:
-                continue
-            used.add(value)
-            if await _deliver(hass, value, title, personal, outcome):
-                sent = True
-    for target in [] if global_skipped else (options.get("notification_targets") or []):
-        if str(target) in used:
-            continue
-        if await _deliver(hass, str(target), title, message, outcome):
-            sent = True
-    return sent
+        personal.append((profile, prefix + context + message))
+    return await _send_recipients(hass, options, title, message, personal, away, global_skipped, outcome)
 
 
 async def _push(hass: HomeAssistant, store, options: dict[str, Any], now: datetime, send: Any, *, event: str, scope: str, key: str,
-                signature: str) -> tuple[bool, bool, bool]:
+                signature: str, episode: Any = None) -> tuple[bool, bool, bool]:
     """F14: one push to every recipient – (some recipient accepted it, held back because all are away, store changed).
 
     Each recipient is served on its own: a recipient whose notify service fails is recorded and tried again with the
@@ -500,15 +499,16 @@ async def _push(hass: HomeAssistant, store, options: dict[str, Any], now: dateti
     service took the call – not that a phone showed the message. The cooldown starts once the message is done.
     """
     target_count, available_count = _notification_service_counts(hass, options)
-    ledger = delivery_ledger(store.data, key, signature)
+    ledger = delivery_ledger(store.data, key, signature, now, _target_identity, episode)
     outcome = _outcome(ledger["accepted"])
     try:
-        await send(outcome)
+        if not delivery_late(ledger, now):  # 0.26.7.2: never a retry after the window, counted from the first attempt
+            await send(outcome)
     except Exception as err:  # noqa: BLE001 - outside one recipient (presence, wording): nothing was sent
         _record_notification_diagnostic(store, now=now, event=event, scope=scope, status="failed", target_count=target_count,
                                         available_service_count=available_count, reason="notify_service_exception", exception_type=type(err).__name__)
         return False, False, True
-    done = settle_delivery(store.data, key, outcome["accepted"], outcome["failed"])
+    done = settle_delivery(store.data, key, outcome["accepted"], outcome["failed"], outcome["unavailable"], now)
     changed = not done or bool(outcome["accepted"])
     for error in dict.fromkeys(outcome["failed"].values()):
         changed = _record_notification_diagnostic(store, now=now, event=event, scope=scope, status="failed", target_count=target_count,
@@ -659,7 +659,7 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             hass, store, options, now,
             (lambda outcome: _send_room_personalised(hass, options, title, message, room_key, event, outcome)) if room_key
             else (lambda outcome: _send(hass, options, title, message, event, outcome)),
-            event=event, scope="room" if room_key else "house", key=key, signature=f"{title}|{message}")
+            event=event, scope="room" if room_key else "house", key=key, signature=f"{title}|{message}", episode=push_episode(store, room_key, event, reminder))
         changed = changed or pushed
         return reached or away
 
@@ -717,7 +717,7 @@ async def _process_notifications(hass: HomeAssistant, store, data: dict[str, Any
             if enabled and not suppress_at_night and not (kind == "sensor" and sensor_recovery_active) and _due(store, event_key, now, cooldown):
                 handled, _away, pushed = await _push(
                     hass, store, options, now, lambda outcome: _send_personalised(hass, options, title, message, iq, f"iq_{kind}", outcome),
-                    event=f"iq_{kind}", scope="house", key=event_key, signature=signature)
+                    event=f"iq_{kind}", scope="house", key=event_key, signature=signature, episode=str(previous_signature))
                 changed = changed or pushed
             if handled:
                 store.data["last_house_recommendation_signature"] = signature

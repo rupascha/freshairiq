@@ -78,3 +78,27 @@ test('a running follow-up counts down; no countdown without an end time or after
   await mount(page, { garage: garage({ state: 'follow_up', label, follow_up_until: until }) }, 'en');
   expect(await text(page)).toContain('follow-up 5 min left');
 });
+
+// 0.26.7.2 (support diagnosis 20.11.): a shared fan another room's automation started names that room
+test('a shared fan names the room whose automation started it; several rooms, none, English, manual', async ({ page }) => {
+  const general = 'Gemeinsamer Ablüfter läuft – FreshAirIQ steuert ihn über einen anderen Raum';
+  const office = (automation, extra = {}) => ({ buro: garage(automation, { key: 'buro', name: 'Büro', action: 'Continue ventilating', ...extra }) });
+  const shared = started => ({ state: 'shared', label_key: 'shared_owner', label: general, started_by: started });
+  const errors = await mount(page, office(shared({ room_keys: ['waschkuche'], room_names: ['Waschküche'] })));
+  let content = await text(page);
+  expect(content).toContain('Gemeinsamer Ablüfter läuft · gestartet von Waschküche');
+  expect(content).not.toContain('Lüfter ausschalten');
+  await mount(page, office(shared({ room_keys: ['waschkuche', 'bad'], room_names: ['Waschküche', 'Bad'] })));
+  expect(await text(page)).toContain('Gemeinsamer Ablüfter läuft · gestartet von Waschküche und Bad');
+  await mount(page, office(shared(null)));
+  content = await text(page);
+  expect(content).toContain(general);
+  expect(content).not.toContain('gestartet von');
+  await mount(page, office(shared({ room_keys: ['waschkuche'], room_names: ['Waschküche'] })), 'en');
+  content = await text(page);
+  expect(content).toContain('Shared exhaust fan running · started by Waschküche');
+  expect(content).not.toContain('gestartet von');
+  await mount(page, office({ state: 'manual', label: null, started_by: null }, { action: 'Close' }));
+  expect(await text(page)).toContain('Lüfter ausschalten');                             // switched on by hand: the user decides
+  expect(errors).toEqual([]);
+});

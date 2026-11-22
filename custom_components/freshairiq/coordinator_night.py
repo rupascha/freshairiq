@@ -144,9 +144,10 @@ class NightStageMixin:
             or hours_to_start <= 3.0
         )
 
+        # 0.26.7.2: by the absolute time – rows of one local zone compare by wall clock (the repeated hour on 25.10.)
         night_rows = [
             x for x in self._hourly_forecast_cache
-            if night_start_dt <= x.get("datetime", night_start_dt - timedelta(days=1)) <= night_end_dt
+            if night_start_dt.timestamp() <= x.get("datetime", night_start_dt - timedelta(days=1)).timestamp() <= night_end_dt.timestamp()
         ]
         night_hours = max(elapsed_minutes(night_start_dt, night_end_dt) / 60.0, 0.0)
         night_forecast_base = overnight_forecast_ml(
@@ -265,7 +266,7 @@ class NightStageMixin:
         rain_start_label = first_rain_dt.strftime("%H:%M") if isinstance(first_rain_dt, datetime) else None
         pre_rain_rows = [
             x for x in night_rows
-            if isinstance(first_rain_dt, datetime) and x.get("datetime") < first_rain_dt
+            if isinstance(first_rain_dt, datetime) and x.get("datetime").timestamp() < first_rain_dt.timestamp()
         ]
         pre_rain_avg_ah = (
             sum(float(x.get("absolute_humidity", 0)) for x in pre_rain_rows) / len(pre_rain_rows)

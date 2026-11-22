@@ -107,7 +107,7 @@ def test_coordinator_freezes_the_target_when_the_window_opens():
 # --- exhaust fan only (community: "Garage schließen", although only the fan runs) ---------
 from custom_components.freshairiq.close_wording import area_close_instruction, close_instruction, fan_only, fan_stop_message, keep_instruction
 from custom_components.freshairiq.live_coach import refine_live_recommendation
-from custom_components.freshairiq.localize import to_english
+from custom_components.freshairiq.localize import Translator
 
 
 def _fan_room(**extra):
@@ -148,8 +148,8 @@ def test_wording_says_switch_off_the_fan_not_close():
     assert close_instruction([]) == "Geöffnete Fenster schließen"
     assert keep_instruction([bad, garage], 3.6) == "Bad offen lassen · Lüfter in Garage laufen lassen · noch ca. 4 min"
     assert keep_instruction([], 0) == "Weiterlüften · noch ca. 1 min"
-    assert to_english("Bad schließen · Lüfter in Garage ausschalten", ["Bad", "Garage"]) == "Close Bad · switch off the fan in Garage"
-    assert to_english("Lüfter in Garage laufen lassen · noch ca. 4 min", ["Garage"]) == "Keep the fan in Garage running · about 4 min left"
+    assert Translator(["Bad", "Garage"]).text("Bad schließen · Lüfter in Garage ausschalten") == "Close Bad · switch off the fan in Garage"
+    assert Translator(["Garage"]).text("Lüfter in Garage laufen lassen · noch ca. 4 min") == "Keep the fan in Garage running · about 4 min left"
 
 
 def _coach_room(key="garage", fan=True, elapsed=180.0, target=None, next5=3.0):
