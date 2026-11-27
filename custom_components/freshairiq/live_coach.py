@@ -304,7 +304,7 @@ def _co2_reason(active: list[dict[str, Any]], options: dict[str, Any]) -> str | 
             continue
         ppm = _f(room.get("co2"))
         goals = (room.get("goal_state") or {}).get("goals") if isinstance(room.get("goal_state"), dict) else []
-        open_goal = any(isinstance(g, dict) and g.get("id") == "co2" and g.get("active") and not g.get("reached") for g in goals or [])
+        open_goal = any(isinstance(g, dict) and g.get("id") == "co2" and g.get("active") and not g.get("reached") and not g.get("given_up") for g in goals or [])
         if ppm >= critical:
             return f"weitergelüftet wird wegen CO₂ ({round(ppm)} ppm, kritisch ab {round(critical)} ppm)"
         if open_goal:

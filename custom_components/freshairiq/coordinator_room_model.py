@@ -23,6 +23,7 @@ from .const import (
 )
 from .consolidation import session_target_min as _session_target_min
 from .coordinator_contacts import _contact_ids, _room_orientation_factor
+from .coordinator_sources import _state_report_timestamp
 from .energy import (
     exchanged_air_fraction,
     heating_cost_context,
@@ -37,7 +38,8 @@ from .iq2_runtime import iq2_base_rate, iq2_forecast_arguments, iq2_start_contex
 from .forecast_shadow import freeze_shadow_start
 from .forecast_validation import START_FORECAST_CONTEXT_VERSION, evaluate_start_forecast_at_duration, freeze_start_forecast_context
 from .learning_effectiveness import freeze_learning_effectiveness_context
-from .model import RoomInput, absolute_humidity, evaluate_room, scaled_min_return
+from .co2_fall import co2_airing_given_up, co2_give_up_confirmed, co2_slope_ppm_min
+from .model import RoomInput, absolute_humidity, co2_release_ppm, evaluate_room, scaled_min_return
 from .moisture_source import update_moisture_source
 from .post_stabilization import prune_history as prune_stabilization_history, update_post_close_observation
 from .room_recommendation import _recommendation, co2_lead
@@ -109,6 +111,38 @@ class RoomModelMixin:
         )
         sources[str(key)] = source_fields(str(entity), value, reason)
         return value
+
+    def _co2_hold(self, key: Any, cfg: Any, mem: dict[str, Any], co2: Any, options: Any, elapsed: Any) -> bool:
+        """#31: the CO2 hold band of a running airing, released early once CO2 levels off above the release level.
+
+        Runtime-only samples, one per sensor report (not per refresh); the caller stores the release through the usual
+        latch update. A release is remembered for the airing (``session_co2_given_up``) so nothing claims CO2 reached.
+        """
+        samples = self.__dict__.setdefault("_co2_samples", {}).setdefault(str(key), [])
+        latched = bool(mem.get("co2_lead_latched"))
+        stamp = _state_report_timestamp(self.hass.states.get(str(cfg.get(CONF_ROOM_CO2) or "")))
+        steepest = self.__dict__.setdefault("_co2_steepest", {})
+        if not mem["session_active"]:
+            samples.clear(); steepest.pop(str(key), None); self.__dict__.setdefault("_co2_since", {}).pop(str(key), None)
+        elif co2 is not None and stamp:
+            if not samples or datetime.fromisoformat(stamp).timestamp() > samples[-1][0]:
+                samples.append((datetime.fromisoformat(stamp).timestamp(), float(co2))); del samples[:-60]
+            slope = co2_slope_ppm_min(samples)
+            if slope is not None:
+                steepest[str(key)] = min(steepest.get(str(key), 0.0), slope)
+            in_band = co2_release_ppm(options) <= co2 < float(options.get("co2_warn", 1000.0))
+            if not in_band:  # the flag only holds inside the band
+                mem.pop("session_co2_given_up", None)
+            since = self.__dict__.setdefault("_co2_since", {})
+            new, confirmed = co2_give_up_confirmed(since.get(str(key)), samples[-1][0], in_band and latched and co2_airing_given_up(float(co2), options, slope, elapsed, steepest.get(str(key), 0.0)))
+            if new is None:
+                since.pop(str(key), None)
+            else:
+                since[str(key)] = new
+            if confirmed:
+                mem["session_co2_given_up"] = True
+                return False
+        return latched
 
     def _dishwasher_phase(self, cfg: dict[str, Any]) -> str | None:
         """0.26.7.0 (#18): phase of the room's optional dishwasher signal (None without one)."""
@@ -220,7 +254,7 @@ class RoomModelMixin:
             volume_m3=float(cfg[CONF_ROOM_VOLUME]), contact_open=is_open, contact_open_seconds=raw_open_seconds,
             learning_rate=effective_learning_rate, learning_samples=effective_learning_samples, co2=co2,
             cooling_allowed="temperature" not in disabled_goals, comfort_target_c=room_comfort_target(cfg, mem)[0] if "temperature" not in disabled_goals else None,
-            surface_reference_temperature=self.__dict__.get("_wall_reference_t", {}).get(str(key)), surface_rh_helper=self._surface_rh_helper(key, cfg), co2_lead_latched=bool(mem.get("co2_lead_latched")), session_co2_only=bool(mem["session_active"] and mem.get("session_co2_only")),
+            surface_reference_temperature=self.__dict__.get("_wall_reference_t", {}).get(str(key)), surface_rh_helper=self._surface_rh_helper(key, cfg), co2_lead_latched=self._co2_hold(key, cfg, mem, co2, options, elapsed), co2_given_up=bool(mem.get("session_co2_given_up")), session_co2_only=bool(mem["session_active"] and mem.get("session_co2_only")),
             co2_sensor_missing=bool(cfg.get(CONF_ROOM_CO2)) and co2 is None and "co2" not in disabled_goals,
             humidity_plateau=track_session(mem, session_active=bool(mem["session_active"]), elapsed_min=elapsed, temp_c=t, rh=rh, reports=int(mem.get("session_humidity_reports", 0))),
             session_active=bool(mem["session_active"]), session_elapsed_min=elapsed, session_start_ah=mem.get("session_start_ah"),
@@ -365,7 +399,7 @@ class RoomModelMixin:
         mem["last_measurement_at"] = now.isoformat()
         mem["last_measurement_valid"] = result.data_quality == "ok"
         # audit S04: a sensor without a value keeps the hold band – only a valid reading below it ends it
-        co2_latched = bool(mem.get("co2_lead_latched")) if room_input.co2_sensor_missing else co2_lead(co2, options, bool(mem.get("co2_lead_latched")))
+        co2_latched = bool(mem.get("co2_lead_latched")) if room_input.co2_sensor_missing else co2_lead(co2, options, room_input.co2_lead_latched)  # #31: an early release of the hold sticks (re-arms only at co2_warn)
         if bool(mem.get("co2_lead_latched")) != co2_latched:
             mem["co2_lead_latched"] = co2_latched; changed = True
         action, reason, reason_list = _recommendation(result, options, pollen=pollen, co2=co2, airflow=airflow, wind_bearing=wind_bearing, wind_speed=wind_speed, outdoor_pm25=outdoor_pm25, ventilation_latched=bool(room_input.ventilation_latched), co2_latched=co2_latched)

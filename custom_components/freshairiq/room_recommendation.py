@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .model import BENEFIT_EXHAUSTED_CLOSE_REASON, CO2_HYSTERESIS_PPM, GOALS_HELD_CLOSE_REASON, GOALS_REACHED_CLOSE_REASON, SUMMER_WARMING_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, ROOM_TOO_DRY_CLOSE_REASON, co2_release_configured, co2_release_ppm, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
+from .model import BENEFIT_EXHAUSTED_CLOSE_REASON, CO2_HYSTERESIS_PPM, CO2_SLOW_FALL_CLOSE_REASON, GOALS_HELD_CLOSE_REASON, GOALS_REACHED_CLOSE_REASON, SUMMER_WARMING_CLOSE_REASON, TEMPERATURE_LIMIT_CLOSE_REASON, ROOM_TOO_DRY_CLOSE_REASON, co2_release_configured, co2_release_ppm, VENTILATION_HYSTERESIS_DELTA_G_M3, VENTILATION_HYSTERESIS_RH, co2_lead
 from .outdoor_air import outdoor_pm25_blocked, pm25_reason
 
 
@@ -38,6 +38,8 @@ def _close_reason(result: Any, options: dict[str, Any]) -> str:
     if reason == BENEFIT_EXHAUSTED_CLOSE_REASON:
         return (f"Weiteres Lüften entfernt kaum noch Feuchtigkeit – Schließen, obwohl das Feuchteziel von "
                 f"{float(options.get('target_rh', 55.0)):.0f} % noch nicht erreicht ist")
+    if reason == CO2_SLOW_FALL_CLOSE_REASON:
+        return f"Das CO₂ sinkt nicht mehr schnell genug bis zum Freigabewert ({round(co2_release_ppm(options))} ppm) – weiteres Lüften lohnt sich dafür nicht mehr"
     if reason == ROOM_TOO_DRY_CLOSE_REASON:
         return (f"Die Raumluft ist bereits trocken (höchstens {float(options.get('humidify_below_rh', 35.0) or 0.0):.0f} % rF); "
                 "weiteres Lüften würde sie zu stark austrocknen")

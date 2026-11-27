@@ -51,6 +51,7 @@ class RoomInput:
     close_notified_kind: str | None = None
     # IQ2 (0.26.7.1): the goals of this airing were reliably reached at some point (kept beside another close cause)
     session_goals_reached: bool = False
+    co2_given_up: bool = False  # #31: this airing gave the CO2 hold up (CO2 levelled off above the release level)
     # IQ2: part of the outdoor temperature difference the room air follows (thermal mass keeps the rest); 1 = plain mixing
     thermal_air_share: float = 1.0
     airflow_factor: float = 1.0
@@ -182,6 +183,7 @@ GOALS_HELD_CLOSE_REASON = "Room goals were reached; the close is kept while humi
 # the humidity target is still open, but confirmed IQ2 forecasts show that further airing hardly removes moisture
 BENEFIT_CLOSE_KIND = "benefit_exhausted"
 BENEFIT_EXHAUSTED_CLOSE_REASON = "Further airing hardly removes moisture any more; the humidity target is not reached"
+CO2_SLOW_FALL_CLOSE_REASON = "CO2 is no longer falling fast enough to reach the release level"
 ROOM_TOO_DRY_CLOSE_REASON = "Room air is already dry; further airing would dry it out too much"
 # 0.26.7.0 (F11): a close stored because the air no longer helped is lifted once it is clearly drier again
 CLOSE_RELEASE_DELTA_G_M3 = 0.3
@@ -331,10 +333,15 @@ def _goals_reached_close(room: RoomInput, options: dict[str, Any], *, co2_held: 
     Humidity at or below ``target_rh`` (the raw reading – rounding never fakes a reached goal), no CO2 hold, no useful
     cooling left, no urgent protection. Only for rooms that chose ``goals_reached``; never on missing readings.
     """
-    if not options.get("room_close_on_goals") or urgent or co2_held or cooling_still_useful or room.co2_sensor_missing:
+    if not options.get("room_close_on_goals") or urgent or co2_held or cooling_still_useful or room.co2_sensor_missing or room.co2_given_up:  # #31: no goal claimed
         return False
     target = float(options.get("target_rh", 55.0))
     return room.humidity <= target + (VENTILATION_HYSTERESIS_RH if hold else 0.0)
+
+
+def _co2_close(room: RoomInput, options: dict[str, Any], urgent: bool) -> bool:
+    """#31: a CO2-only airing that gave the CO2 hold up closes like a benefit close – only for a room that closes on goals."""
+    return bool(room.co2_given_up and room.session_co2_only and options.get("room_close_on_goals") and not urgent)
 
 
 def _running_close(
@@ -365,7 +372,7 @@ def _running_close(
     moisture_ingress, drying_exhausted = moisture_effect_next5 <= 0.0, delta <= close_delta  # 0.26.5.4 (review A01)
     # case C: the physical situation, never a clock. Final hotfix F11-B: the lower humidity setting
     # (``humidify_below_rh``) is no reason to close on its own – it keeps its other uses.
-    air_no_longer_helps = moisture_ingress or drying_exhausted
+    air_no_longer_helps = moisture_ingress or drying_exhausted or _co2_close(room, options, urgent)
     temperature_limit = temperature_limit_reached(room, options) and not urgent
     summer_warming = (
         profile == "summer_cooling"
@@ -619,6 +626,8 @@ def evaluate_room(room: RoomInput, options: dict[str, Any], cross_ventilation: b
             action, reason, close_kind = "Close", GOALS_HELD_CLOSE_REASON, "goals_held"
         elif room.close_notified_kind == BENEFIT_CLOSE_KIND and delta > float(options.get("close_delta", 0.4)) and next5 > 0:
             action, reason, close_kind = "Close", BENEFIT_EXHAUSTED_CLOSE_REASON, BENEFIT_CLOSE_KIND
+        elif _co2_close(room, options, urgent) and delta > float(options.get("close_delta", 0.4)):
+            action, reason, close_kind = "Close", CO2_SLOW_FALL_CLOSE_REASON, "air_no_longer_helps"
         else:
             action, reason, close_kind = "Close", AIR_NO_LONGER_HELPS_CLOSE_REASON, "air_no_longer_helps"
     elif running:
