@@ -43,6 +43,7 @@ class SessionFinishMixin:
     def _reset_completed_session_runtime(self, mem: dict[str, Any], room_key: str) -> None:
         """Clear only per-session runtime state after a definitive room close."""
         clear_session_behaviour(mem)
+        mem.pop("session_co2_given_up", None)
         self._cancel_final_measurement_timer(room_key)
         mem.update({
             "session_active": False,

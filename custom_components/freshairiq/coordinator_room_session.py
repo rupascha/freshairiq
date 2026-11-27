@@ -165,7 +165,7 @@ class RoomSessionMixin:
         mem["session_result_ml"] = 0.0
         mem["close_notified"] = False
         mem["close_notified_kind"] = None
-        mem["session_goals_reached"] = False
+        mem["session_goals_reached"] = False; mem.pop("session_co2_given_up", None)
         # Use the same aggregated/proxy states as the room calculation;
         # list-valued multi-sensor configs are not valid hass.states keys.
         temp_reported = _state_report_timestamp(temperature_state)
@@ -369,7 +369,7 @@ class RoomSessionMixin:
                 mem["session_result_ml"] = 0.0
                 mem["close_notified"] = False
                 mem["close_notified_kind"] = None
-                mem["session_goals_reached"] = False
+                mem["session_goals_reached"] = False; mem.pop("session_co2_given_up", None)
                 # Keep the same aggregated/proxy states used for this calculation cycle.
                 # For a legacy single sensor this is the original HA State object.
                 mem["session_last_temperature_update"] = _state_report_timestamp(temperature_state)
